@@ -68,16 +68,17 @@ IF SetPath() THEN
 	_screen.Caption = MITITULO
 
 *!*		=LEELOCALCFG()
-	DO FORM LOGIN TO LOGEO
+*!*		DO FORM LOGIN TO LOGEO
 
+	LOGEO = -1
 	IF LOGEO > 0 THEN 
-		*SET SYSMENU OFF
-		*SET SYSMENU TO
-		SET DATE TO BRITISH
-		_screen.Visible = .T.
-		
-		DO generamenup WITH logeo 
-		READ EVENTS
+*!*			*SET SYSMENU OFF
+*!*			*SET SYSMENU TO
+*!*			SET DATE TO BRITISH
+*!*			_screen.Visible = .T.
+*!*			
+*!*			DO generamenup WITH logeo 
+*!*			READ EVENTS
  
 	ELSE 
 		IF logeo = -1 THEN 

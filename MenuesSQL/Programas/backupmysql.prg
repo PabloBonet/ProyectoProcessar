@@ -167,7 +167,7 @@ FUNCTION clonardbmysql(xControl, xCamino, xDB, xDBn)
 	*xDBn= nombre que va a tener la nueva base de datos
 	
 	*RECORRO TODA laS TABLAS DE LA  BD Y creo el script de creacion de todas la tablas a un txt
-	IF SQLEXEC(xControl,"show tables","tablas")>=0 THEN 
+	IF SQLEXEC(xControl,"show full tables","tablas1")>=0 THEN 
 	
 		xApunta = FCREATE(xCamino+xDB+".sql") &&CREO UN nombredatabaseoriginal.TXT CON el script de creacion de  TODOS LAS TABLAS
 		
@@ -187,10 +187,21 @@ FUNCTION clonardbmysql(xControl, xCamino, xDB, xDBn)
 	    xContenido = "use "+xDBn
 		=FWRITE(xApunta,xContenido+';')
 	 	=FPUTS(xApunta," ")
+
+		SELECT * FROM tablas1 INTO CURSOR tablas ORDER BY Table_type 
+**		SELECT * FROM tablas1 INTO CURSOR tablas WHERE Table_type = 'BASE TABLE'
+	 	COUNT FOR Table_type = 'VIEW' TO xcantview
+
+**		armo un array para controlar la cantidad de vistas que no puedo generar si da error la creacion por el orden	 	
+	 	DIMENSION xSqlArray (xcantview)  
+	 	FOR i = 1 TO xcantview
+	 		xSqlArray(i) = ""
+	 	ENDFOR 
 	 	
 		SELECT tablas
 		GO TOP 
 		L=0		
+		J=0
 		DO WHILE !EOF()
 			L=L + 1
 			xCampo  = FIELD(1) &&NOMBRE DEL PRIMER CAMPO DE LA TABLA SELECCIONADA
@@ -230,6 +241,7 @@ FUNCTION clonardbmysql(xControl, xCamino, xDB, xDBn)
 		DO WHILE !FEOF(xApunta) 
 			lnAux = lnAux + 1 &&vuelve a cero cada vez que se ejecuta la sentencia
 			xSqltmp = ALLTRIM(FGETS(xApunta))
+*!*				MESSAGEBOX(xSqltmp)
 			lnLen = LEN(xSqltmp)
 			IF SUBSTR(xSqltmp,lnLen,1) = ";" THEN 
 				*ejecutar la sentencia
@@ -249,12 +261,15 @@ FUNCTION clonardbmysql(xControl, xCamino, xDB, xDBn)
 			ENDIF 
 			
 			IF !SQLEXEC(xControl,xSql,'nouso')>=0 THEN 
-				MESSAGEBOX('Error al ejecutar '+ALLTRIM(xSql))
-				RETURN .F.
-			ELSE 
+*!*					MESSAGEBOX('Error al ejecutar '+ALLTRIM(xSql))
+				J=J+1
+				xSqlArray(J)=ALLTRIM(xSql)
+*				RETURN .F.
+*!*				ELSE 
 				*limpiar sentencia
-				xSql = ""
+*!*					xSql = ""
 			ENDIF 			
+				xSql = ""
 		ENDDO
 		=FCLOSE(xApunta)
 		SET SAFETY OFF
@@ -262,5 +277,22 @@ FUNCTION clonardbmysql(xControl, xCamino, xDB, xDBn)
 		*error no se puedo leer el archivo
 		RETURN .F.
 	ENDIF	
+	** ejecuto las sentencias que me dieron error hasta que se ejecuten todas
+	M = 1
+	DO WHILE M>0 
+		M = 0
+		FOR k= 1 TO xcantview
+			IF !EMPTY(xSqlArray(k)) THEN 
+				xSql = ALLTRIM(xSqlArray(k))
+				IF !SQLEXEC(xControl,xSql,'nouso')>=0 THEN 
+					M=M+1
+				ELSE 
+					xSqlArray(k)=""
+				ENDIF 			
+				xSql = ""		
+			ENDIF 
+		ENDFOR 
+	ENDDO 
+	
 	RETURN .T.
 ENDFUNC
