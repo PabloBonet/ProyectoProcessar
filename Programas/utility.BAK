@@ -641,8 +641,8 @@ FUNCTION copydocu
 			ENDDO 
 			nuevo_completo = ALLTRIM(new_nuevo_completo)
 			*v_ejecutar = "COPY FILE (viejo_completo) TO (nuevo_completo)"
-			v_ejecutar = "COPY FILE ("+viejo_completo+") TO ("+nuevo_completo+")"
-			MESSAGEBOX(v_ejecutar)
+			v_ejecutar = "COPY FILE '"+viejo_completo+"' TO '"+nuevo_completo+"'" 
+			
 			&v_ejecutar				
 	ENDIF
 
