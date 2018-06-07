@@ -87,7 +87,7 @@ ON SHUTDOWN DO CERRAR_TODO
 *!*	****************
 *!*	****************
   
-toolbarsys.dock(0)
+toolbarsys.dock(1)
 
 =settoolbarsys()
 =disabletoolbar()

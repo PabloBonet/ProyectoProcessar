@@ -500,6 +500,82 @@ RETURN ret
 ENDFUNC 
 
 
+FUNCTION settoolbarmenu
+PARAMETERS var_perfil
+v_toolperfil = var_perfil
+
+RELEASE toolbarmenu 
+PUBLIC  toolbarmenu
+toolbarmenu = CREATEOBJECT('toolbarmenu')
+toolbarmenu.dock(0)
+toolbarmenu.show 
+toolbarmenu.tag = var_perfil
+
+vconeccion=abreycierracon(0,_SYSSCHEMA)
+
+sqlmatriz(1)="select m.* from toolbarmenu t left join  menusql m on t.idmenu = m.idmenu "
+sqlmatriz(3)="where t.idperfil = "+ALLTRIM((v_toolperfil))+" and t.usuario = '"+alltrim(_SYSUSUARIO)+"'  group by t.idmenu order by m.codigo "
+
+verror=sqlrun(vconeccion,'TBMENU')
+IF !verror THEN 
+	MESSAGEBOX('Ha ocurrido un error al obtener el menu de ToolBar Menu...',0+64,'Error')
+	RETURN 	
+ENDIF 
+
+SELECT TBMENU
+GO TOP 
+IF EOF() THEN 
+	sqlmatriz(1)="select m.* from toolbarmenu t left join  menusql m on t.idmenu = m.idmenu "
+	sqlmatriz(3)="where t.idperfil = 1 and t.usuario = 'ADMINISTRADOR'  group by t.idmenu order by m.codigo "
+
+	verror=sqlrun(vconeccion,'TBMENU')
+	IF !verror THEN 
+		MESSAGEBOX('Ha ocurrido un error al obtener el menu de ToolBar Menu...',0+64,'Error')
+		RETURN 	
+	ENDIF 
+ENDIF 
+=abreycierracon(vconeccion,'')
+
+SELECT TBMENU
+GO TOP 
+IF EOF() THEN 
+	RETURN 
+ENDIF 
+
+DO WHILE !EOF()
+
+	IF !EMPTY(ALLTRIM(tbmenu.comando)) THEN 
+
+	MESSAGEBOX(TYPE("tbmenu.idmenu"))
+	MESSAGEBOX(alltrim(STR(tbmenu.idmenu)))
+		toolbarmenu.addobject('cm'+alltrim(STR(tbmenu.idmenu)),'commandmenu')
+
+		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".visible = .t."
+		&eje 
+
+		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".tag = '"+alltrim(tbmenu.comando)+"'"
+		&eje 
+
+		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".ToolTipText = '"+alltrim(tbmenu.descrip)+"'"
+		&eje 
+	
+		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".caption = ''"
+		&eje 
+
+		v_icono =  IIF(!EMPTY(ALLTRIM(tbmenu.imagen)),"'"+ALLTRIM(_sysservidor)+"iconos\"+ALLTRIM(tbmenu.imagen)+"'","'"+ALLTRIM(_sysservidor)+"iconos\run1.png'")
+		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".Picture = "+v_icono
+		&eje 
+	
+	ENDIF 
+
+	SELECT tbmenu
+	SKIP 
+ENDDO 
+SELECT tbmenu
+USE 
+
+
+ENDFUNC 
 
 
 *** COPIAR IMAGENES ***

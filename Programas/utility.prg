@@ -543,19 +543,29 @@ IF EOF() THEN
 ENDIF 
 
 DO WHILE !EOF()
+
 	IF !EMPTY(ALLTRIM(tbmenu.comando)) THEN 
+
+	
+
 		toolbarmenu.addobject('cm'+alltrim(STR(tbmenu.idmenu)),'commandmenu')
+
 		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".visible = .t."
 		&eje 
+
 		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".tag = '"+alltrim(tbmenu.comando)+"'"
 		&eje 
+
 		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".ToolTipText = '"+alltrim(tbmenu.descrip)+"'"
 		&eje 
+	
 		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".caption = ''"
 		&eje 
+
 		v_icono =  IIF(!EMPTY(ALLTRIM(tbmenu.imagen)),"'"+ALLTRIM(_sysservidor)+"iconos\"+ALLTRIM(tbmenu.imagen)+"'","'"+ALLTRIM(_sysservidor)+"iconos\run1.png'")
 		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".Picture = "+v_icono
 		&eje 
+	
 	ENDIF 
 
 	SELECT tbmenu
