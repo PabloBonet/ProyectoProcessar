@@ -2,7 +2,7 @@ _screen.Visible = .t.
 SET SYSMENU OFF
 CLEAR
 
-_screen.windowstate= 2 
+_screen.windowstate= 0
 _screen.closable = .f.
 _screen.MaxButton = .T.
 _screen.AutoCenter = .T.
@@ -33,7 +33,7 @@ SET CLASSLIB TO crystalreports.vcx additive
 PUBLIC toolbarsys
 toolbarsys = CREATEOBJECT('toolbarsys')
 
-
+WAIT windows "Verificando Conexion con Base de Datos... Aguarde..." NOWAIT 
 
 =LEECONFIG()
 
@@ -46,6 +46,43 @@ PUBLIC SQLMATRIZ(20)
 FOR I = 1 TO 20
 	SQLMATRIZ(I)=""
 ENDFOR 
+
+vconeccion = -1 
+salir = 0
+DO WHILE vconeccion < 0 AND salir = 0 
+	vconeccion=ConMySQL(_SYSSCHEMA)
+	IF vconeccion = -1 THEN 
+		DO FORM seteoaccesodb TO vseteo
+		IF vseteo = 1 THEN 
+			PUNTERO1 = FOPEN("CONFIG.CFG",0)
+			IF PUNTERO1 > 0 THEN
+				DO WHILE !FEOF(PUNTERO1) 
+					EJE = ALLTRIM(FGETS(PUNTERO1))
+					IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
+						&EJE
+					ENDIF
+				ENDDO
+				=FCLOSE(PUNTERO1)
+				SET SAFETY OFF
+				
+			ELSE 
+				MESSAGEBOX("No se puede continuar con la ejecucion"+CHR(13)+" Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
+				quit	
+			ENDIF 
+		ELSE 
+			MESSAGEBOX("No se puede continuar con la ejecucion"+CHR(13)+" Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
+			quit	
+		ENDIF 
+	ELSE 
+		=SQLDISCONNECT(vconeccion)
+		salir = 1
+	ENDIF 
+ENDDO 
+WAIT CLEAR 
+_screen.windowstate= 2 
+
+WAIT CLEAR 
+
 
 
 =DEFVARPUBLICAS ('varpublicas')
@@ -89,6 +126,7 @@ ON SHUTDOWN DO CERRAR_TODO
   
 toolbarsys.dock(1)
 
+
 =settoolbarsys()
 =disabletoolbar()
 =actutoolbarsys('_screen')
@@ -101,7 +139,7 @@ toolbarsys.dock(1)
 	IF LOGEO > 0 THEN 
 	  	KEYBOARD '{F10}'
 		toolbarsys.show 
-		READ EVENTS
+ 		READ EVENTS
 	ELSE 
 	ENDIF 
 	

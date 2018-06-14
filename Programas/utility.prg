@@ -7,10 +7,12 @@ ENDFUNC
 
 
 FUNCTION LEECONFIG()
+	v_llave = 'Processar'
 	PUNTERO = FOPEN("CONFIG.CFG",0)
 	IF PUNTERO > 0 THEN
 		DO WHILE !FEOF(PUNTERO) 
 			EJE = ALLTRIM(FGETS(PUNTERO))
+
 			IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
 				&EJE
 			ENDIF
@@ -18,11 +20,63 @@ FUNCTION LEECONFIG()
 		=FCLOSE(PUNTERO)
 		SET SAFETY OFF
 	ELSE 
-		MESSAGEBOX("Error: No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ")
-		RETURN	
+		DO FORM seteoaccesodb TO vseteo
+		IF vseteo = 1 THEN 
+			PUNTERO1 = FOPEN("CONFIG.CFG",0)
+			IF PUNTERO1 > 0 THEN
+				DO WHILE !FEOF(PUNTERO1) 
+					EJE = ALLTRIM(FGETS(PUNTERO1))
+					IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
+						&EJE
+					ENDIF
+				ENDDO
+				=FCLOSE(PUNTERO1)
+				SET SAFETY OFF
+				RETURN 
+			ELSE 
+				MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
+				quit	
+			ENDIF 
+		ELSE 
+			MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
+			quit
+		ENDIF 
 	ENDIF
 	RETURN
 ENDFUNC 
+
+
+FUNCTION CREACONFIG()
+		PARAMETERS pc_server, pc_usuario, pc_passw, pc_puerto, pc_esquema, pc_driver
+*!*				v_charC=encripta(v_charC0,v_llave,.f.)+CHR(13)+CHR(10)
+		IF FILE('config.cfg') THEN 
+			DELETE FILE 'config.cfg' 
+		ENDIF 
+		v_NombreArchi="config.cfg"		
+		H=FCREATE(v_NombreArchi,0)
+		IF H < 0 THEN 
+			MESSAGEBOX("No se pudo CREAR el Archivo de Configuración ",0+48+0,"Error") 
+		ELSE
+			v_llave = 'Processar'
+			v_charC="PUBLIC _SYSMYSQL_SERVER, _SYSMYSQL_USER, _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "+CHR(13)+CHR(10)
+			chars=fwrite(H,v_charC)
+			v_charC="_SYSMYSQL_SERVER = '"+ALLTRIM(pc_server)+"' "+CHR(13)+CHR(10)
+			chars=FWRITE(H,v_charC)
+			v_charC="_SYSMYSQL_USER   = '"+ALLTRIM(pc_usuario)+"' "+CHR(13)+CHR(10)
+			chars=FWRITE(H,v_charC)
+			v_charC="_SYSMYSQL_PASS   = '"+(ALLTRIM(pc_passw))+"' "+CHR(13)+CHR(10)
+			chars=FWRITE(H,v_charC)
+			v_charC="_SYSMYSQL_PORT   = '"+ALLTRIM(pc_puerto)+"' "+CHR(13)+CHR(10)
+			chars=FWRITE(H,v_charC)
+			v_charC="_SYSSCHEMA    	  = '"+ALLTRIM(pc_esquema)+"' "+CHR(13)+CHR(10)
+			chars=FWRITE(H,v_charC)
+			v_charC="_SYSDRVMYSQL     = '"+ALLTRIM(pc_driver)+"' "+CHR(13)+CHR(10)
+			chars=FWRITE(H,v_charC)
+			FCLOSE(H)
+		ENDIF 
+	RETURN 
+ENDFUNC
+
 
 
 ************************************************************************************************************
@@ -2034,3 +2088,83 @@ v_retorno = v_cad1 + v_cad2 + v_cad3
 RETURN v_retorno
 
 ENDFUNC 
+
+
+
+
+*---------------------------------------------
+* Función que encripta una cadena
+* Parámetros:
+*    tcCadena - Cadena a encriptar
+*    tcLlave - Llave para encriptar (Debe ser la misma para Desencriptar)
+*    tlSinDesencripta - .F. para proceso que se puede usar Desencripta
+*       Los textos encriptados con este tlSinDesencripta en .T. no se pueden
+*       desencriptar, ya que el mecanismo de encriptamiento utilizado
+*       produce perdida de informacion que impide la inversion del proceso
+* Retorno: Caracter (el doble de largo que el texto pasado)
+*---------------------------------------------
+FUNCTION Encripta(tcCadena, tcLlave, tlSinDesencripta)
+ LOCAL lc, ln, lcRet
+ LOCAL lnClaveMul, lnClaveXor
+ IF EMPTY(tcLlave)
+  tcLlave = ""
+ ENDIF
+ =GetClaves(tcLlave,@lnClaveMul,@lnClaveXor)
+ lcRet = ""
+ lc = tcCadena
+ DO WHILE LEN(lc) > 0
+  ln = BITXOR(ASC(lc)*(lnClaveMul+1),lnClaveXor)
+  IF tlSinDesencripta
+   *-- Encripta de modo que no se puede desencriptar
+   ln = BITAND(ln+(ln%256)*17+INT(ln/256)*135+ ;
+    INT(ln/256)*(ln%256),65535)
+  ENDIF
+  lcRet = lcRet+BINTOC(ln-32768,2)
+  lnClaveMul = BITAND(lnClaveMul+59,0xFF)
+  lnClaveXor = BITAND(BITNOT(lnClaveXor),0xFFFF)
+  lc = IIF(LEN(lc) > 1,SUBS(lc,2),"")
+ ENDDO
+ RETURN lcRet
+ENDFUNC
+
+*---------------------------------------------
+* Función que desencripta una cadena encriptada
+* Parámetros:
+*    tcCadena - Cadena a desencriptar
+*    tcLlave - Llave para desencriptar (Debe ser la misma de Encriptar)
+* Retorno: Caracter (la mitad de largo que el texto pasado)
+*---------------------------------------------
+FUNCTION Desencripta(tcCadena, tcLlave)
+ LOCAL lc, ln, lcRet, lnByte
+ LOCAL lnClaveMul, lnClaveXor
+ IF EMPTY(tcLlave)
+  tcLlave = ""
+ ENDIF
+ =GetClaves(tcLlave, @lnClaveMul, @lnClaveXor)
+ lcRet = ""
+ FOR ln = 1 TO LEN(tcCadena)-1 STEP 2
+  lnByte = BITXOR(CTOBIN(SUBS(tcCadena, ln,2))+ ;
+   32768,lnClaveXor)/(lnClaveMul+1)
+  lnClaveMul = BITAND(lnClaveMul+59, 0xFF)
+  lnClaveXor = BITAND(BITNOT(lnClaveXor), 0xFFFF)
+  lcRet = lcRet+CHR(IIF(BETWEEN(lnByte,0,255),lnByte,0))
+ ENDFOR
+ RETURN lcRet
+ENDFUNC
+
+*---------------------------------------------
+* Función usada por Encripta y Desencripta
+*---------------------------------------------
+FUNCTION GetClaves(tcLlave, tnClaveMul, tnClaveXor)
+ LOCAL lc, ln
+ lc = ALLTRIM(LOWER(tcLlave))
+ tnClaveMul = 31
+ tnClaveXor = 3131
+ DO WHILE NOT EMPTY(lc)
+  tnClaveMul = BITXOR(tnClaveMul,ASC(lc))
+  tnClaveXor = BITAND((tnClaveXor+1)*(ASC(lc)+1),0xFFFF)
+  lc = IIF(LEN(lc) > 1,SUBS(lc,2),"")
+ ENDDO
+ENDFUNC
+
+*---------------------------------------------
