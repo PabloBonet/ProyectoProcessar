@@ -50,29 +50,31 @@ ENDFOR
 vconeccion = -1 
 salir = 0
 DO WHILE vconeccion < 0 AND salir = 0 
-	vconeccion=ConMySQL(_SYSSCHEMA)
+	vconeccion=ConMySQL(_SYSSCHEMA)	
 	IF vconeccion = -1 THEN 
 		DO FORM seteoaccesodb TO vseteo
-		IF vseteo = 1 THEN 
-			PUNTERO1 = FOPEN("CONFIG.CFG",0)
-			IF PUNTERO1 > 0 THEN
-				DO WHILE !FEOF(PUNTERO1) 
-					EJE = ALLTRIM(FGETS(PUNTERO1))
-					IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
-						&EJE
-					ENDIF
-				ENDDO
-				=FCLOSE(PUNTERO1)
-				SET SAFETY OFF
-				
-			ELSE 
-				MESSAGEBOX("No se puede continuar con la ejecucion"+CHR(13)+" Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
-				quit	
-			ENDIF 
+		IF !(vseteo = "0") THEN
+			v_llave = vseteo
+			USE CONFIG.DBF IN 0
+			SELECT config 
+			DO WHILE !EOF() 
+				EJE = ALLTRIM(config.valorc)
+				IF !(SUBSTR(ALLTRIM(EJE),1,1)=="_" OR SUBSTR(ALLTRIM(EJE),1,1)=="P") THEN 
+					EJE=desencripta(EJE,v_llave)
+				ENDIF
+
+				IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
+					&EJE
+				ENDIF
+				SKIP 
+			ENDDO
+			USE 
+			SET SAFETY OFF
+
 		ELSE 
-			MESSAGEBOX("No se puede continuar con la ejecucion"+CHR(13)+" Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
+			MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
 			quit	
-		ENDIF 
+		ENDIF 		
 	ELSE 
 		=SQLDISCONNECT(vconeccion)
 		salir = 1

@@ -8,73 +8,137 @@ ENDFUNC
 
 FUNCTION LEECONFIG()
 	v_llave = 'Processar'
-	PUNTERO = FOPEN("CONFIG.CFG",0)
+	IF FILE('config.dbf') THEN 
+		PUNTERO = 1
+	ELSE 
+		PUNTERO = 0
+	ENDIF 
+
 	IF PUNTERO > 0 THEN
-		DO WHILE !FEOF(PUNTERO) 
-			EJE = ALLTRIM(FGETS(PUNTERO))
+		USE CONFIG.DBF IN 0
+		SELECT config 
+		DO WHILE !EOF() 
+			EJE = ALLTRIM(config.valorc)
+
+			IF !(SUBSTR(ALLTRIM(EJE),1,1)=="_" OR SUBSTR(ALLTRIM(EJE),1,1)=="P") THEN 
+				EJE=desencripta(EJE,v_llave)
+			ENDIF
 
 			IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
 				&EJE
 			ENDIF
+			SKIP 
 		ENDDO
-		=FCLOSE(PUNTERO)
+		USE 
 		SET SAFETY OFF
 	ELSE 
 		DO FORM seteoaccesodb TO vseteo
-		IF vseteo = 1 THEN 
-			PUNTERO1 = FOPEN("CONFIG.CFG",0)
-			IF PUNTERO1 > 0 THEN
-				DO WHILE !FEOF(PUNTERO1) 
-					EJE = ALLTRIM(FGETS(PUNTERO1))
-					IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
-						&EJE
-					ENDIF
-				ENDDO
-				=FCLOSE(PUNTERO1)
-				SET SAFETY OFF
-				RETURN 
-			ELSE 
-				MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
-				quit	
-			ENDIF 
+		IF !(vseteo = "0") THEN
+			USE CONFIG.DBF IN 0
+			SELECT config 
+			DO WHILE !EOF() 
+				EJE = ALLTRIM(config.valorc)
+				IF !(SUBSTR(ALLTRIM(EJE),1,1)=="_" OR SUBSTR(ALLTRIM(EJE),1,1)=="P") THEN 
+					EJE=desencripta(EJE,v_llave)
+				ENDIF
+
+				IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
+					&EJE
+				ENDIF
+				SKIP 
+			ENDDO
+			USE 
+			SET SAFETY OFF
+			RETURN 
 		ELSE 
 			MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
-			quit
+			quit	
 		ENDIF 
-	ENDIF
-	RETURN
+	ENDIF 
+
+RETURN
+
+
 ENDFUNC 
 
 
 FUNCTION CREACONFIG()
-		PARAMETERS pc_server, pc_usuario, pc_passw, pc_puerto, pc_esquema, pc_driver
-*!*				v_charC=encripta(v_charC0,v_llave,.f.)+CHR(13)+CHR(10)
-		IF FILE('config.cfg') THEN 
-			DELETE FILE 'config.cfg' 
+		PARAMETERS pc_server, pc_usuario, pc_passw, pc_puerto, pc_esquema, pc_driver, pc_encripta, pc_llave
+		v_llave = pc_llave
+		IF FILE('config.dbf') THEN 
+			DELETE FILE 'config.dbf' 
 		ENDIF 
-		v_NombreArchi="config.cfg"		
-		H=FCREATE(v_NombreArchi,0)
-		IF H < 0 THEN 
-			MESSAGEBOX("No se pudo CREAR el Archivo de Configuración ",0+48+0,"Error") 
-		ELSE
-			v_llave = 'Processar'
-			v_charC="PUBLIC _SYSMYSQL_SERVER, _SYSMYSQL_USER, _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "+CHR(13)+CHR(10)
-			chars=fwrite(H,v_charC)
-			v_charC="_SYSMYSQL_SERVER = '"+ALLTRIM(pc_server)+"' "+CHR(13)+CHR(10)
-			chars=FWRITE(H,v_charC)
-			v_charC="_SYSMYSQL_USER   = '"+ALLTRIM(pc_usuario)+"' "+CHR(13)+CHR(10)
-			chars=FWRITE(H,v_charC)
-			v_charC="_SYSMYSQL_PASS   = '"+(ALLTRIM(pc_passw))+"' "+CHR(13)+CHR(10)
-			chars=FWRITE(H,v_charC)
-			v_charC="_SYSMYSQL_PORT   = '"+ALLTRIM(pc_puerto)+"' "+CHR(13)+CHR(10)
-			chars=FWRITE(H,v_charC)
-			v_charC="_SYSSCHEMA    	  = '"+ALLTRIM(pc_esquema)+"' "+CHR(13)+CHR(10)
-			chars=FWRITE(H,v_charC)
-			v_charC="_SYSDRVMYSQL     = '"+ALLTRIM(pc_driver)+"' "+CHR(13)+CHR(10)
-			chars=FWRITE(H,v_charC)
-			FCLOSE(H)
-		ENDIF 
-	RETURN 
+		CREATE TABLE config.dbf (valorc c(254))
+		v_charC="PUBLIC _SYSMYSQL_SERVER, _SYSMYSQL_USER "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="PUBLIC _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSMYSQL_SERVER = '"+ALLTRIM(pc_server)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSMYSQL_USER   = '"+ALLTRIM(pc_usuario)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSMYSQL_PASS   = '"+(ALLTRIM(pc_passw))+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSMYSQL_PORT   = '"+ALLTRIM(pc_puerto)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSSCHEMA    	  = '"+ALLTRIM(pc_esquema)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSDRVMYSQL     = '"+ALLTRIM(pc_driver)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+
+		USE 
+RETURN 
+
+
+
+*!*	*!*				v_charC=encripta(v_charC0,v_llave,.f.)+CHR(13)+CHR(10)
+*!*			IF FILE('config.cfg') THEN 
+*!*				DELETE FILE 'config.cfg' 
+*!*			ENDIF 
+*!*			v_NombreArchi="config.cfg"		
+*!*			H=FCREATE(v_NombreArchi,0)
+*!*			IF H < 0 THEN 
+*!*				MESSAGEBOX("No se pudo CREAR el Archivo de Configuración ",0+48+0,"Error") 
+*!*			ELSE
+*!*				v_llave = 'Processar'
+*!*				v_charC="PUBLIC _SYSMYSQL_SERVER, _SYSMYSQL_USER, _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=fwrite(H,v_charC)
+
+*!*				v_charC="PUBLIC _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=fwrite(H,v_charC)
+
+*!*				v_charC="_SYSMYSQL_SERVER = '"+ALLTRIM(pc_server)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+
+*!*				v_charC="_SYSMYSQL_USER   = '"+ALLTRIM(pc_usuario)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				v_charC="_SYSMYSQL_PASS   = '"+(ALLTRIM(pc_passw))+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				v_charC="_SYSMYSQL_PORT   = '"+ALLTRIM(pc_puerto)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				v_charC="_SYSSCHEMA    	  = '"+ALLTRIM(pc_esquema)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				v_charC="_SYSDRVMYSQL     = '"+ALLTRIM(pc_driver)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				FCLOSE(H)
+*!*			ENDIF 
+*!*		RETURN 
 ENDFUNC
 
 
