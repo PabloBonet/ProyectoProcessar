@@ -7,28 +7,147 @@ ENDFUNC
 
 
 FUNCTION LEECONFIG()
-	PUNTERO = FOPEN("CONFIG.CFG",0)
+	v_llave = 'Processar'
+	IF FILE('config.dbf') THEN 
+		PUNTERO = 1
+	ELSE 
+		PUNTERO = 0
+	ENDIF 
+
 	IF PUNTERO > 0 THEN
-		DO WHILE !FEOF(PUNTERO) 
-			EJE = ALLTRIM(FGETS(PUNTERO))
+		USE CONFIG.DBF IN 0
+		SELECT config 
+		DO WHILE !EOF() 
+			EJE = ALLTRIM(config.valorc)
+
+			IF !(SUBSTR(ALLTRIM(EJE),1,1)=="_" OR SUBSTR(ALLTRIM(EJE),1,1)=="P") THEN 
+				EJE=desencripta(EJE,v_llave)
+			ENDIF
+
 			IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
 				&EJE
 			ENDIF
+			SKIP 
 		ENDDO
-		=FCLOSE(PUNTERO)
+		USE 
 		SET SAFETY OFF
 	ELSE 
-		MESSAGEBOX("Error: No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ")
-		RETURN	
-	ENDIF
-	RETURN
+		DO FORM seteoaccesodb TO vseteo
+		IF !(vseteo = "0") THEN
+			USE CONFIG.DBF IN 0
+			SELECT config 
+			DO WHILE !EOF() 
+				EJE = ALLTRIM(config.valorc)
+				IF !(SUBSTR(ALLTRIM(EJE),1,1)=="_" OR SUBSTR(ALLTRIM(EJE),1,1)=="P") THEN 
+					EJE=desencripta(EJE,v_llave)
+				ENDIF
+
+				IF !(ALLTRIM(EJE)=="" OR SUBSTR(ALLTRIM(EJE),1,1)=="[") THEN 
+					&EJE
+				ENDIF
+				SKIP 
+			ENDDO
+			USE 
+			SET SAFETY OFF
+			RETURN 
+		ELSE 
+			MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
+			quit	
+		ENDIF 
+	ENDIF 
+
+RETURN
+
+
 ENDFUNC 
+
+
+FUNCTION CREACONFIG()
+		PARAMETERS pc_server, pc_usuario, pc_passw, pc_puerto, pc_esquema, pc_driver, pc_encripta, pc_llave
+		v_llave = pc_llave
+		IF FILE('config.dbf') THEN 
+			DELETE FILE 'config.dbf' 
+		ENDIF 
+		CREATE TABLE config.dbf (valorc c(254))
+		v_charC="PUBLIC _SYSMYSQL_SERVER, _SYSMYSQL_USER "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="PUBLIC _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSMYSQL_SERVER = '"+ALLTRIM(pc_server)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSMYSQL_USER   = '"+ALLTRIM(pc_usuario)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSMYSQL_PASS   = '"+(ALLTRIM(pc_passw))+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSMYSQL_PORT   = '"+ALLTRIM(pc_puerto)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSSCHEMA    	  = '"+ALLTRIM(pc_esquema)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSDRVMYSQL     = '"+ALLTRIM(pc_driver)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+
+		USE 
+RETURN 
+
+
+
+*!*	*!*				v_charC=encripta(v_charC0,v_llave,.f.)+CHR(13)+CHR(10)
+*!*			IF FILE('config.cfg') THEN 
+*!*				DELETE FILE 'config.cfg' 
+*!*			ENDIF 
+*!*			v_NombreArchi="config.cfg"		
+*!*			H=FCREATE(v_NombreArchi,0)
+*!*			IF H < 0 THEN 
+*!*				MESSAGEBOX("No se pudo CREAR el Archivo de Configuración ",0+48+0,"Error") 
+*!*			ELSE
+*!*				v_llave = 'Processar'
+*!*				v_charC="PUBLIC _SYSMYSQL_SERVER, _SYSMYSQL_USER, _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=fwrite(H,v_charC)
+
+*!*				v_charC="PUBLIC _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=fwrite(H,v_charC)
+
+*!*				v_charC="_SYSMYSQL_SERVER = '"+ALLTRIM(pc_server)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+
+*!*				v_charC="_SYSMYSQL_USER   = '"+ALLTRIM(pc_usuario)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				v_charC="_SYSMYSQL_PASS   = '"+(ALLTRIM(pc_passw))+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				v_charC="_SYSMYSQL_PORT   = '"+ALLTRIM(pc_puerto)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				v_charC="_SYSSCHEMA    	  = '"+ALLTRIM(pc_esquema)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				v_charC="_SYSDRVMYSQL     = '"+ALLTRIM(pc_driver)+"' "
+*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
+*!*				chars=FWRITE(H,v_charC)
+*!*				FCLOSE(H)
+*!*			ENDIF 
+*!*		RETURN 
+ENDFUNC
+
 
 
 ************************************************************************************************************
 ************************************************************************************************************
 ********************************************************************************************************
 FUNCTION CIERRAAPP
+QUIT 
 CLOSE ALL 
 CLOSE TABLES ALL 
 SET SAFETY OFF 
@@ -546,8 +665,8 @@ DO WHILE !EOF()
 
 	IF !EMPTY(ALLTRIM(tbmenu.comando)) THEN 
 
-	MESSAGEBOX(TYPE("tbmenu.idmenu"))
-	MESSAGEBOX(alltrim(STR(tbmenu.idmenu)))
+	
+
 		toolbarmenu.addobject('cm'+alltrim(STR(tbmenu.idmenu)),'commandmenu')
 
 		eje = "toolbarmenu."+"cm"+alltrim(STR(tbmenu.idmenu))+".visible = .t."
@@ -2033,4 +2152,138 @@ v_retorno = v_cad1 + v_cad2 + v_cad3
 
 RETURN v_retorno
 
+ENDFUNC 
+
+
+
+
+*---------------------------------------------
+* Función que encripta una cadena
+* Parámetros:
+*    tcCadena - Cadena a encriptar
+*    tcLlave - Llave para encriptar (Debe ser la misma para Desencriptar)
+*    tlSinDesencripta - .F. para proceso que se puede usar Desencripta
+*       Los textos encriptados con este tlSinDesencripta en .T. no se pueden
+*       desencriptar, ya que el mecanismo de encriptamiento utilizado
+*       produce perdida de informacion que impide la inversion del proceso
+* Retorno: Caracter (el doble de largo que el texto pasado)
+*---------------------------------------------
+FUNCTION Encripta(tcCadena, tcLlave, tlSinDesencripta)
+ LOCAL lc, ln, lcRet
+ LOCAL lnClaveMul, lnClaveXor
+ IF EMPTY(tcLlave)
+  tcLlave = ""
+ ENDIF
+ =GetClaves(tcLlave,@lnClaveMul,@lnClaveXor)
+ lcRet = ""
+ lc = tcCadena
+ DO WHILE LEN(lc) > 0
+  ln = BITXOR(ASC(lc)*(lnClaveMul+1),lnClaveXor)
+  IF tlSinDesencripta
+   *-- Encripta de modo que no se puede desencriptar
+   ln = BITAND(ln+(ln%256)*17+INT(ln/256)*135+ ;
+    INT(ln/256)*(ln%256),65535)
+  ENDIF
+  lcRet = lcRet+BINTOC(ln-32768,2)
+  lnClaveMul = BITAND(lnClaveMul+59,0xFF)
+  lnClaveXor = BITAND(BITNOT(lnClaveXor),0xFFFF)
+  lc = IIF(LEN(lc) > 1,SUBS(lc,2),"")
+ ENDDO
+ RETURN lcRet
+ENDFUNC
+
+*---------------------------------------------
+* Función que desencripta una cadena encriptada
+* Parámetros:
+*    tcCadena - Cadena a desencriptar
+*    tcLlave - Llave para desencriptar (Debe ser la misma de Encriptar)
+* Retorno: Caracter (la mitad de largo que el texto pasado)
+*---------------------------------------------
+FUNCTION Desencripta(tcCadena, tcLlave)
+ LOCAL lc, ln, lcRet, lnByte
+ LOCAL lnClaveMul, lnClaveXor
+ IF EMPTY(tcLlave)
+  tcLlave = ""
+ ENDIF
+ =GetClaves(tcLlave, @lnClaveMul, @lnClaveXor)
+ lcRet = ""
+ FOR ln = 1 TO LEN(tcCadena)-1 STEP 2
+  lnByte = BITXOR(CTOBIN(SUBS(tcCadena, ln,2))+ ;
+   32768,lnClaveXor)/(lnClaveMul+1)
+  lnClaveMul = BITAND(lnClaveMul+59, 0xFF)
+  lnClaveXor = BITAND(BITNOT(lnClaveXor), 0xFFFF)
+  lcRet = lcRet+CHR(IIF(BETWEEN(lnByte,0,255),lnByte,0))
+ ENDFOR
+ RETURN lcRet
+ENDFUNC
+
+*---------------------------------------------
+* Función usada por Encripta y Desencripta
+*---------------------------------------------
+FUNCTION GetClaves(tcLlave, tnClaveMul, tnClaveXor)
+ LOCAL lc, ln
+ lc = ALLTRIM(LOWER(tcLlave))
+ tnClaveMul = 31
+ tnClaveXor = 3131
+ DO WHILE NOT EMPTY(lc)
+  tnClaveMul = BITXOR(tnClaveMul,ASC(lc))
+  tnClaveXor = BITAND((tnClaveXor+1)*(ASC(lc)+1),0xFFFF)
+  lc = IIF(LEN(lc) > 1,SUBS(lc,2),"")
+ ENDDO
+ENDFUNC
+
+*---------------------------------------------
+* Función que registra los estados en OtEstadosOt
+* Parámetros:
+*    p_idot - IdOT que se va a registrar el estado
+*    p_idestado - IdEstado a registrar
+* Retorno: True o False en caso que se registre correctamente o no
+*---------------------------------------------
+FUNCTION RegistraEstadoOt
+PARAMETERS p_idot, p_idestado
+
+	MESSAGEBOX("1")
+	* me conecto a la base de datos
+	vconeccion=abreycierracon(0,_SYSSCHEMA)	
+	
+	v_idestadoot	= maxnumeroidx("idotestadosot","I","otestadosot",1)
+	v_idot 			= p_idot
+	v_idestado 		= p_idestado
+	v_fecha			= cftofc(DATE())
+
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	p_titulo      = " EL ALTA "
+	p_tabla     = 'otestadosot'
+	p_matriz    = 'lamatriz'
+
+
+
+	p_conexion  = vconeccionF	
+
+	MESSAGEBOX("2")
+	
+	DIMENSION lamatriz(4,2)
+	
+	lamatriz(1,1)='idotestadosot'
+	lamatriz(1,2)= ALLTRIM(STR(v_idestadoot))
+	lamatriz(2,1)='idot'
+	lamatriz(2,2)= ALLTRIM(STR(v_idot))
+	lamatriz(3,1)='idestado'
+	lamatriz(3,2)=ALLTRIM(STR(v_idestado))
+	lamatriz(4,1)='fecha'
+	lamatriz(4,2)="'"+alltrim(v_fecha)+"'"
+	
+	
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(tmp_ejecumat.idotejem)),0+48+0,"Error")
+	    * me desconecto	
+		=abreycierracon(vconeccionF,"") 
+		RETURN .F.
+	ENDIF
+
+	* me desconecto	
+	=abreycierracon(vconeccionF,"") 
+		MESSAGEBOX("3")
+	RETURN .T.
 ENDFUNC 

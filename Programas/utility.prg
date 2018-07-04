@@ -2233,3 +2233,56 @@ FUNCTION GetClaves(tcLlave, tnClaveMul, tnClaveXor)
 ENDFUNC
 
 *---------------------------------------------
+* Función que registra los estados en OtEstadosOt
+* Parámetros:
+*    p_idot - IdOT que se va a registrar el estado
+*    p_idestado - IdEstado a registrar
+* Retorno: True o False en caso que se registre correctamente o no
+*---------------------------------------------
+FUNCTION RegistraEstadoOt
+PARAMETERS p_idot, p_idestado
+
+	
+	* me conecto a la base de datos
+	vconeccion=abreycierracon(0,_SYSSCHEMA)	
+	
+	v_idestadoot	= maxnumeroidx("idotestadosot","I","otestadosot",1)
+	v_idot 			= p_idot
+	v_idestado 		= p_idestado
+	v_fecha			= cftofc(DATE())
+
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	p_titulo      = " EL ALTA "
+	p_tabla     = 'otestadosot'
+	p_matriz    = 'lamatriz'
+
+
+
+	p_conexion  = vconeccionF	
+
+	
+	DIMENSION lamatriz(4,2)
+	
+	lamatriz(1,1)='idotestadosot'
+	lamatriz(1,2)= ALLTRIM(STR(v_idestadoot))
+	lamatriz(2,1)='idot'
+	lamatriz(2,2)= ALLTRIM(STR(v_idot))
+	lamatriz(3,1)='idestado'
+	lamatriz(3,2)=ALLTRIM(STR(v_idestado))
+	lamatriz(4,1)='fecha'
+	lamatriz(4,2)="'"+alltrim(v_fecha)+"'"
+	
+	
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(tmp_ejecumat.idotejem)),0+48+0,"Error")
+	    * me desconecto	
+		=abreycierracon(vconeccionF,"") 
+		RETURN .F.
+	ENDIF
+
+	* me desconecto	
+	=abreycierracon(vconeccionF,"") 
+		
+	RETURN .T.
+ENDFUNC 
