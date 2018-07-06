@@ -1,0 +1,3 @@
+SELECT o.iddepo,o.idmate,o.codigomat,m.detalle as nombremat,u.stocktot, sum(if(t.ie = 'I',1,if(t.ie = 'E',-1,0))*o.cantidad)as stock , m.stockmin FROM trsoftdb.otmovistockh o left join trsoftdb.tipomstock t on o.idtipomov = t.idtipomov left join trsoftdb.otmateriales m on o.idmate = m.idmate left join (
+SELECT o.iddepo,o.idmate, sum(if(t.ie = 'I',1,if(t.ie = 'E',-1,0))*o.cantidad)as stockTot FROM trsoftdb.otmovistockh o left join trsoftdb.tipomstock t on o.idtipomov = t.idtipomov group by o.idmate) as u on o.idmate = u.idmate
+group by iddepo, idmate
