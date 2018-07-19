@@ -2286,3 +2286,75 @@ PARAMETERS p_idot, p_idestado
 		
 	RETURN .T.
 ENDFUNC 
+
+
+FUNCTION CANTIDADHORAS
+PARAMETERS P_HORAD , P_HORAH
+* calcula la cantidad de horas entre una hora de inicio y una de finalizacion
+* formato en el que debe recibir los parametros en tipo de datos caracter:
+*		'AAAAMMDDHH:MM:SS'
+* recibe dos parametros de igual formato : HORAINICIO Y HORAFIN
+* 
+* retorna la cantidad de horas minutos y segundo en formato caracter
+* transcurridos desde la fecha/hora de inicio a la de fin
+*		'HHH:MM:SS'
+*
+	vphorad = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_horad,' ','0'),':',''))+'00000000000000'),1,14)
+	vphorah = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_horah,' ','0'),':',''))+'00000000000000'),1,14)
+
+	IF VAL(SUBSTR(vphorad,9,2)) > 23  THEN 
+		vphorad = SUBSTR(vphorad,1,8)+'00'+SUBSTR(vphorad,11)
+	ENDIF 
+	IF VAL(SUBSTR(vphorad,11,2)) > 60 THEN 
+		vphorad = SUBSTR(vphorad,1,10)+'00'+SUBSTR(vphorad,13)
+	ENDIF 
+	IF VAL(SUBSTR(vphorad,13,2)) > 60 THEN 
+		vphorad = SUBSTR(vphorad,1,12)+'00'
+	ENDIF 
+	
+	IF VAL(SUBSTR(vphorah,9,2)) > 23 THEN 
+		vphorah = SUBSTR(vphorah,1,8)+'00'+SUBSTR(vphorah,11)
+	ENDIF 
+	IF VAL(SUBSTR(vphorah,11,2)) > 60 THEN 
+		vphorah = SUBSTR(vphorah,1,10)+'00'+SUBSTR(vphorah,13)
+	ENDIF 
+	IF VAL(SUBSTR(vphorah,13,2)) > 60 THEN 
+		vphorah = SUBSTR(vphorah,1,12)+'00'
+	ENDIF 
+	
+	
+
+	vhorastot = (DATETIME(INT(VAL(SUBSTR(vphorah,1,4))), INT(VAL(SUBSTR(vphorah,5,2))), INT(VAL(SUBSTR(vphorah,7,2))) ,INT(VAL(SUBSTR(vphorah,9,2))) ,INT(VAL(SUBSTR(vphorah,11,2))), INT(VAL(SUBSTR(vphorah,13,2))))- ;
+					DATETIME(INT(VAL(SUBSTR(vphorad,1,4))), INT(VAL(SUBSTR(vphorad,5,2))), INT(VAL(SUBSTR(vphorad,7,2))) ,INT(VAL(SUBSTR(vphorad,9,2))) ,INT(VAL(SUBSTR(vphorad,11,2))), INT(VAL(SUBSTR(vphorad,13,2)))) )/3600
+
+	v_horast	= INT(vhorastot)
+	v_minutost 	= INT((vhorastot - v_horast)*60)
+	v_segundost	= (((vhorastot - v_horast)*60) - v_minutost)*60
+	
+	retorno = (STRTRAN((STR(v_horast,4))+':'+(STR(v_minutost,2))+':'+(STR(v_segundost,2)),' ','0'))
+	RETURN retorno 
+ENDFUNC 
+
+
+FUNCTION SUMAHORAS
+PARAMETERS P_HORA1 , P_HORA2
+* suma las horas que recibe como parametro HORA1 Y HORA2
+* el formato en el que recibe es de tipo caracter
+*		'HHHH:MM:SS'
+* devuelve el valor acumulado de horas en el mismo formato
+
+	v_hora1 = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_hora1,' ','0'),':',''))+'00000000'),1,8)
+	v_hora2 = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_hora2,' ','0'),':',''))+'00000000'),1,8)
+
+	v_hora1_MS	= INT(VAL(SUBSTR(v_hora1,1,4)))*3600+INT(VAL(SUBSTR(v_hora1,5,2)))*60+INT(VAL(SUBSTR(v_hora1,7,2)))
+	v_hora2_MS	= INT(VAL(SUBSTR(v_hora2,1,4)))*3600+INT(VAL(SUBSTR(v_hora2,5,2)))*60+INT(VAL(SUBSTR(v_hora2,7,2)))
+	V_horat_MS	= (V_hora1_MS + v_hora2_MS)/3600
+	
+	v_horasMST		= INT(V_horat_MS)
+	v_minutoMST 	= INT((V_horat_MS - v_horasMST)*60)
+	v_segundMST		= (((V_horat_MS - v_horasMST)*60) - v_minutoMST )*60
+	
+
+	retorno = (STRTRAN((STR(v_horasMST,4))+':'+(STR(v_minutoMST ,2))+':'+(STR(v_segundMST,2)),' ','0'))
+	RETURN retorno 
+ENDFUNC 
