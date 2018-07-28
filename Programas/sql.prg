@@ -360,16 +360,22 @@ ENDFUNC
 
 FUNCTION logSistema
 PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
+	
+	IF _SYSSCHEMA = 'admindb' THEN 
+		RETURN 
+	ENDIF 
+	
 	ErrorSql = .F.
 	
 	*** Consulto por la tabla de seteo para obtener el campo id y el tipo ***
-	v_sentencia = "select * from seteolog where tabla = '"+ALLTRIM(p_tabla)+"'"
+	v_sentenciaL = "select * from seteolog where tabla = '"+ALLTRIM(p_tabla)+"' and log = 'S'"
 	
 	LOCAL laError, lcMsg, ln
 	DIMENSION laError[1]
-	r=SQLEXEC(p_conexicon,v_sentencia,"seteoCur")
-	SELECT seteoCUr
-	
+
+
+	r=SQLEXEC(p_conexicon,v_sentenciaL,"seteoCur")
+
 	IF r < 0
 	  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+v_sentencia,0+64,'SQLRUN')
 	  IF AERROR(laError) > 0
@@ -410,7 +416,7 @@ PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
     	
     	
     	
-    	IF p_tipoope = 'I'
+*!*	IF p_tipoope = 'I'
 	*INTEGER
 	v_tipocampo = "I"
 	V_consulta="UPDATE tablasidx set maxvalori = ( maxvalori + 1 ) WHERE campo = 'idlog' and tabla = 'logsystem' and tipocampo = 'I'"
@@ -465,17 +471,12 @@ PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
 	
 
 			
-ENDIF 
-    	
-    	
-    	
-    	
+*!*	ENDIF 
     	
     	v_fecha = TTOC(DATETIME(),1)
     	v_usuario	= _SYSUSUARIO
     	
-    	
-    	
+ 
     	v_sentencia = "INSERT INTO logsystem values ("+ALLTRIM(STR(v_idlog))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_usuario)+"','"+ ;
     	ALLTRIM(p_tabla)+"','"+ALLTRIM(v_campo)+"','"+ALLTRIM(v_tipo)+"','"+ALLTRIM(v_valor)+"','"+ALLTRIM(p_tipoope)+"'"
 	
