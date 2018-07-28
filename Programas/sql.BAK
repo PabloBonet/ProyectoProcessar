@@ -55,9 +55,10 @@ IF !(ALLTRIM(conex) == "") then
 	
 	IF conectar < 0 then
 		=MESSAGEBOX("Error en apertura de la conexion con la base datos... ( "+ALLTRIM(conex)+" )",16,"Error Fatal")
-		=cierraapp()
+*		=cierraapp()
 *		CLOSE ALL
-*		QUIT 
+		ON ERROR errores= .f.
+		QUIT 
 	ENDIF
 ELSE
 	*verfico si es una conexion a visual foxpro cierro la conexion desde aqui (en mysql se encarga de abrir y cerrar ConMysql)
@@ -293,6 +294,9 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 		 	ENDFOR 
 		 	sqlmatriz(pos) = sqlmatriz(pos)+")"
 		 	
+		 	logSistema(p_tabla, p_matriz, p_tipoope,p_conexion)
+		 	
+		 	
 *!*			 	MESSAGEBOX(sqlmatriz(1)+ ;
 *!*			 				sqlmatriz(2)+ ;
 *!*			 				sqlmatriz(3)+ ;
@@ -336,11 +340,13 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 		 		pos = pos + 1
 		 	ENDIF 
 		 	sqlmatriz(pos) = sqlmatriz(pos)+" WHERE "+ALLTRIM(p_condicion)
+		 	logSistema(p_tabla, p_matriz, p_tipoope,p_conexion)
 		 	ErrorSQL=sqlrun(p_conexion,"nosuo")			
 			
 			
 		CASE p_tipoope = 'D' && DELETE
 			sqlmatriz(1) = "DELETE FROM "+ALLTRIM(p_tabla)+" WHERE "+ALLTRIM(p_condicion)
+			logSistema(p_tabla, p_matriz, p_tipoope,p_conexion)
 			ErrorSQL=sqlrun(p_conexion,"nosuo")
 			
 		
@@ -352,3 +358,151 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 	RETURN ErrorSQL
 ENDFUNC 
 
+FUNCTION logSistema
+PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
+	ErrorSql = .F.
+	
+	*** Consulto por la tabla de seteo para obtener el campo id y el tipo ***
+	v_sentencia = "select * from seteolog where tabla = '"+ALLTRIM(p_tabla)+"'"
+	
+	LOCAL laError, lcMsg, ln
+	DIMENSION laError[1]
+	r=SQLEXEC(p_conexicon,v_sentencia,"seteoCur")
+	SELECT seteoCUr
+	
+	IF r < 0
+	  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+v_sentencia,0+64,'SQLRUN')
+	  IF AERROR(laError) > 0
+	    *-- Ocurrio un error
+	    * DISPLAY MEMORY LIKE laError
+	    lcMsg = ""
+	    FOR ln = 1 TO ALEN(laError,2)
+	      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+	    ENDFOR
+	    MESSAGEBOX(lcMsg, 64, "SQLRUN (ERROR)")
+	  ENDIF
+	  *FIN INFORME DE ERROR OCURRIDO	
+		ErrorSql=.t.
+    ELSE
+    	SELECT seteoCur
+    	GO TOP 
+    	IF EOF()
+	    	RETURN 
+    	ENDIF 
+    	v_campo = seteoCur.campo
+    	v_tipo	= seteoCur.tipo
+    	
+    	FOR fila = 1 TO 20 
+    		v_campoMat = &p_matriz(fila,1)
+    		
+    		IF v_campoMat = ALLTRIM(v_campo)
+       			v_valor		=  &p_matriz(fila,2)
+    			fila = 20
+    		ENDIF  
+    	ENDFOR 
+    	
+    	
+    	*** Inserto los campos en la tabla logsystem ***
+    	
+    *	v_idlog = maxnumeroidx('idlog', 'I', 'logsystem',1) 
+    	
+    	
+    	
+    	
+    	
+    	IF p_tipoope = 'I'
+	*INTEGER
+	v_tipocampo = "I"
+	V_consulta="UPDATE tablasidx set maxvalori = ( maxvalori + 1 ) WHERE campo = 'idlog' and tabla = 'logsystem' and tipocampo = 'I'"
+	
+	r=SQLEXEC(p_conexicon,V_consulta,"ActuCur")
+		IF r < 0
+		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+V_consulta,0+64,'SQLRUN')
+		  IF AERROR(laError) > 0
+		    *-- Ocurrio un error
+		    * DISPLAY MEMORY LIKE laError
+		    lcMsg = ""
+		    FOR ln = 1 TO ALEN(laError,2)
+		      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+		    ENDFOR
+		    MESSAGEBOX(lcMsg, 64, "SQLRUN (ERROR)")
+		  ENDIF
+		  *FIN INFORME DE ERROR OCURRIDO	
+			ErrorSql=.t.
+			
+		ENDIF 
+    	
+	
+	*** Vuelvo a buscar para corroborar
+	
+	
+	v_consulta="select maxvalori as maxnro FROM tablasidx WHERE campo = 'idlog' and tabla = 'logsystem' and tipocampo = 'I'" 
+		
+	r=SQLEXEC(p_conexicon,V_consulta,"MaxCur")
+		IF r < 0
+		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+V_consulta,0+64,'SQLRUN')
+		  IF AERROR(laError) > 0
+		    *-- Ocurrio un error
+		    * DISPLAY MEMORY LIKE laError
+		    lcMsg = ""
+		    FOR ln = 1 TO ALEN(laError,2)
+		      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+		    ENDFOR
+		    MESSAGEBOX(lcMsg, 64, "SQLRUN (ERROR)")
+		  ENDIF
+		  *FIN INFORME DE ERROR OCURRIDO	
+			ErrorSql=.t.
+			
+		ENDIF 
+	
+	SELECT maxCur
+	v_maximo = IIF(ISNULL(maxCur.maxnro),0,maxCur.maxnro)
+
+	SELECT maxCur
+	USE IN maxCur
+
+	v_idlog = v_maximo
+	
+
+			
+ENDIF 
+    	
+    	
+    	
+    	
+    	
+    	v_fecha = TTOC(DATETIME())
+    	v_usuario	= _SYSUSUARIO
+    	
+    	
+    	
+    	v_sentencia = "INSERT INTO logsystem values ("+ALLTRIM(STR(v_idlog))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_usuario)+"','"+ ;
+    	ALLTRIM(p_tabla)+"','"+ALLTRIM(v_campo)+"','"+ALLTRIM(v_tipo)+"','"+ALLTRIM(v_valor)+"','"+ALLTRIM(p_tipoope)+"'"
+		MESSAGEBOX(v_sentencia)
+		*r=SQLEXEC(p_conexicon,v_sentencia+",'"+SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20)+"')","InsertCur")
+		MESSAGEBOX(v_sentencia+",'"+STRTRAN(SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20),"'","")+"')")
+		r=SQLEXEC(p_conexicon,v_sentencia+",'"+STRTRAN(SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20),"'","")+"')","InsertCur")
+		IF r < 0
+		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+v_sentencia,0+64,'SQLRUN')
+		  IF AERROR(laError) > 0
+		    *-- Ocurrio un error
+		    * DISPLAY MEMORY LIKE laError
+		    lcMsg = ""
+		    FOR ln = 1 TO ALEN(laError,2)
+		      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+		    ENDFOR
+		    MESSAGEBOX(lcMsg, 64, "SQLRUN (ERROR)")
+		  ENDIF
+		  *FIN INFORME DE ERROR OCURRIDO	
+			ErrorSql=.t.
+			
+		ENDIF 
+    	
+    	
+    	
+    ENDIF 
+	
+	
+	RETURN ErrorSql
+
+ENDFUNC 
