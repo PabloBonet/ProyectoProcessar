@@ -38,7 +38,7 @@ WAIT windows "Verificando Conexion con Base de Datos... Aguarde..." NOWAIT
 =LEECONFIG()
 
 *** SETEO  Y DEFINICION DE VARIABLES PUBLICAS Y DE INICIO
-PUBLIC _SYSSERVIDOR , _SYSMENUSYSTEM, _SYSMODULO , _SYSUSUARIO , _SYSVERSION 
+PUBLIC _SYSSERVIDOR , _SYSMENUSYSTEM, _SYSMODULO , _SYSUSUARIO , _SYSVERSION , _SYSIP, _SYSHOST
 PUBLIC _SYSMASTER_SERVER ,_SYSMASTER_USER, _SYSMASTER_PASS ,_SYSMASTER_USER , _SYSMYSQL_PORT , _SYSMASTER_SCHEMA, _SYSMASTER_DESC 
  
 
@@ -72,7 +72,7 @@ DO WHILE vconeccion < 0 AND salir = 0
 			SET SAFETY OFF
 
 		ELSE 
-			MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
+*			MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
 			quit	
 		ENDIF 		
 	ELSE 
@@ -104,7 +104,8 @@ _SYSMASTER_DESC		= _SYSDESCRIP
 _screen.BackColor 	= &_SYSCOLORFONDO
 _screen.Caption 	= _SYSTITULO
 
-
+_SYSIP = IPADDRESS(1)
+_SYSHOST= IPADDRESS(2)
 
 
 I=1

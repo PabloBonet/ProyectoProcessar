@@ -470,15 +470,14 @@ PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
 	v_idlog = v_maximo
 	
 
-			
-*!*	ENDIF 
-    	
+		    	
     	v_fecha = TTOC(DATETIME(),1)
     	v_usuario	= _SYSUSUARIO
-    	
+    	v_ip		= _SYSIP
+    	v_host		= _SYSHOST
  
     	v_sentencia = "INSERT INTO logsystem values ("+ALLTRIM(STR(v_idlog))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_usuario)+"','"+ ;
-    	ALLTRIM(p_tabla)+"','"+ALLTRIM(v_campo)+"','"+ALLTRIM(v_tipo)+"','"+ALLTRIM(v_valor)+"','"+ALLTRIM(p_tipoope)+"'"
+    	ALLTRIM(p_tabla)+"','"+ALLTRIM(v_campo)+"','"+ALLTRIM(v_tipo)+"','"+ALLTRIM(v_valor)+"','"+ALLTRIM(p_tipoope)+"','"+ALLTRIM(v_ip)+"','"+ALLTRIM(v_host)+"'"
 	
 		*r=SQLEXEC(p_conexicon,v_sentencia+",'"+SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20)+"')","InsertCur")
 		r=SQLEXEC(p_conexicon,v_sentencia+",'"+STRTRAN(SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20),"'","")+"')","InsertCur")
