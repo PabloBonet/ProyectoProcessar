@@ -2358,3 +2358,28 @@ PARAMETERS P_HORA1 , P_HORA2
 	retorno = (STRTRAN((STR(v_horasMST,4))+':'+(STR(v_minutoMST ,2))+':'+(STR(v_segundMST,2)),' ','0'))
 	RETURN retorno 
 ENDFUNC 
+
+
+
+
+FUNCTION IPAddress
+PARAMETERS pdato 
+* Parametro pdato
+*		 = 1 devuelve la ip local del equipo
+*		 = 2 devuelve Nombre del host
+
+oWS = CREATEOBJECT ("MSWinsock.Winsock")
+DO CASE 
+	CASE pdato = 1 
+		retorno = oWS.LocalIP
+	CASE pdato = 2
+		retorno = oWS.LocalHostName
+	
+	OTHERWISE 
+		retorno = ''
+ENDCASE 
+	
+RELEASE oWS
+RETURN retorno
+
+ENDFUNC 
