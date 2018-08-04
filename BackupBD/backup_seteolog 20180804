@@ -1,0 +1,204 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema trsoftdb
+--
+
+CREATE DATABASE IF NOT EXISTS trsoftdb;
+USE trsoftdb;
+
+--
+-- Definition of table `seteolog`
+--
+
+DROP TABLE IF EXISTS `seteolog`;
+CREATE TABLE `seteolog` (
+  `tabla` char(50) NOT NULL,
+  `campo` char(50) NOT NULL,
+  `tipo` char(1) NOT NULL,
+  `log` char(1) NOT NULL,
+  PRIMARY KEY (`tabla`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `seteolog`
+--
+
+/*!40000 ALTER TABLE `seteolog` DISABLE KEYS */;
+INSERT INTO `seteolog` (`tabla`,`campo`,`tipo`,`log`) VALUES 
+ ('afipcompro','idafipcom','I','N'),
+ ('afipimpuestos','idafipimp','I','N'),
+ ('ajustestocke','idajuste','I','N'),
+ ('ajustestockh','idajusteh','I','N'),
+ ('ajustestockp','idajuste','I','N'),
+ ('arqueocajap','idarqueo','I','N'),
+ ('articulos','articulo','I','N'),
+ ('articulosf','idartf','I','N'),
+ ('articulosimg','idartimg','I','N'),
+ ('articulosimp','idartimp','I','N'),
+ ('articulospro','idartpro','I','N'),
+ ('asientos','idasientod','I','N'),
+ ('asientoscompro','idasiento','I','N'),
+ ('astocuenta','idastocuenta','I','N'),
+ ('astomode','codasto','I','N'),
+ ('bancos','idbanco','I','N'),
+ ('bocaservicios','identidadh','I','N'),
+ ('cajabancos','idcuenta','I','N'),
+ ('cajaie','idcajaie','I','N'),
+ ('cajamovip','idcajamovip','I','N'),
+ ('cajarecauda','idcajareca','I','N'),
+ ('cajarecaudah','idcajareh','I','N'),
+ ('carterach','idcartera','I','N'),
+ ('carterachdeta','idcartera','I','N'),
+ ('carteracheque','idcartera','I','N'),
+ ('carterachequed','idcheque','I','N'),
+ ('chequesprop','idchequep','I','N'),
+ ('cobros','idcobro','I','N'),
+ ('comproasiento','idcomproba','I','N'),
+ ('comprobantes','idcomproba','I','N'),
+ ('conceptogrupo','idconceptg','I','N'),
+ ('conceptoser','idconcepto','I','N'),
+ ('condfiscal','iva','I','N'),
+ ('cpptelefono','bocanumero','I','N'),
+ ('cuentasdispon','idcuenta','I','N'),
+ ('cupones','idcupon','I','N'),
+ ('depositos','deposito','I','N'),
+ ('destinooti','destinooti','I','N'),
+ ('detafactu','idfacturah','I','N'),
+ ('detallecobros','iddetacobro','I','N'),
+ ('detallepagos','iddetapago','I','N'),
+ ('ejercicioecon','ejercicio','I','N'),
+ ('empleados','idempleado','I','N'),
+ ('empresa','empresa','I','N'),
+ ('entidades','entidad','I','N'),
+ ('entidadesc','idcontacto','I','N'),
+ ('entidadescr','identidacr','I','N'),
+ ('entidadesd','identidadd','I','N'),
+ ('entidadesdc','idcuotasd','I','N'),
+ ('entidadesg','idgarante','I','N'),
+ ('entidadesh','identidadh','I','N'),
+ ('entidadg','identidadh','I','N'),
+ ('etiquetas','etiqueta','I','N'),
+ ('factclaro','idfactclaro','I','N'),
+ ('factuperiodos','idperiodo','I','N'),
+ ('factuprove','idfactprove','I','N'),
+ ('factuproved','idfactproveh','I','N'),
+ ('factuproveimp','idfactprove','I','N'),
+ ('facturas','idfactura','I','N'),
+ ('facturasanul','idfactura','I','N'),
+ ('facturascta','idcuotafc','I','N'),
+ ('facturasfe','idfe','I','N'),
+ ('grupose','idgrupoe','I','N'),
+ ('gruposepelio','idgruposep','I','N'),
+ ('impuestos','impuesto','I','N'),
+ ('largadistancia','idlargad','I','N'),
+ ('librosocios','idlibrosoc','I','N'),
+ ('librosociosdet','idlibrosoc','I','N'),
+ ('lineas','linea','I','N'),
+ ('listaprecioh','idlista','I','N'),
+ ('listapreciop','idlista','I','N'),
+ ('localidades','localidad','I','N'),
+ ('logsystem','idlog','I','N'),
+ ('medagua','idmedagua','I','N'),
+ ('medluz','idmedluz','I','N'),
+ ('medtelefono','idmedtele','I','N'),
+ ('menusql','idmenu','I','N'),
+ ('monedas','moneda','I','N'),
+ ('np','idnp','I','N'),
+ ('ot','idot','I','N'),
+ ('otcancela','idot','I','N'),
+ ('otcumpleh','idotcumple','I','N'),
+ ('otcumplep','idotcumple','I','N'),
+ ('otdepositos','iddepo','I','N'),
+ ('otdetaot','idotdet','I','N'),
+ ('otejecuh','idotejeh','I','N'),
+ ('otejecum','idotejem','I','N'),
+ ('otestados','idestado','I','N'),
+ ('otestadosot','idotestadosot','I','N'),
+ ('otetapas','idetapa','I','N'),
+ ('otint','idotint','I','N'),
+ ('otinterna','idotint','I','N'),
+ ('otlineasmat','linea','I','N'),
+ ('otmateriales','idmate','I','S'),
+ ('otmaterialeslep','idotmatelep','I','N'),
+ ('otmaterialespro','idotmatepro','I','N'),
+ ('otmovistockh','idmovih','I','N'),
+ ('otmovistockp','idmovip','I','N'),
+ ('otordentra','idot','I','N'),
+ ('ototetapas','idotetapa','I','N'),
+ ('otpedido','idpedido','I','N'),
+ ('otpedidoanul','idotpedido','I','N'),
+ ('otperfiles','idper','I','N'),
+ ('otperfusu','idper','I','N'),
+ ('otpresu','idot','I','N'),
+ ('otstandar','idstandar','I','N'),
+ ('ottiposobs','idottiposobs','I','N'),
+ ('pagosprov','idpago','I','N'),
+ ('pagosprovfc','idpagosprovfc','I','N'),
+ ('paises','pais','I','N'),
+ ('perfilmp','idperfil','I','N'),
+ ('plancuentas','idplan','I','N'),
+ ('plancuentasd','idpland','I','N'),
+ ('presupu','idpresupu','I','N'),
+ ('presupuh','idpresupu','I','N'),
+ ('provincias','provincia','I','N'),
+ ('puntosventa','pventa','I','N'),
+ ('recibos','idrecibo','I','N'),
+ ('relotcompro','idot','I','N'),
+ ('remitos','idremito','I','N'),
+ ('remitosh','idremito','I','N'),
+ ('remitosprovh','idremiprovh','I','N'),
+ ('remitosprovp','idremitprovp','I','N'),
+ ('reportesimp','idreporte','I','N'),
+ ('servicios','servicio','I','N'),
+ ('seteolog','tabla','I','N'),
+ ('sucursales','sucursal','I','N'),
+ ('tablasidx','idindex','I','N'),
+ ('tarjetacredito','idtarjeta','I','N'),
+ ('tarjetacuotas','idtarjetacta','I','N'),
+ ('tipocajabanco','idtipocta','I','N'),
+ ('tipocobrosdeta','puntovta','I','N'),
+ ('tipocompro','idtipocompro','I','N'),
+ ('tipocuenta','idtipo','I','N'),
+ ('tipodocumento','tipodoc','I','N'),
+ ('tipomovctap','idtipomovi','I','N'),
+ ('tipomovotint','idmovotint','I','N'),
+ ('tipomstock','idtipomov','I','N'),
+ ('tiponp','idtiponp','I','N'),
+ ('tipooperacion','idtipoopera','I','N'),
+ ('tipoot','idtipoot','I','N'),
+ ('tipopagos','idtipopago','I','N'),
+ ('tranintercta','idmovicta','I','N'),
+ ('traninterctah','idmovicta','I','N'),
+ ('transfep','idtransfep','I','N'),
+ ('transporte','transporte','I','N'),
+ ('usuarios','usuario','I','N'),
+ ('varpublicas','variable','I','N'),
+ ('vendedores','vendedor','I','N'),
+ ('zonas','zona','I','N');
+/*!40000 ALTER TABLE `seteolog` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
