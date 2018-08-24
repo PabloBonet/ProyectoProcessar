@@ -2383,3 +2383,98 @@ RELEASE oWS
 RETURN retorno
 
 ENDFUNC 
+
+
+
+
+*** FUNCION PARA LA OBTENCION DE UNA TABLA O CURSOR CON TODOS LOS ELEMENTOS 
+*** DE UN GRUPO , EN LA TABLA SE MARCAN TODOS LOS ELEMENTOS QUE PERTENECEN AL GRUPO
+*** Y TODOS AQUELLOS QUE ESTÁN FUERA DEL MISMO A TRAVEZ DEL CAMPO pertenece
+*** campos devueltos en la tabla
+*** 		miembros c 	
+*** 		idmiembro c o i
+***			pertenece = 'S' o 'N'
+***			idgrupo i
+***			nombreg char(100)
+***			tabla char(50)
+***			campo char(50)
+
+FUNCTION obtienegrupo
+PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
+
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		IF par_idgrupo > 0 THEN 		
+				sqlmatriz(1)=" Select g.idgrupo, g.idtipogrupo, g.nombre as nombreg, "
+				sqlmatriz(2)=" t.detalle as nombretipo, t.tabla, t.campo, t.tipoc, " 
+				sqlmatriz(3)=" c.campo as campoc, c.tipoc as tipocc, c.orden  "
+				sqlmatriz(4)=" from campogrupo c left join tipogrupos t on t.idtipogrupo = c.idtipogrupo "
+				sqlmatriz(5)=" left join grupos g on g.idtipogrupo = t.idtipogrupo " 
+				sqlmatriz(6)=" where g.idgrupo= "+ ALLTRIM(STR(par_idgrupo))+" order by c.orden"
+		ELSE
+				sqlmatriz(1)=" Select 0 as idgrupo, c.idtipogrupo, '  ' as nombreg, "
+				sqlmatriz(2)=" t.detalle as nombretipo, t.tabla, t.campo, t.tipoc, " 
+				sqlmatriz(3)=" c.campo as campoc, c.tipoc as tipocc, c.orden  "
+				sqlmatriz(4)=" from campogrupo c left join tipogrupos t on t.idtipogrupo = c.idtipogrupo "
+				sqlmatriz(6)=" where c.idtipogrupo= "+ ALLTRIM(STR(par_idtipogrupo))+" order by c.orden "
+		ENDIF 
+		verror=sqlrun(vconeccionF,"grupotipocampo_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la union de tablas de grupos... ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+
+		SELECT grupotipocampo_sql
+		GO TOP 
+		IF EOF()
+			MESSAGEBOX("No se puede generar una lista del Grupo Seleccionado...")
+			RETURN ""
+		ENDIF
+		sqlmatriz(1)=" select concat_ws('  '" 
+		sqlmatriz(3)= " ) as miembros , "+ALLTRIM(grupotipocampo_sql.campo)+" as idmiembro, 'N' as pertenece from "+ALLTRIM(grupotipocampo_sql.tabla)+" "
+		
+		DO WHILE !EOF()
+			sqlmatriz(2)= sqlmatriz(2)+","+ALLTRIM(grupotipocampo_sql.campoc)		
+			SKIP 
+		ENDDO 		
+				
+		verror=sqlrun(vconeccionF,"miembrosgru_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un en la busqueda de miembros del grupo... ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+		
+		SELECT grupotipocampo_sql
+		GO TOP  
+		
+		SELECT * FROM miembrosgru_sql INTO TABLE .\&par_alias
+		
+		ALTER table &par_alias add idgrupo i
+		ALTER table &par_alias add nombreg char(100)
+		ALTER table &par_alias add tabla char(50)
+		ALTER table &par_alias add campo char(50)
+		ALTER table &par_alias ADD tipoc char(1)
+		UPDATE &par_alias SET idgrupo = IIF(TYPE("grupotipocampo_sql.idgrupo")='C',0,grupotipocampo_sql.idgrupo), nombreg = grupotipocampo_sql.nombreg, tabla = grupotipocampo_sql.tabla, ;
+				campo = grupotipocampo_sql.campo, tipoc = grupotipocampo_sql.tipoc
+
+		sqlmatriz(1)=" select * from grupoobjeto where idgrupo = "+ ALLTRIM(STR(par_idgrupo)) 
+		verror=sqlrun(vconeccionF,"grupoobjeto_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un en la busqueda de miembros del grupo... ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+
+		SELECT grupoobjeto_sql 
+		GO TOP 
+		IF !EOF() THEN 
+			UPDATE &par_alias SET pertenece = 'S' WHERE ;
+				SUBSTR((IIF(tipoc='C',ALLTRIM(idmiembro),alltrim(str(idmiembro)))+REPLICATE('#',20)),1,20) in (select SUBSTR((ALLTRIM(idmiembro)+REPLICATE('#',20)),1,20) from grupoobjeto_sql) 
+		ENDIF 
+
+		=abreycierracon(vconeccionF,"")	
+		
+		USE IN miembrosgru_sql
+		USE IN grupotipocampo_sql 
+		p_alias = par_alias
+		RETURN p_alias 
+ENDFUNC 
