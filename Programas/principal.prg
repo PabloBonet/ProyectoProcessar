@@ -29,6 +29,9 @@ ON KEY LABEL CTRL+F11 MESSAGEBOX(_screen.ActiveForm.name)
 SET PROCEDURE TO UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg 
 SET CLASSLIB TO  toolbarsys.vcx
 SET CLASSLIB TO crystalreports.vcx additive
+SET CLASSLIB TO util.vcx ADDITIVE 
+
+
 
 PUBLIC toolbarsys
 toolbarsys = CREATEOBJECT('toolbarsys')
