@@ -27,6 +27,8 @@ IF !verror THEN
 	MESSAGEBOX('Ha ocurrido un error al obtener el menu',0+64,'Error')
 	RETURN 	
 ENDIF 
+
+*!*	SELECT * FROM tabmenu INTO TABLE .\tabmenu2
 *************************************************************
   	cNameMenuMP = ""
     SET TEXTMERGE ON
@@ -103,16 +105,17 @@ ENDIF
 	  cTagBar = ALLTRIM(TABMENU.descrip)
 	  cTagImagen = IIF(!EMPTY(ALLTRIM(tabmenu.imagen)),"PICTURE '"+ALLTRIM(_sysservidor)+"iconos\"+ALLTRIM(tabmenu.imagen)+"'","")
 	  
-
 	IF nNivel = 2 THEN 	
 		nID = TABMENU.idmenup
 		SELECT codigo, nivel, comando FROM TABMENU WHERE idmenu = nID INTO CURSOR curMenu
 		SELECT curMenu
 		GO TOP			
 		cPadNameNivel = "P"+LEFT(curMenu.codigo,2)
-		
-			
-		IF SUBSTR(tabmenu.codigo,3,2) = "01" THEN 
+
+
+		SELECT MIN(SUBSTR(tabmenu.codigo,(nNivel*2)-1,2)) as priitem FROM TABMENU WHERE idmenup = nID INTO CURSOR primeritem
+		IF SUBSTR(tabmenu.codigo,3,2) = ALLTRIM(primeritem.priitem) THEN 
+*!*			IF SUBSTR(tabmenu.codigo,3,2) = "01" THEN 
 			*SI ES EL PRIMER ELEMENTO DENTRO DEL MENU DEFINO EL POPUP.
 			\DEFINE POPUP <<cPadNameNivel>> MARGIN RELATIVE SHADOW COLOR SCHEME 4
 		ENDIF  	
@@ -149,7 +152,10 @@ ENDIF
 			\ON BAR <<nBarNivel>> OF <<cPadNameNivel>> <<cTagCom>>
 			
 		 ELSE
-			IF SUBSTR(tabmenu.codigo,(nNivel*2)-1,2) = "01" THEN 
+		 	 
+			SELECT MIN(SUBSTR(tabmenu.codigo,(nNivel*2)-1,2)) as priitem FROM TABMENU WHERE idmenup = nID INTO CURSOR primeritem
+			IF SUBSTR(tabmenu.codigo,3,2) = ALLTRIM(primeritem.priitem) THEN 	 
+*!*				IF SUBSTR(tabmenu.codigo,(nNivel*2)-1,2) = "01" THEN 
 				*SI ES EL PRIMER ELEMENTO DENTRO DEL MENU DEFINO EL POPUP. NIVEL H
 				IF !SEEK(ALLTRIM(cPadNameNivel),'tmpPopup','tpopup') THEN 
 					\DEFINE POPUP <<cPadNameNivel>> MARGIN RELATIVE SHADOW COLOR SCHEME 4
@@ -188,6 +194,8 @@ ENDIF
     SET TEXTMERGE OFF
     SELECT TABMENU
     USE
+    SELECT primeritem
+    USE 
     COMPILE (cNameMenuMP+".MPR")
  
    

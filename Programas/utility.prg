@@ -2286,6 +2286,7 @@ PARAMETERS p_idot, p_idestado
 ENDFUNC 
 
 
+
 FUNCTION CANTIDADHORAS
 PARAMETERS P_HORAD , P_HORAH
 * calcula la cantidad de horas entre una hora de inicio y una de finalizacion
@@ -2340,20 +2341,37 @@ PARAMETERS P_HORA1 , P_HORA2
 * el formato en el que recibe es de tipo caracter
 *		'HHHH:MM:SS'
 * devuelve el valor acumulado de horas en el mismo formato
+	
+	v_sig_h1= SUBSTR(ALLTRIM(p_hora1),1,1)
+	v_sig_h2= SUBSTR(ALLTRIM(p_hora2),1,1)
 
-	v_hora1 = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_hora1,' ','0'),':',''))+'00000000'),1,8)
-	v_hora2 = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_hora2,' ','0'),':',''))+'00000000'),1,8)
+	v_hora1 = ALLTRIM((STRTRAN(STRTRAN(STRTRAN(p_hora1,'-','0'),' ','0'),':',''))+'00000000')
+	v_hora1 = SUBSTR(v_hora1,IIF(LEN(v_hora1)=16,1,2),8)
+
+	v_hora2 = ALLTRIM((STRTRAN(STRTRAN(STRTRAN(p_hora2,'-','0'),' ','0'),':',''))+'00000000')
+	v_hora2 = SUBSTR(v_hora2,IIF(LEN(v_hora2)=16,1,2),8)
 
 	v_hora1_MS	= INT(VAL(SUBSTR(v_hora1,1,4)))*3600+INT(VAL(SUBSTR(v_hora1,5,2)))*60+INT(VAL(SUBSTR(v_hora1,7,2)))
+    v_multi = IIF(v_sig_h1='-',-1,1)
+	v_hora1_MS  = v_hora1_MS * v_multi
 	v_hora2_MS	= INT(VAL(SUBSTR(v_hora2,1,4)))*3600+INT(VAL(SUBSTR(v_hora2,5,2)))*60+INT(VAL(SUBSTR(v_hora2,7,2)))
+    v_multi = IIF(v_sig_h2='-',-1,1)
+	v_hora2_MS  = v_hora2_MS * v_multi
 	V_horat_MS	= (V_hora1_MS + v_hora2_MS)/3600
+
 	
+	V_sig_horat_MS = IIF(V_horat_MS>=0,'','-')
+
+	
+	V_horat_MS 		= ABS(V_horat_MS)
 	v_horasMST		= INT(V_horat_MS)
 	v_minutoMST 	= INT((V_horat_MS - v_horasMST)*60)
 	v_segundMST		= (((V_horat_MS - v_horasMST)*60) - v_minutoMST )*60
 	
 
-	retorno = (STRTRAN((STR(v_horasMST,4))+':'+(STR(v_minutoMST ,2))+':'+(STR(v_segundMST,2)),' ','0'))
+	retorno = V_sig_horat_MS+(STRTRAN((STR(v_horasMST,4))+':'+(STR(v_minutoMST ,2))+':'+(STR(v_segundMST,2)),' ','0'))
+*!*		retorno = STRTRAN(retorno,'-0','-')
+
 	RETURN retorno 
 ENDFUNC 
 
@@ -2365,18 +2383,23 @@ PARAMETERS pdato
 * Parametro pdato
 *		 = 1 devuelve la ip local del equipo
 *		 = 2 devuelve Nombre del host
-
+v_error = .f.
+ON ERROR v_error = .t.
 oWS = CREATEOBJECT ("MSWinsock.Winsock")
-DO CASE 
-	CASE pdato = 1 
-		retorno = oWS.LocalIP
-	CASE pdato = 2
-		retorno = oWS.LocalHostName
-	
-	OTHERWISE 
-		retorno = ''
-ENDCASE 
-	
+ON ERROR 
+IF !v_error THEN 
+	DO CASE 
+		CASE pdato = 1 
+			retorno = oWS.LocalIP
+		CASE pdato = 2
+			retorno = oWS.LocalHostName
+		
+		OTHERWISE 
+			retorno = ''
+	ENDCASE 
+ELSE
+	retorno = ''
+ENDIF 
 RELEASE oWS
 RETURN retorno
 
