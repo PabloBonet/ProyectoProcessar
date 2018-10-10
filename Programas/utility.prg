@@ -903,7 +903,7 @@ LOCAL varb_retorno
 
 	IF b_database = 0 THEN && busca en database mysql
 		vconefind=abreycierracon(0,_SYSSCHEMA)
-		sqlmatriz(1)="SELECT "+ALLTRIM(b_camporet)+" as campo from "+b_tabla+" where "+ALLTRIM(b_campoidx)+"="+alltrim(b_valoridx_C)
+		sqlmatriz(1)="SELECT "+ALLTRIM(b_camporet)+" as campo from "+b_tabla+" where "+ALLTRIM(b_campoidx)+"=="+alltrim(b_valoridx_C)
 		verror=sqlrun(vconefind,"buscatmp")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Funcion BUSCAVALORDB ",0+48+0,"Error")
@@ -911,7 +911,7 @@ LOCAL varb_retorno
 		=abreycierracon(vconefind,"")
 		
 	ELSE
-		eje = "SELECT "+ALLTRIM(b_camporet)+" as campo from "+b_tabla+" into cursor buscatmp where "+ALLTRIM(b_campoidx)+"="+alltrim(b_valoridx_C)
+		eje = "SELECT "+ALLTRIM(b_camporet)+" as campo from "+b_tabla+" into cursor buscatmp where "+ALLTRIM(b_campoidx)+"=="+alltrim(b_valoridx_C)
 		&eje 
 	ENDIF 
 	
@@ -1037,6 +1037,7 @@ PARAMETERS p_idcomproba, p_pventa, v_incre
 
 	compruebaCajaReca()
 
+
 vconeccionF = abreycierracon(0,_SYSSCHEMA)
 
 *sqlmatriz(1)="UPDATE compactiv set maxnumero = ( maxnumero + "+ALLTRIM(STR(v_incre))+" ) "
@@ -1052,6 +1053,7 @@ verror=sqlrun(vconeccionF,"upmaximo")
 IF verror=.f.  
     MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion del maximo Numero de Comprobantes ",0+48+0,"Error")
 ENDIF 
+
 
 
 *sqlmatriz(1)="select a.maxnumero as maxnro FROM comprobantes c "
@@ -2015,18 +2017,18 @@ FUNCTION compruebaCajaReca
 
 *** Controlo que se haya seleccionado una caja de recaudación 
 
-	IF _SYSCAJARECA = 0 && No hay caja seleccionada, pide caja
+IF _SYSCAJARECA = 0 && No hay caja seleccionada, pide caja
 
-		v_idcajareca = 0
-		
-		DO FORM selectcajareca  TO v_idcajareca
-			
-		IF v_idcajareca > 0
-		
-			_SYSCAJARECA = v_idcajareca
-		ENDIF 
-
+	v_idcajareca = 0
+	
+	DO FORM selectcajareca  TO v_idcajareca
+	
+	IF v_idcajareca > 0
+	
+		_SYSCAJARECA = v_idcajareca
 	ENDIF 
+
+ENDIF 
 
 
 ENDFUNC 
@@ -2286,7 +2288,6 @@ PARAMETERS p_idot, p_idestado
 ENDFUNC 
 
 
-
 FUNCTION CANTIDADHORAS
 PARAMETERS P_HORAD , P_HORAH
 * calcula la cantidad de horas entre una hora de inicio y una de finalizacion
@@ -2498,54 +2499,4 @@ PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
 		USE IN grupotipocampo_sql 
 		p_alias = par_alias
 		RETURN p_alias 
-ENDFUNC 
-
-
-
-*---------------------------------------------
-* Función que retorna el ID del tipo de comprobante pasado como parámetro, el tipo de comprobante pasado debe ser el mismo nombre que esta registrado en la BD
-* Parámetros:
-*    p_tipocompro: nombre del tipo de comprobante
-* Retorno: Retorna el ID del Tipo de comprobante, pasado como parámetro. -1 en caso de no encontrarse
-*---------------------------------------------
-FUNCTION getIdTipoCompro
-PARAMETERS p_tipoCompro
-
-	v_retorno = -1
-	
-	IF ISNULL(p_tipoCompro) =.F. AND TYPE("p_tipoCompro") =  "C"
-		
-		*** Busco el ID del Tipo de comprobante. 
-		******
-		*Esto se puede mejorar creando un objeto para el tipo de comprobante y cargandolo una sola vez. 
-		*PAra que no tenga que hacer una consulta a la BD cada vez que es llamado
-		*Por ahora busco el estado en la BD
-		******
-		
-		vconeccionE=abreycierracon(0,_SYSSCHEMA)
-		
-		
-		sqlmatriz(1) = " select idtipocompro as idtipo, detalle from tipocompro where detalle = "+ALLTRIM(p_tipoCompro)
-		
-		verror=sqlrun(vconeccionE,"tipoCompro_Sql")
-		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un en la busqueda de Tipos de comprobantes ",0+48+0,"Error")
-		    RETURN -1
-		ENDIF
-		
-		SELECT tipoCompro_sql
-		GO TOP 
-		
-		IF NOT EOF()
-		
-			v_id = tipoCompro_sql.idtipo
-			
-			v_retorno = v_id		
-		ENDIF 
-			
-			
-	ENDIF 
-		
-	RETURN v_retorno
-
 ENDFUNC 
