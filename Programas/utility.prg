@@ -2500,3 +2500,76 @@ PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
 		p_alias = par_alias
 		RETURN p_alias 
 ENDFUNC 
+
+
+*---------------------------------------------
+* Función que retorna el nombre del campo clave de la tabla pasada como parámetro
+* Parámetros:
+*    p_nomTabla: nombre de la tabla
+* Retorno: Retorna el nombre del campo clave de la tabla. vacio en caso de no encotrarlo
+*---------------------------------------------
+
+FUNCTION getIdTabla
+PARAMETERS p_nomTabla
+v_campoPK = ""
+vconeccionFdb = abreycierracon(0,_SYSSCHEMA)
+
+sqlmatriz(1)="SHOW TABLES FROM "+_SYSSCHEMA +" where Tables_in_"+_SYSSCHEMA+ "= '"+ALLTRIM(p_nomTabla)+"'"
+verror=sqlrun(vconeccionFdb ,"tablaDb_sql")
+IF verror=.f.
+	MESSAGEBOX("No se puede obtener la Tabla de "+_SYSSCHEMA,0+16,"Advertencia")
+	* me desconecto	
+	=abreycierracon(vconeccionFdb ,"")
+	RETURN  v_campoPK 
+ENDIF 
+
+eje=" SELECT Tables_in_"+_SYSSCHEMA+" as tablanom from tablaDb_sql INTO TABLE .\tabladb"
+&eje 
+
+USE IN tablaDb_sql
+
+SELECT tabladb
+GO TOP 
+
+	
+IF !EOF()
+*!*		eje = "v_tabla = ALLTRIM(tablas.Tables_in_"+_SYSSCHEMA+")"
+	v_tabla = ALLTRIM(tabladb.tablanom)
+	
+	
+	sqlmatriz(1)="SHOW COLUMNS FROM "+v_tabla
+	verror=sqlrun(vconeccionFdb ,"columnasdb_sql")
+	IF verror=.f.
+		MESSAGEBOX("No se puede obtener los Tipos de Comprobantes",0+16,"Advertencia")
+			* me desconecto	
+		=abreycierracon(vconeccionFdb ,"")
+		RETURN  v_campoPK 
+	ENDIF 
+	SELECT columnasdb_sql
+	
+	
+	SELECT  * FROM columnasdb_sql WHERE key = 'PRI' INTO TABLE .\columnaPKdb
+	
+	SELECT columnaPKdb
+	GO TOP 
+	
+	
+	IF NOT EOF()
+		v_campoPK = columnaPKdb.field
+		
+	ELSE
+	
+		v_campoPK = ""
+	ENDIF 
+	
+  
+	
+	
+ENDIF 
+
+* me desconecto	
+=abreycierracon(vconeccionFdb ,"")
+
+RETURN v_campoPK
+
+ENDFUNC 
