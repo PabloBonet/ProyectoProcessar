@@ -1246,6 +1246,8 @@ PARAMETERS p_idFactura
 
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 			
+			
+			
 *			sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
 *			sqlmatriz(2)=" left join afipcompro a on  c.idafipcom = a.idafipcom left join puntosventa p on f.pventa = p.pventa "
 *			sqlmatriz(3)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
@@ -1276,6 +1278,9 @@ PARAMETERS p_idFactura
 
 			SELECT factu_sql
 
+			
+			
+			
 			v_idComprobante = factu_sql.idfactura
 			*id o tipo?
 			v_tipoComprobante = VAL(factu_sql.codAfip)
@@ -1283,21 +1288,25 @@ PARAMETERS p_idFactura
 			*Tipo doc = 80, CUIT?
 			*¿Que pasa si es consumidor final?
 
-			IF factu_sql.tipodoc = '80'
-				v_tipoDocCliente = '80'
-				v_nroDocCliente = factu_sql.cuit
-			ELSE 
-				IF factu_sql.tipodoc = '99'
-					v_tipoDocCliente = '99'
-					v_nroDocCliente = factu_sql.cuit
-				ELSE
-					MESSAGEBOX("El tipo de cocumento no es CUIT ",0+48+0,"Error")
-				    
-				    v_compCargado =.F.
-				ENDIF 
-				
-				
-			ENDIF 
+			v_tipoDocCliente= factu_sql.tipodoc
+			v_nroDocCliente	= factu_sql.cuit
+			
+
+*!*				IF factu_sql.tipodoc = '80'
+*!*					v_tipoDocCliente = '80'
+*!*					v_nroDocCliente = factu_sql.cuit
+*!*				ELSE 
+*!*					IF factu_sql.tipodoc = '99'
+*!*						v_tipoDocCliente = '99'
+*!*						v_nroDocCliente = factu_sql.cuit
+*!*					ELSE
+*!*						MESSAGEBOX("El tipo de cocumento no es CUIT ",0+48+0,"Error")
+*!*					    
+*!*					    v_compCargado =.F.
+*!*					ENDIF 
+*!*					
+*!*					
+*!*				ENDIF 
 			
 			v_fechaComprobante = factu_sql.fecha
 			v_importeNeto = factu_sql.neto
