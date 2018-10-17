@@ -2582,3 +2582,38 @@ ENDIF
 RETURN v_campoPK
 
 ENDFUNC 
+
+
+** SEPARA CARACTERES BUSCADOS Y RETORNA VERDADERO O FALSO 0 O 1
+FUNCTION ATCF 
+PARAMETERS c_buscado, c_buscaren
+IF !EMPTY(c_buscado) then 
+	vfiltra01 = 0
+	c_buscado 	= UPPER(c_buscado)
+	c_buscaren 	= UPPER(c_buscaren)
+	
+	ALINES(cbuscadoarr,c_buscado,16,"&","#")
+	aelementos = ALEN(cbuscadoarr)
+
+	DIMENSION cbuscadof (aelementos,2)
+	FOR i= 1 TO aelementos
+		cbuscadof(i,2) = IIF(ATC("#",ALLTRIM(cbuscadoarr(i)))>0,'+',IIF(ATC("&",ALLTRIM(cbuscadoarr(i)))>0,'*','+'))
+		cbuscadoarr(i)=STRTRAN(STRTRAN(cbuscadoarr(i),'#',""),"&","")
+	ENDFOR 
+
+	FOR i=1 TO aelementos
+		vfiltra001 = IIF(ATC(ALLTRIM(cbuscadoarr(i)),c_buscaren)>0,'1','0')
+		cbuscadof(i,1)=vfiltra001
+	ENDFOR 
+	vformula = ""
+	FOR i=1 TO aelementos
+		vformula = vformula+cbuscadof(i,1)+cbuscadof(i,2)
+	ENDFOR 
+	vformula = vformula +'+0'  
+	vfiltra01 = &vformula
+	RELEASE cbuscadoarr , cbuscadof
+	RETURN vfiltra01
+ELSE	
+	RETURN 1
+ENDIF 
+ENDFUNC 
