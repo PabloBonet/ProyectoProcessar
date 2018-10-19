@@ -1321,10 +1321,14 @@ PARAMETERS p_idFactura
 			ENDIF 
 			
 
-			SELECT * FROM factImp_sql INTO TABLE .\factImp
+*!*				SELECT * FROM factImp_sql  INTO TABLE .\factImp
+
+	SET ENGINEBEHAVIOR 70  &&habilitará el comportamiento de Visual FoxPro 7. 
+		SELECT *, SUM(importe) as impTot, SUM(neto) as netoTot FROM factImp_sql GROUP BY impuesto  INTO TABLE .\factImp
 			
 			 
 			 
+	SET ENGINEBEHAVIOR 90  &&habilitará el comportamiento de Visual FoxPro 9. 
 			
 			v_importeTotalComp = factu_sql.total
 			v_idMoneda = "PES"
@@ -1356,8 +1360,10 @@ PARAMETERS p_idFactura
 				
 				v_impuesto = factImp.impuesto
 				v_detalle  = factImp.detalle
-				v_importe  = factImp.importe
-				v_neto	   = factImp.neto
+*!*					v_importe  = factImp.importe
+*!*					v_neto	   = factImp.neto
+				v_importe	= factImp.impTot
+				v_neto		= factImp.netoTot
 				v_codAfip  = VAL(ALLTRIM(factImp.codigoafip))
 				v_tipoAfip = factImp.tipoAfip
 				v_detAfip  = factImp.detAfip
@@ -1582,7 +1588,7 @@ PARAMETERS p_idFactura
 					v_respuesta =  SUBSTR(v_respuesta,2)
 					MESSAGEBOX("Comprobante Rechazado: "+ v_respuesta,0+48+0,"Comprobante Rechazado")
 					v_ptoVta = ""
-					v_nro = ""
+					v_nro = "0"
 					v_cae = ""
 					v_fechavenc =""
 					
