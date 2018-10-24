@@ -2623,3 +2623,84 @@ ELSE
 	RETURN 1
 ENDIF 
 ENDFUNC 
+
+
+
+* FUNCION DE BUSQUEDA DE REPORTES Y SELECCION DE ACUERDO AL PARAMETRO APLICADO.
+
+FUNCTION fselectreporte 
+PARAMETERS pvar_paramrepo
+	****************************************
+	v_paramRepo = pvar_paramrepo
+	pvar_retorno = ""
+
+	IF TYPE("v_paramRepo") = "N"
+		*** Si el parametro es un NUMERO, el nùmero es el idComproba
+
+		vconeccion=abreycierracon(0,_SYSSCHEMA)	
+
+		sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet from comprorepo co "
+		sqlmatriz(2)=" left join reportesimp r on co.idreporte = r.idreporte "
+		sqlmatriz(3)=" where co.idcomproba = "+ALLTRIM(STR(v_paramRepo))
+		verror=sqlrun(vconeccion,"repos_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+		
+	ELSE
+
+		IF TYPE("v_paramRepo") = "C"
+		*** Si el paràmetro es un CARACTER, se corresponde con el nombre del formulario y metodo
+
+			vconeccion=abreycierracon(0,_SYSSCHEMA)	
+
+			sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet from comprorepo co "
+			sqlmatriz(2)=" left join reportesimp r on co.idreporte = r.idreporte "
+			sqlmatriz(3)=" where co.codigoImpre= '"+ALLTRIM(v_paramRepo)+"'"
+			
+			verror=sqlrun(vconeccion,"repos_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Reportes ",0+48+0,"Error")
+    		    RETURN 
+
+			ENDIF 
+		ELSE
+			MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
+		    RETURN 
+
+		ENDIF 
+	ENDIF 
+
+****************************************
+		SELECT repos_sql
+		GO TOP 
+		IF  EOF()
+			MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
+			RETURN 
+		ELSE
+			v_cantRegistros = RECCOUNT()
+
+			IF v_cantRegistros = 1
+
+				 *** No tiene que seleccionar reportes, imprime con el que tiene predeterminado
+				pvar_retorno = repos_sql.nombre
+			
+*!*					SELECT repos_sql
+*!*					USE IN repos_sql 
+			*thisform.cmdAceptar.Click
+			ELSE
+				IF v_cantRegistros > 1
+
+					DO FORM selectreporte WITH v_paramRepo TO  pvar_retorno					
+					
+				ELSE
+					MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
+				ENDIF 
+			ENDIF 
+			SELECT repos_sql
+			USE IN repos_sql 
+		ENDIF 
+	RETURN 	pvar_retorno 
+	
+ENDFUNC 
