@@ -2491,8 +2491,10 @@ PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
 		ALTER table &par_alias add tabla char(50)
 		ALTER table &par_alias add campo char(50)
 		ALTER table &par_alias ADD tipoc char(1)
+		ALTER table &par_alias ADD idtipogrup i
+		ALTER table &par_alias ADD nombretipo char(100)
 		UPDATE &par_alias SET idgrupo = IIF(TYPE("grupotipocampo_sql.idgrupo")='C',0,grupotipocampo_sql.idgrupo), nombreg = grupotipocampo_sql.nombreg, tabla = grupotipocampo_sql.tabla, ;
-				campo = grupotipocampo_sql.campo, tipoc = grupotipocampo_sql.tipoc
+				campo = grupotipocampo_sql.campo, tipoc = grupotipocampo_sql.tipoc, idtipogrup = grupotipocampo_sql.idtipogrupo, nombretipo = grupotipocampo_sql.nombretipo
 
 		sqlmatriz(1)=" select * from grupoobjeto where idgrupo = "+ ALLTRIM(STR(par_idgrupo)) 
 		verror=sqlrun(vconeccionF,"grupoobjeto_sql")
@@ -2515,6 +2517,8 @@ PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
 		p_alias = par_alias
 		RETURN p_alias 
 ENDFUNC 
+
+
 
 
 *---------------------------------------------
