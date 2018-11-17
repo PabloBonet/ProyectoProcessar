@@ -2704,3 +2704,107 @@ PARAMETERS pvar_paramrepo
 	RETURN 	pvar_retorno 
 	
 ENDFUNC 
+
+
+*** FUNCION PARA LA OBTENCION DE UNA TABLA O CURSOR CON TODOS LOS ELEMENTOS 
+*** LOS GRUPOS DEL SISTEMA Y SUS COMPONENTES
+*** campos devueltos en la tabla
+*** 		miembros c 	
+*** 		idmiembro c
+***			pertenece = 'S' o 'N'
+***			idgrupo i
+***			nombreg char(100)
+***			tabla char(50)
+***			campo char(50)
+***			tipoc char(1)
+***			idtipogrup i
+***			nombretipo c(100)
+***			codarbol c(15)
+***			tiporeg c(1) 'M'=Miembro, 'G'=Grupo 'T'=Tipo Grupo
+FUNCTION obtieneallgrupos
+PARAMETERS  para_aliasd
+p_aliasreto  = ""
+
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+	
+	sqlmatriz(1)=" Select g.idgrupo, g.idtipogrupo, g.nombre as nombreg, "
+	sqlmatriz(2)=" t.detalle as nombretipo, t.tabla, t.campo, t.tipoc " 
+	sqlmatriz(3)=" from grupos g left join tipogrupos t on t.idtipogrupo = g.idtipogrupo "
+	sqlmatriz(4)=" order by g.idtipogrupo, g.idgrupo "
+
+	verror=sqlrun(vconeccionF,"gruposall_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la union de tablas de grupos... ",0+48+0,"Error")
+	    RETURN p_aliasreto  
+	ENDIF
+	=abreycierracon(vconeccionF,"")	
+
+	SELECT gruposall_sql
+	GO TOP 
+	IF EOF()
+		MESSAGEBOX("No hay Grupos para Seleccionar...")
+		RETURN p_aliasreto  
+	ENDIF
+	v_nomtabla = "grupotmp0"
+	DO WHILE !EOF()
+		=obtienegrupo(gruposall_sql.idtipogrupo,gruposall_sql.idgrupo,"grupotmp")
+		SELECT miembros, SUBSTR((IIF(tipoc='C',ALLTRIM(idmiembro),alltrim(str(idmiembro)))+REPLICATE(' ',20)),1,20) as idmiembro , ;
+				 idgrupo, nombreg, tabla, campo, tipoc, idtipogrup, nombretipo, 'M' as tiporeg FROM grupotmp ;
+			INTO TABLE .\&v_nomtabla WHERE pertenece = 'S'
+		IF v_nomtabla = "grupotmp0" THEN 
+			v_nomtabla = "grupotmp1"
+		ELSE
+			SELECT grupotmp0
+			APPEND FROM .\grupotmp1
+		ENDIF 	
+		SELECT gruposall_sql
+		skip
+	ENDDO 
+	SELECT grupotmp0
+	ALTER table grupotmp0 ADD codarbol c(15)
+	ALTER table grupotmp0 ADD codpadre c(15)
+	GO TOP 
+	replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)+ ;
+								ALLTRIM(REPLICATE('0',(9-LEN(ALLTRIM(idmiembro))))+ALLTRIM(idmiembro)), ;
+				codpadre WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)
+	
+	SET ENGINEBEHAVIOR 70 
+	
+	SELECT * FROM grupotmp0 INTO TABLE .\grupotmpgru GROUP BY idgrupo
+	replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3), ;
+				codpadre WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3), ;
+				miembros WITH SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)+" - "+ALLTRIM(nombreg), idmiembro WITH "", tiporeg WITH "G"
+	
+	SELECT * FROM grupotmp0 INTO TABLE .\grupotmptip GROUP BY idtipogrup
+	replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3), ;
+				codpadre WITH "0_" , ;
+				miembros WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+" - "+ALLTRIM(nombretipo), idmiembro WITH "", idgrupo with 0 , nombreg with "", tiporeg WITH "T"
+	SET ENGINEBEHAVIOR 90 
+				
+	SELECT grupotmp0
+	APPEND FROM .\grupotmpgru
+	APPEND FROM .\grupotmptip
+	
+	SELECT * FROM grupotmp0 INTO TABLE .\&para_aliasd
+
+	USE IN grupotmp0
+	USE IN grupotmp1
+	USE IN gruposall_sql 
+	p_aliasreto  = para_aliasd
+	RETURN p_aliasreto  
+ENDFUNC 
+
+
+
+FUNCTION settoolbargrupo
+PARAMETERS var_perfil
+v_toolperfil = var_perfil
+
+RELEASE toolbargrupos
+PUBLIC  toolbargrupos
+toolbargrupos= CREATEOBJECT('toolbargrupos')
+toolbargrupos.hide 
+*!*	toolbargrupos.enabled = .t.
+toolbargrupos.tag = var_perfil
+
+ENDFUNC 
