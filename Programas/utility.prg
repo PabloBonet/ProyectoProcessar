@@ -1477,6 +1477,8 @@ PARAMETERS p_idFactura
 	v_servicioCargado = .F.
 	v_estadoComp = .F.
 		v_nro = "0"
+		
+	
 	TRY 
 
 		v_servicioCargado = loBasicHttpBinding_IServicio.servicioIniciado()
@@ -1525,6 +1527,14 @@ PARAMETERS p_idFactura
 				v_fecha = cftofc(DATE())
 
 				MESSAGEBOX("Comprobante Autorizado: "+ v_ptovta + " - "+v_nro + " CAE: "+v_cae+"Fecha: "+v_fecha,0+64,"Comprobante Autorizado")
+			
+			
+			*** REGISTRO ESTADO AUTORIZADO PARA FACTURAS ELECTRONICAS ***
+
+			
+				registrarEstado("facturas","idfactura",v_idAutorizar,'I',"AUTORIZADO")
+			
+			
 			
 				*** ACTUALIZO EL NUMERO DEL COMPROBANTE EN FACTURAS
 *				DIMENSION lamatriz7(1,2)
@@ -1597,6 +1607,13 @@ PARAMETERS p_idFactura
 					v_observacion  = V_respuesta 
 					*¿Falta codigo de error?
 					v_codErro = ""
+						
+					*** REGISTRO ESTADO AUTORIZADO PARA FACTURAS ELECTRONICAS ***
+
+					
+						
+						registrarEstado("facturas","idfactura",v_idAutorizar,'I',"RECHAZADO")
+					 
 				ELSE
 					*Indefinido
 					MESSAGEBOX("Respuesta desconocida",0+48+0,"Error al Autorizar")
@@ -2811,4 +2828,80 @@ toolbargrupos.hide
 *!*	toolbargrupos.enabled = .t.
 toolbargrupos.tag = var_perfil
 
+ENDFUNC 
+
+
+*---------------------------------------------
+* Función que registra el estado según los parámetros pasados en la tabla estadosreg
+* Parámetros:
+*   p_nomTabla: nombre de la tabla
+*	p_nomCampo: nombre del campo indice de la tabla
+*	p_indice: valor del campo indice
+*	p_tipoInd: tipo de valor del campo indice
+*	p_estado: estado que se va a registrar, el estado debe estar en la tabla estadosr
+*---------------------------------------------
+
+FUNCTION registrarEstado
+PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
+
+	estObj	= CREATEOBJECT('estadosclass')
+	
+
+	* me conecto a la base de datos
+	vconeccion=abreycierracon(0,_SYSSCHEMA)	
+	
+	v_idestadosreg	= maxnumeroidx("idestadosreg","I","estadosreg",1)
+	v_nomTabla 		= p_nomTabla
+	v_nomCampo 		= p_nomCampo
+	
+	v_idEst			= estObj.getIdEstado(p_estado)
+	v_tipoInd		= p_tipoInd
+	v_indice		= ""
+	IF v_tipoInd = 'I'
+		v_indice		= ALLTRIM(STR(p_indice))
+	ELSE
+		IF v_tipoInd = 'C'
+			v_indice	= ALLTRIM(p_indice)
+		ENDIF 
+	ENDIF 
+	v_fecha			= cftofc(DATE())	
+
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	p_titulo      = " EL ALTA "
+	p_tabla     = 'estadosreg'
+	p_matriz    = 'lamatriz'
+
+
+
+	p_conexion  = vconeccionF	
+
+	
+	DIMENSION lamatriz(7,2)
+	
+	lamatriz(1,1)='idestadosreg'
+	lamatriz(1,2)= ALLTRIM(STR(v_idestadosreg))
+	lamatriz(2,1)='tabla'
+	lamatriz(2,2)= "'"+ALLTRIM(v_nomTabla)+"'"
+	lamatriz(3,1)='campo'
+	lamatriz(3,2)="'"+ALLTRIM(v_nomCampo)+"'"
+	lamatriz(4,1)='id'
+	lamatriz(4,2)="'"+ALLTRIM(v_indice)+"'"
+	lamatriz(5,1)='idestador'
+	lamatriz(5,2)=ALLTRIM(STR(v_idEst))
+	lamatriz(6,1)='tipo'
+	lamatriz(6,2)="'"+ALLTRIM(v_tipoInd)+"'"
+	lamatriz(7,1)='fecha'
+	lamatriz(7,2)="'"+alltrim(v_fecha)+"'"
+	
+	
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado ",0+48+0,"Error")
+	    * me desconecto	
+		=abreycierracon(vconeccionF,"") 
+		
+	ENDIF
+
+	* me desconecto	
+	=abreycierracon(vconeccionF,"") 
 ENDFUNC 
