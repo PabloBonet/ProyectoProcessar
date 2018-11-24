@@ -2864,7 +2864,7 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
 			v_indice	= ALLTRIM(p_indice)
 		ENDIF 
 	ENDIF 
-	v_fecha			= cftofc(DATE())	
+	v_fecha			= cftofc(DATE())+TIME()	
 
 	p_tipoope     = 'I'
 	p_condicion   = ''
