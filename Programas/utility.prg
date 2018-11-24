@@ -2905,3 +2905,64 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
 	* me desconecto	
 	=abreycierracon(vconeccionF,"") 
 ENDFUNC 
+
+
+
+** AGREGA EL CAMPO busquedag para poder realizar busquedas y filtrados con el objeto de grupos
+
+FUNCTION generabusquedag
+	PARAMETERS para_tabla, para_string
+	SELECT &para_tabla
+	ALTER table &para_tabla ADD COLUMN busquedag c(254)
+	GO TOP 
+	replace ALL busquedag WITH &para_string
+RETURN 
+
+*---------------------------------------------------------------------------
+* Filtrado de grupos en tablas Locales, recibe como parametro una tabla local 
+*  y aplica el filtro de grupo a las tablas si está seleccionada la opcion de filtrados
+*  en el objeto de grupos
+*------------------------------------------------------------------------------
+FUNCTION filtragrupos
+	PARAMETERS pf_tbbuscador, pf_tablas 
+	
+	IF !EMPTY(ALLTRIM(pf_tbbuscador)) THEN	
+		EJE1 = "ATCF(ALLTRIM('"+ALLTRIM(pf_tbbuscador)+"'), busqueda) > 0 "
+	ELSE
+		EJE1= ""	
+	ENDIF 
+	IF !EMPTY(ALLTRIM(toolbargrupos.seleccion)) AND toolbargrupos.pageayuda.grupos.filtragrupos.value THEN	
+		EJE2 = "ATCF(ALLTRIM(busquedag), toolbargrupos.seleccion) > 0 "
+	ELSE
+		EJE2= ""	
+	ENDIF 
+	IF !EMPTY(EJE1) AND !EMPTY(EJE2) THEN 
+		EJE3="SET FILTER TO "+EJE1+" AND "+EJE2
+	ELSE
+		EJE3="SET FILTER TO "+EJE1+EJE2
+	ENDIF 
+
+	vcan_tablas=alines( arraytablas, pf_tablas, ";")
+	IF vcan_tablas > 0 THEN 
+		FOR _ifg = 1 TO vcan_tablas
+			SELECT &arraytablas(_ifg)
+			&EJE3 
+			GO TOP	
+		ENDFOR 
+	ENDIF 
+	RELEASE arraytablas 
+	
+ENDFUNC 
+
+*-------------------------------------------------------------
+* Oculta o muestra la tabla de seleccion de grupos del sistema
+*-------------------------------------------------------------
+FUNCTION showhidetoolbargrupo
+	IF toolbargrupos.visible THEN 
+		toolbargrupos.hide
+		toolbargrupos.pageayuda.grupos.filtragrupos.value = .f.
+	ELSE 
+		toolbargrupos.show 	
+		toolbargrupos.pageayuda.grupos.filtragrupos.value = .t.
+	ENDIF 
+ENDFUNC 
