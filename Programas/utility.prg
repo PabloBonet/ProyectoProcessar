@@ -2839,6 +2839,9 @@ ENDFUNC
 *	p_indice: valor del campo indice
 *	p_tipoInd: tipo de valor del campo indice
 *	p_estado: estado que se va a registrar, el estado debe estar en la tabla estadosr
+**
+* Retorno:
+*	True: si no se produjeron errores, False en otro caso
 *---------------------------------------------
 
 FUNCTION registrarEstado
@@ -2846,9 +2849,9 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
 
 	estObj	= CREATEOBJECT('estadosclass')
 	
-
+	
 	* me conecto a la base de datos
-	vconeccion=abreycierracon(0,_SYSSCHEMA)	
+	vconeccionE=abreycierracon(0,_SYSSCHEMA)	
 	
 	v_idestadosreg	= maxnumeroidx("idestadosreg","I","estadosreg",1)
 	v_nomTabla 		= p_nomTabla
@@ -2864,7 +2867,7 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
 			v_indice	= ALLTRIM(p_indice)
 		ENDIF 
 	ENDIF 
-	v_fecha			= cftofc(DATE())+TIME()	
+	v_fecha			= cftofc(DATE())+TIME()
 
 	p_tipoope     = 'I'
 	p_condicion   = ''
@@ -2874,7 +2877,7 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
 
 
 
-	p_conexion  = vconeccionF	
+	p_conexion  = vconeccionE	
 
 	
 	DIMENSION lamatriz(7,2)
@@ -2898,12 +2901,14 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
 	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 	    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado ",0+48+0,"Error")
 	    * me desconecto	
-		=abreycierracon(vconeccionF,"") 
+		=abreycierracon(vconeccionE,"") 
+		RETURN .F.
 		
 	ENDIF
 
 	* me desconecto	
-	=abreycierracon(vconeccionF,"") 
+	=abreycierracon(vconeccionE,"") 
+	RETURN .T.
 ENDFUNC 
 
 
@@ -2965,4 +2970,55 @@ FUNCTION showhidetoolbargrupo
 		toolbargrupos.show 	
 		toolbargrupos.pageayuda.grupos.filtragrupos.value = .t.
 	ENDIF 
+ENDFUNC 
+
+
+
+*---------------------------------------------
+* Función que retorna el IdEstadoR del último estado según los parámetros pasados en la tabla estadosreg
+* Parámetros:
+*   p_nomTabla: nombre de la tabla
+*	p_nomCampo: nombre del campo indice de la tabla
+*	p_indice: valor del campo indice
+*	p_tipoInd: tipo de valor del campo indice
+**
+* Retorno:
+*	True: si no se produjeron errores, False en otro caso
+*---------------------------------------------
+
+FUNCTION obtenerEstado 
+PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd
+
+	v_indice = ""
+	IF v_tipoInd = 'I'
+		v_indice		= ALLTRIM(STR(p_indice))
+	ELSE
+		IF v_tipoInd = 'C'
+			v_indice	= ALLTRIM(p_indice)
+		ENDIF 
+	ENDIF 
+
+	* me conecto a la base de datos
+	vconeccionE=abreycierracon(0,_SYSSCHEMA)	
+	
+	sqlmatriz(1)=" Select idestador "
+	sqlmatriz(2)=" from ultimoestado "
+	sqlmatriz(3)=" where tabla = '"+ALLTRIM(p_nomTabla)+"' and campo = '"+ALLTRIM(p_nomCampo)+"' and id = '"+ALLTRIM(v_indice)+"' and tipo ='"+ALLTRIM(p_tipoInd)+"'"
+	
+
+	verror=sqlrun(vconeccionE,"ultimoEst_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la búsqueda del último estado",0+48+0,"Error")
+	      * me desconecto	
+		=abreycierracon(vconeccionE,"") 
+		RETURN 0
+	ENDIF
+
+	SELECT ultimoEst_sql
+	GO TOP 
+
+	v_IdUltimoEstado	= ultimoEst_sql.idestador
+	* me desconecto	
+	=abreycierracon(vconeccionE,"") 
+	RETURN v_IdUltimoEstado
 ENDFUNC 
