@@ -358,8 +358,13 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 	RETURN ErrorSQL
 ENDFUNC 
 
+
+** --------------------------------------------------------------
+* Graba en la tabla Logsystem de la base de datos todos los 
+* movimientos de las tablas seleccionadas para grabar sus log
+*----------------------------------------------------------------
 FUNCTION logSistema
-PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
+PARAMETERS p_tablalog, p_matrizlog, p_tipoopelog,p_conexiconlog
 	
 	IF _SYSSCHEMA = 'admindb' THEN 
 		RETURN 
@@ -367,17 +372,18 @@ PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
 	
 	ErrorSql = .F.
 	
+	
 	*** Consulto por la tabla de seteo para obtener el campo id y el tipo ***
-	v_sentenciaL = "select * from seteolog where tabla = '"+ALLTRIM(p_tabla)+"' and log = 'S'"
+	v_sentenciaL = "select * from seteolog where tabla = '"+ALLTRIM(p_tablalog)+"' and log = 'S'"
 	
 	LOCAL laError, lcMsg, ln
 	DIMENSION laError[1]
 
 
-	r=SQLEXEC(p_conexicon,v_sentenciaL,"seteoCur")
+	r=SQLEXEC(p_conexiconlog,v_sentenciaL,"seteoCur")
 
 	IF r < 0
-	  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+v_sentencia,0+64,'SQLRUN')
+	  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+v_sentenciaL,0+64,'SQLRUN')
 	  IF AERROR(laError) > 0
 	    *-- Ocurrio un error
 	    * DISPLAY MEMORY LIKE laError
@@ -397,13 +403,16 @@ PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
     	ENDIF 
     	v_campo = seteoCur.campo
     	v_tipo	= seteoCur.tipo
+    
+ 		v_elementosm = ALEN(&p_matrizlog,1)
     	
-    	FOR fila = 1 TO 20 
-    		v_campoMat = &p_matriz(fila,1)
-    		
+
+    	FOR fila = 1 TO v_elementosm 
+    		v_campoMat = &p_matrizlog(fila,1)
+   
     		IF v_campoMat = ALLTRIM(v_campo)
-       			v_valor		=  &p_matriz(fila,2)
-    			fila = 20
+       			v_valor		=  &p_matrizlog(fila,2)
+    			fila = v_elementosm
     		ENDIF  
     	ENDFOR 
     	
@@ -411,17 +420,12 @@ PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
     	*** Inserto los campos en la tabla logsystem ***
     	
     *	v_idlog = maxnumeroidx('idlog', 'I', 'logsystem',1) 
-    	
-    	
-    	
-    	
-    	
-*!*	IF p_tipoope = 'I'
+
 	*INTEGER
 	v_tipocampo = "I"
 	V_consulta="UPDATE tablasidx set maxvalori = ( maxvalori + 1 ) WHERE campo = 'idlog' and tabla = 'logsystem' and tipocampo = 'I'"
 	
-	r=SQLEXEC(p_conexicon,V_consulta,"ActuCur")
+	r=SQLEXEC(p_conexiconlog,V_consulta,"ActuCur")
 		IF r < 0
 		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+V_consulta,0+64,'SQLRUN')
 		  IF AERROR(laError) > 0
@@ -444,7 +448,7 @@ PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
 	
 	v_consulta="select maxvalori as maxnro FROM tablasidx WHERE campo = 'idlog' and tabla = 'logsystem' and tipocampo = 'I'" 
 		
-	r=SQLEXEC(p_conexicon,V_consulta,"MaxCur")
+	r=SQLEXEC(p_conexiconlog,V_consulta,"MaxCur")
 		IF r < 0
 		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+V_consulta,0+64,'SQLRUN')
 		  IF AERROR(laError) > 0
@@ -477,10 +481,10 @@ PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
     	v_host		= _SYSHOST
  
     	v_sentencia = "INSERT INTO logsystem values ("+ALLTRIM(STR(v_idlog))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_usuario)+"','"+ ;
-    	ALLTRIM(p_tabla)+"','"+ALLTRIM(v_campo)+"','"+ALLTRIM(v_tipo)+"','"+ALLTRIM(v_valor)+"','"+ALLTRIM(p_tipoope)+"','"+ALLTRIM(v_ip)+"','"+ALLTRIM(v_host)+"'"
+    	ALLTRIM(p_tabla)+"','"+ALLTRIM(v_campo)+"','"+ALLTRIM(v_tipo)+"','"+ALLTRIM(v_valor)+"','"+ALLTRIM(p_tipoopelog)+"','"+ALLTRIM(v_ip)+"','"+ALLTRIM(v_host)+"'"
 	
 		*r=SQLEXEC(p_conexicon,v_sentencia+",'"+SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20)+"')","InsertCur")
-		r=SQLEXEC(p_conexicon,v_sentencia+",'"+STRTRAN(SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20),"'","")+"')","InsertCur")
+		r=SQLEXEC(p_conexiconlog,v_sentencia+",'"+STRTRAN(SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20),"'","")+"')","InsertCur")
 		IF r < 0
 		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+v_sentencia,0+64,'SQLRUN')
 		  IF AERROR(laError) > 0
@@ -497,8 +501,7 @@ PARAMETERS p_tabla, p_matriz, p_tipoope,p_conexicon
 			
 		ENDIF 
     	
-    	
-    	
+ 
     ENDIF 
 	
 	

@@ -958,6 +958,7 @@ ENDFUNC
 ** SETEO DE MATRIZ PARA EJECUCION DE FUNCIONES DE LOS BOTONES **
 FUNCTION seteoteclafn
 PARAMETERS p_matriz_p , p_opcion, p_objeto, p_teclafn
+	PRIVATE p_matriz 
 	p_matriz = p_matriz_p+"FN"
 	retorno =""
 	DO CASE 
