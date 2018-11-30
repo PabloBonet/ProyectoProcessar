@@ -3023,3 +3023,29 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd
 	=abreycierracon(vconeccionE,"") 
 	RETURN v_IdUltimoEstado
 ENDFUNC 
+
+
+*---------------------------------------------------------------
+* Ejecuta los formularios controlando que no estén activos
+* Utilizado para evitar activar varias veces el mismo formulario
+*---------------------------------------------------------------
+FUNCTION ejecutaform 
+PARAMETERS par_form, par_varpasadas
+	vpar_retorno = ""
+	vpar_varpasadas = ""
+	vpar_form = ""
+	
+	IF EMPTY(par_form) THEN 
+		RETURN vpar_retorno  
+	ELSE
+		vpar_form = ALLTRIM(par_form)
+	ENDIF 
+	IF TYPE("par_varpasadas") = 'C'  THEN 
+		vpar_varpasadas = ALLTRIM(par_varpasadas)
+	ENDIF 
+	IF WEXIST(vpar_form) THEN 
+		RETURN vpar_retorno
+	ENDIF 
+	vpar_eje = "DO FORM "+vpar_form+" "+vpar_varpasadas 
+	&vpar_eje
+ENDFUNC 
