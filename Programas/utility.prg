@@ -3081,3 +3081,75 @@ PARAMETERS par_form, par_varpasadas
 	vpar_eje = "DO FORM "+vpar_form+" "+vpar_varpasadas 
 	&vpar_eje
 ENDFUNC 
+
+
+*---------------------------------------------------------------
+* Función para obtener el campo indice de una tabla de la bd
+* Parametros: p_Tabla: Nombre de la tabla consultada
+* Retorno: Retorna el nombre del campo indice de la tabla consultada
+*---------------------------------------------------------------
+FUNCTION obtenerCampoIndice
+PARAMETERS p_tabla
+
+
+	vconeccionF = abreycierracon(0,_SYSSCHEMA)
+
+		v_tabla = p_tabla
+		
+		sqlmatriz(1)="SHOW COLUMNS FROM "+ALLTRIM(v_tabla)
+		verror=sqlrun(vconeccionF,"columnas_sql")
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener las columnas del Comprobantes",0+16,"Advertencia")
+			RETURN 
+		ENDIF 
+		SELECT columnas_sql
+		
+		
+*!*			eje="SELECT  *, v_tabla+SPACE(30) as tablanom, .f. as sel, 10 as orden FROM columnas_sql INTO TABLE .\columnas"+v_tabla
+*!*			&eje 	
+*!*			
+*!*			IF v_tabla = v_pritabla THEN 
+*!*				SELECT *  FROM columnas&v_tabla INTO TABLE .\columnas
+*!*				ALTER TABLE columnas alter tablanom c(30)
+*!*				ALTER TABLE columnas alter field c(30)
+
+*!*			ELSE
+*!*				SELECT columnas
+*!*				eje = " APPEND FROM .\columnas"+v_tabla
+*!*				&eje 
+*!*			ENDIF  
+*!*			SELECT columnas&v_tabla
+*!*			USE 
+*!*			
+	
+	* me desconecto	
+	=abreycierracon(vconeccionF,"")
+
+*!*		SELECT tablas
+*!*		SELECT columnas 
+*!*		INDEX on ALLTRIM(tablanom) TAG tablanom
+
+*!*		SELECT tablas
+*!*		SET RELATION TO ALLTRIM(tablanom) INTO columnas 
+
+*!*		GO TOP 
+*!*		thisform.cb_tabla.Value = tablas.tablanom 
+
+*!*		thisform.cb_campo.RowSource = "SELECT * FROM columnas into cursor columnasidx WHERE KEY = 'PRI' and ALLTRIM(tablanom) == ALLTRIM(thisform.cb_tabla.value)"
+*!*		thisform.cb_campo.Value = columnasidx.field 
+*!*		THISFORM.tb_tipo.Value  = UPPER(ALLTRIM(columnasidx.type))
+*!*		SELECT columnas
+*!*		SET FILTER TO ALLTRIM(tablanom)= ALLTRIM(tablas.tablanom)
+
+	SELECT field as campo, key as clave FROM  columnas_sql WHERE key = "PRI" INTO TABLE columnas
+	
+	SELECT columnas
+	GO TOP 
+	v_retorno = ""
+	
+	v_retorno = columnas.campo 
+		
+	
+	RETURN v_retorno
+
+ENDFUNC 
