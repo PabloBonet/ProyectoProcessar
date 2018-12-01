@@ -2432,12 +2432,44 @@ IF !v_error THEN
 			retorno = ''
 	ENDCASE 
 ELSE
-	retorno = ''
+
+	oWMI = getobject("winmgmts:")
+	ON ERROR 
+	IF !v_error THEN 
+
+		oAdapters = oWMI.ExecQuery("Select * from Win32_NetworkAdapterConfiguration where IPEnabled=True")
+		ipadd = ""
+		hostn = ""
+		for each oAdapter in oAdapters
+			if not isnull(oAdapter.ipaddress)
+				for each cAddress in oAdapter.ipaddress
+					IF ATC('.',cAddress)>0 AND EMPTY(ipadd) THEN 
+						ipadd = oAdapter.ipaddress
+						hostn  = oAdapter.DNSHostName
+					ENDIF 
+				NEXT 
+			endif
+		NEXT  
+		
+		DO CASE 
+			CASE pdato = 1 
+				retorno = ipadd
+			CASE pdato = 2
+				retorno = hostn
+			OTHERWISE 
+				retorno = ''
+		ENDCASE 
+		RELEASE oWMI
+	ELSE
+		retorno = ''
+	ENDIF 
 ENDIF 
+
 RELEASE oWS
 RETURN retorno
 
 ENDFUNC 
+
 
 
 
