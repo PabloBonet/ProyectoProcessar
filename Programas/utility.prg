@@ -2433,6 +2433,8 @@ IF !v_error THEN
 	ENDCASE 
 ELSE
 
+	v_error = .f.
+	ON ERROR v_error = .t.
 	oWMI = getobject("winmgmts:")
 	ON ERROR 
 	IF !v_error THEN 
