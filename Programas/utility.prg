@@ -2472,7 +2472,71 @@ RETURN retorno
 
 ENDFUNC 
 
-
+*!*	[Dynamic, Provider("CIMWin32"), UUID("{8502C515-5FBB-11D2-AAC1-006008C78BC7}"), AMENDMENT]
+*!*	class Win32_NetworkAdapterConfiguration : CIM_Setting
+*!*	{
+*!*	  string   Caption;
+*!*	  string   Description;
+*!*	  string   SettingID;
+*!*	  boolean  ArpAlwaysSourceRoute;
+*!*	  boolean  ArpUseEtherSNAP;
+*!*	  string   DatabasePath;
+*!*	  boolean  DeadGWDetectEnabled;
+*!*	  string   DefaultIPGateway[];
+*!*	  uint8    DefaultTOS;
+*!*	  uint8    DefaultTTL;
+*!*	  boolean  DHCPEnabled;
+*!*	  datetime DHCPLeaseExpires;
+*!*	  datetime DHCPLeaseObtained;
+*!*	  string   DHCPServer;
+*!*	  string   DNSDomain;
+*!*	  string   DNSDomainSuffixSearchOrder[];
+*!*	  boolean  DNSEnabledForWINSResolution;
+*!*	  string   DNSHostName;
+*!*	  string   DNSServerSearchOrder[];
+*!*	  boolean  DomainDNSRegistrationEnabled;
+*!*	  uint32   ForwardBufferMemory;
+*!*	  boolean  FullDNSRegistrationEnabled;
+*!*	  uint16   GatewayCostMetric[];
+*!*	  uint8    IGMPLevel;
+*!*	  uint32   Index;
+*!*	  uint32   InterfaceIndex;
+*!*	  string   IPAddress[];
+*!*	  uint32   IPConnectionMetric;
+*!*	  boolean  IPEnabled;
+*!*	  boolean  IPFilterSecurityEnabled;
+*!*	  boolean  IPPortSecurityEnabled;
+*!*	  string   IPSecPermitIPProtocols[];
+*!*	  string   IPSecPermitTCPPorts[];
+*!*	  string   IPSecPermitUDPPorts[];
+*!*	  string   IPSubnet[];
+*!*	  boolean  IPUseZeroBroadcast;
+*!*	  string   IPXAddress;
+*!*	  boolean  IPXEnabled;
+*!*	  uint32   IPXFrameType[];
+*!*	  uint32   IPXMediaType;
+*!*	  string   IPXNetworkNumber[];
+*!*	  string   IPXVirtualNetNumber;
+*!*	  uint32   KeepAliveInterval;
+*!*	  uint32   KeepAliveTime;
+*!*	  string   MACAddress;
+*!*	  uint32   MTU;
+*!*	  uint32   NumForwardPackets;
+*!*	  boolean  PMTUBHDetectEnabled;
+*!*	  boolean  PMTUDiscoveryEnabled;
+*!*	  string   ServiceName;
+*!*	  uint32   TcpipNetbiosOptions;
+*!*	  uint32   TcpMaxConnectRetransmissions;
+*!*	  uint32   TcpMaxDataRetransmissions;
+*!*	  uint32   TcpNumConnections;
+*!*	  boolean  TcpUseRFC1122UrgentPointer;
+*!*	  uint16   TcpWindowSize;
+*!*	  boolean  WINSEnableLMHostsLookup;
+*!*	  string   WINSHostLookupFile;
+*!*	  string   WINSPrimaryServer;
+*!*	  string   WINSScopeID;
+*!*	  string   WINSSecondaryServer;
+*!*	}
 
 
 
