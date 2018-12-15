@@ -1,0 +1,222 @@
+
+Admindb
+
+Agregar USUARIO predeterminado. Puede ser processar
+
+Tablas con datos
+----------------
+bibliotecaf
+esquemas: modificamos registros -> Quedó un solo registro con los datos de conexión local
+iconos
+modulosys
+settoolbarsys
+varpublicas
+
+
+------------------------------------------------
+Tablas con datos:
+-----------------
+afipcompro
+afipimpuestos: modificar indices
+afiptipodocu
+cajabancos (Blanqueada)
+bancos (Blanqueada)
+cajarecauda
+cobrocomproba
+compactiv
+comprobantes
+comprorepo
+condfiscal
+depositos
+empresa
+estadosr
+impuestos
+listapreciop
+localidades
+menusql
+monedas
+otdepositos
+otestados
+otetapas
+otparametros
+ottiposmovi
+paises
+perfilmh
+perfilmp
+perfilusu
+provincias
+puntosventa
+reportesimp
+servicios
+serviciosimpu
+sucursales
+tipocajabanco
+tipocompro
+tipodocumento
+tipomaterial
+tipomstock
+tiponp
+tipooperacion
+tipoot
+tipopagos
+toe
+toolbarmenu
+usuarios
+varpublicas
+vendedores
+zonas
+
+
+--------------------------------------------------
+Tablas a limpiar:
+-----------------
+ajustestocke
+ajustestockh
+ajustestockimp
+ajustestockp
+arqueocajah
+arqueocajap
+articulos
+articulosf
+articulosimg
+articulosimp
+articulospro
+asientos
+asientoscompro
+astocuenta
+astomode
+astovalor
+bocaservicios
+cajaie 
+cajamovih
+cajamovip
+cajarecaudah
+campogrupo
+carterach (ELIMINADA)
+carterachdeta (ELIMINADA)
+carteracheque
+carterachequed
+cobros
+compiservi
+comproasiento
+conceptogrupo
+conceptoimpu
+conceptolimit
+conceptoser
+contabarticonc
+cpptelefono
+cuentasdispon
+cupones
+destinooti
+detafactu
+detallecobros
+detallepagos
+ejercicioecon
+empleados
+entidades
+entidadesc
+entidadescr
+entidadesd
+entidadesdc
+entidadesh
+entidadg
+estadosreg
+etiquetas
+factclaro
+factuperiodos
+factuprove
+factuproved
+factuproveimp
+facturas
+facturascta
+facturasfe
+facturasimp
+factrasrec
+formicompro
+grupoobjeto
+grupos
+grupose
+gruposepelio
+largadistancia
+librossocios
+librossociosdet
+librosociosdeta
+lineas
+linkcompro
+listaprecioh
+logsystem
+medagua
+medluz
+medtelefono
+movidepo
+np
+ot
+otajuste
+otcancela (ELIMINADA)
+otcumpleh
+otcumplep
+otdetaot
+otdocumento (ELIMINADA)
+otdocumentos
+otejecu (ELIMINADA)
+otejecuh
+otejecum
+otejecumovi
+otestadosot
+otint		(REVISAR)
+otinterna	(REVISAR)
+otlineasmat
+otmateriales
+otmaterialeslep
+otmaterialespro
+otmonedah	(ELIMINAR)
+otmoneda	(ELIMINAR)
+otmovianul
+otmovistockh
+otmovistockp
+otordentra
+ototetapas
+otpedido
+otpedidoanul
+otperfiles
+otperfusu
+otpresu
+otestandar
+otstock (ELIMINADA)
+ottiposobs
+pagosprov
+pagosprovfc
+plancuentas
+plancuentasd
+presupu
+presupuanul (ELIMINADO)
+presupuh
+presupuimp
+recibos
+relotcompro
+remitos
+remitosanul (ELIMINADO)
+remitosh
+remitosprovh
+remitosprovp
+seteolog
+stock (ELIMINADA)
+sucursalpventa
+tarjetacredito
+tarjetacuotas
+tipocobrosdeta
+tipocuenta
+tipogrupos
+tipomovctap
+tipomovotint
+tranintercta
+traninterctah
+transfep
+transfeh
+transporte
+
+
+
+
+
+
