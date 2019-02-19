@@ -3219,3 +3219,22 @@ PARAMETERS p_tabla
 	RETURN v_retorno
 
 ENDFUNC 
+
+
+
+*+ Funcion para el seteo de indices en tablas locales
+* recibe como parametros una tabla a ordenar , una tabla con los indices y el valor que debe
+* seleccionar para crear el indice. 
+* busca en la tabla de orde pa_orden , selecciona el indice y lo crea en pa_tabla
+FUNCTION SetearIndice
+PARAMETERS pa_tabla, pa_tablaorden, pa_campobus, pa_valorbus, pa_camporet, pa_tag
+
+	var_indice = ALLTRIM(BUSCAVALORDB(pa_tablaorden,pa_campobus,pa_valorbus, pa_camporet,1))
+	IF !isnull(var_indice)  THEN 
+		SELECT &pa_tabla
+		SET SAFETY OFF 
+		INDEX on &var_indice TAG &pa_tag  
+		RETURN pa_tag
+	ENDIF 
+	RETURN ""
+ENDFUNC 
