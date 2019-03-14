@@ -1,12 +1,12 @@
 *       *********************************************************
 *       *                                                         
-*       * 05/25/18              MENU.MPR                10:17:54  
+*       * 03/14/19              MENU.MPR                10:03:06  
 *       *                                                         
 *       *********************************************************
 *       *                                                         
 *       * Author's Name                                           
 *       *                                                         
-*       * Copyright (C) 2018 Company Name                         
+*       * Copyright (C) 2019 Company Name                         
 *       * Address                                                 
 *       * City,     Zip                                           
 *       *                                                         
@@ -26,36 +26,36 @@
 SET SYSMENU TO
 SET SYSMENU AUTOMATIC
 
-DEFINE PAD _57j0m2n2f OF _MSYSMENU PROMPT "Archivos" COLOR SCHEME 3 ;
+DEFINE PAD _5fq0ljlv8 OF _MSYSMENU PROMPT "Archivos" COLOR SCHEME 3 ;
 	KEY ALT+A, ""
-DEFINE PAD _57j0m2n2g OF _MSYSMENU PROMPT "Ver" COLOR SCHEME 3 ;
+DEFINE PAD _5fq0ljlv9 OF _MSYSMENU PROMPT "Ver" COLOR SCHEME 3 ;
 	KEY ALT+V, ""
-DEFINE PAD _57j0m2n2h OF _MSYSMENU PROMPT "Salir" COLOR SCHEME 3 ;
+DEFINE PAD _5fq0ljlva OF _MSYSMENU PROMPT "Salir" COLOR SCHEME 3 ;
 	KEY ALT+F4, "ALT+F4"
-ON PAD _57j0m2n2f OF _MSYSMENU ACTIVATE POPUP archivos
-ON PAD _57j0m2n2g OF _MSYSMENU ACTIVATE POPUP ver
-ON SELECTION PAD _57j0m2n2h OF _MSYSMENU ;
-	DO _57j0m2n2i ;
+ON PAD _5fq0ljlv8 OF _MSYSMENU ACTIVATE POPUP archivos
+ON PAD _5fq0ljlv9 OF _MSYSMENU ACTIVATE POPUP ver
+ON SELECTION PAD _5fq0ljlva OF _MSYSMENU ;
+	DO _5fq0ljlvb ;
 	IN LOCFILE("MENUESSQL\MENU" ,"MPX;MPR|FXP;PRG" ,"WHERE is MENU?")
 
 DEFINE POPUP archivos MARGIN RELATIVE SHADOW COLOR SCHEME 4
 DEFINE BAR 1 OF archivos PROMPT "Cambiar Usuario"
 DEFINE BAR 2 OF archivos PROMPT "Usuarios"
 ON SELECTION BAR 1 OF archivos ;
-	DO _57j0m2n2j ;
+	DO _5fq0ljlvc ;
 	IN LOCFILE("MENUESSQL\MENU" ,"MPX;MPR|FXP;PRG" ,"WHERE is MENU?")
 ON SELECTION BAR 2 OF archivos DO FORM nuevousuario
 
 DEFINE POPUP ver MARGIN RELATIVE SHADOW COLOR SCHEME 4
 DEFINE BAR 1 OF ver PROMPT "Barra de Herramientas"
 ON SELECTION BAR 1 OF ver ;
-	DO _57j0m2n2k ;
+	DO _5fq0ljlvd ;
 	IN LOCFILE("MENUESSQL\MENU" ,"MPX;MPR|FXP;PRG" ,"WHERE is MENU?")
 
 
 *       *********************************************************
 *       *                                                         
-*       * _57J0M2N2I  ON SELECTION PAD                            
+*       * _5FQ0LJLVB  ON SELECTION PAD                            
 *       *                                                         
 *       * Procedure Origin:                                       
 *       *                                                         
@@ -66,7 +66,7 @@ ON SELECTION BAR 1 OF ver ;
 *       *                                                         
 *       *********************************************************
 *
-PROCEDURE _57j0m2n2i
+PROCEDURE _5fq0ljlvb
 IF MESSAGEBOX("Desea Abandonar el Sistema",4+32,"Salir del Sistema") = 6 THEN
 	CLEAR EVENTS
 *	CLEAR ALL
@@ -83,7 +83,7 @@ ENDIF
 
 *       *********************************************************
 *       *                                                         
-*       * _57J0M2N2J  ON SELECTION BAR 1 OF POPUP archivos        
+*       * _5FQ0LJLVC  ON SELECTION BAR 1 OF POPUP archivos        
 *       *                                                         
 *       * Procedure Origin:                                       
 *       *                                                         
@@ -94,7 +94,7 @@ ENDIF
 *       *                                                         
 *       *********************************************************
 *
-PROCEDURE _57j0m2n2j
+PROCEDURE _5fq0ljlvc
 bartools.hide()
 treemenu.hide()
 =cambiausuario()
@@ -102,7 +102,7 @@ treemenu.hide()
 
 *       *********************************************************
 *       *                                                         
-*       * _57J0M2N2K  ON SELECTION BAR 1 OF POPUP ver             
+*       * _5FQ0LJLVD  ON SELECTION BAR 1 OF POPUP ver             
 *       *                                                         
 *       * Procedure Origin:                                       
 *       *                                                         
@@ -113,7 +113,7 @@ treemenu.hide()
 *       *                                                         
 *       *********************************************************
 *
-PROCEDURE _57j0m2n2k
+PROCEDURE _5fq0ljlvd
 bartools = CREATEOBJECT("Herramientas")
 *bartools.dock(1)
 bartools.show

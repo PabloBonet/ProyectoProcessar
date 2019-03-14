@@ -1,4 +1,9 @@
+parameters par_hostadm, par_useradm, par_passwordadm, par_portadm, par_hostdb, par_portdb, par_schemma, par_drvmysql, par_usuario, par_seleccion, par_arrancaren		
+
 _screen.Visible = .t.
+IF par_seleccion = "1" THEN 
+*!*		_screen.Visible = .F.
+ENDIF 
 SET SYSMENU OFF
 CLEAR
 _screen.windowstate= 0 
@@ -7,27 +12,54 @@ _screen.MaxButton = .T.
 _screen.AutoCenter = .T.
 
 set exclusive OFF
-set date to dmy
+set date to DMY
 set century on
 set delete on
 set safety off
 SET DATE TO BRITISH
 
-=LEECONFIG()
+PUBLIC MYSQL_SERVER, MYSQL_USER, MYSQL_PASS, MYSQL_PORT, MYSQL_DB, MYSQL_PRU, MISCHEMA, MIDESCRIP, MIDRVMYSQL  
+PUBLIC MIICONO, LC_PORT, MIPAPELERA, MIESTACION, MISERVIDOR
 
-_screen.BackColor = MICOLORFONDO
-_screen.Caption = MITITULO
-_screen.Icon    = MIICONO
+MIESTACION = FULLPATH(CURDIR())
+
+IF !EMPTY(par_arrancaren)  THEN 
+	MISERVIDOR = par_arrancaren
+ELSE 
+	MISERVIDOR = FULLPATH(CURDIR())
+ENDIF 
+SET DEFAULT TO &MISERVIDOR 
+
+
+MIDRVMYSQL 	= STRTRAN(par_drvmysql,"|"," ")
+LC_PORT 	= par_portadm
+MIPAPELERA 	= "RECYCLE"
+
+mysql_server = par_hostadm
+mysql_user	 = par_useradm
+mysql_pass	 = par_passwordadm
+mysql_port	 = par_portadm
+mischema	 = par_schemma
+midescrip    = ""
+
+
+mysql_pru 	= ""
+miicono 	= ""
+
+
+*_screen.BackColor = MICOLORFONDO
+_screen.Caption = ""
+*!*	_screen.Icon    = ""
 **********
 **** CREACION DEL DIRECTORIO DE ARCHIVOS TEMPORARIOS
 **********
 I=1
 VMIESTACION = MIESTACION+"\"+ALLTRIM(STR(I))
-AUX = VMIESTACION+"\TEMP"
+AUX = VMIESTACION+"\MENUTMP"
 DO WHILE DIRECTORY(AUX)
 	I = I+1
 	VMIESTACION = MIESTACION+"\"+ALLTRIM(STR(I))
-	AUX = VMIESTACION+"\TEMP"
+	AUX = VMIESTACION+"\MENUTMP"
 ENDDO
 IF !DIRECTORY(AUX) then
 	MKDIR(AUX)
@@ -58,17 +90,19 @@ ENDIF
 PUBLIC gcOldDir, gcOldPath, gcOldClassLib, gcOldEscape, gTTrade, ;
 		gUsuario, gJerarquia, logeo 
 gcOldEscape   = SET('ESCAPE')
-gcOldDir       = FULLPATH(CURDIR())
+*!*	gcOldDir       = FULLPATH(CURDIR())
+gcOldDir       = MISERVIDOR
 gcOldPath     = SET('PATH')
 gcOldClassLib = SET('CLASSLIB')
 gTTrade = .T.
 
 IF SetPath() THEN
     RELEASE gcOldDir, gcOldPath, gcOldClassLib, gcOldTalk, gcOldEscape
-	_screen.Caption = MITITULO
+	_screen.Caption = ""
 
 *!*		=LEELOCALCFG()
-*!*		DO FORM LOGIN TO LOGEO
+	DO FORM LOGIN TO LOGEO
+
 
 	LOGEO = -1
 	IF LOGEO > 0 THEN 
@@ -85,7 +119,9 @@ IF SetPath() THEN
 			SET SYSMENU OFF
 			SET SYSMENU TO
 			SET DATE TO BRITISH	
-			_screen.Visible = .F.			
+			_screen.Visible = .F.
+			
+	
 			DO FORM frmadmin
 			READ EVENTS 
 		ENDIF 	
