@@ -3238,3 +3238,95 @@ PARAMETERS pa_tabla, pa_tablaorden, pa_campobus, pa_valorbus, pa_camporet, pa_ta
 	ENDIF 
 	RETURN ""
 ENDFUNC 
+
+
+*---------------------------------------------------------------
+* LLama al Menu de Configuracion para Setearlo pasando como parametros
+* los datos del Esquema seleccionado en el Sistema Seleccionado
+*---------------------------------------------------------------
+FUNCTION ejecutarexe
+PARAMETERS param_path ,param_executa
+
+	vpar_retorno = ""
+	vpar_varpasadas = ""
+	
+	IF EMPTY( param_executa) THEN 
+		RETURN vpar_retorno  
+	ELSE
+		vparam_executa = ALLTRIM(param_executa)
+	ENDIF 
+
+	vparam_path = ALLTRIM(param_path)
+
+	SET DEFAULT TO &vparam_path 
+	vpar_eje = "RUN /N  "+vparam_path+vparam_executa
+
+	SET DEFAULT TO &_SYSESTACION	
+	&vpar_eje
+ENDFUNC 
+
+
+*/-------------------------------------------------------------
+* Setea los indices en las grillas pasadas como parametros
+* Recibe como parametros la Grilla con todo el nombre gerarquico 
+* es decir el formulario y la grilla.
+* como segundo parametro el Orden de la columna que esta solicitando Indexar
+* Finalmente ordenea de acuerdo a los parametros y setea la grilla con informacion
+* para luego continuar con el orden.
+* Para el Orden del Indice Ascentente o Descendente , la grilla debe tener seteado en 
+* el campo StatusBarText= "A" = "ASCENDING" u "D" = "DESCENDING"
+*/-------------------------------------------------------------
+FUNCTION setidxgrilla
+PARAMETERS p_grilla, p_columna, p_header 
+v_grilla_tabla 			= p_grilla+".recordsource"
+v_grilla_tag 			= p_grilla+".tag"
+v_grilla_StatusBarText	= p_grilla+".StatusBarText"
+v_columna_control 		= p_grilla+"."+ALLTRIM(p_columna)+".ControlSource"
+v_columna_fontunderline = p_grilla+"."+ALLTRIM(p_columna)+"."+ALLTRIM(p_header)+".fontunderline"
+v_columna_fontitalic	= p_grilla+"."+ALLTRIM(p_columna)+"."+ALLTRIM(p_header)+".fontitalic"
+v_columna_tag 			= p_grilla+"."+ALLTRIM(p_columna)+".tag"
+V_tipodato				= TYPE(&v_columna_control)
+
+
+&v_grilla_tag = STRTRAN(&v_grilla_tag,&v_columna_tag,"")
+IF empty(&v_columna_tag) THEN 
+	DO CASE 
+		CASE v_tipodato = 'N' 
+			&v_columna_tag = "strtran(str("+&v_columna_control+",10),' ','0')"
+		CASE  v_tipodato = 'D' 
+			&v_columna_tag = "dtos("+&v_columna_control+")"
+		CASE v_tipodato = 'U'
+			&v_columna_tag = ""
+		CASE v_tipodato = 'C'
+			&v_columna_tag = &v_columna_control	
+		CASE v_tipodato = 'Y' 
+			&v_columna_tag = "strtran(str("+&v_columna_control+",10,2),' ','0')"
+
+		OTHERWISE 
+			&v_columna_tag = ""
+	ENDCASE  
+ELSE
+	&v_columna_tag = ""
+ENDIF
+ 
+IF EMPTY(&v_columna_tag) THEN 
+	&v_columna_fontunderline = .f.
+	&v_columna_fontitalic 	= .f.
+ELSE
+	&v_columna_fontunderline = .t.
+	&v_columna_fontitalic 	= .t.
+ENDIF 
+
+
+&v_grilla_tag = "+"+ALLTRIM(&v_grilla_tag)+"+"+&v_columna_tag+"+" 
+&v_grilla_tag = strtran(&v_grilla_tag,'++','+')
+&v_grilla_tag = substr(&v_grilla_tag,2)
+&v_grilla_tag = strtran(&v_grilla_tag,'++','+')
+&v_grilla_tag = IIF(SUBSTR(ALLTRIM(&v_grilla_tag),LEN(ALLTRIM(&v_grilla_tag)),1)='+',SUBSTR(ALLTRIM(&v_grilla_tag),1,LEN(ALLTRIM(&v_grilla_tag))-1),ALLTRIM(&v_grilla_tag))
+EJE = "sele "+&v_grilla_tabla
+&EJE 
+EJE = IIF(!EMPTY(&v_grilla_tag),"INDEX ON  ALLTRIM(SUBSTR("+&v_grilla_tag+"+SPACE(240),1,240)) TAG indice "+IIF(SUBSTR(&v_grilla_StatusBarText,1,1) = 'A','ASCENDING','DESCENDING'),"SET ORDER TO ")
+&EJE
+&p_grilla..refresh 
+
+RETURN 
