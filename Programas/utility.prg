@@ -3330,3 +3330,50 @@ EJE = IIF(!EMPTY(&v_grilla_tag),"INDEX ON  ALLTRIM(SUBSTR("+&v_grilla_tag+"+SPAC
 &p_grilla..refresh 
 
 RETURN 
+
+
+
+
+*/-------------------------------------------------------------
+* Seteo de las Grillas de
+* Recibe como parametros, el cursor, el nombre de la grilla
+* un arreglo con las columnas a a colocar en la grilla
+*/-------------------------------------------------------------
+FUNCTION seteagrilla
+PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor
+
+	vcan_column = ALEN(&p_matcolumn,1)
+	
+	&p_grilla..RecordSource = &p_grilla..RecordSource
+	&p_grilla..RecordSource = p_RecordSource
+	&p_grilla..ReadOnly = .t.
+	&p_grilla..ColumnCount = vcan_column
+	&p_grilla..BackColor = RGB(255,255,255)
+	&p_grilla..DeleteMark = .F. 
+	&p_grilla..FontSize = 8
+	&p_grilla..ScrollBars = 3
+	&p_grilla..HighlightRowLineWidth=3
+	&p_grilla..GridLineWidth= 1
+	&p_grilla..anchor= 15
+	IF !EMPTY(p_DynamicColor) AND TYPE('p_DynamicColor')='C' THEN 
+		EJE = p_grilla+".SetAll('DynamicBackColor',["+p_DynamicColor+"],'Column')"
+		&EJE
+	ENDIF 
+
+	IF vcan_column > 0 THEN 
+		FOR _icl = 1 TO vcan_column
+		
+			v_columnxx 						= p_grilla+".column"+ALLTRIM(STR(_icl))
+			&v_columnxx..ControlSource 		= &p_matcolumn(_icl,1) 
+			&v_columnxx..header1.Caption 	= IIF(&p_matcolumn(_icl,2)=="","Header",&p_matcolumn(_icl,2))
+			&v_columnxx..header1.FontBold 	= .T. 
+			&v_columnxx..header1.Alignment 	= 2
+			&v_columnxx..Width 				= IIF(&p_matcolumn(_icl,3)=0,75,&p_matcolumn(_icl,3))
+			&v_columnxx..Alignment 			= IIF(&p_matcolumn(_icl,4)=0,3,&p_matcolumn(_icl,4)) &&0=Izquierda 1=Derecha 2=Centro 3=Automatico
+
+		ENDFOR 
+	ENDIF 
+
+	&p_grilla..refresh 
+
+RETURN 
