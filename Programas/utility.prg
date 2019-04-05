@@ -1841,8 +1841,8 @@ PARAMETERS p_idFactura, p_esElectronica
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
 
-			sqlmatriz(1)="Select *,c.detalle as detIVA, v.nombre as nomVend from facturas f left join detafactu d on f.idfactura = d.idfactura " 
-			sqlmatriz(2)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(1)=" Select f.*,d.*,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov from facturas f left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa   "
+			sqlmatriz(2)=" left join detafactu d on f.idfactura = d.idfactura left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
 			sqlmatriz(3)=" left join vendedores v on f.vendedor = v.vendedor"
 			sqlmatriz(4)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))+ " and fe.resultado = 'A'"
 			
@@ -1855,8 +1855,8 @@ PARAMETERS p_idFactura, p_esElectronica
 			
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
-			sqlmatriz(1)="Select *,c.detalle as detIVA from facturas f left join detafactu d on f.idfactura = d.idfactura " 
-			sqlmatriz(2)=" left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(1)="Select f.*,d.*,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov from facturas f left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa    " 
+			sqlmatriz(2)=" left join detafactu d on f.idfactura = d.idfactura left join condfiscal c on f.iva = c.iva"
 			sqlmatriz(3)=" left join vendedores v on f.vendedor = v.vendedor"
 			sqlmatriz(4)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 
@@ -3239,32 +3239,53 @@ PARAMETERS pa_tabla, pa_tablaorden, pa_campobus, pa_valorbus, pa_camporet, pa_ta
 	RETURN ""
 ENDFUNC 
 
+*---------------------------------------------------------------
+
+* LLama al Menu de Configuracion para Setearlo pasando como parametros
+
+* los datos del Esquema seleccionado en el Sistema Seleccionado
 
 *---------------------------------------------------------------
-* LLama al Menu de Configuracion para Setearlo pasando como parametros
-* los datos del Esquema seleccionado en el Sistema Seleccionado
-*---------------------------------------------------------------
+
 FUNCTION ejecutarexe
+
 PARAMETERS param_path ,param_executa
 
-	vpar_retorno = ""
-	vpar_varpasadas = ""
-	
-	IF EMPTY( param_executa) THEN 
-		RETURN vpar_retorno  
-	ELSE
-		vparam_executa = ALLTRIM(param_executa)
-	ENDIF 
+ 
 
-	vparam_path = ALLTRIM(param_path)
+      vpar_retorno = ""
 
-	SET DEFAULT TO &vparam_path 
-	vpar_eje = "RUN /N  "+vparam_path+vparam_executa
+      vpar_varpasadas = ""
 
-	SET DEFAULT TO &_SYSESTACION	
-	&vpar_eje
-ENDFUNC 
+     
 
+      IF EMPTY( param_executa) THEN
+
+            RETURN vpar_retorno 
+
+      ELSE
+
+            vparam_executa = ALLTRIM(param_executa)
+
+      ENDIF
+
+ 
+
+      vparam_path = ALLTRIM(param_path)
+
+ 
+
+      SET DEFAULT TO &vparam_path
+
+      vpar_eje = "RUN /N  "+vparam_path+vparam_executa
+
+ 
+
+      SET DEFAULT TO &_SYSESTACION 
+
+      &vpar_eje
+
+ENDFUNC
 
 */-------------------------------------------------------------
 * Setea los indices en las grillas pasadas como parametros
@@ -3330,8 +3351,6 @@ EJE = IIF(!EMPTY(&v_grilla_tag),"INDEX ON  ALLTRIM(SUBSTR("+&v_grilla_tag+"+SPAC
 &p_grilla..refresh 
 
 RETURN 
-
-
 
 
 */-------------------------------------------------------------
