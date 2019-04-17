@@ -1841,10 +1841,13 @@ PARAMETERS p_idFactura, p_esElectronica
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
 
-			sqlmatriz(1)=" Select f.*,d.*,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov from facturas f left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa   "
-			sqlmatriz(2)=" left join detafactu d on f.idfactura = d.idfactura left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
-			sqlmatriz(3)=" left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(4)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))+ " and fe.resultado = 'A'"
+			sqlmatriz(1)=" Select f.*,d.*,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov,ti.detalle as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP "
+			sqlmatriz(2)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+			sqlmatriz(4)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(5)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(7)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))+ " and fe.resultado = 'A'"
 			
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
@@ -1855,10 +1858,13 @@ PARAMETERS p_idFactura, p_esElectronica
 			
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
-			sqlmatriz(1)="Select f.*,d.*,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov from facturas f left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa    " 
-			sqlmatriz(2)=" left join detafactu d on f.idfactura = d.idfactura left join condfiscal c on f.iva = c.iva"
-			sqlmatriz(3)=" left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(4)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+			sqlmatriz(1)="Select f.*,d.*,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ti.detalle as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP "
+			sqlmatriz(2)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+			sqlmatriz(4)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(5)=" left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(7)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
@@ -1892,6 +1898,8 @@ PARAMETERS p_idFactura, p_esElectronica
 		SELECT factu
 		
 		IF NOT EOF()
+		
+			
 		
 			v_idcomproba = factu.idcomproba
 			DO FORM reporteform WITH "factu;impIva;impTRIB","facturasrc;impIVArc;impTRIBrc",v_idcomproba
@@ -3352,7 +3360,7 @@ EJE = IIF(!EMPTY(&v_grilla_tag),"INDEX ON  ALLTRIM(SUBSTR("+&v_grilla_tag+"+SPAC
 
 RETURN 
 
-
+ENDFUNC 
 */-------------------------------------------------------------
 * Seteo de las Grillas de
 * Recibe como parametros, el cursor, el nombre de la grilla
@@ -3396,3 +3404,134 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor
 	&p_grilla..refresh 
 
 RETURN 
+
+ENDFUNC 
+
+
+*/-------------------------------------------------------------
+* Retorna una cadena de caracteres con la localidad
+* Con el siguiente formato: <Localidad> [(<Cod_postal)] [- <Provincia>] [- <Pais>]
+* Parametros: 
+*	p_idlocalidad I: 	Id de la localidad
+*	p_conCod  B:		Booleano indicando si se muestra o no el codigo postal
+*	p_conProv B:		Booleano indicando si se muestra o no la provincia
+*	p_conPais B:		Booleano indicando si se muestra o no el país
+*	
+*/-------------------------------------------------------------
+FUNCTION consultalocprovpais
+PARAMETERS p_idlocalidad,p_conCod, p_conProv, p_conPais
+
+		v_idlocalidad	= p_idlocalidad
+		v_conCod		= p_conCod
+		v_conProv		= p_conProv
+		v_conPais		= p_conPais
+	
+	
+	
+		v_retorno = ""
+		vconeccionF = abreycierracon(0,_SYSSCHEMA)
+
+		
+		sqlmatriz(1)="select l.nombre as nomLoc, l.cp, p.nombre as nomProv, pa.nombre as nomPais "
+		sqlmatriz(2)=" from localidades l left join provincias p on l.provincia = p.provincia left join paises pa on p.pais = pa.pais "
+		sqlmatriz(3)=" where l.localidad = "+ALLTRIM(STR(v_idlocalidad))
+		
+		
+		verror=sqlrun(vconeccionF,"locprovpais_sql")
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener la localidad ",0+16,"Advertencia")
+			RETURN v_retorno
+		ENDIF 
+		SELECT locprovpais_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			
+			v_strlocalidad	= ALLTRIM(locprovpais_sql.nomLoc)
+			v_strCodPostal	= ALLTRIM(locprovpais_sql.cp)
+			v_strNomProv	= ALLTRIM(locprovpais_sql.nomProv)
+			v_strNomPais	= ALLTRIM(locprovpais_sql.nomPais)
+		
+		
+			v_retorno = v_strLocalidad
+			
+			IF  v_conCod = .T.
+				v_retorno = ALLTRIM(v_retorno) + " ("+v_strCodPostal+")"
+			
+			ENDIF 
+			
+			IF v_conProv = .T.
+				v_retorno = ALLTRIM(v_retorno) + " - "+v_strNomProv
+			ENDIF 
+			
+			IF 	v_conPais = .T.
+				v_retorno	= ALLTRIM(v_retorno) + " - "+v_strNomPais
+			ENDIF 
+		ELSE
+			v_retorno = ""
+			RETURN v_retorno
+		ENDIF 
+		
+
+	RETURN v_retorno
+
+ENDFUNC 
+
+
+*/-------------------------------------------------------------
+* Retorna una cadena de caracteres con agregando al final el digito verificador a la cadena pasada como parámetro
+* Con el siguiente formato: CCCCCCCCCCCTTTPPPPAAAAAAAAAAAAAAVVVVVVVVD
+* Donde: C: CUIT_EMISOR; T: TIPO_COMPROBANTE; P: PUNTO_VENTA; A: CAE; V: FECHA_VTO; D: DIGITO_VERIFICADOR
+* Parametros: 
+*	p_codigoI: 	Cadena a calcular el digito verificador
+* Retorno: Cadena con digito verificador	
+*/-------------------------------------------------------------
+FUNCTION calculaDigitoVerif
+PARAMETERS p_codigo
+
+	v_codigo	= ALLTRIM(p_codigo)
+	v_cantDig	= LEN(v_codigo)
+	v_sumaImpar	= 0
+	
+	
+	**Etapa 1: Comenzar de Izquierda a derecha, sumar todos los caracteres ubicados en las posiciones impares
+	FOR i = 1 TO v_cantDig STEP 2
+	
+		
+		v_dig = SUBSTR(v_codigo,i,1)
+		v_sumaImpar	= v_sumaImpar + VAL(v_dig)
+	
+	ENDFOR 
+	
+
+	 **Etapa 2: multiplicar la suma obtenida en la estapa 1 por 3
+	v_resE2 = v_sumaImpar* 3
+
+	
+
+	**Etapa 3: comenzar desde la izquierda, sumar todos los caracteres que están ubicados en las posiciones pares
+
+	v_sumaPar	= 0
+	FOR i = 2 TO v_cantDig STEP 2
+	
+		v_dig = SUBSTR(v_codigo,i,1)
+		v_sumaPar	= v_sumaPar + VAL(v_dig)
+	
+	ENDFOR 
+
+	
+	 **Etapa 4: sumar los resultados obtenidos en la etapas 2 y 3 
+
+	v_resE4 = v_resE2 + v_sumaPar
+
+
+	v_modulo = resE4 % 10
+	v_dif = 10 - modulo
+	v_digitoVerif = v_dif % 10;
+
+	v_codigo = v_codigo + ALLTRIM(STR(v_digitoVerif))
+
+	RETURN v_codigo
+
+
+ENDFUNC 
