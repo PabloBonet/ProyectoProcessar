@@ -3407,6 +3407,40 @@ RETURN
 
 ENDFUNC 
 
+*/*****************************************************
+*/ Toma en caracteres separados por puntos el valor de codigo
+*/ y lo divide de acuerdo al codigo de ENTIDAD-SERVICIO-SUBCODIGO
+*/ recibe caracteres y devuelve en valor numerico de acuerdo
+*/ al parametro solicitado 1-ENTIDAD  2-SERVICIO  3-SUBCODIGO
+*/******************************************************
+FUNCTION fcodentidad
+PARAMETERS pcodenti, pcual
+varretorno = 0
+ALINES(ccodarray,pcodenti,1,".",'-')
+caelementos = ALEN(ccodarray)
+aelementos = IIF(caelementos>3,3,caelementos)
+vcual1 = 0
+vcual2 = 0
+vcual3 = 0
+FOR i=1 TO aelementos
+	eje = "vcual"+STR(i,1)+" = INT(VAL(ccodarray(1,"+STR(i,1)+")))"
+	&eje
+ENDFOR 
+
+DO CASE 
+	CASE pcual = 1 &&entidad
+		varretorno = vcual1
+	CASE pcual = 2 &&servicio
+		varretorno = vcual2
+	CASE pcual = 3 && subservicio
+		varretorno = vcual3
+	OTHERWISE
+		varretorno = 0
+ENDCASE 
+RELEASE ccodarray 
+RETURN varretorno
+
+
 
 */-------------------------------------------------------------
 * Retorna una cadena de caracteres con la localidad
