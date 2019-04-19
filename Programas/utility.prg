@@ -1899,9 +1899,37 @@ PARAMETERS p_idFactura, p_esElectronica
 		
 		IF NOT EOF()
 		
-			
+			ALTER table factu ADD COLUMN codBarra	 C(42)
 		
 			v_idcomproba = factu.idcomproba
+			v_tipoCompAfip	= ALLTRIM(factu.tipcomAFIP)
+			
+			
+			v_codBarra		= ""
+			v_codBarraD 	= ""
+			v_electronica	= factu.electro
+			v_cuitEmpresa	= _SYSCUIT
+			
+			IF  ALLTRIM(v_electronica) == "S"
+				v_cuitempresa	= ALLTRIM(v_CuitEmpresa)
+				
+				v_puntoVta		= ALLTRIM(factu.puntov)
+				v_fechaVenc_cae	= ALLTRIM(factu.caecespven)
+				v_cespcae		= ALLTRIM(factu.cespcae)
+				
+				v_codBarra		= v_cuitEmpresa+v_tipoCompAfip+"0"+v_puntoVta+v_fechaVenc_cae+v_Cespcae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
+				MESSAGEBOX(v_codBarra)
+				v_codBarraD 		= calculaDigitoVerif(v_codBarra)
+				
+				MESSAGEBOX(v_codBarraD)
+				
+				SELECT factu
+				replace ALL codBarra WITH v_codBarraD
+								
+			ELSE
+			
+			ENDIF 
+			
 			DO FORM reporteform WITH "factu;impIva;impTRIB","facturasrc;impIVArc;impTRIBrc",v_idcomproba
 			
 		ELSE
