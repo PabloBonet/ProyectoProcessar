@@ -1958,28 +1958,77 @@ PARAMETERS p_idRecibo
 	
 	IF v_idrecibo > 0
 		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+		
 		*** Busco los datos del recibo
 					
-			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+				
 		
-			sqlmatriz(1)="Select * from recibos" 
-			sqlmatriz(4)=" where idrecibo = "+ ALLTRIM(STR(v_idrecibo))
+			sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetacobro, dc.idtipopago, dc.importe as impCobrado, dc.idcuenta, tp.detalle as tipopago, cb.codcuenta "
+			sqlmatriz(2)=" from recibos r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba "
+			sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom " 
+			sqlmatriz(4)=" left join entidades e on r.entidad = e.entidad left join detallecobros dc on r.idcomproba = dc.idcomproba and r.idrecibo = dc.idregistro "
+			sqlmatriz(5)=" left join tipopagos tp on dc.idtipopago = tp.idtipopago left join cajabancos cb on dc.idcuenta = cb.idcuenta "
+			sqlmatriz(6)=" where r.idrecibo = "+ ALLTRIM(STR(v_idrecibo))
 
-			verror=sqlrun(vconeccionF,"recibo_sql")
+			verror=sqlrun(vconeccionF,"recibo_sql_u")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del recibo",0+48+0,"Error")
 			ENDIF
 		
-		 		
+		 
+		
+		
+		
+		
+		
 
-		SELECT * FROM recibo_sql INTO TABLE .\recibo
+		SELECT * FROM recibo_sql_u INTO TABLE .\recibo
 				
 		SELECT recibo
 		
 		IF NOT EOF()
 		
+			SELECT recibo 
+			GO TOP 
+			
+			v_idcomproba 	= recibo.idcomproba
+			*** Busco los datos de los cobros para el recibo
+		
+				sqlmatriz(1)=" Select c.*, f.numero,f.tipo,f.fecha,f.entidad, f.servicio, f.cuenta, f.nombre, f.apellido,f.cuit , pv.puntov "
+				sqlmatriz(2)=" from cobros c left join facturas f on c.idfactura = f.idfactura left join puntosventa pv on f.pventa = pv.pventa "
+				sqlmatriz(3)=" where c.idcomproba = " +ALLTRIM(STR(v_idcomproba))+" and c.idregipago = "+ ALLTRIM(STR(v_idrecibo))
+
+				verror=sqlrun(vconeccionF,"cobros_sql_u")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de cobros relacionados al recibo ",0+48+0,"Error")
+				ENDIF
+			
+		
+		
+		
+			SELECT * FROM cobros_sql_u INTO TABLE .\cobros
+			SELECT cobros
+			GO TOP 
+			
+		
+		
+			ALTER table recibo ADD COLUMN strImporte C(250)
+			
+			SELECT recibo
+			v_importe	= recibo.importe
+			v_strImporte	= enletras (v_importe)
+			
+			SELECT recibo 
+			GO TOP 
+			
+			replace ALL strImporte WITH v_strImporte
+			
+			SELECT recibo 
+			GO TOP 
 			v_idcomproba = recibo.idcomproba
-			DO FORM reporteform WITH "recibo","reciborc",v_idcomproba
+			
+			DO FORM reporteform WITH "recibo;cobros","reciborc;cobroscr",v_idcomproba
 			
 		ELSE
 			MESSAGEBOX("Error al cargar el recibo para imprimir",0+48+0,"Error al cargar el recibo")
