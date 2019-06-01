@@ -1,0 +1,401 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar
+--
+
+CREATE DATABASE IF NOT EXISTS processar;
+USE processar;
+
+--
+-- Definition of table `asientos`
+--
+
+DROP TABLE IF EXISTS `asientos`;
+CREATE TABLE `asientos` (
+  `idasientod` int(10) unsigned NOT NULL,
+  `numero` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `codigocta` char(20) NOT NULL,
+  `nombrecta` char(254) NOT NULL,
+  `debe` float(13,4) NOT NULL,
+  `haber` float(13,4) NOT NULL,
+  `detalle` char(254) NOT NULL,
+  `ejercicio` int(10) unsigned NOT NULL,
+  `idpland` int(10) unsigned NOT NULL,
+  `detaasiento` char(254) NOT NULL,
+  `idasiento` int(10) unsigned NOT NULL,
+  `idtipoasi` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idasientod`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `asientos`
+--
+
+/*!40000 ALTER TABLE `asientos` DISABLE KEYS */;
+INSERT INTO `asientos` (`idasientod`,`numero`,`fecha`,`codigocta`,`nombrecta`,`debe`,`haber`,`detalle`,`ejercicio`,`idpland`,`detaasiento`,`idasiento`,`idtipoasi`) VALUES 
+ (19,15,'20190523','010200000000000000','Caja',100.0000,0.0000,'',2,28,'NUEVO ASIENTO DE PRUEBAS',15,2),
+ (20,15,'20190523','010501000000000000','Deudores por Ventas',0.0000,100.0000,'',2,16,'NUEVO ASIENTO DE PRUEBAS',15,2),
+ (24,16,'20190524','010200000000000000','Caja',100.0000,0.0000,'',2,28,'DKDJDFAÑSKFDSJK',16,2),
+ (25,16,'20190524','010300000000000000','JDJFJF',0.0000,100.0000,'',2,29,'DKDJDFAÑSKFDSJK',16,2),
+ (26,2,'20190518','010501000000000000','Deudores por Ventas',14000.0000,0.0000,'cccccccccccc',1,16,'dddddddddddddddddd',2,1),
+ (27,2,'20190518','050300000000000000','JDJFJF',0.0000,6000.0000,'140000000000',1,20,'dddddddddddddddddd',2,1),
+ (28,2,'20190518','010200000000000000','Caja',0.0000,8000.0000,'vvvvvvvvvvv',1,28,'dddddddddddddddddd',2,1);
+/*!40000 ALTER TABLE `asientos` ENABLE KEYS */;
+
+
+--
+-- Definition of table `asientoscompro`
+--
+
+DROP TABLE IF EXISTS `asientoscompro`;
+CREATE TABLE `asientoscompro` (
+  `idastocompro` int(10) unsigned NOT NULL DEFAULT '0',
+  `idasiento` int(10) unsigned NOT NULL DEFAULT '0',
+  `idcomproba` int(10) unsigned NOT NULL DEFAULT '0',
+  `idregicomp` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`idastocompro`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `asientoscompro`
+--
+
+/*!40000 ALTER TABLE `asientoscompro` DISABLE KEYS */;
+INSERT INTO `asientoscompro` (`idastocompro`,`idasiento`,`idcomproba`,`idregicomp`) VALUES 
+ (2,2,1,3);
+/*!40000 ALTER TABLE `asientoscompro` ENABLE KEYS */;
+
+
+--
+-- Definition of table `astocuenta`
+--
+
+DROP TABLE IF EXISTS `astocuenta`;
+CREATE TABLE `astocuenta` (
+  `idastocuenta` int(10) unsigned NOT NULL DEFAULT '0',
+  `idastomode` int(10) unsigned NOT NULL DEFAULT '0',
+  `idcpoconta` int(10) unsigned NOT NULL DEFAULT '0',
+  `dh` char(1) NOT NULL DEFAULT '',
+  `detalle` char(254) NOT NULL DEFAULT '',
+  PRIMARY KEY (`idastocuenta`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `astocuenta`
+--
+
+/*!40000 ALTER TABLE `astocuenta` DISABLE KEYS */;
+/*!40000 ALTER TABLE `astocuenta` ENABLE KEYS */;
+
+
+--
+-- Definition of table `astofiltros`
+--
+
+DROP TABLE IF EXISTS `astofiltros`;
+CREATE TABLE `astofiltros` (
+  `idfiltro` int(10) unsigned NOT NULL,
+  `detalle` char(254) NOT NULL,
+  `tabla` char(100) NOT NULL,
+  `idastomode` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idfiltro`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `astofiltros`
+--
+
+/*!40000 ALTER TABLE `astofiltros` DISABLE KEYS */;
+/*!40000 ALTER TABLE `astofiltros` ENABLE KEYS */;
+
+
+--
+-- Definition of table `astofiltrosd`
+--
+
+DROP TABLE IF EXISTS `astofiltrosd`;
+CREATE TABLE `astofiltrosd` (
+  `idfiltrod` int(10) unsigned NOT NULL,
+  `idfiltro` int(10) unsigned NOT NULL,
+  `tabla` char(100) NOT NULL,
+  `campo` char(100) NOT NULL,
+  `tipo` char(1) NOT NULL,
+  `valord` char(50) NOT NULL,
+  `compara` char(10) NOT NULL,
+  `valorh` char(50) NOT NULL,
+  `detalle` char(254) NOT NULL,
+  PRIMARY KEY (`idfiltrod`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `astofiltrosd`
+--
+
+/*!40000 ALTER TABLE `astofiltrosd` DISABLE KEYS */;
+/*!40000 ALTER TABLE `astofiltrosd` ENABLE KEYS */;
+
+
+--
+-- Definition of table `astomodelo`
+--
+
+DROP TABLE IF EXISTS `astomodelo`;
+CREATE TABLE `astomodelo` (
+  `idastomode` int(10) unsigned NOT NULL DEFAULT '0',
+  `detalle` char(254) NOT NULL DEFAULT '',
+  PRIMARY KEY (`idastomode`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `astomodelo`
+--
+
+/*!40000 ALTER TABLE `astomodelo` DISABLE KEYS */;
+/*!40000 ALTER TABLE `astomodelo` ENABLE KEYS */;
+
+
+--
+-- Definition of table `astovalor`
+--
+
+DROP TABLE IF EXISTS `astovalor`;
+CREATE TABLE `astovalor` (
+  `idastovalor` int(10) unsigned NOT NULL,
+  `idastocuenta` int(10) unsigned NOT NULL,
+  `tabla` char(100) NOT NULL,
+  `campo` char(100) NOT NULL,
+  `opera` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idastovalor`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `astovalor`
+--
+
+/*!40000 ALTER TABLE `astovalor` DISABLE KEYS */;
+/*!40000 ALTER TABLE `astovalor` ENABLE KEYS */;
+
+
+--
+-- Definition of table `campoconta`
+--
+
+DROP TABLE IF EXISTS `campoconta`;
+CREATE TABLE `campoconta` (
+  `idcpoconta` int(10) unsigned NOT NULL,
+  `tabla` char(100) NOT NULL,
+  `campo` char(100) NOT NULL,
+  `tipo` char(1) NOT NULL,
+  `detalle` char(254) NOT NULL,
+  PRIMARY KEY (`idcpoconta`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `campoconta`
+--
+
+/*!40000 ALTER TABLE `campoconta` DISABLE KEYS */;
+/*!40000 ALTER TABLE `campoconta` ENABLE KEYS */;
+
+
+--
+-- Definition of table `campocontag`
+--
+
+DROP TABLE IF EXISTS `campocontag`;
+CREATE TABLE `campocontag` (
+  `idcpocontag` int(10) unsigned NOT NULL,
+  `idcpoconta` int(10) unsigned NOT NULL,
+  `valor1` char(50) NOT NULL,
+  `compara` char(10) NOT NULL,
+  `valor2` char(50) NOT NULL,
+  `codigocta` char(20) NOT NULL,
+  `tablag` char(100) NOT NULL,
+  `campog` char(100) NOT NULL,
+  `tipog` char(1) NOT NULL,
+  PRIMARY KEY (`idcpocontag`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `campocontag`
+--
+
+/*!40000 ALTER TABLE `campocontag` DISABLE KEYS */;
+/*!40000 ALTER TABLE `campocontag` ENABLE KEYS */;
+
+
+--
+-- Definition of table `ejercicioecon`
+--
+
+DROP TABLE IF EXISTS `ejercicioecon`;
+CREATE TABLE `ejercicioecon` (
+  `ejercicio` int(10) unsigned NOT NULL,
+  `anio` int(10) unsigned NOT NULL,
+  `fechaini` char(8) NOT NULL,
+  `fechafin` char(8) NOT NULL,
+  `detalle` char(254) NOT NULL,
+  `idplan` int(10) unsigned NOT NULL,
+  `idejerci` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`idejerci`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `ejercicioecon`
+--
+
+/*!40000 ALTER TABLE `ejercicioecon` DISABLE KEYS */;
+INSERT INTO `ejercicioecon` (`ejercicio`,`anio`,`fechaini`,`fechafin`,`detalle`,`idplan`,`idejerci`) VALUES 
+ (1,2019,'20300101','20301231','AAAAAAAAAAAAAAAAA',1,1),
+ (2,2019,'20190101','20191231','BBBBBBBBBBBBB',2,2);
+/*!40000 ALTER TABLE `ejercicioecon` ENABLE KEYS */;
+
+
+--
+-- Definition of table `plancuentas`
+--
+
+DROP TABLE IF EXISTS `plancuentas`;
+CREATE TABLE `plancuentas` (
+  `idplan` int(10) unsigned NOT NULL,
+  `fechad` char(8) NOT NULL,
+  `fechah` char(8) NOT NULL,
+  `detalle` char(254) NOT NULL,
+  PRIMARY KEY (`idplan`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `plancuentas`
+--
+
+/*!40000 ALTER TABLE `plancuentas` DISABLE KEYS */;
+INSERT INTO `plancuentas` (`idplan`,`fechad`,`fechah`,`detalle`) VALUES 
+ (1,'20300101','20301231','PRIMER PLAN'),
+ (2,'20190504','20190504','SEGUNDO PLAN');
+/*!40000 ALTER TABLE `plancuentas` ENABLE KEYS */;
+
+
+--
+-- Definition of table `plancuentasd`
+--
+
+DROP TABLE IF EXISTS `plancuentasd`;
+CREATE TABLE `plancuentasd` (
+  `idplan` int(10) unsigned NOT NULL,
+  `codigocta` char(20) NOT NULL,
+  `nombrecta` char(254) NOT NULL,
+  `imputable` char(1) NOT NULL,
+  `activa` char(1) NOT NULL,
+  `detalle` char(254) NOT NULL,
+  `idpland` int(10) unsigned NOT NULL,
+  `idplandp` int(10) unsigned NOT NULL DEFAULT '0',
+  `codigo` char(22) NOT NULL DEFAULT '',
+  `nivel` char(1) NOT NULL DEFAULT '',
+  PRIMARY KEY (`idpland`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `plancuentasd`
+--
+
+/*!40000 ALTER TABLE `plancuentasd` DISABLE KEYS */;
+INSERT INTO `plancuentasd` (`idplan`,`codigocta`,`nombrecta`,`imputable`,`activa`,`detalle`,`idpland`,`idplandp`,`codigo`,`nivel`) VALUES 
+ (1,'000000000000000000','PLAN 1','N','S','PRIMER PLAN',1,0,'010000000000000000','P'),
+ (1,'010000000000000000','ACTIVO','N','S','',2,1,'010100000000000000','H'),
+ (1,'020000000000000000','PASIVO','N','S','',3,1,'010200000000000000','H'),
+ (1,'010100000000000000','Disponibilidades','S','S','',4,2,'010101000000000000','H'),
+ (1,'010200000000000000','Caja','S','S','',5,2,'010102000000000000','H'),
+ (1,'030000000000000000','PATRIMONIO NETO','N','S','',6,1,'010300000000000000','H'),
+ (1,'030100000000000000','Disponibilidades','S','S','',7,6,'010301000000000000','H'),
+ (1,'030200000000000000','Caja','S','S','',8,6,'010302000000000000','H'),
+ (1,'010300000000000000','JDJFJF','S','S','',9,2,'010103000000000000','H'),
+ (1,'040000000000000000','PATRIM','N','S','',10,1,'010400000000000000','H'),
+ (1,'040100000000000000','Disponibilidades','S','S','',11,10,'010401000000000000','H'),
+ (1,'040200000000000000','Caja','S','S','',12,10,'010402000000000000','H'),
+ (1,'010400000000000000','CREDITOS','N','S','',13,2,'010104000000000000','H'),
+ (1,'010401000000000000','Deudores por Ventas','S','S','',14,13,'010104010000000000','H'),
+ (1,'010500000000000000','aaaaaa','N','S','',15,2,'010105000000000000','H'),
+ (1,'010501000000000000','Deudores por Ventas','S','S','',16,15,'010105010000000000','H'),
+ (1,'050000000000000000','ACTIVO','N','S','',17,1,'010500000000000000','H'),
+ (1,'050100000000000000','Disponibilidades','S','S','',18,17,'010501000000000000','H'),
+ (1,'050200000000000000','Caja','S','S','',19,17,'010502000000000000','H'),
+ (1,'050300000000000000','JDJFJF','S','S','',20,17,'010503000000000000','H'),
+ (1,'050400000000000000','CREDITOS','N','S','',21,17,'010504000000000000','H'),
+ (1,'050401000000000000','Deudores por Ventas','S','S','',22,21,'010504010000000000','H'),
+ (1,'050500000000000000','aaaaaa','N','S','',23,17,'010505000000000000','H'),
+ (1,'050501000000000000','Deudores por Ventas','S','S','',24,23,'010505010000000000','H'),
+ (2,'000000000000000000','PLAN 1','N','S','',25,0,'020000000000000000','P'),
+ (2,'010000000000000000','ACTIVO','N','S','',26,25,'020100000000000000','H'),
+ (2,'010100000000000000','Disponibilidades','S','S','',27,26,'020101000000000000','H'),
+ (2,'010200000000000000','Caja','S','S','',28,26,'020102000000000000','H'),
+ (2,'010300000000000000','JDJFJF','S','S','',29,26,'020103000000000000','H'),
+ (2,'010400000000000000','CREDITOS','N','S','',30,26,'020104000000000000','H'),
+ (2,'010401000000000000','Deudores por Ventas','S','S','',31,30,'020104010000000000','H'),
+ (2,'010500000000000000','aaaaaa','N','S','',32,26,'020105000000000000','H'),
+ (2,'010501000000000000','Deudores por Ventas','S','S','',33,32,'020105010000000000','H'),
+ (2,'020000000000000000','PASIVO','N','S','',34,25,'020200000000000000','H'),
+ (2,'030000000000000000','PATRIMONIO NETO','N','S','',35,25,'020300000000000000','H'),
+ (2,'030100000000000000','Disponibilidades','S','S','',36,35,'020301000000000000','H'),
+ (2,'030200000000000000','Caja','S','S','',37,35,'020302000000000000','H'),
+ (2,'040000000000000000','PATRIM','N','S','',38,25,'020400000000000000','H'),
+ (2,'040100000000000000','Disponibilidades','S','S','',39,38,'020401000000000000','H'),
+ (2,'040200000000000000','Caja','S','S','',40,38,'020402000000000000','H'),
+ (2,'050000000000000000','ACTIVO','N','S','',41,25,'020500000000000000','H'),
+ (2,'050100000000000000','Disponibilidades','S','S','',42,41,'020501000000000000','H'),
+ (2,'050200000000000000','Caja','S','S','',43,41,'020502000000000000','H'),
+ (2,'050300000000000000','JDJFJF','S','S','',44,41,'020503000000000000','H'),
+ (2,'050400000000000000','CREDITOS','N','S','',45,41,'020504000000000000','H'),
+ (2,'050401000000000000','Deudores por Ventas','S','S','',46,45,'020504010000000000','H'),
+ (2,'050500000000000000','aaaaaa','N','S','',47,41,'020505000000000000','H'),
+ (2,'050501000000000000','Deudores por Ventas','S','S','',48,47,'020505010000000000','H');
+/*!40000 ALTER TABLE `plancuentasd` ENABLE KEYS */;
+
+
+--
+-- Definition of table `tipoasiento`
+--
+
+DROP TABLE IF EXISTS `tipoasiento`;
+CREATE TABLE `tipoasiento` (
+  `idtipoasi` int(10) unsigned NOT NULL,
+  `detalle` char(100) NOT NULL,
+  PRIMARY KEY (`idtipoasi`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `tipoasiento`
+--
+
+/*!40000 ALTER TABLE `tipoasiento` DISABLE KEYS */;
+INSERT INTO `tipoasiento` (`idtipoasi`,`detalle`) VALUES 
+ (1,'APERTURA'),
+ (2,'CORRIENTE'),
+ (3,'CIERRE');
+/*!40000 ALTER TABLE `tipoasiento` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
