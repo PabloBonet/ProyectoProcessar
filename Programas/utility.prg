@@ -3254,43 +3254,11 @@ PARAMETERS p_tabla
 			RETURN 
 		ENDIF 
 		SELECT columnas_sql
-		
-		
-*!*			eje="SELECT  *, v_tabla+SPACE(30) as tablanom, .f. as sel, 10 as orden FROM columnas_sql INTO TABLE .\columnas"+v_tabla
-*!*			&eje 	
-*!*			
-*!*			IF v_tabla = v_pritabla THEN 
-*!*				SELECT *  FROM columnas&v_tabla INTO TABLE .\columnas
-*!*				ALTER TABLE columnas alter tablanom c(30)
-*!*				ALTER TABLE columnas alter field c(30)
 
-*!*			ELSE
-*!*				SELECT columnas
-*!*				eje = " APPEND FROM .\columnas"+v_tabla
-*!*				&eje 
-*!*			ENDIF  
-*!*			SELECT columnas&v_tabla
-*!*			USE 
-*!*			
 	
 	* me desconecto	
 	=abreycierracon(vconeccionF,"")
 
-*!*		SELECT tablas
-*!*		SELECT columnas 
-*!*		INDEX on ALLTRIM(tablanom) TAG tablanom
-
-*!*		SELECT tablas
-*!*		SET RELATION TO ALLTRIM(tablanom) INTO columnas 
-
-*!*		GO TOP 
-*!*		thisform.cb_tabla.Value = tablas.tablanom 
-
-*!*		thisform.cb_campo.RowSource = "SELECT * FROM columnas into cursor columnasidx WHERE KEY = 'PRI' and ALLTRIM(tablanom) == ALLTRIM(thisform.cb_tabla.value)"
-*!*		thisform.cb_campo.Value = columnasidx.field 
-*!*		THISFORM.tb_tipo.Value  = UPPER(ALLTRIM(columnasidx.type))
-*!*		SELECT columnas
-*!*		SET FILTER TO ALLTRIM(tablanom)= ALLTRIM(tablas.tablanom)
 
 	SELECT field as campo, key as clave FROM  columnas_sql WHERE key = "PRI" INTO TABLE columnas
 	
@@ -3444,7 +3412,7 @@ ENDFUNC
 * un arreglo con las columnas a a colocar en la grilla
 */-------------------------------------------------------------
 FUNCTION seteagrilla
-PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor
+PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 
 	vcan_column = ALEN(&p_matcolumn,1)
 	
@@ -3463,10 +3431,13 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor
 		EJE = p_grilla+".SetAll('DynamicBackColor',["+p_DynamicColor+"],'Column')"
 		&EJE
 	ENDIF 
+	IF !EMPTY(p_FontSize) AND TYPE('p_FontSize')='N' THEN 
+		&p_grilla..FontSize = p_FontSize
+	ENDIF 
 
 	IF vcan_column > 0 THEN 
 		FOR _icl = 1 TO vcan_column
-		
+			
 			v_columnxx 						= p_grilla+".column"+ALLTRIM(STR(_icl))
 			&v_columnxx..ControlSource 		= &p_matcolumn(_icl,1) 
 			&v_columnxx..header1.Caption 	= IIF(&p_matcolumn(_icl,2)=="","Header",&p_matcolumn(_icl,2))
@@ -3474,6 +3445,8 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor
 			&v_columnxx..header1.Alignment 	= 2
 			&v_columnxx..Width 				= IIF(&p_matcolumn(_icl,3)=0,75,&p_matcolumn(_icl,3))
 			&v_columnxx..Alignment 			= IIF(&p_matcolumn(_icl,4)=0,3,&p_matcolumn(_icl,4)) &&0=Izquierda 1=Derecha 2=Centro 3=Automatico
+			&v_columnxx..Format 	= 'Z'
+			&v_columnxx..Enabled    = &p_matcolumn(_icl,5) && .t. habliltado .f. deshabilitado
 
 		ENDFOR 
 	ENDIF 
@@ -3549,6 +3522,9 @@ PARAMETERS p_idlocalidad,p_conCod, p_conProv, p_conPais
 		
 		
 		verror=sqlrun(vconeccionF,"locprovpais_sql")
+
+		=abreycierracon(vconeccionF,"")
+
 		IF verror=.f.
 			MESSAGEBOX("No se puede obtener la localidad ",0+16,"Advertencia")
 			RETURN v_retorno
@@ -3645,4 +3621,121 @@ PARAMETERS p_codigo
 	RETURN v_codigo
 
 
+ENDFUNC 
+
+
+** Función que retorna la cadena pasada como parámetro separada por puntos
+FUNCTION separarcadena
+PARAMETERS PCADENA
+	RETORNO = ALLTRIM(STRTRAN(PCADENA,".",""))
+	CANTCAR = LEN(ALLTRIM(RETORNO))
+	IF !(MOD(CANTCAR,2) = 0) THEN 
+		RETORNO = ALLTRIM(RETORNO)+"0"
+		CANTCAR = CANTCAR+1
+	ENDIF
+
+	RETORNA = ""
+	FOR I = 1 TO CANTCAR
+		IF MOD(I,2)=0 AND I > 1 THEN
+			RETORNA = RETORNA + SUBSTR(RETORNO,I-1,2)+"."
+		ENDIF
+	ENDFOR
+	RETORNA = SUBSTR(RETORNA,1,LEN(ALLTRIM(RETORNA))-1)
+RETURN RETORNA
+
+
+
+*/-------------------------------------------------------------
+* Retorna el id del dejercicio economico y el id del Plan de Cuentas
+* de acuerdo al ejercicio seleccionado segun la fecha ingresada
+* Parametros: 1-Fecha a considerar
+*			  2-Condicion devuelta : 0=Devuelve el idejercicio, 1= Devuelve el idplan
+*/-------------------------------------------------------------
+FUNCTION fejercicioplan
+PARAMETERS p_fecha,p_devuelve
+
+	IF TYPE('p_fecha')= 'D' THEN 
+		v_fechapar = DTOS(p_fecha)
+	ELSE
+		v_fechapar = p_fecha 
+	ENDIF 
+		v_retorno = 0
+		
+		vconeccionF = abreycierracon(0,_SYSSCHEMA)
+		sqlmatriz(1)="select * from ejercicioecon "
+		sqlmatriz(3)=" where fechaini <= '"+ALLTRIM(v_fechapar)+"' and fechafin >= '"+ALLTRIM(v_fechapar)+"'"
+		verror=sqlrun(vconeccionF,"ejecon_sql")
+		IF verror=.f.
+			*MESSAGEBOX("No se puede obtener Ejercicios Económicos ",0+16,"Advertencia")
+			RETURN v_retorno
+		ENDIF 
+		SELECT ejecon_sql
+		GO TOP 
+		IF EOF()	
+			sqlmatriz(1)="select * from ejercicioecon  where ejercicio in (select max(ejercicio) as ejercicio from ejercicioecon where fechafin <= '"+ALLTRIM(v_fechapar)+"') "
+			verror=sqlrun(vconeccionF,"ejecon_sql")
+			IF verror=.f.
+				*MESSAGEBOX("No se puede obtener Ejercicios Económicos ",0+16,"Advertencia")
+				RETURN v_retorno
+			ENDIF 
+		ENDIF 
+		=abreycierracon(vconeccionF,"")
+
+		SELECT ejecon_sql 
+		GO TOP 
+		IF !EOF() THEN 
+			IF p_devuelve = 0 THEN 
+				v_retorno = IIF(ISNULL(ejecon_sql.ejercicio),0,ejecon_sql.ejercicio)
+			ELSE
+				v_retorno = IIF(ISNULL(ejecon_sql.idplan),0,ejecon_sql.idplan)			
+			ENDIF 
+		ENDIF 
+		SELECT ejecon_sql
+		USE
+				
+	RETURN v_retorno
+ENDFUNC 
+
+
+*/-------------------------------------------------------------
+* Retorna un string conteniendo una descripcion del comprobante
+* que permite identificarlo univocamente. 
+* Parametros: 1-tabla
+*			  2-nombre del indice
+*			  3-Valor del indice
+*/-------------------------------------------------------------
+FUNCTION fdescribecompro
+PARAMETERS par_tabla,par_nomindice,par_valindice
+
+	v_retornod = ""
+
+	DO CASE 
+		CASE ALLTRIM(par_tabla)=='facturas'
+
+			vconeccionF = abreycierracon(0,_SYSSCHEMA)
+			sqlmatriz(1)=" select f.*, c.comprobante as compro, p.puntov from facturas f left join comprobantes c on c.idcomproba = f.idcomproba "
+			sqlmatriz(2)=" left join puntosventa p on p.pventa = f.pventa "
+			sqlmatriz(3)=" where f."+ALLTRIM(par_nomindice)+" = "+ALLTRIM(STR(par_valindice))
+			verror=sqlrun(vconeccionF,"datoscompro_sql")
+			=abreycierracon(vconeccionF,"")
+			IF verror=.f.
+				RETURN v_retornod
+			ENDIF 
+			SELECT datoscompro_sql
+			GO TOP 
+			IF !EOF() THEN 
+				v_retornod = ALLTRIM(datoscompro_sql.compro)+"  "+(datoscompro_sql.tipo)+" "+ALLTRIM(datoscompro_sql.puntov)+"-"+ ;
+					STRTRAN(STR(datoscompro_sql.numero,8),' ','0')+"  "+DTOC(cftofc(datoscompro_sql.fecha))+"   $"+STR(datoscompro_sql.total,12,2)+"   "+ ;
+					ALLTRIM(STR(datoscompro_sql.entidad))+"-"+ALLTRIM(datoscompro_sql.apellido)+" "+ALLTRIM(datoscompro_sql.nombre)
+			ENDIF 	
+		CASE ALLTRIM(par_tabla)=='recibos'
+		
+			OTHERWISE 
+		
+		
+	ENDCASE 
+	SELECT datoscompro_sql 
+	USE IN datoscompro_sql 
+		
+	RETURN v_retornod
 ENDFUNC 
