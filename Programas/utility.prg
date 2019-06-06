@@ -3739,3 +3739,75 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 		
 	RETURN v_retornod
 ENDFUNC 
+
+* FUNCIÓN PARA IMPRIMIR UN REMITO
+* PARAMETROS: P_IDREMITO, P_ESELECTRONICA
+FUNCTION imprimirRemito
+PARAMETERS p_idremito, p_esElectronica
+
+
+	v_idremito = p_idremito
+	v_esElectronica = p_esElectronica 
+
+	IF v_idremito > 0
+		
+		*** Busco los datos de la factura y el detalle
+		IF v_esElectronica  = .T.
+
+		
+		ELSE
+			
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+			sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP "
+			sqlmatriz(2)=" from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(3)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+			sqlmatriz(4)=" left join remitosh d on r.idremito = d.idremito "
+			sqlmatriz(5)=" left join condfiscal c on r.iva = c.iva"
+			sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
+			sqlmatriz(7)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))
+
+			verror=sqlrun(vconeccionF,"rec_det_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del Remito",0+48+0,"Error")
+			ENDIF
+		
+		ENDIF 
+		
+	
+		SELECT * FROM rec_det_sql INTO TABLE remi
+		
+		
+		SELECT remi
+		
+		IF NOT EOF()
+		
+*			ALTER table factu ADD COLUMN codBarra	 C(42)
+		
+			v_idcomproba = remi.idcomproba
+			v_tipoCompAfip	= ALLTRIM(remi.tipcomAFIP)
+			
+			
+			v_codBarra		= ""
+			v_codBarraD 	= ""
+			v_electronica	= remi.electro
+			v_cuitEmpresa	= _SYSCUIT
+			
+		
+			
+			DO FORM reporteform WITH "remi","remitoscr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar el remito para imprimir",0+48+0,"Error al cargar el remito")
+			RETURN 	
+		ENDIF 
+		
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar el remito ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
