@@ -3842,7 +3842,8 @@ IF v_idregistro	> 0
 		
 
 	*** Busco los comprobantes y sus respectivos puntos de venta 
-	sqlmatriz(1)=" Select c.*, t.pventa, t.puntov from comprobantes c left join compactiv t on c.idcomproba = t.idcomproba "
+	sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla, t.pventa, "
+	sqlmatriz(2)=" t.puntov from comprobantes c left join compactiv t on c.idcomproba = t.idcomproba "
 	*sqlmatriz(1)=" Select c.* from comprobantes c "
 	verror=sqlrun(vconeccionA,"Comprobantes_sql")
 	IF verror=.f.  
@@ -3858,6 +3859,7 @@ IF v_idregistro	> 0
 	GO TOP 
 	
 	v_tabla	= compSelecc.tabla
+	v_nombreComp	= compSelecc.nomcomp
 	
 	*** Busco el comprobante asociado
 	sqlmatriz(1)=" select * from "+ALLTRIM(v_tabla)+" c left join compactiv cp on c.idcomproba = cp.idcomproba and c.pventa = cp.pventa "
@@ -3901,7 +3903,7 @@ IF v_idregistro	> 0
 	v_nombre	= Comprobante_sql.nombre
 	v_puntov	= comprobante_sql.puntov
 	v_numComp	= comprobante_sql.numero
-	v_observa1	= "Comprobante asociado: "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
+	v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
 
 	DIMENSION lamatriz1(14,2)
 
