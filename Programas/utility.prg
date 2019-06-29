@@ -3759,13 +3759,14 @@ PARAMETERS p_idremito, p_esElectronica
 			
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
-			sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP "
+			sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, p.nombre as nomProv "
 			sqlmatriz(2)=" from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 			sqlmatriz(3)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
 			sqlmatriz(4)=" left join remitosh d on r.idremito = d.idremito "
 			sqlmatriz(5)=" left join condfiscal c on r.iva = c.iva"
 			sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
-			sqlmatriz(7)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))
+			sqlmatriz(7)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(8)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))
 
 			verror=sqlrun(vconeccionF,"rec_det_sql")
 			IF verror=.f.  
