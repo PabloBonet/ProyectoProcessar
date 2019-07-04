@@ -3174,10 +3174,10 @@ FUNCTION obtenerEstado
 PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd
 
 	v_indice = ""
-	IF v_tipoInd = 'I'
+	IF p_tipoInd = 'I'
 		v_indice		= ALLTRIM(STR(p_indice))
 	ELSE
-		IF v_tipoInd = 'C'
+		IF p_tipoInd = 'C'
 			v_indice	= ALLTRIM(p_indice)
 		ENDIF 
 	ENDIF 
