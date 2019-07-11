@@ -2129,6 +2129,133 @@ PARAMETERS p_idMoviStockP
 ENDFUNC 
 
 
+* FUNCIÓN PARA IMPRIMIR UNA Nota de Pedido (COMPROBANTES DE LA TABLA NP)
+* PARAMETROS: P_IDNP
+FUNCTION imprimirNP
+PARAMETERS p_idnp
+
+
+	v_idnp = p_idnp
+
+
+	IF v_idnp  > 0
+		
+
+		v_imprimeMonto = 0		
+		sino = MESSAGEBOX("¿Desea imprimir la NP con montos?",4+48+256,"Imprimir montos")
+
+		IF sino = 6
+			v_imprimeMonto	= 1
+		
+		ELSE
+		
+			v_imprimeMonto	= 0
+		ENDIF 
+		
+		*** Busco los datos de la factura y el detalle
+		
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+
+			sqlmatriz(1)=" Select f.*,d.*,c.*,v.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit  "
+			sqlmatriz(2)=" from np f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+			sqlmatriz(4)="  left join ot d on f.idnp = d.idnp "
+			sqlmatriz(5)=" left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva"
+			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(7)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(8)=" where f.idnp = "+ ALLTRIM(STR(v_idnp))
+			
+			
+			
+			
+					
+			verror=sqlrun(vconeccionF,"np_det_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la NP",0+48+0,"Error")
+			ENDIF
+		
+	
+*!*			
+*!*			*** Busco los datos de los impuestos
+*!*				vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+*!*			
+*!*				sqlmatriz(1)="Select fi.detalle as detaIMP, fi.neto as netoIMP, fi.razon as razonIMP, fi.importe as importeIMP, ai.tipo as tipoIMP "
+*!*				sqlmatriz(2)=" from facturasimp fi" 
+*!*				sqlmatriz(3)=" left join impuestos i on fi.impuesto = i.impuesto "
+*!*				sqlmatriz(4)=" left join afipimpuestos ai on i.idafipimp = ai.idafipimp "
+*!*				sqlmatriz(5)=" where fi.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+*!*				verror=sqlrun(vconeccionF,"impuestos_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
+*!*				ENDIF
+		
+
+		SELECT * FROM np_det_sql INTO TABLE .\np_impr
+		
+			
+		SELECT np_impr
+		
+		IF NOT EOF()
+			SELECT np_impr
+			ALTER table np_impr ADD COLUMN imprMonto I
+			
+			SELECT np_impr
+			GO TOP 
+			replace ALL imprMonto WITH v_imprimeMonto
+			
+			SELECT np_impr
+			GO TOP 
+			
+			
+			v_idcomproba = np_impr.idcomproba
+			v_tipoCompAfip	= ALLTRIM(np_impr.tipcomAFIP)
+	
+			
+			v_codBarra		= ""
+			v_codBarraD 	= ""
+			v_electronica	= .F.
+			v_cuitEmpresa	= _SYSCUIT
+			
+*!*				IF  ALLTRIM(v_electronica) == "S"
+*!*					v_cuitempresa	= ALLTRIM(v_CuitEmpresa)
+*!*					
+*!*					v_puntoVta		= ALLTRIM(factu.puntov)
+*!*					v_fechaVenc_cae	= ALLTRIM(factu.caecespven)
+*!*					v_cespcae		= ALLTRIM(factu.cespcae)
+*!*					
+*!*					v_codBarra		= v_cuitEmpresa+v_tipoCompAfip+"0"+v_puntoVta+v_fechaVenc_cae+v_Cespcae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
+*!*					MESSAGEBOX(v_codBarra)
+*!*					v_codBarraD 		= calculaDigitoVerif(v_codBarra)
+*!*					
+*!*					MESSAGEBOX(v_codBarraD)
+*!*					
+*!*					SELECT factu
+*!*					replace ALL codBarra WITH v_codBarraD
+*!*									
+*!*				ELSE
+*!*				
+*!*				ENDIF 
+			
+			DO FORM reporteform WITH "np_impr","npcr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar la NP  para imprimir",0+48+0,"Error al cargar la NP")
+			RETURN 	
+		ENDIF 
+		
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar la NP ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
+
+
 
 
 FUNCTION compruebaCajaReca
