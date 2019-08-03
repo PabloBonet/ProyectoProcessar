@@ -4763,3 +4763,418 @@ ENDIF
 
 	RETURN .T.
 ENDFUNC 
+
+
+*///////////////////////////////////////////////////////////////
+**********************************************************************
+** Funcion que devuelve el asiento modelo armado a partir de un 
+** codigo o modelo de asiento**
+*///////////////////////////////////////////////////////////////
+FUNCTION GenAstoContable
+PARAMETERS par_modelo, par_tabla, par_registro, par_tablaret
+
+	v_indicetabla = getIdTabla(par_tabla) && Obtengo el nombre del campo indice de la tabla
+	var_retorno = ""
+	**** El Modelo de Asiento Seleccionado ***
+	vconeccionATO=abreycierracon(0,_SYSSCHEMA)	
+
+	** Campos con los Valores que deben calcular el resultado a imputar a cada cuenta ***
+	sqlmatriz(1)=" Select ac.idastomode, ac.idastocuenta as idastocuen, ac.idcpoconta, ac.dh, ac.detalle, "
+	sqlmatriz(2)="   av.tabla, av.campo, av.opera, av.idastovalor as idastoval from astovalor av left join astocuenta ac on av.idastocuenta=ac.idastocuenta "
+	sqlmatriz(3)=" where ac.idastomode = "+ALLTRIM(STR(par_modelo))
+	verror=sqlrun(vconeccionATO,"AstoValorA_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de AstoCuenta ",0+48+0,"Error")
+	    =abreycierracon(vconeccionATO,"")
+	    RETURN var_retorno
+	ENDIF
+
+	** Obtiene los registros que daran como resultado la cuenta a la cual debera imputarse el importe correspondiente calculado arriba ** 
+	sqlmatriz(1)=" Select a.idastomode, a.idastocuenta as idastocuen, a.idcpoconta, a.dh, a.detalle, "
+	sqlmatriz(2)="   	  c.tabla, c.campo, c.tipo, c.detalle as detacpo,   "
+	sqlmatriz(3)="   	  cg.valor1,cg.compara, cg.valor2, cg.codigocta, cg.tablag, cg.campog, cg.tipog, cg.idcpocontag as idcpocontg  "
+	sqlmatriz(4)=" from campocontag cg "
+	sqlmatriz(5)=" left join campoconta c on c.idcpoconta=cg.idcpoconta "
+	sqlmatriz(6)=" left join astocuenta a on a.idcpoconta=cg.idcpoconta "
+	sqlmatriz(7)=" where a.idastomode = "+ALLTRIM(STR(par_modelo))
+	verror=sqlrun(vconeccionATO,"AstoCuentaA_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de AstoCuenta ",0+48+0,"Error")
+	    =abreycierracon(vconeccionATO,"")
+	    RETURN var_retorno
+	ENDIF
+
+
+	SELECT AstoValorA_sql
+	SELECT AstoCuentaA_sql
+
+**********************************************
+***	Armado del valor  de las cuentas a imputar 
+
+	SELECT * FROM AstoValorA_sql INTO TABLE .\AstoValorA
+	ALTER table AstoValorA ADD importe y
+	ZAP 
+	SELECT AstoValorA_sql 
+	GO TOP 
+	
+	DO WHILE !EOF() 
+		
+		sqlmatriz(1)=" Select "+ALLTRIM(AstoValorA_sql.campo)+" as importe from "+ALLTRIM(AstoValorA_sql.tabla)
+		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
+			
+		verror=sqlrun(vconeccionATO,"tablacampo")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA en el Campo a Imputar de la Tabla Seleccionada ",0+48+0,"Error")
+		    =abreycierracon(vconeccionATO,"")
+		    RETURN var_retorno
+		ENDIF
+		
+		SELECT tablacampo
+		GO top
+		DO WHILE !EOF()
+			SELECT AstoValorA
+			INSERT INTO AstoValorA VALUES (AstoValorA_sql.idastomode, AstoValorA_sql.idastocuen, AstoValorA_sql.idcpoconta, AstoValorA_sql.dh, ;
+										   AstoValorA_sql.detalle, AstoValorA_sql.tabla, AstoValorA_sql.campo, AstoValorA_sql.opera, ;
+										   AstoValorA_sql.idastoval, tablacampo.importe)
+			SELECT tablacampo 
+			SKIP 
+		ENDDO 
+				
+		SELECT AstoValorA_sql
+		SKIP 
+	ENDDO 
+
+	SELECT AstoValorA
+	REPLACE ALL importe WITH importe * opera 
+	
+*****************************************************************
+***** Agrupo para obtener el monto final a imputar a cada cuenta
+	SET ENGINEBEHAVIOR 70 
+	 
+	SELECT idastomode, idastocuen, idcpoconta, dh, detalle, SUM(importe) as importe ;
+		FROM AstoValorA INTO TABLE AstoValorB ORDER BY idastocuen GROUP BY idastocuen
+	
+	SET ENGINEBEHAVIOR 90 
+	
+	SELECT AstoValorB
+	
+*************************************************************************
+** Obtengo el la Cuenta que se deberá imputar ***************************
+	SELECT * FROM AstoCuentaA_sql INTO TABLE .\AstoCuentaA
+	ALTER table AstoCuentaA ADD valor c(100)
+	ZAP 
+	SELECT AstoCuentaA_sql 
+	GO TOP 
+	DO WHILE !EOF() 
+		
+		sqlmatriz(1)=" Select "+ALLTRIM(AstoCuentaA_sql.campo)+" as valor from "+ALLTRIM(AstoCuentaA_sql.tabla)
+		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
+		verror=sqlrun(vconeccionATO,"tablacuenta")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la Cuenta Seleccionada ",0+48+0,"Error")
+		    =abreycierracon(vconeccionATO,"")
+		    RETURN var_retorno
+		ENDIF
+
+		SELECT tablacuenta
+		GO top
+		DO WHILE !EOF()
+			var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),tablacuenta.valor,ALLTRIM(tablacuenta.valor))  
+			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoCuentaA_sql.valor1))','ALLTRIM(AstoCuentaA_sql.valor1)')
+			&eje 
+					
+			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoCuentaA_sql.valor2))','ALLTRIM(AstoCuentaA_sql.valor2)')
+			&eje 
+
+			v_incerta = .f.
+			DO CASE 
+				CASE UPPER(AstoCuentaA_sql.compara)="TODOS"
+					v_incerta = .t.
+				CASE UPPER(AstoCuentaA_sql.compara)="ENTRE"
+					IF var_valor >= var_valor1 AND var_valor <= var_valor2 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(filtros.compara)="IGUAL"
+					IF var_valor = var_valor1 THEN 
+						v_incerta = .t. 
+					ENDIF 
+				CASE UPPER(AstoCuentaA_sql.compara)="MAYOR"
+					IF var_valor > var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoCuentaA_sql.compara)="MAYOR O IGUAL"
+					IF var_valor >= var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoCuentaA_sql.compara)="MENOR"
+					IF var_valor < var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoCuentaA_sql.compara)="MENOR O IGUAL"
+					IF var_valor <= var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoCuentaA_sql.compara)="DISTINTO"
+					IF var_valor <> var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoCuentaA_sql.compara)="GRUPO"
+					var_valorgru = IIF(TYPE("var_valor")='C',var_valor,ALLTRIM(STR(var_valor)))
+					IF GrupoCuentaContable (var_valorgru,AstoCuentaA_sql.tablag,AstoCuentaA_sql.campog,AstoCuentaA_sql.tipog,AstoCuentaA_sql.valor1, vconeccionATO) THEN 
+						v_incerta = .t.
+					ENDIF 
+
+			ENDCASE 
+			
+			SELECT AstoCuentaA
+			IF v_incerta = .t. THEN 
+
+				var_valorinc = IIF(TYPE("var_valor")='C',var_valor,ALLTRIM(STR(var_valor)))
+				
+				INSERT INTO AstoCuentaA VALUES (AstoCuentaA_sql.idastomode, AstoCuentaA_sql.idastocuen, AstoCuentaA_sql.idcpoconta, AstoCuentaA_sql.dh, ;
+										   AstoCuentaA_sql.detalle, AstoCuentaA_sql.tabla, AstoCuentaA_sql.campo, AstoCuentaA_sql.tipo, ;
+										   AstoCuentaA_sql.detacpo, AstoCuentaA_sql.valor1, AstoCuentaA_sql.compara, AstoCuentaA_sql.valor2, ;
+										   AstoCuentaA_sql.codigocta, AstoCuentaA_sql.tablag, AstoCuentaA_sql.campog, AstoCuentaA_sql.tipog,AstoCuentaA_sql.idcpocontg,var_valorinc)
+			ENDIF 
+			SELECT tablacuenta
+			SKIP 
+		ENDDO 
+				
+		SELECT AstoCuentaA_sql
+		SKIP 
+		
+	ENDDO 
+
+	 =abreycierracon(vconeccionATO,"")
+	 
+	 SELECT AstoCuentaA
+	 GO TOP 
+
+	 ************* Union de las dos partes que componen el Asiento, ************************************
+	 ************* Se Unen el Valor o Importe a Imputar con la Cuenta que recibe la Imputación *********
+
+	 SELECT AVB.idastomode, AVB.idastocuen, AVB.idcpoconta, AVB.dh, AVB.detalle, AVB.importe ,AVB.importe as debe ,AVB.importe as haber , ;
+	 		 ACA.codigocta, ACA.valor, ACA.idcpocontg, SPACE(50) as tabla, 10000000000 as registro  ;
+	 FROM  AstoValorB AVB left join AstoCuentaA ACA on AVB.idastocuen = ACA.idastocuen ;
+	 INTO TABLE AstoFinalA WHERE !ISNULL(ACA.idcpocontg)
+	 
+	 SELECT AstoFinalA
+	 GO TOP 
+	 replace ALL debe WITH IIF((((dh='D' AND importe > 0) OR (dh='H' AND importe < 0 ))),ABS(importe),0), haber WITH IIF((((dh='H' AND importe > 0) OR (dh='D' AND importe < 0))),ABS(importe),0), ;
+	 			tabla WITH par_tabla, registro WITH par_registro 
+
+	 SELECT  idastomode, codigocta, debe, haber, tabla, registro FROM AstoFinalA INTO TABLE &par_tablaret 
+	 COPY TO &par_tablaret DELIMITED WITH ""
+	
+	 USE IN AstoCuentaA_sql
+	 USE IN AstoValorA_sql
+	 USE IN AstoCuentaA
+	 USE IN AstoValorA
+	 USE IN AstoValorB
+	 USE IN AstoFinalA
+	 USE IN tablacuenta
+	 USE IN tablacampo
+	 USE IN &par_tablaret 
+	 var_retorno = par_tablaret 	 
+	 RETURN var_retorno 
+	
+ENDFUNC 
+
+*////////////////////////////////////////////////////
+** Función que devuelve verdadero o falso segun sea
+*/ segun sea que el indice del registro  pasado como parámetro pertenezca o no al grupo asociado a la cuenta
+*/ contable que se debiera utilizar en el asiento modelo.
+*/**********************************************************
+
+FUNCTION GrupoCuentaContable 
+PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
+	vpertenece = .f. 
+	var_pg_valorg = IIF((UPPER(SUBSTR(pg_tipog,1,1))='I' or UPPER(SUBSTR(pg_tipog,1,1))='F'),ALLTRIM(STR(pg_valor,12,2)),"'"+ALLTRIM(pg_valor)+"'")	
+	
+	sqlmatriz(1)=" Select * from "+ALLTRIM(pg_tablag)+" where "+pg_campog+" = "+var_pg_valorg
+	verror=sqlrun(pg_vconeccion,"registro_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Campo a Seleccionar en la Tabla: "+var_pg_valorg+";"+pg_tablag+";"+pg_campog+";"+pg_tipog+";"+pg_valor1,0+48+0,"Error")
+	    RETURN vpertenece
+	ENDIF
+	
+	SELECT registro_sql
+	IF EOF() THEN 
+		USE IN registro_sql 
+		RETURN vpertenece
+	ELSE	
+		v_campoidxg = ""
+		v_tipoidxg  = ""
+		FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
+				
+			IF toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idgrupo"))= val(alltrim(pg_valor1)) AND toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tiporeg")) = "G" THEN 
+				v_campoidxg = toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("campo"))
+				v_tipoidxg  = toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tipoc"))
+				EXIT 
+			ENDIF 
+		ENDFOR 
+		
+		IF !EMPTY(v_campoidxg) THEN 
+			
+			v_idmiembrog = ""	
+			eje = "v_idmiembroa = registro_sql."+ALLTRIM(v_campoidxg)
+					
+			&eje
+			v_idmiembrog = IIF(ALLTRIM(v_tipoidxg)='I',ALLTRIM(STR(v_idmiembroa)),ALLTRIM(v_idmiembroa))
+			
+			FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
+						
+				IF  toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tabla"))= alltrim(pg_tablag) AND ;
+					toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idgrupo"))= val(alltrim(pg_valor1)) AND ;
+					ALLTRIM(toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idmiembro")))= ALLTRIM(v_idmiembrog) AND ;					
+					toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tiporeg")) = "M" THEN 
+					
+					vpertenece = .t. 
+					EXIT 			
+				ENDIF 
+			ENDFOR 
+
+		ENDIF 
+		
+	ENDIF 
+	USE IN registro_sql
+	RETURN vpertenece
+ENDFUNC 
+
+
+*//////////////////////////////////////
+*/ Determina el Modelo de Asiento a aplicar en funcion
+*/ del filtrado que aplica al comprobante recibido como parametros
+*//////////////////////////////////////
+
+FUNCTION FiltroAstoModelo 
+PARAMETERS pf_idregi, pf_tabla, pf_vconeccion
+	
+	pf_campoid = getIdTabla(pf_tabla) && Obtengo el nombre del campo indice de la tabla
+	
+	pf_cierraconex = .f.
+	IF pf_vconeccion = 0 THEN 
+		**** El Modelo de Asiento Seleccionado ***
+		pf_vconeccion=abreycierracon(0,_SYSSCHEMA)	
+		pf_cierraconex = .t.
+	ENDIF 
+
+	ret_modelo = 0
+	var_pf_idregi = IIF((UPPER(type("pf_idregi"))='I' or UPPER(type("pf_idregi"))='N'),ALLTRIM(STR(pf_idregi)),"'"+ALLTRIM(pf_idregi)+"'")	
+	
+	sqlmatriz(1)=" Select * from "+ALLTRIM(pf_tabla)+" where "+pf_campoid+" = "+var_pf_idregi
+	verror=sqlrun(pf_vconeccion,"registrof_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Registro en la Tabla: "+var_pf_idregi+";"+pf_tabla+";"+pf_campoid,0+48+0,"Error")
+	    RETURN ret_modelo
+	ENDIF
+	
+	SELECT registrof_sql
+	
+	IF EOF() THEN 
+		USE IN registrof_sql 
+		RETURN ret_modelo
+	ELSE	
+		*///////////////////
+		*/Aca calculo la coincidencia con los filtros definidos para la tabla pasada*//
+		*/ y el registro encontrado */**************
+		*///////////////////
+		
+		sqlmatriz(1)=" Select d.*, f.tabla as tablaf, f.idastomode " 
+		sqlmatriz(2)="   from astofiltrosd d left join astofiltros f on f.idfiltro = d.idfiltro "	
+		sqlmatriz(3)="   where f.tabla = '"+ALLTRIM(pf_tabla)+"' order by f.idfiltro"
+		verror=sqlrun(pf_vconeccion,"filtros_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Registro en la Tabla: "+var_pf_idregi+";"+pf_tabla+";"+pf_campoid,0+48+0,"Error")
+		    RETURN ret_modelo
+		ENDIF
+		SELECT *, 0 as cumple FROM filtros_sql INTO TABLE filtros
+		SELECT filtros_sql
+		USE IN filtros_sql
+		SELECT registrof_sql
+		SELECT filtros 		
+		GO TOP 
+		
+		DO WHILE !EOF()
+			v_cumple = 0
+			IF ALLTRIM(filtros.tabla) = ALLTRIM(pf_tabla) THEN 
+					eje = " var_valor = registrof_sql."+ALLTRIM(filtros.campo)
+					&eje
+					eje = " var_valord= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valord))','ALLTRIM(filtros.valord)')
+					&eje 
+					eje = " var_valorh= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valorh))','ALLTRIM(filtros.valorh)')
+					&eje 
+
+				DO CASE 
+					CASE UPPER(filtros.compara)="TODOS"
+						v_cumple = 1
+					CASE UPPER(filtros.compara)="ENTRE"
+						IF  var_valor >= var_valord AND var_valor <= var_valorh THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="IGUAL"
+						IF var_valor = var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="MAYOR"
+						IF var_valor > var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="MAYOR O IGUAL"
+						IF var_valor >= var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="MENOR"
+						IF var_valor < var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="MENOR O IGUAL"
+						IF var_valor <= var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="DISTINTO"
+						IF var_valor <> var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+*!*						CASE UPPER(AstoCuentaA_sql.compara)="GRUPO"
+*!*							IF GrupoCuentaContable (var_valor,AstoCuentaA_sql.tablag,AstoCuentaA_sql.campog,AstoCuentaA_sql.tipog,AstoCuentaA_sql.valor1, vconeccionATO) THEN 
+*!*								v_incerta = .t.
+*!*							ENDIF 
+
+				ENDCASE 
+				
+				SELECT filtros
+				replace cumple WITH v_cumple
+			
+			ENDIF 
+		
+			SELECT filtros
+			SKIP 
+
+		ENDDO 
+	ENDIF 
+	
+
+	SET ENGINEBEHAVIOR 70
+	SELECT idfiltro, tabla, idastomode, SUM(1) as cantidadf, SUM(cumple) as cumplidos, pf_idregi as idreg, pf_campoid as campoid ;
+			FROM  filtros INTO TABLE filtrosele ORDER BY idfiltro GROUP BY idfiltro
+	SET ENGINEBEHAVIOR 90
+	GO TOP 
+	
+	SELECT filtrosele
+	LOCATE FOR cantidadf = cumplidos AND cumplidos > 0 
+	IF FOUND() THEN 
+		ret_modelo = filtrosele.idastomode
+	ENDIF   
+	SELECT filtros
+	USE IN filtros
+	SELECT filtrosele
+	USE IN filtrosele
+
+	IF pf_cierraconex THEN 
+		**** El Modelo de Asiento Seleccionado ***
+		=abreycierracon(pf_vconeccion,"")	
+	ENDIF 
+	
+RETURN ret_modelo
+ENDFUNC 
