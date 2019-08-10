@@ -3837,36 +3837,48 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 
 	v_retornod = ""
 
-	DO CASE 
-		CASE ALLTRIM(par_tabla)=='facturas'
+	vconeccionFD = abreycierracon(0,_SYSSCHEMA)
+	
+	*// Busco el registro de descripcion de la tabla *//
+	sqlmatriz(1)=" select * from tabladescrip "
+	sqlmatriz(2)=" where tabla = '"+ALLTRIM(par_tabla)+"'"
+	verror=sqlrun(vconeccionF,"tabladescrip_sql")
+	IF verror=.f.
+		=abreycierracon(vconeccionFD,"")
+		RETURN v_retornod
+	ENDIF 
+	SELECT tabladescrip_sql
+	IF _tally = 0 THEN 
+		=abreycierracon(vconeccionFD,"")
+		RETURN v_retornod
+	ENDIF 
+	
+	*// si llego es porque hay registro de descripcion de la tabla *//
+	*// busco la descripcion del registro pasado *//
+	sqlmatriz(1)= ALLTRIM(tabladescrip_sql.consulta)
+	sqlmatriz(2)=" where "+ALLTRIM(par_tabla)+"."+ALLTRIM(par_nomindice)+" = "+ALLTRIM(STR(par_valindice))
+	verror=sqlrun(vconeccionF,"datoscompro_sql")
+	IF verror=.f.
+		=abreycierracon(vconeccionFD,"")
+		RETURN v_retornod
+	ENDIF 
+	=abreycierracon(vconeccionFD,"")
+	SELECT datoscompro_sql
+	GO TOP 
+	IF !EOF() THEN 
+		eje = "v_retornod = "+tabladescrip_sql.descrip
+		&eje
+	ENDIF 	
 
-			vconeccionF = abreycierracon(0,_SYSSCHEMA)
-			sqlmatriz(1)=" select f.*, c.comprobante as compro, p.puntov from facturas f left join comprobantes c on c.idcomproba = f.idcomproba "
-			sqlmatriz(2)=" left join puntosventa p on p.pventa = f.pventa "
-			sqlmatriz(3)=" where f."+ALLTRIM(par_nomindice)+" = "+ALLTRIM(STR(par_valindice))
-			verror=sqlrun(vconeccionF,"datoscompro_sql")
-			=abreycierracon(vconeccionF,"")
-			IF verror=.f.
-				RETURN v_retornod
-			ENDIF 
-			SELECT datoscompro_sql
-			GO TOP 
-			IF !EOF() THEN 
-				v_retornod = ALLTRIM(datoscompro_sql.compro)+"  "+(datoscompro_sql.tipo)+" "+ALLTRIM(datoscompro_sql.puntov)+"-"+ ;
-					STRTRAN(STR(datoscompro_sql.numero,8),' ','0')+"  "+DTOC(cftofc(datoscompro_sql.fecha))+"   $"+STR(datoscompro_sql.total,12,2)+"   "+ ;
-					ALLTRIM(STR(datoscompro_sql.entidad))+"-"+ALLTRIM(datoscompro_sql.apellido)+" "+ALLTRIM(datoscompro_sql.nombre)
-			ENDIF 	
-		CASE ALLTRIM(par_tabla)=='recibos'
-		
-			OTHERWISE 
-		
-		
-	ENDCASE 
 	SELECT datoscompro_sql 
 	USE IN datoscompro_sql 
+	SELECT tabladescrip_sql
+	USE IN tabladescrip_sql
 		
 	RETURN v_retornod
 ENDFUNC 
+
+
 
 * FUNCIÓN PARA IMPRIMIR UN REMITO
 * PARAMETROS: P_IDREMITO, P_ESELECTRONICA
@@ -4894,7 +4906,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_tablaret
 					IF var_valor >= var_valor1 AND var_valor <= var_valor2 THEN 
 						v_incerta = .t.
 					ENDIF 
-				CASE UPPER(filtros.compara)="IGUAL"
+				CASE UPPER(AstoCuentaA_sql.compara)="IGUAL"
 					IF var_valor = var_valor1 THEN 
 						v_incerta = .t. 
 					ENDIF 
@@ -5048,7 +5060,7 @@ ENDFUNC
 *//////////////////////////////////////
 
 FUNCTION FiltroAstoModelo 
-PARAMETERS pf_idregi, pf_tabla, pf_vconeccion
+PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 	
 	pf_campoid = getIdTabla(pf_tabla) && Obtengo el nombre del campo indice de la tabla
 	
@@ -5080,7 +5092,7 @@ PARAMETERS pf_idregi, pf_tabla, pf_vconeccion
 		*/ y el registro encontrado */**************
 		*///////////////////
 		
-		sqlmatriz(1)=" Select d.*, f.tabla as tablaf, f.idastomode " 
+		sqlmatriz(1)=" Select d.*, f.tabla as tablaf, f.idastomode, f.campofecha as campofecha " 
 		sqlmatriz(2)="   from astofiltrosd d left join astofiltros f on f.idfiltro = d.idfiltro "	
 		sqlmatriz(3)="   where f.tabla = '"+ALLTRIM(pf_tabla)+"' order by f.idfiltro"
 		verror=sqlrun(pf_vconeccion,"filtros_sql")
@@ -5156,7 +5168,7 @@ PARAMETERS pf_idregi, pf_tabla, pf_vconeccion
 	
 
 	SET ENGINEBEHAVIOR 70
-	SELECT idfiltro, tabla, idastomode, SUM(1) as cantidadf, SUM(cumple) as cumplidos, pf_idregi as idreg, pf_campoid as campoid ;
+	SELECT idfiltro, tabla, idastomode, campofecha, SUM(1) as cantidadf, SUM(cumple) as cumplidos, pf_idregi as idreg, pf_campoid as campoid ;
 			FROM  filtros INTO TABLE filtrosele ORDER BY idfiltro GROUP BY idfiltro
 	SET ENGINEBEHAVIOR 90
 	GO TOP 
@@ -5177,4 +5189,256 @@ PARAMETERS pf_idregi, pf_tabla, pf_vconeccion
 	ENDIF 
 	
 RETURN ret_modelo
+ENDFUNC 
+
+
+*** -----------------------------------------
+* Cambia el reclamop del sector indicado al estado pasado como parámetro
+* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
+* Retorna: True o False, según se cambió o no el estado
+*** -----------------------------------------
+
+FUNCTION cambiaAEstado
+	
+	PARAMETERS p_reclamop, p_sector, p_estado
+
+	v_idreclamop	= p_reclamop
+	v_idsector		= p_sector
+	v_idestado		= p_estado
+	v_fecha			= DTOS(DATE())+ALLTRIM(SUBSTR(ALLTRIM(TIME(DATETIME())),1,8))
+	
+
+	vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+
+
+	*** Cambio el estado del reclamo, agregando un registro de la tabla reclamoe *
+	
+	p_campoidx	= 'idreclamoe'
+	p_tipo		= 'I'
+	p_tabla		= 'reclamoe'
+	p_incre		= 1
+	
+	v_idreclamoe	= maxnumeroidx (p_campoidx, p_tipo, p_tabla, p_incre)
+	
+	IF v_idreclamoe <= 0 
+		** Error al obtner el max idreclamoe 
+				
+		** me desconecto
+		=abreycierracon(vconeccionM,"")
+	
+		RETURN .F.
+	
+	ELSE
+	
+	
+		MESSAGEBOX("RECLAMO ID")
+	
+
+		vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+		
+		sqlmatriz(1)=" select * from recestado "
+		sqlmatriz(2)=" where idrecest = "+ALLTRIM(STR(v_idestado))
+		
+		
+		verror=sqlrun(vconeccionM,"estado_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al buscar el estado",0+48+0,"Error")
+		    		
+			** me desconecto
+			=abreycierracon(vconeccionM,"")
+			
+		    RETURN .F.
+		ENDIF 
+
+		SELECT estado_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			v_estado	= estado_sql.estado
+		ELSE
+				
+		** me desconecto
+		=abreycierracon(vconeccionM,"")
+		
+			RETURN .F.
+		ENDIF 
+		
+
+	
+
+		vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+
+		sqlmatriz(1)=" insert into reclamoe  "
+		sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idreclamoe))+","+ALLTRIM(STR(v_idreclamop))+","+ALLTRIM(STR(v_idestado))+","+ALLTRIM(STR(v_idsector))+",'"+ALLTRIM(v_fecha)+"')"
+
+
+		verror=sqlrun(vconeccionM,"ins_reclamoe_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
+		    		
+			** me desconecto
+			=abreycierracon(vconeccionM,"")
+	
+		    RETURN .F.
+		ENDIF 
+
+		
+		IF v_idreclamop > 0 AND v_idreclamoe > 0
+		
+		
+		*** Busco datos del reclamo ***
+			sqlmatriz(1)=" select * from reclamop "
+			sqlmatriz(2)=" where idreclamop = "+ALLTRIM(STR(v_idreclamop))
+			
+			
+			verror=sqlrun(vconeccionM,"reclamop_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error al buscar el reclamo",0+48+0,"Error")
+			    		
+				** me desconecto
+				=abreycierracon(vconeccionM,"")
+				
+			    RETURN .F.
+			ENDIF 
+
+			SELECT reclamop_sql
+			GO TOP 
+			
+			IF NOT EOF()
+				v_numeroRec	= reclamop_sql.numero
+			ELSE
+					
+				** me desconecto
+				=abreycierracon(vconeccionM,"")
+				
+				RETURN .F.
+			ENDIF 
+			
+		*** Busco datos del sector ***	
+			sqlmatriz(1)=" select * from recsector "
+			sqlmatriz(2)=" where idrecsec = "+ALLTRIM(STR(v_idsector))
+			
+				
+			verror=sqlrun(vconeccionM,"sector_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error al buscar el sector",0+48+0,"Error")
+			    		
+				** me desconecto
+				=abreycierracon(vconeccionM,"")
+				
+			    RETURN .F.
+			ENDIF 
+
+			SELECT sector_sql
+			GO TOP 
+			
+			IF NOT EOF()
+				v_sectorRec	= sector_sql.sector
+			ELSE
+			
+					
+				** me desconecto
+				=abreycierracon(vconeccionM,"")
+				
+				RETURN .F.
+			ENDIF 
+					
+
+			p_campoidx	= 'idrecnov'
+			p_tipo		= 'I'
+			p_tabla		= 'recnovedad'
+			p_incre		= 1
+		
+		
+			v_idrecnov	= maxnumeroidx(p_campoidx, p_tipo, p_tabla, p_incre)
+			
+			
+
+			vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+			
+			v_fechaHora		= DATETIME()
+			v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
+			v_fechaStr		= ALLTRIM(TTOC(DATETIME()))
+			v_usuario		= _SYSUSUARIO
+			
+			v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
+			
+			v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
+					
+			
+			sqlmatriz(1)=" insert into recnovedad "
+			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"')"
+
+
+			verror=sqlrun(vconeccionM,"ins_recnovedad_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error al registrar la novedad del reclamo ",0+48+0,"Error")
+			    		
+				** me desconecto
+				=abreycierracon(vconeccionM,"")
+				
+			    RETURN .F.
+			ENDIF 
+		
+		ELSE
+		
+		
+		ENDIF 
+	
+	
+	
+	ENDIF 
+	
+	
+		
+	** me desconecto
+	=abreycierracon(vconeccionM,"")
+	
+
+	RETURN .T.
+ENDFUNC 
+
+
+*** -----------------------------------------
+* Obtiene el ID del sector al que pertenece el usuario
+* Retorna: idusuario
+*** -----------------------------------------
+
+FUNCTION getSectorUsu
+	
+	PARAMETERS p_usuario
+
+	v_idsector	= 0
+	
+	v_usuario	= p_usuario
+	
+
+	vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+
+
+	sqlmatriz(1)=" select * from recsecusu "
+	sqlmatriz(2)= " where usuario = '"+ALLTRIM(v_usuario)+"'"
+
+
+	verror=sqlrun(vconeccionM,"usuario_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del  usuario ",0+48+0,"Error")
+	ENDIF 
+
+	SELECT usuario_sql
+	GO TOP 
+	
+	IF NOT EOF()
+	
+		v_idusuario	= usuario_sql.idrecsusu
+		
+	ENDIF 
+
+
+	RETURN v_idusuario
 ENDFUNC 
