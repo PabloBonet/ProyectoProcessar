@@ -3842,7 +3842,7 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 	*// Busco el registro de descripcion de la tabla *//
 	sqlmatriz(1)=" select * from tabladescrip "
 	sqlmatriz(2)=" where tabla = '"+ALLTRIM(par_tabla)+"'"
-	verror=sqlrun(vconeccionF,"tabladescrip_sql")
+	verror=sqlrun(vconeccionFD,"tabladescrip_sql")
 	IF verror=.f.
 		=abreycierracon(vconeccionFD,"")
 		RETURN v_retornod
@@ -3857,7 +3857,7 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 	*// busco la descripcion del registro pasado *//
 	sqlmatriz(1)= ALLTRIM(tabladescrip_sql.consulta)
 	sqlmatriz(2)=" where "+ALLTRIM(par_tabla)+"."+ALLTRIM(par_nomindice)+" = "+ALLTRIM(STR(par_valindice))
-	verror=sqlrun(vconeccionF,"datoscompro_sql")
+	verror=sqlrun(vconeccionFD,"datoscompro_sql")
 	IF verror=.f.
 		=abreycierracon(vconeccionFD,"")
 		RETURN v_retornod
@@ -4781,15 +4781,71 @@ ENDFUNC
 **********************************************************************
 ** Funcion que devuelve el asiento modelo armado a partir de un 
 ** codigo o modelo de asiento**
+** la funcion devuelve el nombre de la tabla con el asiento si lo pudo armar
+** caso contrario devuelve vacio ""
+** estructura devuelta .dbf o .txt 
+**		idastomode i, codigocta c(30), debe y, haber y, tabla c(30), 
+**      registro i ,fecha c(8), idfiltro i, idtipoasi i, idastoe i, idpland, codigo c(22)
 *///////////////////////////////////////////////////////////////
 FUNCTION GenAstoContable
-PARAMETERS par_modelo, par_tabla, par_registro, par_tablaret
+PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par_idastoe, par_tablaret
+
+	IF TYPE("par_idfiltro") = 'L' THEN
+		vpar_idfiltro = 0
+	ELSE 
+		vpar_idfiltro = par_idfiltro 
+	ENDIF  	
+	IF TYPE("par_idtipoasi") = 'L' THEN
+		vpar_idtipoasi = 0
+	ELSE
+		vpar_idtipoasi = par_idtipoasi		
+	ENDIF  	
+	IF TYPE("par_idastoe") = 'L' THEN
+		vpar_idastoe = 0
+	ELSE 
+		vpar_idastoe = par_idastoe
+	ENDIF  	
+	IF TYPE("par_tablaret") = 'L' THEN
+		vpar_tablaret = "asientopropuesto"
+	ELSE 
+		vpar_tablaret = par_tablaret
+	ENDIF  	
 
 	v_indicetabla = getIdTabla(par_tabla) && Obtengo el nombre del campo indice de la tabla
+	v_fechaasi = ""
 	var_retorno = ""
 	**** El Modelo de Asiento Seleccionado ***
 	vconeccionATO=abreycierracon(0,_SYSSCHEMA)	
 
+** Selecciono la Fecha del Comprobante para el Asiento **
+	** Campos con los Valores que deben calcular el resultado a imputar a cada cuenta ***
+	sqlmatriz(1)=" Select * from astofiltros where idfiltro = "+ALLTRIM(STR(vpar_idfiltro))
+	MESSAGEBOX(sqlmatriz(1))
+	verror=sqlrun(vconeccionATO,"Astofil_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de Filtros ",0+48+0,"Error")
+	    =abreycierracon(vconeccionATO,"")
+	    RETURN var_retorno
+	ENDIF
+
+	sqlmatriz(1)=" Select "+ALLTRIM(Astofil_sql.campofecha)+" as fecha from "+ALLTRIM(par_tabla)+" where "+ALLTRIM(v_indicetabla)+" = "+ALLTRIM(STR(par_registro))
+	MESSAGEBOX(sqlmatriz(1))
+	verror=sqlrun(vconeccionATO,"ComproFecha_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de Filtros ",0+48+0,"Error")
+	    =abreycierracon(vconeccionATO,"")
+	    RETURN var_retorno
+	ENDIF
+
+	v_fechaasi = ComproFecha_sql.fecha
+	MESSAGEBOX(v_fechaasi)
+	
+	SELECT Astofil_sql
+	USE IN Astofil_sql
+	SELECT ComproFecha_sql
+	USE IN ComproFecha_sql
+
+**********************************************************
 	** Campos con los Valores que deben calcular el resultado a imputar a cada cuenta ***
 	sqlmatriz(1)=" Select ac.idastomode, ac.idastocuenta as idastocuen, ac.idcpoconta, ac.dh, ac.detalle, "
 	sqlmatriz(2)="   av.tabla, av.campo, av.opera, av.idastovalor as idastoval from astovalor av left join astocuenta ac on av.idastocuenta=ac.idastocuenta "
@@ -4874,6 +4930,8 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_tablaret
 ** Obtengo el la Cuenta que se deberá imputar ***************************
 	SELECT * FROM AstoCuentaA_sql INTO TABLE .\AstoCuentaA
 	ALTER table AstoCuentaA ADD valor c(100)
+	ALTER table AstoCuentaA ADD idpland i
+	ALTER table AstoCuentaA ADD codigo c(22)
 	ZAP 
 	SELECT AstoCuentaA_sql 
 	GO TOP 
@@ -4943,10 +5001,24 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_tablaret
 
 				var_valorinc = IIF(TYPE("var_valor")='C',var_valor,ALLTRIM(STR(var_valor)))
 				
-				INSERT INTO AstoCuentaA VALUES (AstoCuentaA_sql.idastomode, AstoCuentaA_sql.idastocuen, AstoCuentaA_sql.idcpoconta, AstoCuentaA_sql.dh, ;
+				sqlmatriz(1)=" Select idpland, codigo from plancuentasd where idplan = "+str(_SYSIDPLAN)+" and codigocta = '"+ALLTRIM(AstoCuentaA_sql.codigocta)+"'"
+				verror=sqlrun(vconeccionATO,"idpland_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del IDPLAN de la Cuenta del Asiento ",0+48+0,"Error")
+				    =abreycierracon(vconeccionATO,"")
+				    RETURN var_retorno
+				ENDIF
+				SELECT idpland_sql
+				IF !EOF() THEN 
+					var_idpland = idpland_sql.idpland 
+					var_codigo	= idpland_sql.codigo
+					INSERT INTO AstoCuentaA VALUES (AstoCuentaA_sql.idastomode, AstoCuentaA_sql.idastocuen, AstoCuentaA_sql.idcpoconta, AstoCuentaA_sql.dh, ;
 										   AstoCuentaA_sql.detalle, AstoCuentaA_sql.tabla, AstoCuentaA_sql.campo, AstoCuentaA_sql.tipo, ;
 										   AstoCuentaA_sql.detacpo, AstoCuentaA_sql.valor1, AstoCuentaA_sql.compara, AstoCuentaA_sql.valor2, ;
-										   AstoCuentaA_sql.codigocta, AstoCuentaA_sql.tablag, AstoCuentaA_sql.campog, AstoCuentaA_sql.tipog,AstoCuentaA_sql.idcpocontg,var_valorinc)
+										   AstoCuentaA_sql.codigocta, AstoCuentaA_sql.tablag, AstoCuentaA_sql.campog, AstoCuentaA_sql.tipog,AstoCuentaA_sql.idcpocontg,var_valorinc,var_idpland,var_codigo)
+				ENDIF 
+				SELECT idpland_sql
+				USE IN idpland_sql 
 			ENDIF 
 			SELECT tablacuenta
 			SKIP 
@@ -4966,17 +5038,18 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_tablaret
 	 ************* Se Unen el Valor o Importe a Imputar con la Cuenta que recibe la Imputación *********
 
 	 SELECT AVB.idastomode, AVB.idastocuen, AVB.idcpoconta, AVB.dh, AVB.detalle, AVB.importe ,AVB.importe as debe ,AVB.importe as haber , ;
-	 		 ACA.codigocta, ACA.valor, ACA.idcpocontg, SPACE(50) as tabla, 10000000000 as registro  ;
+	 		 ACA.codigocta, ACA.valor, ACA.idcpocontg, SPACE(50) as tabla, 10000000000 as registro, '        ' as fecha, ;
+	 		 10000000000 as idfiltro, 10000000000 as idtipoasi, 10000000000 as idastoe, ACA.idpland, ACA.codigo   ;
 	 FROM  AstoValorB AVB left join AstoCuentaA ACA on AVB.idastocuen = ACA.idastocuen ;
 	 INTO TABLE AstoFinalA WHERE !ISNULL(ACA.idcpocontg)
 	 
 	 SELECT AstoFinalA
 	 GO TOP 
 	 replace ALL debe WITH IIF((((dh='D' AND importe > 0) OR (dh='H' AND importe < 0 ))),ABS(importe),0), haber WITH IIF((((dh='H' AND importe > 0) OR (dh='D' AND importe < 0))),ABS(importe),0), ;
-	 			tabla WITH par_tabla, registro WITH par_registro 
+	 			tabla WITH par_tabla, registro WITH par_registro, idfiltro WITH vpar_idfiltro, idtipoasi WITH vpar_idtipoasi, idastoe WITH vpar_idastoe, fecha WITH v_fechaasi
 
-	 SELECT  idastomode, codigocta, debe, haber, tabla, registro FROM AstoFinalA INTO TABLE &par_tablaret 
-	 COPY TO &par_tablaret DELIMITED WITH ""
+	 SELECT  idastomode, codigocta, debe, haber, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo FROM AstoFinalA INTO TABLE &vpar_tablaret 
+	 COPY TO &vpar_tablaret DELIMITED WITH ""
 	
 	 USE IN AstoCuentaA_sql
 	 USE IN AstoValorA_sql
@@ -4986,8 +5059,8 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_tablaret
 	 USE IN AstoFinalA
 	 USE IN tablacuenta
 	 USE IN tablacampo
-	 USE IN &par_tablaret 
-	 var_retorno = par_tablaret 	 
+	 USE IN &vpar_tablaret 
+	 var_retorno = vpar_tablaret 	 
 	 RETURN var_retorno 
 	
 ENDFUNC 
@@ -5055,7 +5128,7 @@ ENDFUNC
 
 
 *//////////////////////////////////////
-*/ Determina el Modelo de Asiento a aplicar en funcion
+*/ Determina el Filtro y Modelo de Asiento a aplicar en funcion
 */ del filtrado que aplica al comprobante recibido como parametros
 *//////////////////////////////////////
 
@@ -5071,7 +5144,7 @@ PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 		pf_cierraconex = .t.
 	ENDIF 
 
-	ret_modelo = 0
+	ret_modelo = ''
 	var_pf_idregi = IIF((UPPER(type("pf_idregi"))='I' or UPPER(type("pf_idregi"))='N'),ALLTRIM(STR(pf_idregi)),"'"+ALLTRIM(pf_idregi)+"'")	
 	
 	sqlmatriz(1)=" Select * from "+ALLTRIM(pf_tabla)+" where "+pf_campoid+" = "+var_pf_idregi
@@ -5176,7 +5249,7 @@ PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 	SELECT filtrosele
 	LOCATE FOR cantidadf = cumplidos AND cumplidos > 0 
 	IF FOUND() THEN 
-		ret_modelo = filtrosele.idastomode
+		ret_modelo = STRTRAN(STR(filtrosele.idfiltro,4),' ','0')+STRTRAN(STR(filtrosele.idastomode,4),' ','0')
 	ENDIF   
 	SELECT filtros
 	USE IN filtros
@@ -5442,3 +5515,117 @@ FUNCTION getSectorUsu
 
 	RETURN v_idusuario
 ENDFUNC 
+
+
+
+***//////////////////////////////////////////////////////////////////
+** Función de incersion de asientos a partir de un txt con el asiento con el modelo de asiento y el comprobante asociado
+** La funcion controla que el asiento balancee y que las cuentas se correspondan con el 
+** Plan de Cuentas Actual
+****////////////////////////////////////////////////////////////////
+FUNCTION IncerAstoContable
+PARAMETERS par_asiento
+
+	CREATE TABLE tmpasientoin FREE (idastomode i, codigocta c(30),debe y, haber y, tabla c(30), registro i, fecha c(8), idfiltro i, idtipoasi i, idastoe i, idpland, codigo c(22))
+	
+	SELECT tmpasientoin 
+	APPEND FROM &par_asiento DELIMITED WITH ""
+
+		* Obtengo el idasiento nuevo y el numero de asiento nuevo
+	v_idasiento = maxnumeroidx("idasiento","I","asientos",1)
+	v_numero	= maxnumeroidx("numero","I","asientos",1)
+	v_ejercicio		= _SYSEJERCICIO
+	
+
+	vconeccionp=abreycierracon(0,_SYSSCHEMA)		
+	*** ELIMINO HIJOS PARA NO TENER PROBLEMAS DE ACTUALIZACION ***
+	sqlmatriz(1)="DELETE FROM asientos WHERE idasiento = " + ALLTRIM(STR(v_idasiento))
+	verror=sqlrun(vconeccionp,"asiento1")
+
+	DIMENSION lamatriz(16,2)
+
+	*** INSERTO HIJOS ***			
+	SELECT tmpasientoin
+	GO TOP 
+	DO WHILE NOT EOF()
+		IF !EMPTY(tmpasientoin.codigocta) AND (tmpasientoin.debe + tmpasientoin.haber) > 0 AND tmpasientoin.idpland > 0 THEN 
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+			
+			*thisform.calcularmaxh
+			v_idasientod = maxnumeroidx("idasientod","I","asientos",1)
+			
+			lamatriz(1,1)='idasientod'
+			lamatriz(1,2)=ALLTRIM(STR(v_idasientod))
+			lamatriz(2,1)='idasiento'
+			lamatriz(2,2)=ALLTRIM(STR(v_idasiento))
+			lamatriz(3,1)='numero'
+			lamatriz(3,2)=ALLTRIM(STR(v_numero))
+			lamatriz(4,1)='fecha'
+			lamatriz(4,2)="'"+ALLTRIM(tmpasientoin.fecha)+"'"
+			lamatriz(5,1)='ejercicio'
+			lamatriz(5,2)=ALLTRIM(STR(v_ejercicio))
+			lamatriz(6,1)='idpland' 
+			lamatriz(6,2)=ALLTRIM(STR(tmpasientoin.idpland))
+			lamatriz(7,1)='codigocta'
+			lamatriz(7,2)="'"+alltrim(tmpasientoin.codigocta)+"'"
+			lamatriz(8,1)='debe'
+			lamatriz(8,2)=ALLTRIM(STR(tmpasientoin.debe,12,2))
+			lamatriz(9,1)='haber'
+			lamatriz(9,2)=ALLTRIM(STR(tmpasientoin.haber,12,2))
+			lamatriz(10,1)='detalle'
+			lamatriz(10,2)="''"
+			lamatriz(11,1)='nombrecta'
+			lamatriz(11,2)="'"+ALLTRIM(tmpasiento.nombrecta)+"'"
+			lamatriz(12,1)='detaasiento'
+			lamatriz(12,2)="'Registro Automático de Asientos'"
+			lamatriz(13,1)='idtipoasi'
+			lamatriz(13,2)=STR(tmpasientoin.idtipoasi)
+			lamatriz(14,1)='idastomode'
+			lamatriz(14,2)=STR(tmpasientoin.idastomode)
+			lamatriz(15,1)='idfiltro'
+			lamatriz(15,2)=STR(tmpasientoin.idfiltro)
+			lamatriz(16,1)='idastoe'
+			lamatriz(16,2)=STR(tmpasientoin.idastoe)
+
+			
+			p_tabla     = 'asientos'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionp
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+			ENDIF						
+			
+		ENDIF
+
+		SELECT tmpasientoin
+		SKIP 1
+	ENDDO	
+
+	=abreycierracon(vconeccionp,"")	
+
+
+
+ENDFUNC 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

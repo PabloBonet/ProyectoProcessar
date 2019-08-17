@@ -1,0 +1,98 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar
+--
+
+CREATE DATABASE IF NOT EXISTS processar;
+USE processar;
+
+--
+-- Definition of table `asientos`
+--
+
+DROP TABLE IF EXISTS `asientos`;
+CREATE TABLE `asientos` (
+  `idasientod` int(10) unsigned NOT NULL,
+  `numero` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `codigocta` char(20) NOT NULL,
+  `nombrecta` char(254) NOT NULL,
+  `debe` float(13,4) NOT NULL,
+  `haber` float(13,4) NOT NULL,
+  `detalle` char(254) NOT NULL,
+  `ejercicio` int(10) unsigned NOT NULL,
+  `idpland` int(10) unsigned NOT NULL,
+  `detaasiento` char(254) NOT NULL,
+  `idasiento` int(10) unsigned NOT NULL,
+  `idtipoasi` int(10) unsigned NOT NULL,
+  `idastomode` int(10) unsigned NOT NULL DEFAULT '0',
+  `idfiltro` int(10) unsigned NOT NULL DEFAULT '0',
+  `idastoe` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`idasientod`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `asientos`
+--
+
+/*!40000 ALTER TABLE `asientos` DISABLE KEYS */;
+INSERT INTO `asientos` (`idasientod`,`numero`,`fecha`,`codigocta`,`nombrecta`,`debe`,`haber`,`detalle`,`ejercicio`,`idpland`,`detaasiento`,`idasiento`,`idtipoasi`,`idastomode`,`idfiltro`,`idastoe`) VALUES 
+ (24,16,'20190524','010200000000000000','Caja',100.0000,0.0000,'',2,28,'DKDJDFAÑSKFDSJK',16,2,0,0,3),
+ (25,16,'20190524','010300000000000000','JDJFJF',0.0000,100.0000,'',2,29,'DKDJDFAÑSKFDSJK',16,2,0,0,3),
+ (35,17,'20190603','010200000000000000','Caja',100.0000,0.0000,'',2,28,'DADF',17,4,0,0,1),
+ (36,17,'20190603','050300000000000000','JDJFJF',0.0000,100.0000,'',2,44,'DADF',17,4,0,0,1),
+ (51,15,'20190523','010200000000000000','Caja',100.0000,0.0000,'',2,28,'NUEVO ASIENTO DE PRUEBAS',15,2,0,0,1),
+ (52,15,'20190523','010501000000000000','Deudores por Ventas',0.0000,100.0000,'',2,16,'NUEVO ASIENTO DE PRUEBAS',15,2,0,0,1),
+ (53,2,'20190518','010501000000000000','Deudores por Ventas',14000.0000,0.0000,'cccccccccccc',1,16,'dddddddddddddddddd',2,2,2,2,1),
+ (54,2,'20190518','050300000000000000','JDJFJF',0.0000,6000.0000,'140000000000',1,20,'dddddddddddddddddd',2,2,2,2,1),
+ (55,2,'20190518','010200000000000000','Caja',0.0000,8000.0000,'vvvvvvvvvvv',1,28,'dddddddddddddddddd',2,2,2,2,1);
+/*!40000 ALTER TABLE `asientos` ENABLE KEYS */;
+
+
+--
+-- Definition of table `astoestado`
+--
+
+DROP TABLE IF EXISTS `astoestado`;
+CREATE TABLE `astoestado` (
+  `idastoe` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `estado` char(50) NOT NULL,
+  PRIMARY KEY (`idastoe`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `astoestado`
+--
+
+/*!40000 ALTER TABLE `astoestado` DISABLE KEYS */;
+INSERT INTO `astoestado` (`idastoe`,`estado`) VALUES 
+ (1,'VERIFICADO'),
+ (2,'A REVISAR'),
+ (3,'ERRONEO');
+/*!40000 ALTER TABLE `astoestado` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
