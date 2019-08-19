@@ -1088,78 +1088,86 @@ ENDFUNC
 * FUNCION PARA TRAER EL MAXIMO ID O INDICE DE UNA TABLA
 * RECIBE COMO PARAMETROS EL CAMPO QUE CONTIENE EL ID O INDICE, EL TIPO DE CAMPO, LA TABLA Y EL VALOR A INCREMENTAR EL ID
 * DEVUELVE EL VALOR INCREMENTADO SEGUN EL PARAMETRO DE INCREMENTO RECIBIDO (SOLO SI ES NUMERO)
+* SI V_AUTOINC ES .T. significa que el campo indice es autoincremental en la bd Y DEBE devolver "0"
 FUNCTION maxnumeroidx
-PARAMETERS p_campoidx, p_tipo, p_tabla, v_incre 
-v_tipoCampo = ""
+PARAMETERS p_campoidx, p_tipo, p_tabla, v_incre , v_autoinc
+
+	v_tipoCampo = ""
 
 
-vconeccionF = abreycierracon(0,_SYSSCHEMA)
+	IF p_tipo = 'I'
 
-IF p_tipo = 'I'
-	*INTEGER
-	v_tipocampo = "I"
-	sqlmatriz(1)="UPDATE tablasidx set maxvalori = ( maxvalori + "+ALLTRIM(STR(v_incre))+" ) "
-	sqlmatriz(2)=" WHERE campo = '"+ALLTRIM(p_campoidx)+"' and tabla = '"+ALLTRIM(p_tabla)+"' and tipocampo = '"+ALLTRIM(v_tipocampo)+"'"
-
-	verror=sqlrun(vconeccionF,"idxmaximo")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion del maximo Numero de indice ",0+48+0,"Error")
-	    RETURN 
-	ENDIF 
-	
-	*** Vuelvo a buscar para corroborar
-	
-	
-	sqlmatriz(1)="select maxvalori as maxnro FROM tablasidx "
-	sqlmatriz(2)="WHERE campo = '"+ALLTRIM(p_campoidx)+"' and tabla = '"+ALLTRIM(p_tabla)+"' and tipocampo = '"+ALLTRIM(v_tipocampo)+"'" 
+		IF v_autoinc = .t. THEN 
+			RETURN 0
+		ENDIF 
 		
-	verror=sqlrun(vconeccionF,"maximo")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA ddel maximo Numero de indice",0+48+0,"Error")
-	ENDIF 
+		vconeccionFm = abreycierracon(0,_SYSSCHEMA)
+		*INTEGER
+		v_tipocampo = "I"
+		sqlmatriz(1)="UPDATE tablasidx set maxvalori = ( maxvalori + "+ALLTRIM(STR(v_incre))+" ) "
+		sqlmatriz(2)=" WHERE campo = '"+ALLTRIM(p_campoidx)+"' and tabla = '"+ALLTRIM(p_tabla)+"' and tipocampo = '"+ALLTRIM(v_tipocampo)+"'"
 
-	* me desconecto	
-	=abreycierracon(vconeccionF,"")
-	v_maximo = IIF(ISNULL(maximo.maxnro),0,maximo.maxnro)
-
-	SELECT maximo
-	USE IN maximo
-
-	RETURN v_maximo
-
-	
-
-ELSE
-	IF p_tipo = 'C'
-		*CHAR
-		v_tipocampo = "C"
+		verror=sqlrun(vconeccionFm,"idxmaximo")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion del maximo Numero de indice ",0+48+0,"Error")
+			=abreycierracon(vconeccionFm,"")
+		    RETURN 
+		ENDIF 
 		
-	
-				
-		sqlmatriz(1)="select maxvalorc as maxnro FROM tablasidx "
-		sqlmatriz(3)="WHERE campo = '"+ALLTRIM(p_campoidx)+"' and tabla = '"+ALLTRIM(p_tabla)+"' and tipocampo = '"+ALLTRIM(v_tipocampo)+"'" 
-
-		verror=sqlrun(vconeccionF,"maximo")
+		*** Vuelvo a buscar para corroborar
+		
+		
+		sqlmatriz(1)="select maxvalori as maxnro FROM tablasidx "
+		sqlmatriz(2)="WHERE campo = '"+ALLTRIM(p_campoidx)+"' and tabla = '"+ALLTRIM(p_tabla)+"' and tipocampo = '"+ALLTRIM(v_tipocampo)+"'" 
+			
+		verror=sqlrun(vconeccionFm,"maximo")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA ddel maximo Numero de indice",0+48+0,"Error")
 		ENDIF 
 
 		* me desconecto	
-		=abreycierracon(vconeccionF,"")
-
-		v_maximo = IIF(ISNULL(maximo.maxnro),"",maximo.maxnro)
+		=abreycierracon(vconeccionFm,"")
+		v_maximo = IIF(ISNULL(maximo.maxnro),0,maximo.maxnro)
 
 		SELECT maximo
 		USE IN maximo
 
 		RETURN v_maximo
-		
-		
-	ELSE
-		
-	ENDIF 
 
-ENDIF 
+		
+
+	ELSE
+		IF p_tipo = 'C'
+			*CHAR
+			v_tipocampo = "C"
+			
+			vconeccionFm = abreycierracon(0,_SYSSCHEMA)
+		
+					
+			sqlmatriz(1)="select maxvalorc as maxnro FROM tablasidx "
+			sqlmatriz(3)="WHERE campo = '"+ALLTRIM(p_campoidx)+"' and tabla = '"+ALLTRIM(p_tabla)+"' and tipocampo = '"+ALLTRIM(v_tipocampo)+"'" 
+
+			verror=sqlrun(vconeccionFm,"maximo")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA ddel maximo Numero de indice",0+48+0,"Error")
+			ENDIF 
+
+			* me desconecto	
+			=abreycierracon(vconeccionFm,"")
+
+			v_maximo = IIF(ISNULL(maximo.maxnro),"",maximo.maxnro)
+
+			SELECT maximo
+			USE IN maximo
+
+			RETURN v_maximo
+			
+			
+		ELSE
+			
+		ENDIF 
+
+	ENDIF 
 
 RETURN -1
 ENDFUNC
@@ -3543,7 +3551,7 @@ FUNCTION seteagrilla
 PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 
 	vcan_column = ALEN(&p_matcolumn,1)
-	
+
 	&p_grilla..RecordSource = &p_grilla..RecordSource
 	&p_grilla..RecordSource = p_RecordSource
 	&p_grilla..ReadOnly = .t.
@@ -3848,7 +3856,8 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 		RETURN v_retornod
 	ENDIF 
 	SELECT tabladescrip_sql
-	IF _tally = 0 THEN 
+	GO TOP 
+	IF EOF() THEN 
 		=abreycierracon(vconeccionFD,"")
 		RETURN v_retornod
 	ENDIF 
@@ -4820,7 +4829,6 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 ** Selecciono la Fecha del Comprobante para el Asiento **
 	** Campos con los Valores que deben calcular el resultado a imputar a cada cuenta ***
 	sqlmatriz(1)=" Select * from astofiltros where idfiltro = "+ALLTRIM(STR(vpar_idfiltro))
-	MESSAGEBOX(sqlmatriz(1))
 	verror=sqlrun(vconeccionATO,"Astofil_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de Filtros ",0+48+0,"Error")
@@ -4829,7 +4837,6 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	ENDIF
 
 	sqlmatriz(1)=" Select "+ALLTRIM(Astofil_sql.campofecha)+" as fecha from "+ALLTRIM(par_tabla)+" where "+ALLTRIM(v_indicetabla)+" = "+ALLTRIM(STR(par_registro))
-	MESSAGEBOX(sqlmatriz(1))
 	verror=sqlrun(vconeccionATO,"ComproFecha_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de Filtros ",0+48+0,"Error")
@@ -4838,7 +4845,6 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	ENDIF
 
 	v_fechaasi = ComproFecha_sql.fecha
-	MESSAGEBOX(v_fechaasi)
 	
 	SELECT Astofil_sql
 	USE IN Astofil_sql
@@ -4932,6 +4938,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	ALTER table AstoCuentaA ADD valor c(100)
 	ALTER table AstoCuentaA ADD idpland i
 	ALTER table AstoCuentaA ADD codigo c(22)
+	ALTER table AstoCuentaA ADD nombrecta c(100)
 	ZAP 
 	SELECT AstoCuentaA_sql 
 	GO TOP 
@@ -5001,7 +5008,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 
 				var_valorinc = IIF(TYPE("var_valor")='C',var_valor,ALLTRIM(STR(var_valor)))
 				
-				sqlmatriz(1)=" Select idpland, codigo from plancuentasd where idplan = "+str(_SYSIDPLAN)+" and codigocta = '"+ALLTRIM(AstoCuentaA_sql.codigocta)+"'"
+				sqlmatriz(1)=" Select idpland, codigo, nombrecta from plancuentasd where idplan = "+str(_SYSIDPLAN)+" and codigocta = '"+ALLTRIM(AstoCuentaA_sql.codigocta)+"'"
 				verror=sqlrun(vconeccionATO,"idpland_sql")
 				IF verror=.f.  
 				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del IDPLAN de la Cuenta del Asiento ",0+48+0,"Error")
@@ -5012,10 +5019,12 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 				IF !EOF() THEN 
 					var_idpland = idpland_sql.idpland 
 					var_codigo	= idpland_sql.codigo
+					var_nombrecta=idpland_sql.nombrecta
 					INSERT INTO AstoCuentaA VALUES (AstoCuentaA_sql.idastomode, AstoCuentaA_sql.idastocuen, AstoCuentaA_sql.idcpoconta, AstoCuentaA_sql.dh, ;
 										   AstoCuentaA_sql.detalle, AstoCuentaA_sql.tabla, AstoCuentaA_sql.campo, AstoCuentaA_sql.tipo, ;
 										   AstoCuentaA_sql.detacpo, AstoCuentaA_sql.valor1, AstoCuentaA_sql.compara, AstoCuentaA_sql.valor2, ;
-										   AstoCuentaA_sql.codigocta, AstoCuentaA_sql.tablag, AstoCuentaA_sql.campog, AstoCuentaA_sql.tipog,AstoCuentaA_sql.idcpocontg,var_valorinc,var_idpland,var_codigo)
+										   AstoCuentaA_sql.codigocta, AstoCuentaA_sql.tablag, AstoCuentaA_sql.campog, AstoCuentaA_sql.tipog, ;
+										   AstoCuentaA_sql.idcpocontg,var_valorinc,var_idpland,var_codigo,var_nombrecta)
 				ENDIF 
 				SELECT idpland_sql
 				USE IN idpland_sql 
@@ -5039,7 +5048,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 
 	 SELECT AVB.idastomode, AVB.idastocuen, AVB.idcpoconta, AVB.dh, AVB.detalle, AVB.importe ,AVB.importe as debe ,AVB.importe as haber , ;
 	 		 ACA.codigocta, ACA.valor, ACA.idcpocontg, SPACE(50) as tabla, 10000000000 as registro, '        ' as fecha, ;
-	 		 10000000000 as idfiltro, 10000000000 as idtipoasi, 10000000000 as idastoe, ACA.idpland, ACA.codigo   ;
+	 		 10000000000 as idfiltro, 10000000000 as idtipoasi, 10000000000 as idastoe, ACA.idpland, ACA.codigo, ACA.nombrecta   ;
 	 FROM  AstoValorB AVB left join AstoCuentaA ACA on AVB.idastocuen = ACA.idastocuen ;
 	 INTO TABLE AstoFinalA WHERE !ISNULL(ACA.idcpocontg)
 	 
@@ -5048,7 +5057,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	 replace ALL debe WITH IIF((((dh='D' AND importe > 0) OR (dh='H' AND importe < 0 ))),ABS(importe),0), haber WITH IIF((((dh='H' AND importe > 0) OR (dh='D' AND importe < 0))),ABS(importe),0), ;
 	 			tabla WITH par_tabla, registro WITH par_registro, idfiltro WITH vpar_idfiltro, idtipoasi WITH vpar_idtipoasi, idastoe WITH vpar_idastoe, fecha WITH v_fechaasi
 
-	 SELECT  idastomode, codigocta, debe, haber, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo FROM AstoFinalA INTO TABLE &vpar_tablaret 
+	 SELECT  idastomode, codigocta, debe, haber, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo, nombrecta FROM AstoFinalA INTO TABLE &vpar_tablaret 
 	 COPY TO &vpar_tablaret DELIMITED WITH ""
 	
 	 USE IN AstoCuentaA_sql
@@ -5526,12 +5535,31 @@ ENDFUNC
 FUNCTION IncerAstoContable
 PARAMETERS par_asiento
 
-	CREATE TABLE tmpasientoin FREE (idastomode i, codigocta c(30),debe y, haber y, tabla c(30), registro i, fecha c(8), idfiltro i, idtipoasi i, idastoe i, idpland, codigo c(22))
+	varastovalido = ""
+	CREATE TABLE tmpasientoin FREE (idastomode i, codigocta c(30),debe y, haber y, tabla c(30), registro i, ;
+	 fecha c(8), idfiltro i, idtipoasi i, idastoe i, idpland i, codigo c(22), nombrecta c(200))
 	
 	SELECT tmpasientoin 
 	APPEND FROM &par_asiento DELIMITED WITH ""
-
-		* Obtengo el idasiento nuevo y el numero de asiento nuevo
+	
+	** Valido montos y balance del asiento
+	CALCULATE SUM(debe)  TO va_debe
+	CALCULATE SUM(haber) TO va_haber
+	IF (va_debe + va_haber) > 0 AND (va_debe-va_haber) <> 0 THEN
+		varastovalido = "El Asiento no Balancea..."
+	ENDIF 
+	SELECT * FROM tmpasientoin INTO CURSOR cuentainvalida WHERE idpland = 0 OR EMPTY(codigocta)
+	IF _tally > 0 THEN 
+		varastovalido = "Existe una Cuenta inválida para el Plan de Cuentas Actual..."
+	ENDIF 
+	USE IN cuentainvalida
+	
+	IF !EMPTY(varastovalido) THEN 
+		MESSAGEBOX("No se Puede Grabar el Asiento: "+varastovalido)
+		RETURN .F.
+	ENDIF 
+	
+	** Obtengo el idasiento nuevo y el numero de asiento nuevo
 	v_idasiento = maxnumeroidx("idasiento","I","asientos",1)
 	v_numero	= maxnumeroidx("numero","I","asientos",1)
 	v_ejercicio		= _SYSEJERCICIO
@@ -5544,17 +5572,17 @@ PARAMETERS par_asiento
 
 	DIMENSION lamatriz(16,2)
 
-	*** INSERTO HIJOS ***			
+	*** INSERTO HIJOS - CREO EL ASIENTO***			
 	SELECT tmpasientoin
 	GO TOP 
 	DO WHILE NOT EOF()
-		IF !EMPTY(tmpasientoin.codigocta) AND (tmpasientoin.debe + tmpasientoin.haber) > 0 AND tmpasientoin.idpland > 0 THEN 
+*!*			IF !EMPTY(tmpasientoin.codigocta) AND (tmpasientoin.debe + tmpasientoin.haber) > 0 AND tmpasientoin.idpland > 0 THEN 
 			p_tipoope     = 'I'
 			p_condicion   = ''
 			v_titulo      = " EL ALTA "
 			
 			*thisform.calcularmaxh
-			v_idasientod = maxnumeroidx("idasientod","I","asientos",1)
+			v_idasientod = maxnumeroidx("idasientod","I","asientos",1,.t.)
 			
 			lamatriz(1,1)='idasientod'
 			lamatriz(1,2)=ALLTRIM(STR(v_idasientod))
@@ -5577,7 +5605,7 @@ PARAMETERS par_asiento
 			lamatriz(10,1)='detalle'
 			lamatriz(10,2)="''"
 			lamatriz(11,1)='nombrecta'
-			lamatriz(11,2)="'"+ALLTRIM(tmpasiento.nombrecta)+"'"
+			lamatriz(11,2)="'"+ALLTRIM(tmpasientoin.nombrecta)+"'"
 			lamatriz(12,1)='detaasiento'
 			lamatriz(12,2)="'Registro Automático de Asientos'"
 			lamatriz(13,1)='idtipoasi'
@@ -5597,16 +5625,50 @@ PARAMETERS par_asiento
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
 			ENDIF						
 			
-		ENDIF
+*!*			ENDIF
 
 		SELECT tmpasientoin
 		SKIP 1
 	ENDDO	
+	
+	*** INSERTO LA RELACION CON EL COMPROBANTE***			
 
+	SELECT tmpasientoin
+	GO TOP 
+	*** SI HUBIERE ALGUNA RELACION CON EL COMPROBANTE DE ALGUN ASIENTO ANTES ***
+	sqlmatriz(1)=" DELETE FROM asientoscompro WHERE tabla = '"+ALLTRIM(tmpasientoin.tabla)+"' and idregicomp="+ALLTRIM(STR(tmpasientoin.registro))
+	verror=sqlrun(vconeccionp,"asiento1")
+
+
+	DIMENSION lamatriz(4,2)
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+			
+			*thisform.calcularmaxh
+	v_idastocompro = maxnumeroidx("idastocompro","I","asientoscompro",1,.T.)
+				
+	lamatriz(1,1)='idastocompro'
+	lamatriz(1,2)=ALLTRIM(STR(v_idastocompro))
+	lamatriz(2,1)='idasiento'
+	lamatriz(2,2)=ALLTRIM(STR(v_idasiento))
+	lamatriz(3,1)='idregicomp'
+	lamatriz(3,2)=ALLTRIM(STR(tmpasientoin.registro))
+	lamatriz(4,1)='tabla'
+	lamatriz(4,2)="'"+ALLTRIM(tmpasientoin.tabla)+"'"
+
+			
+	p_tabla     = 'asientoscompro'
+	p_matriz    = 'lamatriz'
+	p_conexion  = vconeccionp
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+	ENDIF						
+	
+	
 	=abreycierracon(vconeccionp,"")	
-
-
-
+	RETURN .T.
+	 
 ENDFUNC 
 
 
