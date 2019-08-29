@@ -5674,6 +5674,102 @@ ENDFUNC
 
 
 
+* FUNCIÓN PARA IMPRIMIR PAGO
+* PARAMETROS: P_idPagoProv
+FUNCTION imprimirPagoProv
+PARAMETERS p_idpagoProv
+
+
+	v_idpagoProv = p_idpagoProv
+	
+	IF v_idpagoProv > 0
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+		
+		*** Busco los datos del recibo
+					
+				
+		
+			sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetapago, dc.idtipopago, dc.importe as impCobrado, dc.idcuenta, tp.detalle as tipopago, cb.codcuenta "
+			sqlmatriz(2)=" from pagosprov r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba "
+			sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom " 
+			sqlmatriz(4)=" left join entidades e on r.entidad = e.entidad left join detallepagos dc on r.idcomproba = dc.idcomproba and r.idpago = dc.idregistro "
+			sqlmatriz(5)=" left join tipopagos tp on dc.idtipopago = tp.idtipopago left join cajabancos cb on dc.idcuenta = cb.idcuenta "
+			sqlmatriz(6)=" where r.idpago = "+ ALLTRIM(STR(v_idpagoProv))
+
+			verror=sqlrun(vconeccionF,"pagoprov_sql_u")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del Pago a Proveedor",0+48+0,"Error")
+			ENDIF
+		
+		 
+		
+		
+		
+		
+		
+
+		SELECT * FROM pagoprov_sql_u INTO TABLE .\pago
+				
+		SELECT pago
+		
+		IF NOT EOF()
+		
+			SELECT pago
+			GO TOP 
+			
+			v_idcomproba 	= pago.idcomproba
+			*** Busco los datos de los cobros para el pago
+		
+				sqlmatriz(1)=" Select c.*, f.numero,f.tipo,f.fecha,f.entidad, f.nombre, f.apellido,f.cuit ,f.nroremito, f.nropedido, f.actividad "
+				sqlmatriz(2)=" from pagosprovfc c left join factuprove f on c.idfactprove = f.idfactprove  "
+				sqlmatriz(3)=" where c.idcomproba = " +ALLTRIM(STR(v_idcomproba))+" and c.idpago = "+ ALLTRIM(STR(v_idpagoProv))
+
+				verror=sqlrun(vconeccionF,"pagos_sql_u")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de cobros relacionados al Pago de Proveedor ",0+48+0,"Error")
+				ENDIF
+			
+		
+		
+		
+			SELECT * FROM pagos_sql_u INTO TABLE .\pagos
+			SELECT pagos
+			GO TOP 
+			
+		
+		
+			ALTER table pago ADD COLUMN strImporte C(250)
+			
+			SELECT pago
+			v_importe	= pago.importe
+			v_strImporte	= enletras (v_importe)
+			
+			SELECT pago 
+			GO TOP 
+			
+			replace ALL strImporte WITH v_strImporte
+			
+			SELECT pago 
+			GO TOP 
+			v_idcomproba = pago.idcomproba
+			
+			DO FORM reporteform WITH "pago;pagos","pagocr;pagoscr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar el Pago de proveedor para imprimir",0+48+0,"Error al cargar el Pago de proveedor ")
+			RETURN 	
+		ENDIF 
+		
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar el pago con ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
 
 
 
