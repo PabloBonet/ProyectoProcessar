@@ -5721,7 +5721,7 @@ PARAMETERS p_idpagoProv
 			v_idcomproba 	= pago.idcomproba
 			*** Busco los datos de los cobros para el pago
 		
-				sqlmatriz(1)=" Select c.*, f.numero,f.tipo,f.fecha,f.entidad, f.nombre, f.apellido,f.cuit ,f.nroremito, f.nropedido, f.actividad "
+				sqlmatriz(1)=" Select c.*,f.actividad, f.numero,f.tipo,f.fecha,f.entidad, f.nombre, f.apellido,f.cuit ,f.nroremito, f.nropedido, f.actividad "
 				sqlmatriz(2)=" from pagosprovfc c left join factuprove f on c.idfactprove = f.idfactprove  "
 				sqlmatriz(3)=" where c.idcomproba = " +ALLTRIM(STR(v_idcomproba))+" and c.idpago = "+ ALLTRIM(STR(v_idpagoProv))
 
