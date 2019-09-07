@@ -5485,45 +5485,7 @@ FUNCTION cambiaAEstado
 ENDFUNC 
 
 
-*** -----------------------------------------
-* Obtiene el ID del sector al que pertenece el usuario
-* Retorna: idusuario
-*** -----------------------------------------
 
-FUNCTION getSectorUsu
-	
-	PARAMETERS p_usuario
-
-	v_idsector	= 0
-	
-	v_usuario	= p_usuario
-	
-
-	vconeccionM=abreycierracon(0,_SYSSCHEMA)	
-
-
-
-	sqlmatriz(1)=" select * from recsecusu "
-	sqlmatriz(2)= " where usuario = '"+ALLTRIM(v_usuario)+"'"
-
-
-	verror=sqlrun(vconeccionM,"usuario_sql")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del  usuario ",0+48+0,"Error")
-	ENDIF 
-
-	SELECT usuario_sql
-	GO TOP 
-	
-	IF NOT EOF()
-	
-		v_idusuario	= usuario_sql.idrecsusu
-		
-	ENDIF 
-
-
-	RETURN v_idusuario
-ENDFUNC 
 
 
 
@@ -5774,16 +5736,394 @@ ENDFUNC
 
 
 
+*** -----------------------------------------
+* Retorna el ultimo estado para un reclamo dado, segun el sector
+* Parametros: Reclamo, Sector, Retorno (I: Indice,N: Nombre)
+* Retorna: ID_Reclamo_Estado
+*** -----------------------------------------
+
+FUNCTION estadoReclamoPorSector
+	
+	PARAMETERS p_reclamop, p_sector, p_Retorno
+
+	v_idreclamop	= p_reclamop
+	v_idsector		= p_sector
+	v_retorno		= p_retorno
+
+	
+
+	
+	*Abro conexión
+	vconeccionM=abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)= "select r.*,e.estado from reclamoe  r left join recestado e on r.idrecest = e.idrecest "
+	sqlmatriz(2)= " where r.idreclamop = "+ALLTRIM(STR(v_idreclamop)) + " and r.idrecsec = " +ALLTRIM(STR(v_idsector))
+	sqlmatriz(3)= " order by r.idreclamoe " 
+
+
+	verror=sqlrun(vconeccionM ,"reclamoe_sql")
+	
+	=abreycierracon(vconeccionM,"")
+			
+	IF verror=.f.
+		MESSAGEBOX("Hubo un error al obtener el estado del reclamo",0+16+256,"Error al obtner el estado")		
+		DO CASE
+		CASE v_retorno 	= 'I'
+			RETURN 0
+		CASE v_retorno	= 'N'
+			RETURN ''
+		OTHERWISE
+
+		ENDCASE
+
+	ENDIF 
+
+	SELECT reclamoe_sql
+	GO BOTTOM 
+	
+	
+	DO CASE
+		CASE v_retorno 	= 'I'
+			RETURN reclamoe_sql.idrecest
+		CASE v_retorno	= 'N'
+			RETURN reclamoe_sql.estado
+		OTHERWISE
+			RETURN ''
+		ENDCASE
+
+ENDFUNC 
 
 
 
 
 
+*** -----------------------------------------
+* Obtiene el ID del sector al que pertenece el usuario
+* Retorna: idusuario
+*** -----------------------------------------
+
+FUNCTION getSectorUsu
+	
+	PARAMETERS p_usuario
+
+	v_idsector	= 0
+	
+	v_usuario	= p_usuario
+	
+	* Abro conexión
+	vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+
+
+	sqlmatriz(1)=" select * from recsecusu "
+	sqlmatriz(2)= " where usuario = '"+ALLTRIM(v_usuario)+"'"
+
+
+	verror=sqlrun(vconeccionM,"usuario_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del  usuario ",0+48+0,"Error")
+	ENDIF 
+	*Cierro Conexión
+	=abreycierracon(vconeccionM,"")
+	SELECT usuario_sql
+	GO TOP 
+	
+	IF NOT EOF()
+	
+		v_idsector	= usuario_sql.idrecsusu
+		
+	ENDIF 
+
+
+	RETURN v_idsector
+ENDFUNC 
 
 
 
 
 
+*** -----------------------------------------
+* Obtiene el ID del sector al que pertenece el usuario
+* Retorna: idrecsec
+*** -----------------------------------------
+
+FUNCTION getSecUsu
+	
+	PARAMETERS p_usuario
+
+	v_idsector	= 0
+	
+	v_usuario	= p_usuario
+	
+	*Abro conexión
+	vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+	
+	sqlmatriz(1)=" select * from recsecusu "
+	sqlmatriz(2)= " where usuario = '"+ALLTRIM(v_usuario)+"'"
 
 
+	verror=sqlrun(vconeccionM,"usuario_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del  usuario ",0+48+0,"Error")
+	ENDIF 
+	
+	*Cierro Conexión
+	=abreycierracon(vconeccionM,"")
+	SELECT usuario_sql
+	GO TOP 
+	
+	IF NOT EOF()
+	
+		v_idrecsec	= usuario_sql.idrecsec
+	ELSE
+		v_idrecsec	= 0
+		
+	ENDIF 
+
+
+	RETURN v_idrecsec
+ENDFUNC 
+
+
+
+*** -----------------------------------------
+* Cambia el reclamop del sector indicado al estado pasado como parámetro
+* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
+* Retorna: True o False, según se cambió o no el estado
+*** -----------------------------------------
+
+FUNCTION cambiaAEstado
+	
+	PARAMETERS p_reclamop, p_sector, p_estado
+
+	v_idreclamop	= p_reclamop
+	v_idsector		= p_sector
+	v_idestado		= p_estado
+	v_fecha			= DTOS(DATE())+ALLTRIM(SUBSTR(ALLTRIM(TIME(DATETIME())),1,8))
+	
+	*Abro conexión
+	vconeccionM=abreycierracon(0,_SYSSCHEMA)
+
+
+	*** Cambio el estado del reclamo, agregando un registro de la tabla reclamoe *
+	
+	p_campoidx	= 'idreclamoe'
+	p_tipo		= 'I'
+	p_tabla		= 'reclamoe'
+	p_incre		= 1
+	
+	v_idreclamoe	= maxnumeroidx (p_campoidx, p_tipo, p_tabla, p_incre)
+	
+	IF v_idreclamoe <= 0 
+		** Error al obtner el max idreclamoe 
+				
+		** me desconecto
+		=abreycierracon(vconeccionM,"")
+	
+		RETURN .F.
+	
+	ELSE
+	
+	
+	
+		vconeccionM=abreycierracon(0,_SYSSCHEMA)
+		
+		sqlmatriz(1)=" select * from recestado "
+		sqlmatriz(2)=" where idrecest = "+ALLTRIM(STR(v_idestado))
+		
+		
+		verror=sqlrun(vconeccionM,"estado_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al buscar el estado",0+48+0,"Error")
+		    		
+			** me desconecto
+			=abreycierracon(vconeccionM,"")
+			
+		    RETURN .F.
+		ENDIF 
+
+		SELECT estado_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			v_estado	= estado_sql.estado
+		ELSE
+				
+		** me desconecto
+		=abreycierracon(vconeccionM,"")
+		
+			RETURN .F.
+		ENDIF 
+		
+
+
+
+		*Abro conexión
+		vconeccionM=abreycierracon(0,_SYSSCHEMA)
+
+		DIMENSION lamatriz(5,2)
+		
+					
+		lamatriz(1,1)='idreclamoe'
+		lamatriz(1,2)=ALLTRIM(STR(v_idreclamoe))
+		lamatriz(2,1)='idreclamop'
+		lamatriz(2,2)=ALLTRIM(STR(v_idreclamop))
+		lamatriz(3,1)='idrecest'
+		lamatriz(3,2)=ALLTRIM(STR(v_idestado))
+		lamatriz(4,1)='idrecsec'
+		lamatriz(4,2)=ALLTRIM(STR(v_idsector))
+		lamatriz(5,1)='fecha'
+		lamatriz(5,2)="'"+ALLTRIM(v_fecha)+"'"
+				
+		p_tabla     = 'reclamoe'
+		p_matriz    = 'lamatriz'
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		p_conexion  = vconeccionM
+		
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
+		    
+		    ** me desconecto
+			=abreycierracon(vconeccionM,"")
+		
+		  RETURN .F.
+		ENDIF	
+
+
+		
+		IF v_idreclamop > 0 AND v_idreclamoe > 0
+		
+		
+		*** Busco datos del reclamo ***
+			sqlmatriz(1)=" select * from reclamop "
+			sqlmatriz(2)=" where idreclamop = "+ALLTRIM(STR(v_idreclamop))
+			
+			
+			verror=sqlrun(vconeccionM,"reclamop_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error al buscar el reclamo",0+48+0,"Error")
+			    		
+				** me desconecto
+				=abreycierracon(vconeccionM,"")
+				
+			    RETURN .F.
+			ENDIF 
+
+			SELECT reclamop_sql
+			GO TOP 
+			
+			IF NOT EOF()
+				v_numeroRec	= reclamop_sql.numero
+			ELSE
+					
+				** me desconecto
+				=abreycierracon(vconeccionM,"")
+				
+				RETURN .F.
+			ENDIF 
+			
+		*** Busco datos del sector ***	
+			sqlmatriz(1)=" select * from recsector "
+			sqlmatriz(2)=" where idrecsec = "+ALLTRIM(STR(v_idsector))
+			
+				
+			verror=sqlrun(vconeccionM,"sector_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error al buscar el sector",0+48+0,"Error")
+			    		
+				** me desconecto
+				=abreycierracon(vconeccionM,"")
+				
+			    RETURN .F.
+			ENDIF 
+
+			SELECT sector_sql
+			GO TOP 
+			
+			IF NOT EOF()
+				v_sectorRec	= sector_sql.sector
+			ELSE
+			
+					
+				** me desconecto
+				=abreycierracon(vconeccionM,"")
+				
+				RETURN .F.
+			ENDIF 
+					
+			** me desconecto
+			=abreycierracon(vconeccionM,"")
+			
+			
+			p_campoidx	= 'idrecnov'
+			p_tipo		= 'I'
+			p_tabla		= 'recnovedad'
+			p_incre		= 1
+		
+		
+			v_idrecnov	= maxnumeroidx(p_campoidx, p_tipo, p_tabla, p_incre)
+			
+			
+			*Abro conexión
+			vconeccionM=abreycierracon(0,_SYSSCHEMA)
+			
+			v_fechaHora		= DATETIME()
+			v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
+			v_fechaStr		= ALLTRIM(TTOC(DATETIME()))
+			v_usuario		= _SYSUSUARIO
+			
+			v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
+			
+			v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
+				
+			
+			DIMENSION lamatriz2(5,2)
+	
+				
+			lamatriz2(1,1)='idrecnov'
+			lamatriz2(1,2)=ALLTRIM(STR(v_idrecnov))
+			lamatriz2(2,1)='idreclamop'
+			lamatriz2(2,2)=ALLTRIM(STR(v_idreclamop))
+			lamatriz2(3,1)='fecha'
+			lamatriz2(3,2)="'"+ALLTRIM(v_fecha)+"'"
+			lamatriz2(4,1)='novedades'
+			lamatriz2(4,2)="'"+ALLTRIM(v_novedad)+"'"
+			lamatriz2(5,1)='usuario'
+			lamatriz2(5,2)="'"+ALLTRIM(v_usuario)+"'"
+					
+			p_tabla     = 'recnovedad'
+			p_matriz    = 'lamatriz2'
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+			p_conexion  = vconeccionM
+			
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
+			    
+			    ** me desconecto
+				=abreycierracon(vconeccionM,"")
+			
+			  RETURN .F.
+			ENDIF	
+			
+		
+		ENDIF 
+		
+	
+	ENDIF 
+			
+	** me desconecto
+	=abreycierracon(vconeccionM,"")
+	
+
+	RETURN .T.
+ENDFUNC 
+
+
+FUNCTION frandom
+	RETURN ALLTRIM(STRTRAN(SUBSTR(STR((RAND()*_SYSRAND)),2),'','0'))
+ENDFUNC 
 
