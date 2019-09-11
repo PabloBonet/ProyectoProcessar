@@ -5737,67 +5737,6 @@ ENDFUNC
 
 
 *** -----------------------------------------
-* Retorna el ultimo estado para un reclamo dado, segun el sector
-* Parametros: Reclamo, Sector, Retorno (I: Indice,N: Nombre)
-* Retorna: ID_Reclamo_Estado
-*** -----------------------------------------
-
-FUNCTION estadoReclamoPorSector
-	
-	PARAMETERS p_reclamop, p_sector, p_Retorno
-
-	v_idreclamop	= p_reclamop
-	v_idsector		= p_sector
-	v_retorno		= p_retorno
-
-	
-
-	
-	*Abro conexión
-	vconeccionM=abreycierracon(0,_SYSSCHEMA)
-
-	sqlmatriz(1)= "select r.*,e.estado from reclamoe  r left join recestado e on r.idrecest = e.idrecest "
-	sqlmatriz(2)= " where r.idreclamop = "+ALLTRIM(STR(v_idreclamop)) + " and r.idrecsec = " +ALLTRIM(STR(v_idsector))
-	sqlmatriz(3)= " order by r.idreclamoe " 
-
-
-	verror=sqlrun(vconeccionM ,"reclamoe_sql")
-	
-	=abreycierracon(vconeccionM,"")
-			
-	IF verror=.f.
-		MESSAGEBOX("Hubo un error al obtener el estado del reclamo",0+16+256,"Error al obtner el estado")		
-		DO CASE
-		CASE v_retorno 	= 'I'
-			RETURN 0
-		CASE v_retorno	= 'N'
-			RETURN ''
-		OTHERWISE
-
-		ENDCASE
-
-	ENDIF 
-
-	SELECT reclamoe_sql
-	GO BOTTOM 
-	
-	
-	DO CASE
-		CASE v_retorno 	= 'I'
-			RETURN reclamoe_sql.idrecest
-		CASE v_retorno	= 'N'
-			RETURN reclamoe_sql.estado
-		OTHERWISE
-			RETURN ''
-		ENDCASE
-
-ENDFUNC 
-
-
-
-
-
-*** -----------------------------------------
 * Obtiene el ID del sector al que pertenece el usuario
 * Retorna: idusuario
 *** -----------------------------------------
@@ -6127,3 +6066,138 @@ FUNCTION frandom
 	RETURN ALLTRIM(STRTRAN(SUBSTR(STR((RAND()*_SYSRAND)),2),'','0'))
 ENDFUNC 
 
+
+*** -----------------------------------------
+* Retorna el ultimo estado para un reclamo dado, segun el sector
+* Parametros: Reclamo, Sector, Retorno (I: Indice,N: Nombre)
+* Retorna: ID_Reclamo_Estado
+*** -----------------------------------------
+
+FUNCTION estadoReclamoPorSector
+	
+	PARAMETERS p_reclamop, p_sector, p_Retorno
+
+	v_idreclamop	= p_reclamop
+	v_idsector		= p_sector
+	v_retorno		= p_retorno
+
+	
+
+	
+	*Abro conexión
+	vconeccionM=abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)= "select r.*,e.estado from reclamoe  r left join recestado e on r.idrecest = e.idrecest "
+	sqlmatriz(2)= " where r.idreclamop = "+ALLTRIM(STR(v_idreclamop)) + " and r.idrecsec = " +ALLTRIM(STR(v_idsector))
+	sqlmatriz(3)= " order by r.idreclamoe " 
+
+
+	verror=sqlrun(vconeccionM ,"reclamoe_sql")
+	
+	=abreycierracon(vconeccionM,"")
+			
+	IF verror=.f.
+		MESSAGEBOX("Hubo un error al obtener el estado del reclamo",0+16+256,"Error al obtner el estado")		
+		DO CASE
+		CASE v_retorno 	= 'I'
+			RETURN 0
+		CASE v_retorno	= 'N'
+			RETURN ''
+		OTHERWISE
+
+		ENDCASE
+
+	ENDIF 
+
+	SELECT reclamoe_sql
+	GO BOTTOM 
+	
+	
+	DO CASE
+		CASE v_retorno 	= 'I'
+			RETURN reclamoe_sql.idrecest
+		CASE v_retorno	= 'N'
+			RETURN reclamoe_sql.estado
+		OTHERWISE
+			RETURN ''
+		ENDCASE
+
+	
+ENDFUNC 	
+	
+
+FUNCTION CopiarClip
+	v_auxi = ALIAS()
+	IF !EMPTY(v_auxi) THEN 
+		IF (ALLTRIM(FIELD("sel",v_auxi))=='SEL') THEN
+			IF TYPE('sel')='L' THEN 
+				SELECT * FROM &v_auxi INTO CURSOR ccopiarclip WHERE sel = .t. 
+				SELECT ccopiarclip
+				IF _tally = 0  THEN 
+					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip 
+				ENDIF 
+			ELSE
+				SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  			
+			ENDIF 
+		ELSE
+			SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  	
+		ENDIF  
+		SELECT ccopiarclip
+		v_rec = reccount()
+		IF v_rec > 0 then 
+			_vfp.DataToClip('ccopiarclip',v_rec,3)
+			MESSAGEBOX("Se copiaron los datos al Portapapeles",64)
+		ENDIF 
+		USE IN ccopiarclip
+		SELECT &v_auxi
+	ENDIF 
+	RETURN 
+ENDFUNC 
+
+
+
+
+
+*** -----------------------------------------
+* Retorna Verdadero o Falso, si el reclamo pertenece al sector dado
+* Parametros: Reclamo, Sector
+* Retorna: True o False
+*** -----------------------------------------
+
+FUNCTION reclamoPerteneceSector
+	
+	PARAMETERS p_reclamop, p_sector
+
+	v_idreclamop	= p_reclamop
+	v_idsector		= p_sector
+
+
+	*Abro conexión
+	vconeccionM=abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)= "select * from reclamosec r  "
+	sqlmatriz(2)= " where r.idreclamop = "+ALLTRIM(STR(v_idreclamop)) + " and r.idrecsecD = " +ALLTRIM(STR(v_idsector))
+
+
+	verror=sqlrun(vconeccionM ,"reclamoSec_sql")
+	
+	=abreycierracon(vconeccionM,"")
+			
+	IF verror=.f.
+		MESSAGEBOX("Hubo un error al obtener el sector ",0+16+256,"Error al obtner el sector")		
+		RETURN .F.
+	ENDIF 
+
+	SELECT reclamoSec_sql
+	GO top
+	
+	IF NOT EOF()
+		RETURN .T.
+	ELSE
+		RETURN .F.
+	ENDIF 
+	
+	
+	RETURN .F.
+
+ENDFUNC 
