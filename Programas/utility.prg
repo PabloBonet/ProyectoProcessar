@@ -4494,7 +4494,6 @@ SELECT &v_tablaDatos
 GO TOP 
 
 
-
 IF v_idregistro	> 0
 
 	**** Busco el comprobante asociado ***
@@ -5312,9 +5311,6 @@ FUNCTION cambiaAEstado
 		RETURN .F.
 	
 	ELSE
-	
-	
-		MESSAGEBOX("RECLAMO ID")
 	
 
 		vconeccionM=abreycierracon(0,_SYSSCHEMA)	
@@ -6201,3 +6197,132 @@ FUNCTION reclamoPerteneceSector
 	RETURN .F.
 
 ENDFUNC 
+
+
+
+*** -----------------------------------------
+* Retorna una lista de correos asociados a la entidad pasado como parámetro
+* pIdEntidadd: ID de la entidad
+* Retorno: Lista de Emails separados por ';'
+*** -----------------------------------------
+
+FUNCTION obtenerCorreos
+	PARAMETERS pIdEntidad
+
+	
+	v_retorno	= ""
+	
+	IF pIdCliente == 0 OR EMPTY(pIdCliente) == .T.
+	
+		RETURN  v_retorno
+	ENDIF 
+
+	v_identidad	= pIdEntidad
+	
+	vconeccionM	= abreycierracon(0,_SYSSCHEMA)
+	
+	sqlmatriz(1)=" select cliente, email1, email2 from entidad where entidad = "+ALLTRIM(STR(v_identidad))
+
+
+	verror=sqlrun(vconeccionM,"entidades_sql_uti")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los correos de las entidades",0+48+0,"Error")
+	    RETURN v_retorno
+	ENDIF 
+
+	* me desconecto	
+	=abreycierracon(vconeccionM,"")
+		
+	
+	SELECT entidades_sql_uti
+	GO TOP 
+
+		v_email1	= entidades_sql_uti.email1
+		v_email2	= entidades_sql_utiv.email2
+			
+		IF EMPTY(v_email2)
+			v_retorno	= v_email1
+		ELSE
+			IF EMPTY(v_email1)
+				v_retorno	= v_email2
+			ELSE
+				v_retorno	= v_email1+";"+v_email2
+			ENDIF 
+		ENDIF  
+			
+		
+		
+		return v_retorno
+		
+		
+ENDFUNC 
+
+
+*** -----------------------------------------
+* Busca la configuración de correo para el usuario logeado
+* Retorna: objeto de configuración
+*** -----------------------------------------
+FUNCTION cargaCfgCorreo
+
+
+vconeccionM = abreycierracon(0,_SYSCHEMA)
+
+
+	sqlmatriz(1)=" select * FROM correoconf "
+	sqlmatriz(2)= " where usuario = '"+ALLTRIM(_SYSUSUARIO )+"'"
+
+	verror=sqlrun(vconeccionM,"correoconf_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la configuración del correo de usuario ",0+48+0,"Error")
+	ENDIF 
+
+	* me desconecto	
+	=abreycierracon(vconeccionM,"")
+
+	SELECT correoconf_sql
+	GO top
+	
+	IF NOT EOF()
+		** Encontró la configuración
+	
+		v_smtpserver	= correoconf_sql.smtpserv
+		v_smtpport		= correoconf_sql.smtpport
+		v_smtpport		= correoconf_sql.smtpport
+ 
+		v_sendusing		= correoconf_sql.sendusing
+		v_smtpaut		= IIF(correoconf_sql.smtpaut == 'S',.T.,.F.)
+		v_smtpusessl	= IIF(correoconf_sql.smtpusessl == 'S', .T.,.F.)
+		v_correoEnv		= correoconf_sql.correo
+		v_clave			= correoconf_sql.clave
+		
+		
+	 	loCfg = CREATEOBJECT("CDO.Configuration")
+  		WITH loCfg.Fields
+		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = v_smtpserver
+		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = v_smtpport
+		    .Item("http://schemas.microsoft.com/cdo/configuration/sendusing") = v_sendusing
+		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate") = v_smtpaut
+		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpusessl") = v_smtpusessl
+		    .Item("http://schemas.microsoft.com/cdo/configuration/sendusername") = v_correoEnv
+		    .Item("http://schemas.microsoft.com/cdo/configuration/sendpassword") = v_clave
+		    .Update
+  		ENDWITH
+  		
+  		RETURN loCfg
+	ELSE
+		** No encontró configuración para el usuario -> Pido la configuración del correo
+	
+		DO FORM abmcfgcorreo TO v_respuesta
+		
+		IF v_respuesta > 0
+					
+			v_res = cargaCfgCorreo()
+			
+			RETURN v_res
+			
+	 	ELSE
+	 	
+	 		RETURN null	
+		ENDIF 
+	ENDIF 
+
