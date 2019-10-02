@@ -5273,14 +5273,229 @@ RETURN ret_modelo
 ENDFUNC 
 
 
+*!*	*** -----------------------------------------
+*!*	* Cambia el reclamop del sector indicado al estado pasado como parámetro
+*!*	* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
+*!*	* Parámetros: 
+*!*	*	P_reclamop: Reclamo al que se le va a cambiar de estado
+*!*	*	P_Sector:	Sector asociado al reclamo
+*!*	*	P_estado:	Nuevo estado del reclamo para el sector
+*!*	*	P_CierraTodos: Indica que si el sector que se va a cambiar es el origen, y el estado es Cerrado: va a cerrar el reclamo para todos los sectores
+*!*	* Retorna: True o False, según se cambió o no el estado
+*!*	*** -----------------------------------------
+
+*!*	FUNCTION cambiaAEstado
+*!*		
+*!*		PARAMETERS p_reclamop, p_sector, p_estado, P_cierraTodos
+
+*!*		v_idreclamop	= p_reclamop
+*!*		v_idsector		= p_sector
+*!*		v_idestado		= p_estado
+*!*		v_cierraTodos	= p_cierraTodos
+*!*		v_fecha			= DTOS(DATE())+ALLTRIM(SUBSTR(ALLTRIM(TIME(DATETIME())),1,8))
+*!*		
+
+*!*		vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+
+
+*!*		*** Cambio el estado del reclamo, agregando un registro de la tabla reclamoe *
+*!*		
+*!*		p_campoidx	= 'idreclamoe'
+*!*		p_tipo		= 'I'
+*!*		p_tabla		= 'reclamoe'
+*!*		p_incre		= 1
+*!*		
+*!*		v_idreclamoe	= maxnumeroidx (p_campoidx, p_tipo, p_tabla, p_incre)
+*!*		
+*!*		IF v_idreclamoe <= 0 
+*!*			** Error al obtner el max idreclamoe 
+*!*					
+*!*			** me desconecto
+*!*			=abreycierracon(vconeccionM,"")
+*!*		
+*!*			RETURN .F.
+*!*		
+*!*		ELSE
+*!*		
+
+*!*			vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+*!*			
+*!*			sqlmatriz(1)=" select * from recestado "
+*!*			sqlmatriz(2)=" where idrecest = "+ALLTRIM(STR(v_idestado))
+*!*			
+*!*			
+*!*			verror=sqlrun(vconeccionM,"estado_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error al buscar el estado",0+48+0,"Error")
+*!*			    		
+*!*				** me desconecto
+*!*				=abreycierracon(vconeccionM,"")
+*!*				
+*!*			    RETURN .F.
+*!*			ENDIF 
+
+*!*			SELECT estado_sql
+*!*			GO TOP 
+*!*			
+*!*			IF NOT EOF()
+*!*				v_estado	= estado_sql.estado
+*!*			ELSE
+*!*					
+*!*			** me desconecto
+*!*			=abreycierracon(vconeccionM,"")
+*!*			
+*!*				RETURN .F.
+*!*			ENDIF 
+*!*			
+
+*!*		
+
+*!*			vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+
+*!*			sqlmatriz(1)=" insert into reclamoe  "
+*!*			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idreclamoe))+","+ALLTRIM(STR(v_idreclamop))+","+ALLTRIM(STR(v_idestado))+","+ALLTRIM(STR(v_idsector))+",'"+ALLTRIM(v_fecha)+"')"
+
+
+*!*			verror=sqlrun(vconeccionM,"ins_reclamoe_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
+*!*			    		
+*!*				** me desconecto
+*!*				=abreycierracon(vconeccionM,"")
+*!*		
+*!*			    RETURN .F.
+*!*			ENDIF 
+
+*!*			
+*!*			IF v_idreclamop > 0 AND v_idreclamoe > 0
+*!*			
+*!*			
+*!*			*** Busco datos del reclamo ***
+*!*				sqlmatriz(1)=" select * from reclamop "
+*!*				sqlmatriz(2)=" where idreclamop = "+ALLTRIM(STR(v_idreclamop))
+*!*				
+*!*				
+*!*				verror=sqlrun(vconeccionM,"reclamop_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error al buscar el reclamo",0+48+0,"Error")
+*!*				    		
+*!*					** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*					
+*!*				    RETURN .F.
+*!*				ENDIF 
+
+*!*				SELECT reclamop_sql
+*!*				GO TOP 
+*!*				
+*!*				IF NOT EOF()
+*!*					v_numeroRec	= reclamop_sql.numero
+*!*				ELSE
+*!*						
+*!*					** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*					
+*!*					RETURN .F.
+*!*				ENDIF 
+*!*				
+*!*			*** Busco datos del sector ***	
+*!*				sqlmatriz(1)=" select * from recsector "
+*!*				sqlmatriz(2)=" where idrecsec = "+ALLTRIM(STR(v_idsector))
+*!*				
+*!*					
+*!*				verror=sqlrun(vconeccionM,"sector_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error al buscar el sector",0+48+0,"Error")
+*!*				    		
+*!*					** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*					
+*!*				    RETURN .F.
+*!*				ENDIF 
+
+*!*				SELECT sector_sql
+*!*				GO TOP 
+*!*				
+*!*				IF NOT EOF()
+*!*					v_sectorRec	= sector_sql.sector
+*!*				ELSE
+*!*				
+*!*						
+*!*					** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*					
+*!*					RETURN .F.
+*!*				ENDIF 
+*!*						
+
+*!*				p_campoidx	= 'idrecnov'
+*!*				p_tipo		= 'I'
+*!*				p_tabla		= 'recnovedad'
+*!*				p_incre		= 1
+*!*			
+*!*			
+*!*				v_idrecnov	= maxnumeroidx(p_campoidx, p_tipo, p_tabla, p_incre)
+*!*				
+*!*				
+
+*!*				vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+
+*!*				
+*!*				v_fechaHora		= DATETIME()
+*!*				v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
+*!*				v_fechaStr		= ALLTRIM(TTOC(DATETIME()))
+*!*				v_usuario		= _SYSUSUARIO
+*!*				
+*!*				v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
+*!*				
+*!*				v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
+*!*						
+*!*				
+*!*				sqlmatriz(1)=" insert into recnovedad "
+*!*				sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"')"
+
+
+*!*				verror=sqlrun(vconeccionM,"ins_recnovedad_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error al registrar la novedad del reclamo ",0+48+0,"Error")
+*!*				    		
+*!*					** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*					
+*!*				    RETURN .F.
+*!*				ENDIF 
+*!*			
+*!*			ELSE
+*!*			
+*!*			
+*!*			ENDIF 
+*!*		
+*!*		
+*!*		
+*!*		ENDIF 
+*!*		
+*!*		
+*!*			
+*!*		** me desconecto
+*!*		=abreycierracon(vconeccionM,"")
+*!*		
+
+*!*		RETURN .T.
+*!*	ENDFUNC 
+
+
+
 *** -----------------------------------------
 * Cambia el reclamop del sector indicado al estado pasado como parámetro
 * Guarda el registro del cambio de estado además genera la novedad de cambio del estado
 * Retorna: True o False, según se cambió o no el estado
 *** -----------------------------------------
 
-FUNCTION cambiaAEstado
-	
+
+FUNCTION cambiaEstadoRec
 	PARAMETERS p_reclamop, p_sector, p_estado
 
 	v_idreclamop	= p_reclamop
@@ -5289,10 +5504,7 @@ FUNCTION cambiaAEstado
 	v_fecha			= DTOS(DATE())+ALLTRIM(SUBSTR(ALLTRIM(TIME(DATETIME())),1,8))
 	
 
-	vconeccionM=abreycierracon(0,_SYSSCHEMA)	
-
-
-
+	
 	*** Cambio el estado del reclamo, agregando un registro de la tabla reclamoe *
 	
 	p_campoidx	= 'idreclamoe'
@@ -5312,8 +5524,10 @@ FUNCTION cambiaAEstado
 	
 	ELSE
 	
+	
+	
+		vconeccionM = abreycierracon(0,SYSSCHEMA)
 
-		vconeccionM=abreycierracon(0,_SYSSCHEMA)	
 
 		
 		sqlmatriz(1)=" select * from recestado "
@@ -5345,10 +5559,6 @@ FUNCTION cambiaAEstado
 		
 
 	
-
-		vconeccionM=abreycierracon(0,_SYSSCHEMA)	
-
-
 		sqlmatriz(1)=" insert into reclamoe  "
 		sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idreclamoe))+","+ALLTRIM(STR(v_idreclamop))+","+ALLTRIM(STR(v_idestado))+","+ALLTRIM(STR(v_idsector))+",'"+ALLTRIM(v_fecha)+"')"
 
@@ -5423,8 +5633,8 @@ FUNCTION cambiaAEstado
 				
 				RETURN .F.
 			ENDIF 
-					
-
+			** me desconecto
+			=abreycierracon(vconeccionM,"")
 			p_campoidx	= 'idrecnov'
 			p_tipo		= 'I'
 			p_tabla		= 'recnovedad'
@@ -5435,8 +5645,7 @@ FUNCTION cambiaAEstado
 			
 			
 
-			vconeccionM=abreycierracon(0,_SYSSCHEMA)	
-
+		vconeccionM = abreycierracon(0,_SYSSCHEMA)
 			
 			v_fechaHora		= DATETIME()
 			v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
@@ -5462,8 +5671,7 @@ FUNCTION cambiaAEstado
 			    RETURN .F.
 			ENDIF 
 		
-		ELSE
-		
+	
 		
 		ENDIF 
 	
@@ -5480,6 +5688,107 @@ FUNCTION cambiaAEstado
 	RETURN .T.
 ENDFUNC 
 
+
+
+
+
+
+
+
+
+
+*** -----------------------------------------
+* Cambia los estados del reclamo según el sector y los sectores asociados al reclamo si está habilitada la opción
+* Retorna: True o False, según se cambió o no el estado
+*** -----------------------------------------
+
+FUNCTION cambiaAEstado
+	
+	PARAMETERS p_reclamop, p_sector, p_estado
+
+	v_idreclamop	= p_reclamop
+	v_idsector		= p_sector
+	v_idestado		= p_estado
+	v_retorno		= .F.
+	
+	estadoRecObjTmp = CREATEOBJECT('estadosrecclass')
+	
+	
+	v_estadoCerradoTmp	=  estadoRecObjTmp.getidestado("CERRADO")
+		
+		
+	IF v_estadoCerradoTmp = v_idestado AND _SYSRECCIERRAO = 'S'
+		** El Sector origen cierra todos los sectores 
+	
+	
+	
+
+		vconeccionM = abreycierracon(0,_SYSSCHEMA)
+
+		
+		sqlmatriz(1)=" select * from reclamosec "
+		sqlmatriz(2)=" where idrecseco = "+ALLTRIM(STR(v_idsector)) +" and idreclamop = "+ALLTRIM(STR(v_idreclamop))
+		
+		
+		verror=sqlrun(vconeccionM,"reclamosec_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al buscar los sectores del reclamo",0+48+0,"Error")
+		    		
+			** me desconecto
+			=abreycierracon(vconeccionM,"")
+			
+		    RETURN .F.
+		ENDIF 	
+			v_huboError	= 0
+		
+		SELECT reclamosec_sql
+		
+		v_cantReg	= RECCOUNT()
+		
+		SELECT reclamosec_sql
+		GO TOP 
+		
+		DO WHILE NOT EOF()
+		
+			v_idsectorD	= reclamosec_sql.idrecsecd
+		
+			v_idultEstadoRecTmp	= estadoReclamoPorSector(v_idreclamop, v_idsectorD, 'I')
+	
+			
+			IF v_idultEstadoRecTmp = v_estadoCerradoTmp
+				** Si está en estado cerrado -> No cambio el estado
+			ELSE
+			
+				** Cierro el reclamo para el sector
+				v_retTmp = cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
+		
+				IF v_retTmp = .F.
+					v_huboError = v_huboError  + 1
+					
+					MESSAGEBOX("Hubo un problema al intentar cambiar de estado el reclamo ID: "+ALLTRIM(STR(v_idreclamop)),0+48+256,"Error al cambiar de estado")
+				ENDIF 
+			ENDIF 
+		
+			SELECT reclamosec_sql
+			SKIP 1
+		
+		ENDDO 
+		
+		IF v_cantReg = v_huboError
+			v_retorno = .F.
+		ELSE
+			v_retorno = .T.		
+		ENDIF  
+	ELSE
+		v_retorno	= cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
+	
+	ENDIF 		
+	
+	
+		
+
+	RETURN v_retorno
+ENDFUNC 
 
 
 
@@ -5821,14 +6130,253 @@ ENDFUNC
 
 
 
+*!*	*** -----------------------------------------
+*!*	* Cambia el reclamop del sector indicado al estado pasado como parámetro
+*!*	* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
+*!*	* Retorna: True o False, según se cambió o no el estado
+*!*	*** -----------------------------------------
+
+*!*	FUNCTION cambiaAEstado
+*!*		
+*!*		PARAMETERS p_reclamop, p_sector, p_estado
+
+*!*		v_idreclamop	= p_reclamop
+*!*		v_idsector		= p_sector
+*!*		v_idestado		= p_estado
+*!*		v_fecha			= DTOS(DATE())+ALLTRIM(SUBSTR(ALLTRIM(TIME(DATETIME())),1,8))
+*!*		
+*!*		*Abro conexión
+*!*		vconeccionM=abreycierracon(0,_SYSSCHEMA)
+
+
+*!*		*** Cambio el estado del reclamo, agregando un registro de la tabla reclamoe *
+*!*		
+*!*		p_campoidx	= 'idreclamoe'
+*!*		p_tipo		= 'I'
+*!*		p_tabla		= 'reclamoe'
+*!*		p_incre		= 1
+*!*		
+*!*		v_idreclamoe	= maxnumeroidx (p_campoidx, p_tipo, p_tabla, p_incre)
+*!*		
+*!*		IF v_idreclamoe <= 0 
+*!*			** Error al obtner el max idreclamoe 
+*!*					
+*!*			** me desconecto
+*!*			=abreycierracon(vconeccionM,"")
+*!*		
+*!*			RETURN .F.
+*!*		
+*!*		ELSE
+*!*		
+*!*		
+*!*		
+*!*			vconeccionM=abreycierracon(0,_SYSSCHEMA)
+*!*			
+*!*			sqlmatriz(1)=" select * from recestado "
+*!*			sqlmatriz(2)=" where idrecest = "+ALLTRIM(STR(v_idestado))
+*!*			
+*!*			
+*!*			verror=sqlrun(vconeccionM,"estado_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error al buscar el estado",0+48+0,"Error")
+*!*			    		
+*!*				** me desconecto
+*!*				=abreycierracon(vconeccionM,"")
+*!*				
+*!*			    RETURN .F.
+*!*			ENDIF 
+
+*!*			SELECT estado_sql
+*!*			GO TOP 
+*!*			
+*!*			IF NOT EOF()
+*!*				v_estado	= estado_sql.estado
+*!*			ELSE
+*!*					
+*!*			** me desconecto
+*!*			=abreycierracon(vconeccionM,"")
+*!*			
+*!*				RETURN .F.
+*!*			ENDIF 
+*!*			
+
+
+
+*!*			*Abro conexión
+*!*			vconeccionM=abreycierracon(0,_SYSSCHEMA)
+
+*!*			DIMENSION lamatriz(5,2)
+*!*			
+*!*						
+*!*			lamatriz(1,1)='idreclamoe'
+*!*			lamatriz(1,2)=ALLTRIM(STR(v_idreclamoe))
+*!*			lamatriz(2,1)='idreclamop'
+*!*			lamatriz(2,2)=ALLTRIM(STR(v_idreclamop))
+*!*			lamatriz(3,1)='idrecest'
+*!*			lamatriz(3,2)=ALLTRIM(STR(v_idestado))
+*!*			lamatriz(4,1)='idrecsec'
+*!*			lamatriz(4,2)=ALLTRIM(STR(v_idsector))
+*!*			lamatriz(5,1)='fecha'
+*!*			lamatriz(5,2)="'"+ALLTRIM(v_fecha)+"'"
+*!*					
+*!*			p_tabla     = 'reclamoe'
+*!*			p_matriz    = 'lamatriz'
+*!*			p_tipoope     = 'I'
+*!*			p_condicion   = ''
+*!*			v_titulo      = " EL ALTA "
+*!*			p_conexion  = vconeccionM
+*!*			
+*!*			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
+*!*			    
+*!*			    ** me desconecto
+*!*				=abreycierracon(vconeccionM,"")
+*!*			
+*!*			  RETURN .F.
+*!*			ENDIF	
+
+
+*!*			
+*!*			IF v_idreclamop > 0 AND v_idreclamoe > 0
+*!*			
+*!*			
+*!*			*** Busco datos del reclamo ***
+*!*				sqlmatriz(1)=" select * from reclamop "
+*!*				sqlmatriz(2)=" where idreclamop = "+ALLTRIM(STR(v_idreclamop))
+*!*				
+*!*				
+*!*				verror=sqlrun(vconeccionM,"reclamop_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error al buscar el reclamo",0+48+0,"Error")
+*!*				    		
+*!*					** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*					
+*!*				    RETURN .F.
+*!*				ENDIF 
+
+*!*				SELECT reclamop_sql
+*!*				GO TOP 
+*!*				
+*!*				IF NOT EOF()
+*!*					v_numeroRec	= reclamop_sql.numero
+*!*				ELSE
+*!*						
+*!*					** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*					
+*!*					RETURN .F.
+*!*				ENDIF 
+*!*				
+*!*			*** Busco datos del sector ***	
+*!*				sqlmatriz(1)=" select * from recsector "
+*!*				sqlmatriz(2)=" where idrecsec = "+ALLTRIM(STR(v_idsector))
+*!*				
+*!*					
+*!*				verror=sqlrun(vconeccionM,"sector_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error al buscar el sector",0+48+0,"Error")
+*!*				    		
+*!*					** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*					
+*!*				    RETURN .F.
+*!*				ENDIF 
+
+*!*				SELECT sector_sql
+*!*				GO TOP 
+*!*				
+*!*				IF NOT EOF()
+*!*					v_sectorRec	= sector_sql.sector
+*!*				ELSE
+*!*				
+*!*						
+*!*					** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*					
+*!*					RETURN .F.
+*!*				ENDIF 
+*!*						
+*!*				** me desconecto
+*!*				=abreycierracon(vconeccionM,"")
+*!*				
+*!*				
+*!*				p_campoidx	= 'idrecnov'
+*!*				p_tipo		= 'I'
+*!*				p_tabla		= 'recnovedad'
+*!*				p_incre		= 1
+*!*			
+*!*			
+*!*				v_idrecnov	= maxnumeroidx(p_campoidx, p_tipo, p_tabla, p_incre)
+*!*				
+*!*				
+*!*				*Abro conexión
+*!*				vconeccionM=abreycierracon(0,_SYSSCHEMA)
+*!*				
+*!*				v_fechaHora		= DATETIME()
+*!*				v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
+*!*				v_fechaStr		= ALLTRIM(TTOC(DATETIME()))
+*!*				v_usuario		= _SYSUSUARIO
+*!*				
+*!*				v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
+*!*				
+*!*				v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
+*!*					
+*!*				
+*!*				DIMENSION lamatriz2(5,2)
+*!*		
+*!*					
+*!*				lamatriz2(1,1)='idrecnov'
+*!*				lamatriz2(1,2)=ALLTRIM(STR(v_idrecnov))
+*!*				lamatriz2(2,1)='idreclamop'
+*!*				lamatriz2(2,2)=ALLTRIM(STR(v_idreclamop))
+*!*				lamatriz2(3,1)='fecha'
+*!*				lamatriz2(3,2)="'"+ALLTRIM(v_fecha)+"'"
+*!*				lamatriz2(4,1)='novedades'
+*!*				lamatriz2(4,2)="'"+ALLTRIM(v_novedad)+"'"
+*!*				lamatriz2(5,1)='usuario'
+*!*				lamatriz2(5,2)="'"+ALLTRIM(v_usuario)+"'"
+*!*						
+*!*				p_tabla     = 'recnovedad'
+*!*				p_matriz    = 'lamatriz2'
+*!*				p_tipoope     = 'I'
+*!*				p_condicion   = ''
+*!*				v_titulo      = " EL ALTA "
+*!*				p_conexion  = vconeccionM
+*!*				
+*!*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
+*!*				    
+*!*				    ** me desconecto
+*!*					=abreycierracon(vconeccionM,"")
+*!*				
+*!*				  RETURN .F.
+*!*				ENDIF	
+*!*				
+*!*			
+*!*			ENDIF 
+*!*			
+*!*		
+*!*		ENDIF 
+*!*				
+*!*		** me desconecto
+*!*		=abreycierracon(vconeccionM,"")
+*!*		
+
+*!*		RETURN .T.
+*!*	ENDFUNC 
+
+
+
+
 *** -----------------------------------------
 * Cambia el reclamop del sector indicado al estado pasado como parámetro
 * Guarda el registro del cambio de estado además genera la novedad de cambio del estado
 * Retorna: True o False, según se cambió o no el estado
 *** -----------------------------------------
 
-FUNCTION cambiaAEstado
-	
+
+FUNCTION cambiaEstadoRec
 	PARAMETERS p_reclamop, p_sector, p_estado
 
 	v_idreclamop	= p_reclamop
@@ -5836,8 +6384,8 @@ FUNCTION cambiaAEstado
 	v_idestado		= p_estado
 	v_fecha			= DTOS(DATE())+ALLTRIM(SUBSTR(ALLTRIM(TIME(DATETIME())),1,8))
 	
-	*Abro conexión
-	vconeccionM=abreycierracon(0,_SYSSCHEMA)
+
+	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 
 
 	*** Cambio el estado del reclamo, agregando un registro de la tabla reclamoe *
@@ -5861,8 +6409,8 @@ FUNCTION cambiaAEstado
 	
 	
 	
-		vconeccionM=abreycierracon(0,_SYSSCHEMA)
-		
+
+	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 		sqlmatriz(1)=" select * from recestado "
 		sqlmatriz(2)=" where idrecest = "+ALLTRIM(STR(v_idestado))
 		
@@ -5891,41 +6439,23 @@ FUNCTION cambiaAEstado
 		ENDIF 
 		
 
-
-
-		*Abro conexión
-		vconeccionM=abreycierracon(0,_SYSSCHEMA)
-
-		DIMENSION lamatriz(5,2)
+	
 		
-					
-		lamatriz(1,1)='idreclamoe'
-		lamatriz(1,2)=ALLTRIM(STR(v_idreclamoe))
-		lamatriz(2,1)='idreclamop'
-		lamatriz(2,2)=ALLTRIM(STR(v_idreclamop))
-		lamatriz(3,1)='idrecest'
-		lamatriz(3,2)=ALLTRIM(STR(v_idestado))
-		lamatriz(4,1)='idrecsec'
-		lamatriz(4,2)=ALLTRIM(STR(v_idsector))
-		lamatriz(5,1)='fecha'
-		lamatriz(5,2)="'"+ALLTRIM(v_fecha)+"'"
-				
-		p_tabla     = 'reclamoe'
-		p_matriz    = 'lamatriz'
-		p_tipoope     = 'I'
-		p_condicion   = ''
-		v_titulo      = " EL ALTA "
-		p_conexion  = vconeccionM
-		
-		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	vconeccionM = abreycierracon(0,_SYSSCHEMA)
+
+		sqlmatriz(1)=" insert into reclamoe  "
+		sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idreclamoe))+","+ALLTRIM(STR(v_idreclamop))+","+ALLTRIM(STR(v_idestado))+","+ALLTRIM(STR(v_idsector))+",'"+ALLTRIM(v_fecha)+"')"
+
+
+		verror=sqlrun(vconeccionM,"ins_reclamoe_sql")
+		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
-		    
-		    ** me desconecto
+		    		
+			** me desconecto
 			=abreycierracon(vconeccionM,"")
-		
-		  RETURN .F.
-		ENDIF	
-
+	
+		    RETURN .F.
+		ENDIF 
 
 		
 		IF v_idreclamop > 0 AND v_idreclamoe > 0
@@ -5988,10 +6518,7 @@ FUNCTION cambiaAEstado
 				RETURN .F.
 			ENDIF 
 					
-			** me desconecto
-			=abreycierracon(vconeccionM,"")
-			
-			
+
 			p_campoidx	= 'idrecnov'
 			p_tipo		= 'I'
 			p_tabla		= 'recnovedad'
@@ -6001,8 +6528,8 @@ FUNCTION cambiaAEstado
 			v_idrecnov	= maxnumeroidx(p_campoidx, p_tipo, p_tabla, p_incre)
 			
 			
-			*Abro conexión
-			vconeccionM=abreycierracon(0,_SYSSCHEMA)
+		
+	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 			
 			v_fechaHora		= DATETIME()
 			v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
@@ -6012,50 +6539,144 @@ FUNCTION cambiaAEstado
 			v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
 			
 			v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
-				
-			
-			DIMENSION lamatriz2(5,2)
-	
-				
-			lamatriz2(1,1)='idrecnov'
-			lamatriz2(1,2)=ALLTRIM(STR(v_idrecnov))
-			lamatriz2(2,1)='idreclamop'
-			lamatriz2(2,2)=ALLTRIM(STR(v_idreclamop))
-			lamatriz2(3,1)='fecha'
-			lamatriz2(3,2)="'"+ALLTRIM(v_fecha)+"'"
-			lamatriz2(4,1)='novedades'
-			lamatriz2(4,2)="'"+ALLTRIM(v_novedad)+"'"
-			lamatriz2(5,1)='usuario'
-			lamatriz2(5,2)="'"+ALLTRIM(v_usuario)+"'"
 					
-			p_tabla     = 'recnovedad'
-			p_matriz    = 'lamatriz2'
-			p_tipoope     = 'I'
-			p_condicion   = ''
-			v_titulo      = " EL ALTA "
-			p_conexion  = vconeccionM
 			
-			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-			    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
-			    
-			    ** me desconecto
+			sqlmatriz(1)=" insert into recnovedad "
+			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"')"
+
+
+			verror=sqlrun(vconeccionM,"ins_recnovedad_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error al registrar la novedad del reclamo ",0+48+0,"Error")
+			    		
+				** me desconecto
 				=abreycierracon(vconeccionM,"")
-			
-			  RETURN .F.
-			ENDIF	
-			
+				
+			    RETURN .F.
+			ENDIF 
+		
+		ELSE
+		
 		
 		ENDIF 
-		
+	
+	
 	
 	ENDIF 
-			
+	
+	
+		
 	** me desconecto
 	=abreycierracon(vconeccionM,"")
 	
 
 	RETURN .T.
 ENDFUNC 
+
+
+
+
+
+
+
+
+
+
+*** -----------------------------------------
+* Cambia los estados del reclamo según el sector y los sectores asociados al reclamo si está habilitada la opción
+* Retorna: True o False, según se cambió o no el estado
+*** -----------------------------------------
+
+FUNCTION cambiaAEstado
+	
+	PARAMETERS p_reclamop, p_sector, p_estado
+
+	v_idreclamop	= p_reclamop
+	v_idsector		= p_sector
+	v_idestado		= p_estado
+	v_retorno		= .F.
+	
+	estadoRecObjTmp = CREATEOBJECT('estadosrecclass')
+	
+	
+	v_estadoCerradoTmp	=  estadoRecObjTmp.getidestado("CERRADO")
+		
+		
+	IF v_estadoCerradoTmp = v_idestado AND _SYSRECCIERRAO = 'S'
+		** El Sector origen cierra todos los sectores 
+	
+	
+	
+	
+		vconeccionM = abreycierracon(0,_SYSSCHEMA)
+
+		
+		sqlmatriz(1)=" select * from reclamosec "
+		sqlmatriz(2)=" where idrecseco = "+ALLTRIM(STR(v_idsector)) +" and idreclamop = "+ALLTRIM(STR(v_idreclamop))
+		
+		
+		verror=sqlrun(vconeccionM,"reclamosec_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al buscar los sectores del reclamo",0+48+0,"Error")
+		    		
+			** me desconecto
+			=abreycierracon(vconeccionM,"")
+			
+		    RETURN .F.
+		ENDIF 	
+			v_huboError	= 0
+		
+		SELECT reclamosec_sql
+		
+		v_cantReg	= RECCOUNT()
+		
+		SELECT reclamosec_sql
+		GO TOP 
+		
+		DO WHILE NOT EOF()
+		
+			v_idsectorD	= reclamosec_sql.idrecsecd
+		
+			v_idultEstadoRecTmp	= estadoReclamoPorSector(v_idreclamop, v_idsectorD, 'I')
+	
+			
+			IF v_idultEstadoRecTmp = v_estadoCerradoTmp
+				** Si está en estado cerrado -> No cambio el estado
+			ELSE
+			
+				** Cierro el reclamo para el sector
+				v_retTmp = cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
+		
+				IF v_retTmp = .F.
+					v_huboError = v_huboError  + 1
+					
+					MESSAGEBOX("Hubo un problema al intentar cambiar de estado el reclamo ID: "+ALLTRIM(STR(v_idreclamop)),0+48+256,"Error al cambiar de estado")
+				ENDIF 
+			ENDIF 
+		
+			SELECT reclamosec_sql
+			SKIP 1
+		
+		ENDDO 
+		
+		IF v_cantReg = v_huboError
+			v_retorno = .F.
+		ELSE
+			v_retorno = .T.		
+		ENDIF  
+	ELSE
+		v_retorno	= cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
+	
+	ENDIF 		
+	
+	
+		
+
+	RETURN v_retorno
+ENDFUNC 
+
+
+
 
 
 FUNCTION frandom
@@ -6094,6 +6715,22 @@ FUNCTION estadoReclamoPorSector
 			
 	IF verror=.f.
 		MESSAGEBOX("Hubo un error al obtener el estado del reclamo",0+16+256,"Error al obtner el estado")		
+		DO CASE
+		CASE v_retorno 	= 'I'
+			RETURN 0
+		CASE v_retorno	= 'N'
+			RETURN ''
+		OTHERWISE
+
+		ENDCASE
+
+	ENDIF 
+
+
+	
+	SELECT reclamoe_sql
+	v_cantReg	= RECCOUNT()
+	IF v_cantReg = 0
 		DO CASE
 		CASE v_retorno 	= 'I'
 			RETURN 0
