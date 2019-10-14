@@ -3549,17 +3549,19 @@ ENDFUNC
 */-------------------------------------------------------------
 FUNCTION seteagrilla
 PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
-
+MESSAGEBOX("C1")
 	vcan_column = ALEN(&p_matcolumn,1)
-
+MESSAGEBOX("C2")
 	&p_grilla..RecordSource = &p_grilla..RecordSource
 	&p_grilla..RecordSource = p_RecordSource
 	&p_grilla..ReadOnly = .t.
+MESSAGEBOX("C3")
 	&p_grilla..ColumnCount = vcan_column
 	&p_grilla..BackColor = RGB(255,255,255)
 	&p_grilla..DeleteMark = .F. 
 	&p_grilla..FontSize = 8
 	&p_grilla..ScrollBars = 3
+MESSAGEBOX("C4")
 	&p_grilla..HighlightRowLineWidth=3
 	&p_grilla..GridLineWidth= 1
 	&p_grilla..anchor= 15
@@ -3570,7 +3572,7 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 	IF !EMPTY(p_FontSize) AND TYPE('p_FontSize')='N' THEN 
 		&p_grilla..FontSize = p_FontSize
 	ENDIF 
-
+MESSAGEBOX("C5")
 	IF vcan_column > 0 THEN 
 		FOR _icl = 1 TO vcan_column
 			
@@ -3588,7 +3590,7 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 	ENDIF 
 
 	&p_grilla..refresh 
-
+MESSAGEBOX("C6")
 RETURN 
 
 ENDFUNC 
