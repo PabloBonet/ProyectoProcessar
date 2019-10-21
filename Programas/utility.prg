@@ -6965,3 +6965,51 @@ vconeccionM = abreycierracon(0,_SYSCHEMA)
 		ENDIF 
 	ENDIF 
 
+
+
+*-----------------------------------------------------------------------------------
+* Obtiene todos los reclamos no leidos dato el usuario (y con el usuario el sector)
+*-----------------------------------------------------------------------------------
+
+
+FUNCTION obtieneRecNoLeidos
+PARAMETERS  para_aliasrnl, p_usuario
+p_aliasretorno  = ""
+
+v_idrecsec	= getSecUsu(p_usuario)
+
+
+	vconeccionM = abreycierracon(0,_SYSSCHEMA)
+		
+	sqlmatriz(1)=" SELECT r.idrecnol, r.idrecsec, p.*,t.tipo "
+	sqlmatriz(2)=" FROM recnoleido r  " 
+	sqlmatriz(3)=" left join reclamop p on r.idreclamop = p.idreclamop  left join rectipo t on p.idrectipo = t.idrectipo "
+	sqlmatriz(4)=" WHERE  r.idrecsec = "+ALLTRIM(STR(v_idrecsec))
+
+  
+	verror=sqlrun(vconeccionM ,"recnoleido_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de reclamos no leidos... ",0+48+0,"Error")
+	    RETURN p_aliasretorno  
+	ENDIF
+	=abreycierracon(vconeccionM ,"")	
+
+	SELECT recnoleido_sql
+	GO TOP 
+	
+	IF EOF()
+		RETURN p_aliasretorno  
+	ENDIF
+
+	
+	*	SELECT idrecnol,idrecsec, idreclamop, idrectipo,tipo,numero, entidad, fecha, observac, descrip FROM recnoleido_sql	INTO TABLE &v_nomtabla 
+		SELECT idrecnol,idrecsec, idreclamop, idrectipo,tipo,numero, entidad, fecha, observac, descrip FROM recnoleido_sql	INTO TABLE recnoleidos 
+		
+		SELECT recnoleido_sql
+
+	USE IN recnoleido_sql
+	p_aliasretorno  = para_aliasrnl
+	RETURN para_aliasrnl
+ENDFUNC 
+
+
