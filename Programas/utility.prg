@@ -512,6 +512,7 @@ PARAMETERS p_form
 	= disabletoolbar()
 	
 	USE .\settoolbarsys IN 0
+		
 	SELECT * FROM settoolbarsys INTO CURSOR settool WHERE UPPER(ALLTRIM(form)) == UPPER(ALLTRIM(p_form))
 	DO WHILE !EOF()
 	
@@ -547,6 +548,7 @@ PARAMETERS p_form
 		SELECT settool
 		SKIP 
 	ENDDO  
+	
 	SELECT settoolbarsys
 	USE 
 
@@ -6964,7 +6966,7 @@ vconeccionM = abreycierracon(0,_SYSCHEMA)
 	 		RETURN null	
 		ENDIF 
 	ENDIF 
-
+ENDFUNC 
 
 
 *-----------------------------------------------------------------------------------
