@@ -7015,3 +7015,146 @@ v_idrecsec	= getSecUsu(p_usuario)
 ENDFUNC 
 
 
+	
+*/****
+* Obtiene todas las listas de precios con los Precios Actualizados 
+* La lista 0 corresponde a la basica de articulos sin Calculo de Costos
+* Recibe como parametro el nombre de la tabla en la cual retornará las listas 
+***********************************************************************
+FUNCTION GetListasPrecios	
+PARAMETERS p_nombrearchivo
+vtmp = frandom()
+vconeccionF = abreycierracon(0,_SYSSCHEMA)
+fvarticulos_sql 	= 'articulos_sql'+vtmp 
+fvlistapreciop_sql 	= 'listapreciop_sql'+vtmp 
+fvlistaprecioh_sql 	= 'listaprecioh_sql'+vtmp 
+fvlistaprecioc_sql 	= 'listaprecioc_sql'+vtmp 
+
+sqlmatriz(1)="select *  from articulos  " 
+verror=sqlrun(vconeccionF,fvarticulos_sql)
+IF verror=.f.
+	MESSAGEBOX("No se puede obtener  Articulos ",0+16,"Advertencia")
+	RETURN 
+ENDIF 
+sqlmatriz(1)="select * from listapreciop   " 
+verror=sqlrun(vconeccionF,fvlistapreciop_sql)
+IF verror=.f.
+	MESSAGEBOX("No se puede obtener  Lista de Precios ",0+16,"Advertencia")
+	RETURN 
+ENDIF 
+sqlmatriz(1)="select * from listaprecioh   " 
+verror=sqlrun(vconeccionF,fvlistaprecioh_sql)
+IF verror=.f.
+	MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
+	RETURN 
+ENDIF 
+sqlmatriz(1)="select * from listaprecioc   " 
+verror=sqlrun(vconeccionF,fvlistaprecioc_sql)
+IF verror=.f.
+	MESSAGEBOX("No se puede obtener Cuotas de Listas de Precios ",0+16,"Advertencia")
+	RETURN 
+ENDIF 
+* me desconecto	
+=abreycierracon(vconeccionF,"")
+
+*INSERT INTO &vlistaprecios VALUES ('# Lista Base - Costos de Artículos',0,'','','',1,0,0)
+
+
+* Obtengo los Articulos de Cada Lista Seleccionada 
+fvlistasart = 'listasart'+vtmp 
+fvlistasartp = 'listasartp'+vtmp 
+fvarticulos = 'articulos'+vtmp 
+
+SELECT p.idlista, SUBSTR(p.detalle+SPACE(254),1,254) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.idlistap, l.idlistah, ;  
+	a.articulo, a.detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.ctrlstock, a.ocultar, ;
+	a.stockmin, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
+	a.costo as pcosto, l.margen , a.costo as pventa ;
+ 	FROM &fvlistaprecioh_sql l ;
+	LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
+	LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
+	INTO TABLE &fvlistasart 
+
+
+SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
+	a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.ctrlstock, a.ocultar, ;
+	a.stockmin, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
+	a.costo as pcosto, a.costo as pventa ;
+	FROM &fvarticulos_sql a INTO TABLE &fvarticulos
+
+SELECT &fvlistasart
+APPEND FROM &fvarticulos  
+INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
+
+
+SELECT * FROM &fvlistasart INTO TABLE &fvlistasartp
+SELECT &fvlistasartp
+INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
+SELECT &fvlistasart
+SET RELATION TO STR(idlistap)+'#'+ALLTRIM(articulo) INTO &fvlistasartp 
+
+
+fvlistas = 'listas'+vtmp
+SELECT idlista, idlistap, 1 as actul, 1 as actup  FROM &fvlistapreciop_sql INTO TABLE &fvlistas 
+SELECT &fvlistas
+replace actup WITH 0 FOR idlistap = 0
+
+vactualizadas = 1 
+DO WHILE vactualizadas > 0
+
+	SELECT &fvlistas 
+	
+	SCAN FOR &fvlistas..actul = 1 AND actup = 0
+
+		SELECT &fvlistasart
+		* Reemplazo los costos en la lista nueva con los costos de la lista padre
+		replace pcosto WITH &fvlistasartp..pventa, pventa WITH &fvlistasartp..pventa * (1 + margen/100) FOR &fvlistasart..idlista	= &fvlistas..idlista
+		SET RELATION TO 
+		SELECT &fvlistasartp
+		SET RELATION TO STR(idlista)+'#'+ALLTRIM(articulo) INTO &fvlistasart 
+		* actualizo los costos de la lista recien reemplazada en la tabla de listas padres 
+		replace pcosto WITH &fvlistasart..pcosto, pventa WITH &fvlistasart..pventa FOR &fvlistasart..idlista	= &fvlistas..idlista
+		SET RELATION TO 
+		SELECT &fvlistasart
+		SET RELATION TO STR(idlistap)+'#'+ALLTRIM(articulo) INTO &fvlistasartp 
+		
+		
+		SELECT &fvlistas 
+		replace &fvlistas..actul WITH 0 
+	ENDSCAN 
+	
+	SELECT * FROM &fvlistas INTO CURSOR lista01 WHERE &fvlistas..actul = 0
+	UPDATE &fvlistas SET actup = 0 WHERE idlistap in (select idlista from lista01)
+	
+	SELECT &fvlistas
+	CALCULATE SUM(actul+actup) TO vactualizadas
+ENDDO  
+
+v_nombreretorno = fvlistasart 
+
+IF !EMPTY(p_nombrearchivo) THEN 
+	v_nombreretorno = p_nombrearchivo
+	v_nombrearchivop = p_nombrearchivo+'a'
+	v_nombrearchivoc = p_nombrearchivo+'b'
+ELSE 
+	v_nombreretorno = fvlistasart 
+	v_nombrearchivop = fvlistasart+'a'
+	v_nombrearchivoc = fvlistasart+'b'
+
+ENDIF 
+
+SELECT * FROM &fvlistasart 			INTO TABLE &v_nombrearchivop	
+SELECT * FROM &fvlistaprecioc_sql  	INTO TABLE &v_nombrearchivoc	
+
+USE IN &fvlistas  
+USE IN &fvlistasart  
+USE IN &fvlistasartp  
+USE IN &fvarticulos
+USE IN &fvarticulos_sql 
+USE IN &fvlistapreciop_sql 	
+USE IN &fvlistaprecioh_sql 	
+USE IN &fvlistaprecioc_sql 	
+
+
+
+RETURN v_nombreretorno 
+ENDFUNC 
