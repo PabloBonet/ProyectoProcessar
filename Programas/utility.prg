@@ -2277,10 +2277,29 @@ IF _SYSCAJARECA = 0 && No hay caja seleccionada, pide caja
 
 	v_idcajareca = 0
 	
-	DO FORM selectcajareca  TO v_idcajareca
+		vconeccion = abreycierracon(0,_SYSSCHEMA)
+		sqlmatriz(1)=" select * from cajarecauda"
+		verror=sqlrun(vconeccion,"cajareca_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las cajareca",0+48+0,"Error")
+		ENDIF 
+		* me desconecto	
+		=abreycierracon(vconeccion,"")
+		SELECT cajareca_sql 
+		GO TOP 
+		IF RECCOUNT() = 1  THEN 
+			v_idcajareca=cajareca_sql.idcajareca
+		ENDIF 
+		IF RECCOUNT() = 0  THEN 
+			v_idcajareca=1
+		ENDIF 
+		USE IN cajareca_sql 
+	
+	IF v_idcajareca=0 THEN 	
+		DO FORM selectcajareca  TO v_idcajareca
+	ENDIF 
 	
 	IF v_idcajareca > 0
-	
 		_SYSCAJARECA = v_idcajareca
 	ENDIF 
 
@@ -3554,7 +3573,7 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 
 	vcan_column = ALEN(&p_matcolumn,1)
 
-	&p_grilla..RecordSource = (&p_grilla)..RecordSource
+	&p_grilla..RecordSource = &p_grilla..RecordSource
 	&p_grilla..RecordSource = p_RecordSource
 	&p_grilla..ReadOnly = .t.
 
@@ -3571,6 +3590,7 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 		EJE = p_grilla+".SetAll('DynamicBackColor',["+p_DynamicColor+"],'Column')"
 		&EJE
 	ENDIF 
+
 	IF !EMPTY(p_FontSize) AND TYPE('p_FontSize')='N' THEN 
 		&p_grilla..FontSize = p_FontSize
 	ENDIF 
@@ -7029,6 +7049,7 @@ fvarticulos_sql 	= 'articulos_sql'+vtmp
 fvlistapreciop_sql 	= 'listapreciop_sql'+vtmp 
 fvlistaprecioh_sql 	= 'listaprecioh_sql'+vtmp 
 fvlistaprecioc_sql 	= 'listaprecioc_sql'+vtmp 
+fvarticulosimp_sql	= 'articulosimp_sql'+vtmp
 
 sqlmatriz(1)="select *  from articulos  " 
 verror=sqlrun(vconeccionF,fvarticulos_sql)
@@ -7048,7 +7069,13 @@ IF verror=.f.
 	MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
 	RETURN 
 ENDIF 
-sqlmatriz(1)="select * from listaprecioc   " 
+sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto group by a.articulo " 
+verror=sqlrun(vconeccionF,fvarticulosimp_sql)
+IF verror=.f.
+	MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
+	RETURN 
+ENDIF 
+sqlmatriz(1)="select l.*, c.habilitado from listaprecioc l left join cuotalistapre c on l.idcuotalis = c.idcuotalis  " 
 verror=sqlrun(vconeccionF,fvlistaprecioc_sql)
 IF verror=.f.
 	MESSAGEBOX("No se puede obtener Cuotas de Listas de Precios ",0+16,"Advertencia")
@@ -7068,23 +7095,27 @@ fvarticulos = 'articulos'+vtmp
 SELECT p.idlista, SUBSTR(p.detalle+SPACE(254),1,254) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.idlistap, l.idlistah, ;  
 	a.articulo, a.detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.ctrlstock, a.ocultar, ;
 	a.stockmin, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
-	a.costo as pcosto, l.margen , a.costo as pventa ;
+	a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot ;
  	FROM &fvlistaprecioh_sql l ;
 	LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
 	LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
+	LEFT JOIN &fvarticulosimp_sql i  ON l.articulo = i.articulo ;
 	INTO TABLE &fvlistasart 
 
 
 SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
 	a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.ctrlstock, a.ocultar, ;
 	a.stockmin, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
-	a.costo as pcosto, a.costo as pventa ;
-	FROM &fvarticulos_sql a INTO TABLE &fvarticulos
+	a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot   ;
+	FROM &fvarticulos_sql a ;
+	LEFT JOIN &fvarticulosimp_sql i  ON a.articulo = i.articulo ;
+	INTO TABLE &fvarticulos
 
 SELECT &fvlistasart
 APPEND FROM &fvarticulos  
 INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
-
+GO TOP 
+replace razonimpu WITH 0 FOR ISNULL(razonimpu)
 
 SELECT * FROM &fvlistasart INTO TABLE &fvlistasartp
 SELECT &fvlistasartp
@@ -7107,12 +7138,16 @@ DO WHILE vactualizadas > 0
 
 		SELECT &fvlistasart
 		* Reemplazo los costos en la lista nueva con los costos de la lista padre
-		replace pcosto WITH &fvlistasartp..pventa, pventa WITH &fvlistasartp..pventa * (1 + margen/100) FOR &fvlistasart..idlista	= &fvlistas..idlista
+		replace pcosto WITH &fvlistasartp..pventa, pventa WITH &fvlistasartp..pventa * (1 + margen/100)  ;
+			    impuestos WITH (&fvlistasartp..pventa * (1 + margen/100))*(razonimpu/100), pventatot WITH (&fvlistasartp..pventa * (1 + margen/100))*(1 + razonimpu/100) FOR &fvlistasart..idlista	= &fvlistas..idlista
+			    
 		SET RELATION TO 
 		SELECT &fvlistasartp
 		SET RELATION TO STR(idlista)+'#'+ALLTRIM(articulo) INTO &fvlistasart 
 		* actualizo los costos de la lista recien reemplazada en la tabla de listas padres 
-		replace pcosto WITH &fvlistasart..pcosto, pventa WITH &fvlistasart..pventa FOR &fvlistasart..idlista	= &fvlistas..idlista
+		replace pcosto WITH &fvlistasart..pcosto, pventa WITH &fvlistasart..pventa ;
+			FOR &fvlistasart..idlista	= &fvlistas..idlista
+			
 		SET RELATION TO 
 		SELECT &fvlistasart
 		SET RELATION TO STR(idlistap)+'#'+ALLTRIM(articulo) INTO &fvlistasartp 
@@ -7143,7 +7178,7 @@ ELSE
 ENDIF 
 
 SELECT * FROM &fvlistasart 			INTO TABLE &v_nombrearchivop	
-SELECT * FROM &fvlistaprecioc_sql  	INTO TABLE &v_nombrearchivoc	
+SELECT idlistac, idlista, SUBSTR(detalle+SPACE(254),1,254) as detalle, cuotas, razon, idcuotalis, habilitado   FROM &fvlistaprecioc_sql  	INTO TABLE &v_nombrearchivoc	
 
 USE IN &fvlistas  
 USE IN &fvlistasart  
@@ -7158,3 +7193,15 @@ USE IN &fvlistaprecioc_sql
 
 RETURN v_nombreretorno 
 ENDFUNC 
+
+
+FUNCTION getLogo
+archi = _SYSPATHARCHIVOS + "\Imagenes\Logo\" + _SYSLOGOEMPRE
+IF FILE(archi) THEN 
+	RETURN archi
+ENDIF 
+archi = _SYSSERVIDOR + "\Imagenes\Logo\" + _SYSLOGOEMPRE
+IF FILE(archi) THEN 
+	RETURN archi
+ENDIF 
+RETURN ""
