@@ -2572,7 +2572,7 @@ PARAMETERS P_HORAD , P_HORAH
 * 
 * retorna la cantidad de horas minutos y segundo en formato caracter
 * transcurridos desde la fecha/hora de inicio a la de fin
-*		'HHH:MM:SS'
+*		'HHHHHH:MM:SS'
 *
 	vphorad = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_horad,' ','0'),':',''))+'00000000000000'),1,14)
 	vphorah = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_horah,' ','0'),':',''))+'00000000000000'),1,14)
@@ -2606,7 +2606,7 @@ PARAMETERS P_HORAD , P_HORAH
 	v_minutost 	= INT((vhorastot - v_horast)*60)
 	v_segundost	= (((vhorastot - v_horast)*60) - v_minutost)*60
 	
-	retorno = (STRTRAN((STR(v_horast,4))+':'+(STR(v_minutost,2))+':'+(STR(v_segundost,2)),' ','0'))
+	retorno = (STRTRAN((STR(v_horast,6))+':'+(STR(v_minutost,2))+':'+(STR(v_segundost,2)),' ','0'))
 	RETURN retorno 
 ENDFUNC 
 
@@ -2615,22 +2615,37 @@ FUNCTION SUMAHORAS
 PARAMETERS P_HORA1 , P_HORA2
 * suma las horas que recibe como parametro HORA1 Y HORA2
 * el formato en el que recibe es de tipo caracter
-*		'HHHH:MM:SS'
+*		'HHHHHH:MM:SS'
 * devuelve el valor acumulado de horas en el mismo formato
 	
 	v_sig_h1= SUBSTR(ALLTRIM(p_hora1),1,1)
 	v_sig_h2= SUBSTR(ALLTRIM(p_hora2),1,1)
 
-	v_hora1 = ALLTRIM((STRTRAN(STRTRAN(STRTRAN(p_hora1,'-','0'),' ','0'),':',''))+'00000000')
-	v_hora1 = SUBSTR(v_hora1,IIF(LEN(v_hora1)=16,1,2),8)
+	v_dop_1 = ATC(':',p_hora1,1)
+	v_dop_2 = ATC(':',p_hora1,2)	
+	vh1 = ('000000'+SUBSTR(p_hora1,1,(v_dop_1-1)))
+	vh2 = ('00'+SUBSTR(p_hora1,v_dop_1+1,2))
+	vh3 = ('00'+SUBSTR(p_hora1,v_dop_2+1,2))
+	pa_hora1 = SUBSTR(vh1,LEN(vh1)-5)+":"+SUBSTR(vh2,LEN(vh2)-1)+":"+SUBSTR(vh3,LEN(vh3)-1)
 
-	v_hora2 = ALLTRIM((STRTRAN(STRTRAN(STRTRAN(p_hora2,'-','0'),' ','0'),':',''))+'00000000')
-	v_hora2 = SUBSTR(v_hora2,IIF(LEN(v_hora2)=16,1,2),8)
+	v_hora1 = ALLTRIM((STRTRAN(STRTRAN(STRTRAN(pa_hora1,'-','0'),' ','0'),':',''))+'0000000000')
+	v_hora1 = SUBSTR(v_hora1,IIF(LEN(v_hora1)=20,1,2),10)
 
-	v_hora1_MS	= INT(VAL(SUBSTR(v_hora1,1,4)))*3600+INT(VAL(SUBSTR(v_hora1,5,2)))*60+INT(VAL(SUBSTR(v_hora1,7,2)))
+
+	v_dop_1 = ATC(':',p_hora2,1)
+	v_dop_2 = ATC(':',p_hora2,2)	
+	vh1 = ('000000'+SUBSTR(p_hora2,1,(v_dop_1-1)))
+	vh2 = ('00'+SUBSTR(p_hora2,v_dop_1+1,2))
+	vh3 = ('00'+SUBSTR(p_hora2,v_dop_2+1,2))
+	pa_hora2 = SUBSTR(vh1,LEN(vh1)-5)+":"+SUBSTR(vh2,LEN(vh2)-1)+":"+SUBSTR(vh3,LEN(vh3)-1)
+
+	v_hora2 = ALLTRIM((STRTRAN(STRTRAN(STRTRAN(pa_hora2,'-','0'),' ','0'),':',''))+'0000000000')
+	v_hora2 = SUBSTR(v_hora2,IIF(LEN(v_hora2)=20,1,2),10)
+
+	v_hora1_MS	= INT(VAL(SUBSTR(v_hora1,1,6)))*3600+INT(VAL(SUBSTR(v_hora1,7,2)))*60+INT(VAL(SUBSTR(v_hora1,9,2)))
     v_multi = IIF(v_sig_h1='-',-1,1)
 	v_hora1_MS  = v_hora1_MS * v_multi
-	v_hora2_MS	= INT(VAL(SUBSTR(v_hora2,1,4)))*3600+INT(VAL(SUBSTR(v_hora2,5,2)))*60+INT(VAL(SUBSTR(v_hora2,7,2)))
+	v_hora2_MS	= INT(VAL(SUBSTR(v_hora2,1,6)))*3600+INT(VAL(SUBSTR(v_hora2,7,2)))*60+INT(VAL(SUBSTR(v_hora2,9,2)))
     v_multi = IIF(v_sig_h2='-',-1,1)
 	v_hora2_MS  = v_hora2_MS * v_multi
 	V_horat_MS	= (V_hora1_MS + v_hora2_MS)/3600
@@ -2645,8 +2660,29 @@ PARAMETERS P_HORA1 , P_HORA2
 	v_segundMST		= (((V_horat_MS - v_horasMST)*60) - v_minutoMST )*60
 	
 
-	retorno = V_sig_horat_MS+(STRTRAN((STR(v_horasMST,4))+':'+(STR(v_minutoMST ,2))+':'+(STR(v_segundMST,2)),' ','0'))
-*!*		retorno = STRTRAN(retorno,'-0','-')
+	retorno = V_sig_horat_MS+(STRTRAN((STR(v_horasMST,6))+':'+(STR(v_minutoMST ,2))+':'+(STR(v_segundMST,2)),' ','0'))
+	
+
+*!*		v_hora1_MS	= INT(VAL(SUBSTR(v_hora1,1,4)))*3600+INT(VAL(SUBSTR(v_hora1,5,2)))*60+INT(VAL(SUBSTR(v_hora1,7,2)))
+*!*	    v_multi = IIF(v_sig_h1='-',-1,1)
+*!*		v_hora1_MS  = v_hora1_MS * v_multi
+*!*		v_hora2_MS	= INT(VAL(SUBSTR(v_hora2,1,4)))*3600+INT(VAL(SUBSTR(v_hora2,5,2)))*60+INT(VAL(SUBSTR(v_hora2,7,2)))
+*!*	    v_multi = IIF(v_sig_h2='-',-1,1)
+*!*		v_hora2_MS  = v_hora2_MS * v_multi
+*!*		V_horat_MS	= (V_hora1_MS + v_hora2_MS)/3600
+
+*!*		
+*!*		V_sig_horat_MS = IIF(V_horat_MS>=0,'','-')
+
+*!*		
+*!*		V_horat_MS 		= ABS(V_horat_MS)
+*!*		v_horasMST		= INT(V_horat_MS)
+*!*		v_minutoMST 	= INT((V_horat_MS - v_horasMST)*60)
+*!*		v_segundMST		= (((V_horat_MS - v_horasMST)*60) - v_minutoMST )*60
+*!*		
+
+*!*		retorno = V_sig_horat_MS+(STRTRAN((STR(v_horasMST,4))+':'+(STR(v_minutoMST ,2))+':'+(STR(v_segundMST,2)),' ','0'))
+
 
 	RETURN retorno 
 ENDFUNC 
@@ -2960,25 +2996,40 @@ IF !EMPTY(c_buscado) then
 	c_buscado 	= UPPER(c_buscado)
 	c_buscaren 	= UPPER(c_buscaren)
 	
-	ALINES(cbuscadoarr,c_buscado,16,"&","#")
+	ALINES(cbuscadoarr,c_buscado,16,"&","#",")","(")
 	aelementos = ALEN(cbuscadoarr)
+
+*!*		FOR i= 1 TO aelementos
+*!*			MESSAGEBOX(ALLTRIM(cbuscadoarr(i)))
+*!*		ENDFOR 
 
 	DIMENSION cbuscadof (aelementos,2)
 	FOR i= 1 TO aelementos
-		cbuscadof(i,2) = IIF(ATC("#",ALLTRIM(cbuscadoarr(i)))>0,'+',IIF(ATC("&",ALLTRIM(cbuscadoarr(i)))>0,'*','+'))
-		cbuscadoarr(i)=STRTRAN(STRTRAN(cbuscadoarr(i),'#',""),"&","")
+*!*			cbuscadof(i,2) = IIF(ATC("#",ALLTRIM(cbuscadoarr(i)))>0,'+',IIF(ATC("&",ALLTRIM(cbuscadoarr(i)))>0,'*','+'))
+*!*			cbuscadoarr(i)=STRTRAN(STRTRAN(cbuscadoarr(i),'#',""),"&","")
+			cbuscadof(i,2) = IIF(ATC("#",ALLTRIM(cbuscadoarr(i)))>0,'+',IIF(ATC("&",ALLTRIM(cbuscadoarr(i)))>0,'*',IIF(ATC("(",ALLTRIM(cbuscadoarr(i)))>0,'(',IIF(ATC(")",ALLTRIM(cbuscadoarr(i)))>0,')','+'))))
+			cbuscadoarr(i)=STRTRAN(STRTRAN(STRTRAN(STRTRAN(cbuscadoarr(i),'#',""),"&",""),"(",""),")","")
 	ENDFOR 
 
 	FOR i=1 TO aelementos
-		vfiltra001 = IIF(ATC(ALLTRIM(cbuscadoarr(i)),c_buscaren)>0,'1','0')
-		cbuscadof(i,1)=vfiltra001
+		IF !EMPTY(ALLTRIM(cbuscadoarr(i))) THEN 	
+			vfiltra001 = IIF(ATC(ALLTRIM(cbuscadoarr(i)),c_buscaren)>0,'1','0')
+			cbuscadof(i,1)=vfiltra001
+		ELSE
+			vfiltra001 = ""
+			cbuscadof(i,1)=vfiltra001		
+		ENDIF 
 	ENDFOR 
 	vformula = ""
 	FOR i=1 TO aelementos
 		vformula = vformula+cbuscadof(i,1)+cbuscadof(i,2)
 	ENDFOR 
+	vformula = STRTRAN(STRTRAN(STRTRAN(STRTRAN(STRTRAN(vformula,'**','*'),'+*','+'),'*+','+'),'(*(','(('),')*)','))')
 	vformula = vformula +'+0'  
+*!*		MESSAGEBOX(vformula)
+	ON ERROR vfiltra01 = 1
 	vfiltra01 = &vformula
+	ON ERROR 
 	RELEASE cbuscadoarr , cbuscadof
 	RETURN vfiltra01
 ELSE	
@@ -2986,6 +3037,40 @@ ELSE
 ENDIF 
 ENDFUNC 
 
+
+*!*	** SEPARA CARACTERES BUSCADOS Y RETORNA VERDADERO O FALSO 0 O 1
+*!*	FUNCTION ATCF_BKP 
+*!*	PARAMETERS c_buscado, c_buscaren
+*!*	IF !EMPTY(c_buscado) then 
+*!*		vfiltra01 = 0
+*!*		c_buscado 	= UPPER(c_buscado)
+*!*		c_buscaren 	= UPPER(c_buscaren)
+*!*		
+*!*		ALINES(cbuscadoarr,c_buscado,16,"&","#")
+*!*		aelementos = ALEN(cbuscadoarr)
+
+*!*		DIMENSION cbuscadof (aelementos,2)
+*!*		FOR i= 1 TO aelementos
+*!*			cbuscadof(i,2) = IIF(ATC("#",ALLTRIM(cbuscadoarr(i)))>0,'+',IIF(ATC("&",ALLTRIM(cbuscadoarr(i)))>0,'*','+'))
+*!*			cbuscadoarr(i)=STRTRAN(STRTRAN(cbuscadoarr(i),'#',""),"&","")
+*!*		ENDFOR 
+
+*!*		FOR i=1 TO aelementos
+*!*			vfiltra001 = IIF(ATC(ALLTRIM(cbuscadoarr(i)),c_buscaren)>0,'1','0')
+*!*			cbuscadof(i,1)=vfiltra001
+*!*		ENDFOR 
+*!*		vformula = ""
+*!*		FOR i=1 TO aelementos
+*!*			vformula = vformula+cbuscadof(i,1)+cbuscadof(i,2)
+*!*		ENDFOR 
+*!*		vformula = vformula +'+0'  
+*!*		vfiltra01 = &vformula
+*!*		RELEASE cbuscadoarr , cbuscadof
+*!*		RETURN vfiltra01
+*!*	ELSE	
+*!*		RETURN 1
+*!*	ENDIF 
+*!*	ENDFUNC 
 
 
 * FUNCION DE BUSQUEDA DE REPORTES Y SELECCION DE ACUERDO AL PARAMETRO APLICADO.
@@ -3594,6 +3679,7 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 	IF !EMPTY(p_FontSize) AND TYPE('p_FontSize')='N' THEN 
 		&p_grilla..FontSize = p_FontSize
 	ENDIF 
+
 
 	IF vcan_column > 0 THEN 
 		FOR _icl = 1 TO vcan_column
@@ -7075,7 +7161,7 @@ IF verror=.f.
 	MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
 	RETURN 
 ENDIF 
-sqlmatriz(1)="select l.*, c.habilitado from listaprecioc l left join cuotalistapre c on l.idcuotalis = c.idcuotalis  " 
+sqlmatriz(1)="select l.*, c.habilitado from listaprecioc l left join financiacion c on l.idfinancia = c.idfinancia  " 
 verror=sqlrun(vconeccionF,fvlistaprecioc_sql)
 IF verror=.f.
 	MESSAGEBOX("No se puede obtener Cuotas de Listas de Precios ",0+16,"Advertencia")
@@ -7178,7 +7264,7 @@ ELSE
 ENDIF 
 
 SELECT * FROM &fvlistasart 			INTO TABLE &v_nombrearchivop	
-SELECT idlistac, idlista, SUBSTR(detalle+SPACE(254),1,254) as detalle, cuotas, razon, idcuotalis, habilitado   FROM &fvlistaprecioc_sql  	INTO TABLE &v_nombrearchivoc	
+SELECT idlistac, idlista, SUBSTR(detalle+SPACE(254),1,254) as detalle, cuotas, razon, idfinancia, habilitado   FROM &fvlistaprecioc_sql  	INTO TABLE &v_nombrearchivoc	
 
 USE IN &fvlistas  
 USE IN &fvlistasart  

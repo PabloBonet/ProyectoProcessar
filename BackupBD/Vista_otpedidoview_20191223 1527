@@ -1,0 +1,107 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema trsoftdb
+--
+
+CREATE DATABASE IF NOT EXISTS trsoftdb;
+USE trsoftdb;
+
+--
+-- Temporary table structure for view `otpedidoview`
+--
+DROP TABLE IF EXISTS `otpedidoview`;
+DROP VIEW IF EXISTS `otpedidoview`;
+CREATE TABLE `otpedidoview` (
+  `fecha` char(8),
+  `fechacarga` char(8),
+  `nombre` char(200),
+  `direccion` char(200),
+  `telefono` char(50),
+  `email` char(200),
+  `proyecto` char(200),
+  `idpedido` int(10) unsigned,
+  `idot` int(10) unsigned,
+  `fechaot` char(8),
+  `fechaini` char(8),
+  `testimado` char(20),
+  `fechafin` char(8),
+  `costoest` float(13,2),
+  `descriptot` char(200),
+  `idestado` int(10) unsigned,
+  `detaestado` char(200),
+  `responsa` char(200),
+  `observa` char(200),
+  `idetapa` int(10) unsigned,
+  `etapa` char(200),
+  `describir` longtext,
+  `idotlinea` int(10) unsigned,
+  `estadoot` char(200),
+  `idestot` int(10) unsigned,
+  `idotdet` int(10) unsigned,
+  `codigomat1` char(20),
+  `descrip` char(200),
+  `cantidad` float(13,2),
+  `impuni` float(13,2),
+  `imptotal` float(13,2),
+  `idmate` int(10) unsigned,
+  `fechai` char(8),
+  `horai` char(8),
+  `fechaf` char(8),
+  `horaf` char(8),
+  `tiemest` char(20),
+  `cantm2` float(13,2),
+  `idmoneda` int(10) unsigned,
+  `moneda` char(50),
+  `cotizacion` float(13,2),
+  `fechacot` char(8),
+  `observa2` char(200),
+  `fechaanu` char(8),
+  `codigomat` char(20),
+  `detmat` char(200),
+  `unidad` char(10),
+  `obsmat` char(254),
+  `entidad` int(11),
+  `nomentidad` char(100),
+  `apeEntidad` char(100),
+  `tmadeta` char(100),
+  `tmastock` char(1),
+  `tmahoras` varchar(10),
+  `detaliot` char(254),
+  `idtipomate` int(10) unsigned,
+  `tipohora` char(1),
+  `linea` char(10),
+  `detlinea` char(50)
+);
+
+--
+-- Definition of view `otpedidoview`
+--
+
+DROP TABLE IF EXISTS `otpedidoview`;
+DROP VIEW IF EXISTS `otpedidoview`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `otpedidoview` AS select `op`.`fecha` AS `fecha`,`op`.`fechacarga` AS `fechacarga`,`op`.`nombre` AS `nombre`,`op`.`direccion` AS `direccion`,`op`.`telefono` AS `telefono`,`op`.`email` AS `email`,`op`.`proyecto` AS `proyecto`,`ot`.`idpedido` AS `idpedido`,`ot`.`idot` AS `idot`,`ot`.`fechaot` AS `fechaot`,`ot`.`fechaini` AS `fechaini`,`ot`.`testimado` AS `testimado`,`ot`.`fechafin` AS `fechafin`,`ot`.`costoest` AS `costoest`,`ot`.`descriptot` AS `descriptot`,`ot`.`idestado` AS `idestado`,`ot`.`detaestado` AS `detaestado`,`ot`.`responsa` AS `responsa`,`ot`.`observa` AS `observa`,`ot`.`idetapa` AS `idetapa`,`ot`.`etapa` AS `etapa`,`ot`.`describir` AS `describir`,`ot`.`idotlinea` AS `idotlinea`,`ot`.`detaestado` AS `estadoot`,`ot`.`idestado` AS `idestot`,`otd`.`idotdet` AS `idotdet`,`otd`.`codigomat` AS `codigomat1`,`otd`.`descrip` AS `descrip`,`otd`.`cantidad` AS `cantidad`,`otd`.`impuni` AS `impuni`,`otd`.`imptotal` AS `imptotal`,`otd`.`idmate` AS `idmate`,`otd`.`fechai` AS `fechai`,`otd`.`horai` AS `horai`,`otd`.`fechaf` AS `fechaf`,`otd`.`horaf` AS `horaf`,`otd`.`tiemest` AS `tiemest`,`otd`.`cantm2` AS `cantm2`,`otd`.`idmoneda` AS `idmoneda`,`otd`.`moneda` AS `moneda`,`otd`.`cotizacion` AS `cotizacion`,`otd`.`fechacot` AS `fechacot`,`otd`.`observa` AS `observa2`,`ota`.`fecha` AS `fechaanu`,`otm`.`codigomat` AS `codigomat`,`otm`.`detalle` AS `detmat`,`otm`.`unidad` AS `unidad`,`otm`.`observa` AS `obsmat`,`e`.`entidad` AS `entidad`,`e`.`nombre` AS `nomentidad`,`e`.`apellido` AS `apeEntidad`,`t`.`detalle` AS `tmadeta`,`t`.`stock` AS `tmastock`,if((`t`.`horas` = 'S'),'HORAS     ','MATERIALES') AS `tmahoras`,`l`.`detalle` AS `detaliot`,`t`.`idtipomate` AS `idtipomate`,`t`.`horas` AS `tipohora`,`lm`.`linea` AS `linea`,`lm`.`detalle` AS `detlinea` from ((((((((`otpedido` `op` left join `otordentra` `ot` on((`op`.`idpedido` = `ot`.`idpedido`))) left join `otpedidoanul` `ota` on((`op`.`idpedido` = `ota`.`idotpedido`))) left join `otdetaot` `otd` on((`ot`.`idot` = `otd`.`idot`))) left join `otmateriales` `otm` on((`otd`.`idmate` = `otm`.`idmate`))) left join `entidades` `e` on((`op`.`entidad` = `e`.`entidad`))) left join `otlineasot` `l` on((`l`.`idotlinea` = `ot`.`idotlinea`))) left join `tipomaterial` `t` on((`otm`.`idtipomate` = `t`.`idtipomate`))) left join `otlineasmat` `lm` on((`otm`.`linea` = `lm`.`linea`))) order by `op`.`idpedido`;
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
