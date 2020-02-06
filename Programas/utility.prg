@@ -3355,7 +3355,17 @@ RETURN
 *  en el objeto de grupos
 *------------------------------------------------------------------------------
 FUNCTION filtragrupos
-	PARAMETERS pf_tbbuscador, pf_tablas 
+	PARAMETERS pf_tbbuscador, pf_tablas, pf_extras
+
+	IF TYPE("pf_extras")='C' THEN 
+		IF !EMPTY(ALLTRIM(pf_extras)) THEN	
+			EJE4 = pf_extras
+		ELSE
+			EJE4= ""	
+		ENDIF 		
+	ELSE 
+		EJE4=""
+	ENDIF 
 	
 	IF !EMPTY(ALLTRIM(pf_tbbuscador)) THEN	
 		EJE1 = "ATCF(ALLTRIM('"+ALLTRIM(pf_tbbuscador)+"'), busqueda) > 0 "
@@ -3371,6 +3381,11 @@ FUNCTION filtragrupos
 		EJE3="SET FILTER TO "+EJE1+" AND "+EJE2
 	ELSE
 		EJE3="SET FILTER TO "+EJE1+EJE2
+	ENDIF 
+	IF !EMPTY(EJE1+EJE2) AND !EMPTY(EJE4) THEN 
+		EJE3 = EJE3+" AND "+EJE4
+	ELSE
+		EJE3 = EJE3+EJE4
 	ENDIF 
 
 	vcan_tablas=alines( arraytablas, pf_tablas, ";")
@@ -7089,10 +7104,10 @@ v_idrecsec	= getSecUsu(p_usuario)
 
 	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 		
-	sqlmatriz(1)=" SELECT r.idrecnol, r.idrecsec, p.*,t.tipo "
+	sqlmatriz(1)=" SELECT r.idrecnol, r.idrecsec, p.*,t.tipo, r.leido "
 	sqlmatriz(2)=" FROM recnoleido r  " 
 	sqlmatriz(3)=" left join reclamop p on r.idreclamop = p.idreclamop  left join rectipo t on p.idrectipo = t.idrectipo "
-	sqlmatriz(4)=" WHERE  r.idrecsec = "+ALLTRIM(STR(v_idrecsec))
+	sqlmatriz(4)=" WHERE  r.leido = 0 and r.idrecsec = "+ALLTRIM(STR(v_idrecsec))
 
   
 	verror=sqlrun(vconeccionM ,"recnoleido_sql")
@@ -7137,7 +7152,9 @@ fvlistaprecioh_sql 	= 'listaprecioh_sql'+vtmp
 fvlistaprecioc_sql 	= 'listaprecioc_sql'+vtmp 
 fvarticulosimp_sql	= 'articulosimp_sql'+vtmp
 
-sqlmatriz(1)="select *  from articulos  " 
+sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot  from articulos a "
+sqlmatriz(2)=" left join lineas l on l.linea = a.linea "
+sqlmatriz(3)=" left join articulostock s on s.articulo = a.articulo " 
 verror=sqlrun(vconeccionF,fvarticulos_sql)
 IF verror=.f.
 	MESSAGEBOX("No se puede obtener  Articulos ",0+16,"Advertencia")
@@ -7179,8 +7196,8 @@ fvlistasartp = 'listasartp'+vtmp
 fvarticulos = 'articulos'+vtmp 
 
 SELECT p.idlista, SUBSTR(p.detalle+SPACE(254),1,254) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.idlistap, l.idlistah, ;  
-	a.articulo, a.detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.ctrlstock, a.ocultar, ;
-	a.stockmin, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
+	a.articulo, a.detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea, a.ctrlstock, a.ocultar, ;
+	a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
 	a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot ;
  	FROM &fvlistaprecioh_sql l ;
 	LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
@@ -7190,8 +7207,8 @@ SELECT p.idlista, SUBSTR(p.detalle+SPACE(254),1,254) as detallep, p.vigedesde, p
 
 
 SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
-	a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.ctrlstock, a.ocultar, ;
-	a.stockmin, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
+	a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.detalinea, a.ctrlstock, a.ocultar, ;
+	a.stockmin, a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
 	a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot   ;
 	FROM &fvarticulos_sql a ;
 	LEFT JOIN &fvarticulosimp_sql i  ON a.articulo = i.articulo ;
