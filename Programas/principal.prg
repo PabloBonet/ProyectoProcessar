@@ -26,12 +26,15 @@ ON KEY LABEL CTRL+F4 DO SALIRMENU
 ON KEY LABEL ESC DO SETEO_ESC 
 ON KEY LABEL CTRL+F11 MESSAGEBOX(_screen.ActiveForm.name)
 
-SET PROCEDURE TO UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg 
+SET PROCEDURE TO UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg
 SET CLASSLIB TO  toolbarsys.vcx
 SET CLASSLIB TO crystalreports.vcx additive
 SET CLASSLIB TO util.vcx ADDITIVE 
 
 
+
+
+vrand = RAND(-100.001)
 
 PUBLIC toolbarsys
 toolbarsys = CREATEOBJECT('toolbarsys')
@@ -41,7 +44,7 @@ WAIT windows "Verificando Conexion con Base de Datos... Aguarde..." NOWAIT
 =LEECONFIG()
 
 *** SETEO  Y DEFINICION DE VARIABLES PUBLICAS Y DE INICIO
-PUBLIC _SYSSERVIDOR , _SYSMENUSYSTEM, _SYSMODULO , _SYSUSUARIO , _SYSVERSION , _SYSIP, _SYSHOST
+PUBLIC _SYSSERVIDOR , _SYSMENUSYSTEM, _SYSMODULO , _SYSUSUARIO , _SYSVERSION , _SYSIP, _SYSHOST, _SYSLISTAPRECIO
 PUBLIC _SYSMASTER_SERVER ,_SYSMASTER_USER, _SYSMASTER_PASS ,_SYSMASTER_USER , _SYSMYSQL_PORT , _SYSMASTER_SCHEMA, _SYSMASTER_DESC 
  
 
@@ -96,6 +99,7 @@ WAIT CLEAR
 _SYSSERVIDOR 	= FULLPATH(CURDIR())
 _SYSMENUSYSTEM 	= ""
 _SYSMODULO 		= 1
+_SYSLISTAPRECIO	= ""
 
 _SYSMASTER_SERVER 	= _SYSMYSQL_SERVER 
 _SYSMASTER_USER	 	= _SYSMYSQL_USER   
@@ -137,6 +141,18 @@ toolbarsys.dock(1)
 =disabletoolbar()
 =actutoolbarsys('_screen')
 
+
+*!*	Local loDLL
+*!*	   loDLL = CreateObject("importarobj.importaobj")
+*!*	   loDLL.Sumar()
+*!*	   MESSAGEBOX(loDLL.nResultado)
+*!*	   loDLL.mensaje()
+*!*	   MESSAGEBOX(loDLL.nResulta2)
+*!*	   loDLL = .NULL.
+*!*	   Release loDLL
+
+
+
     SET TALK OFF
 	SET SYSMENU ON    
 	SET SYSMENU TO 
@@ -145,6 +161,7 @@ toolbarsys.dock(1)
 	IF LOGEO > 0 THEN 
 	  	KEYBOARD '{F10}'
 		toolbarsys.show 
+*!*			SET MESSAGE TO "Esta es la Barra"
  		READ EVENTS
 	ELSE 
 	ENDIF 
