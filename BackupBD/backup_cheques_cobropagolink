@@ -1,0 +1,115 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema trsoftdb
+--
+
+CREATE DATABASE IF NOT EXISTS trsoftdb;
+USE trsoftdb;
+
+--
+-- Definition of table `cheques`
+--
+
+DROP TABLE IF EXISTS `cheques`;
+CREATE TABLE `cheques` (
+  `idcheque` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `serie` char(10) NOT NULL,
+  `numero` char(50) NOT NULL,
+  `importe` float(13,4) NOT NULL,
+  `fechaemisi` char(8) NOT NULL,
+  `fechavence` char(8) NOT NULL,
+  `alaorden` char(254) NOT NULL,
+  `librador` char(254) NOT NULL,
+  `loentrega` char(254) NOT NULL,
+  `cuit` char(13) NOT NULL,
+  `cuenta` char(50) NOT NULL,
+  `idbanco` int(10) unsigned NOT NULL,
+  `codcheque` char(50) NOT NULL,
+  `idcuenta` int(10) unsigned NOT NULL,
+  `detercero` char(1) NOT NULL,
+  `lugaremi` char(254) NOT NULL,
+  `domilib` char(254) NOT NULL,
+  PRIMARY KEY (`idcheque`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `cheques`
+--
+
+/*!40000 ALTER TABLE `cheques` DISABLE KEYS */;
+INSERT INTO `cheques` (`idcheque`,`serie`,`numero`,`importe`,`fechaemisi`,`fechavence`,`alaorden`,`librador`,`loentrega`,`cuit`,`cuenta`,`idbanco`,`codcheque`,`idcuenta`,`detercero`,`lugaremi`,`domilib`) VALUES 
+ (1,'A','123456',732.3498,'20200330','20200430','Tulio','Pablo Bonet','Pablo Bonet','20334684734','11120123456',2,'11120123456',0,'S','Recreo, Santa Fe','Mitre 1900'),
+ (2,'A','321654',1464.6996,'20200330','20200430','Tulio Rossi','Pablo Bonet','Pablo Bonet','20334684734','789456',2,'11120300789456',0,'S','Recreo Santa fe','Mitre 1900'),
+ (3,'A','987654',732.3498,'20200330','20200430','Tulio Rossi','Pablo Bonet','Pablo Bonet','20334684734','321654',2,'11120300321654',0,'S','Recre Santa Fe','Blas Parera 174'),
+ (4,'A','123456',732.3498,'20200330','20200430','Tulio','Pablo','Pablo','20334684734','123456',2,'111203000123456',0,'S','Recreo','Blas Parera'),
+ (5,'A','123456',1464.6996,'20200330','20200330','TUlio','Pablo','Pablo','20334684734','123465',2,'111203000123456',0,'S','Recreo','Blas Parera'),
+ (6,'A','123456',732.3498,'20200330','20200430','Tulio','Pablo','Pablo','20334684734','987654',2,'111203000987654',0,'S','Recreo','Blas Parera'),
+ (7,'A','123456',1464.6996,'20200330','20200430','Tulio','Pablo','Pablo','20334684734','123456',2,'111203000123456',0,'S','Recreo','Blas Parera'),
+ (8,'A','123456',732.3498,'20200401','20200501','Tulio Rossi','Pablo Bonet','Pablo Bonet','20334684734','111203000123',2,'111203000123456',0,'S','Recre, Santa Fe','Blas Parera 196'),
+ (9,'A','123789',732.3498,'20200401','20200401','Tulio Rossi','Pablo','Pablo','20334684734','111222333',2,'111203000',0,'S','Santa Fe','Blas Parera'),
+ (10,'B','123444',1000.0000,'20200401','20200401','Tulio','Pablo','Pablo','20334684734','789456123',2,'789456123',0,'S','Recreo','Blas Parera'),
+ (11,'B','333222',464.6996,'20200401','20200401','TUlio','Pablo','Pablo','20334684734','54654987321',2,'156461346513211',0,'S','Recreo','Mitre'),
+ (12,'A','444555666',700.0000,'20200401','20200401','Tulio','Pablo','Pablo','20334684734','789456123',2,'123123123123',0,'S','Recreo','Mitre');
+/*!40000 ALTER TABLE `cheques` ENABLE KEYS */;
+
+
+--
+-- Definition of table `cobropagolink`
+--
+
+DROP TABLE IF EXISTS `cobropagolink`;
+CREATE TABLE `cobropagolink` (
+  `idcplink` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `tablacp` char(50) NOT NULL,
+  `campocp` char(50) NOT NULL,
+  `registrocp` int(10) unsigned NOT NULL,
+  `tabla` char(50) NOT NULL,
+  `idregistro` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `campo` char(50) NOT NULL,
+  PRIMARY KEY (`idcplink`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `cobropagolink`
+--
+
+/*!40000 ALTER TABLE `cobropagolink` DISABLE KEYS */;
+INSERT INTO `cobropagolink` (`idcplink`,`tablacp`,`campocp`,`registrocp`,`tabla`,`idregistro`,`fecha`,`campo`) VALUES 
+ (1,'detallecobros','iddetacobro',486,'cupones',434,'20200326','idcupon'),
+ (2,'detallecobros','iddetacobro',487,'cheques',1,'20200327','idcheque'),
+ (3,'detallecobros','iddetacobro',488,'cheques',436,'20200330','idcheque'),
+ (4,'detallecobros','iddetacobro',489,'cheques',7,'20200330','idcheque'),
+ (5,'detallecobros','iddetacobro',490,'cheques',8,'20200401','idcheque'),
+ (6,'detallecobros','iddetacobro',491,'cheques',9,'20200401','idcheque'),
+ (7,'detallecobros','iddetacobro',492,'cheques',10,'20200401','idcheque'),
+ (8,'detallecobros','iddetacobro',493,'cheques',11,'20200401','idcheque'),
+ (9,'detallecobros','iddetacobro',494,'cheques',12,'20200401','idcheque'),
+ (10,'detallecobros','iddetacobro',496,'cupones',0,'20200401','idcupon');
+/*!40000 ALTER TABLE `cobropagolink` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
