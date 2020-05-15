@@ -55,11 +55,11 @@ _screen.Caption = ""
 **********
 I=1
 VMIESTACION = MIESTACION+"\"+ALLTRIM(STR(I))
-AUX = VMIESTACION+"\MENUTMP"
+AUX = VMIESTACION+"\TEMP"
 DO WHILE DIRECTORY(AUX)
 	I = I+1
 	VMIESTACION = MIESTACION+"\"+ALLTRIM(STR(I))
-	AUX = VMIESTACION+"\MENUTMP"
+	AUX = VMIESTACION+"\TEMP"
 ENDDO
 IF !DIRECTORY(AUX) then
 	MKDIR(AUX)
@@ -101,6 +101,7 @@ IF SetPath() THEN
 	_screen.Caption = ""
 
 *!*		=LEELOCALCFG()
+MESSAGEBOX(mischema)
 	DO FORM LOGIN TO LOGEO
 
 
@@ -121,6 +122,7 @@ IF SetPath() THEN
 			SET DATE TO BRITISH	
 			_screen.Visible = .F.
 			
+MESSAGEBOX(mischema)
 	
 			DO FORM frmadmin
 			READ EVENTS 

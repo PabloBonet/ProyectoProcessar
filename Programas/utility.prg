@@ -3656,7 +3656,7 @@ ENDIF
 &v_grilla_tag = IIF(SUBSTR(ALLTRIM(&v_grilla_tag),LEN(ALLTRIM(&v_grilla_tag)),1)='+',SUBSTR(ALLTRIM(&v_grilla_tag),1,LEN(ALLTRIM(&v_grilla_tag))-1),ALLTRIM(&v_grilla_tag))
 EJE = "sele "+&v_grilla_tabla
 &EJE 
-EJE = IIF(!EMPTY(&v_grilla_tag),"INDEX ON  ALLTRIM(SUBSTR("+&v_grilla_tag+"+SPACE(240),1,240)) TAG indice "+IIF(SUBSTR(&v_grilla_StatusBarText,1,1) = 'A','ASCENDING','DESCENDING'),"SET ORDER TO ")
+EJE = IIF(!EMPTY(&v_grilla_tag),"INDEX ON  ALLTRIM(SUBSTR("+&v_grilla_tag+"+SPACE(200),1,200)) TAG indice "+IIF(SUBSTR(&v_grilla_StatusBarText,1,1) = 'A','ASCENDING','DESCENDING'),"SET ORDER TO ")
 &EJE
 &p_grilla..refresh 
 
@@ -7362,3 +7362,10 @@ IF FILE(archi) THEN
 	RETURN archi
 ENDIF 
 RETURN ""
+
+
+FUNCTION cfgmenues
+	vpathejecuta= _SYSSERVIDOR+_SYSMENUPATH
+	vejecutable = "menu.exe "+_SYSMASTER_SERVER+" "+_SYSMASTER_USER+" "+_SYSMASTER_PASS+" "+_SYSMASTER_PORT+" "+_SYSMYSQL_SERVER+" "+_SYSMYSQL_PORT+" "+_SYSSCHEMA+" "+STRTRAN(_SYSDRVMYSQL," ","|")+" "+_SYSUSUARIO+" 1 "+vpathejecuta
+	=ejecutarexe(vpathejecuta, vejecutable)
+ENDFUNC 
