@@ -1235,9 +1235,430 @@ FUNCTION cargarServicioFE
 
 	RETURN v_cargado
 ENDFUNC 
+
+
+ FUNCTION cursorAXML
+ PARAMETERS p_nombre,p_idcomp
  
+MESSAGEBOX(p_nombre)
+
+IF TYPE("p_idcomp") = 'N'
+ SELECT * FROM &p_nombre WHERE idfactura = p_idcomp INTO TABLE tablaaxml
+ELSE
+ SELECT * FROM &p_nombre INTO TABLE tablaaxml
+ENDIF 
+
  
+ SELECT tablaaxml
+ GO TOP 
+BROWSE
+
+
+CURSORTOXML("tablaaxml","archivoXML.xml",1,512)
+
+
+
+
+*!*	*!*	LOCAL oXml as XMLAdapter
+*!*	*!*		 LOCAL iXml as IXMLDOMElement 
+*!*	*!*			oXml = CREATEOBJECT("XmlAdapter")
+*!*	*!*			
+*!*	*!*			
+*!*	*!*			oXml.loadXml(IncomingXML)
+*!*	*!*			iXml = oXml.IXMLDOMElement
+*!*	*!*			
+
+*!*	*!*			IF oXml.isLoaded
+*!*	*!*			   cDate = VAL(iXml.getElementsByTagName("EventDate").item(0).text)
+*!*	*!*			   cInfo = VAL(iXml.getElementsByTagName("EventDetail").item(0).text)
+*!*	*!*			ENDIF
+*!*	*!*			RELEASE oXml, iXm
+
+
+
+*!*		 LOCAL oXml as XMLAdapter
+*!*		 LOCAL iXml as MSXML2.IXMLDOMElement 
+*!*		 LOCAL nXml as MSXML2.IXMLDOMNode
+
+*!*			oXml = CREATEOBJECT("XmlAdapter")
+*!*			
+*!*			
+*!*		*	oXml.loadXml(IncomingXML)
+*!*			
+*!*	oxml.AddProperty("Comprobante")
+*!*			iXml = oXml.IXMLDOMElement
+
+
+*!*			IF oXml.isLoaded
+*!*			   cDate = VAL(iXml.getElementsByTagName("EventDate") .item(0).text)
+*!*			   cInfo = VAL(iXml.getElementsByTagName("EventDetail").item(0).text)
+*!*			ENDIF
+*!*			RELEASE oXml, iXm
+
+
+
+*!*	Local  CFDXml         As msxml2.DOMDocument 
+*!*	Local  root            As MSXML2.IXMLDOMProcessingInstruction
+*!*	Local  nComprobante    As MSXML2.IXMLDOMNode
+*!*	Local  nIdComp         As MSXML2.IXMLDOMNode
+*!*	Local  nNumero	       As MSXML2.IXMLDOMNode
+*!*	Local  nMonto		   As MSXML2.IXMLDOMNode
+
+*!*	nIdComp.nodeValue = p_idcomp
+
+
+*!*	* se crea el objeto XML 
+*!*	CFDXml = CREATEOBJECT("msxml2.DOMDocument") 
+
+*!*	* Header: La siguiente instrucción genera  <?xml version="1.0"?> como salida
+*!*	root   = CFDXml.createProcessingInstruction("xml","version='1.0' encoding='UTF-8'")
+*!*	CFDXml.insertBefore(root, CFDXml.documentElement)
+
+*!*	* Crea el Nodo Principal COMPROBANTE 
+*!*	nComprobante = CFDXml.CreateNode(1,"Comprobante","")
+
+*!*	nComprobante.insertBefore(nIdComp,CFDXml.do
+
+*!*	*!*		nComprobante.setAttribute("xmlns"             ,"http://www.sat.gob.mx/cfd/2")	
+*!*	*!*		nComprobante.setAttribute("xmlns:xsi"         ,"http://www.w3.org/2001/XMLSchema-instance")
+*!*	*!*		nComprobante.setAttribute("xsi:schemaLocation","http://www.sat.gob.mx/cfd/2 http://www.sat.gob.mx/sitio_internet/cfd/2/cfdv2.xsd")
+
+*!*	*!*		If Len(QtarChrInval(Gral.versions  )) > 0
+*!*	*!*		   nComprobante.setAttribute("version"           ,QtarChrInval(Gral.versions     ))
+*!*	*!*		ENDIF
+*!*	*!*		
+*!*	*!*		If Len(QtarChrInval(Gral.serie     )) > 0
+*!*	*!*	   	   nComprobante.setAttribute("serie"             ,QtarChrInval(Gral.serie        ))
+*!*	*!*		EndIf                             
+*!*	*!*		If Len(QtarChrInval(Gral.folio         )) > 0
+*!*	*!*		   nComprobante.setAttribute("folio"             ,QtarChrInval(Gral.folio        ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(Gral.fecha         )) > 0
+*!*	*!*		   nComprobante.setAttribute("fecha"             ,QtarChrInval(Gral.fecha        ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(Gral.noAprobaci    )) > 0
+*!*	*!*		   nComprobante.setAttribute("noAprobacion"      ,QtarChrInval(Gral.noAprobaci   ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(Gral.anoAprobac    )) > 0
+*!*	*!*		   nComprobante.setAttribute("anoAprobacion"     ,QtarChrInval(Gral.anoAprobac   ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(Gral.formaDePag    )) > 0
+*!*	*!*		   nComprobante.setAttribute("formaDePago"       ,QtarChrInval(Gral.formaDePag   ))
+*!*	*!*		ENDIF
+*!*	*!*		If Len(QtarChrInval(Gral.metodoDePa    )) > 0
+*!*	*!*		   nComprobante.setAttribute("metodoDePago"       ,QtarChrInval(Gral.metodoDePa  ))
+*!*	*!*		ENDIF	
+*!*	*!*		If Len(QtarChrInval(Gral.condicione    )) > 0
+*!*	*!*		   nComprobante.setAttribute("condicionesDePago"   ,QtarChrInval(Gral.condicione  ))
+*!*	*!*		ENDIF	
+*!*	*!*		If Len(QtarChrInval(Gral.motivoDesc    )) > 0
+*!*	*!*		   nComprobante.setAttribute("motivoDescuento"   ,QtarChrInval(Gral.motivoDesc   ))
+*!*	*!*		ENDIF
+*!*	*!*		If Len(QtarChrInval(Gral.subTotal      )) > 0
+*!*	*!*		   nComprobante.setAttribute("subTotal"          ,QtarChrInval(Gral.subTotal     ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(Gral.descuento     )) > 0
+*!*	*!*		   nComprobante.setAttribute("descuento"          ,QtarChrInval(Gral.descuento   ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(Gral.total         )) > 0
+*!*	*!*		   nComprobante.setAttribute("total"             ,QtarChrInval(Gral.total        ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(Gral.tipoDeComp    )) > 0
+*!*	*!*		   nComprobante.setAttribute("tipoDeComprobante" ,QtarChrInval(Gral.tipoDeComp   ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(noCertificado    )) > 0
+*!*	*!*		   nComprobante.setAttribute("noCertificado"     ,QtarChrInval(noCertificado     ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(Certificado    )) > 0
+*!*	*!*		   nComprobante.setAttribute("certificado"       ,QtarChrInval(Certificado       ))
+*!*	*!*		EndIf
+*!*	*!*		If Len(QtarChrInval(strsello         )) > 0
+*!*	*!*		   nComprobante.setAttribute("sello"             ,QtarChrInval(strsello          ))
+*!*	*!*		EndIf
+
+*!*		* Se crea el Nodo IDComprobante
+*!*	    nIdComp         = CFDXml.CreateNode(1, "idcomprobante", "")
+*!*	    
+*!*	   
+*!*	    
+*!*	    	LOCAL IdComp as XMLAdapter
+*!*	    	idComp.XMLName
+*!*	    	nIdComp.setAttribute("valor",
+*!*			If Len(QtarChrInval(Gral.Enombre        )) > 0
+*!*			   nEmisor.setAttribute("id"             ,QtarChrInval(Gral.Enombre      ))
+*!*			EndIf
+*!*			
+*!*		
+*!*		    * Se crea el Nodo Domicilio Fiscal
+*!*		    nDomiciloFiscal = CFDXml.CreateNode(1, "DomicilioFiscal", "")   
+
+*!*				If Len(QtarChrInval(Gral.Ecalle         )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("calle"               ,QtarChrInval(Gral.Ecalle       ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.EcodigoPos    )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("codigoPostal"       ,QtarChrInval(Gral.EcodigoPos    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Ecolonia       )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("colonia"            ,QtarChrInval(Gral.Ecolonia      ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Eestado        )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("estado"             ,QtarChrInval(Gral.Eestado       ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Elocalidad     )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("localidad"          ,QtarChrInval(Gral.Elocalidad    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Emunicipio     )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("municipio"          ,QtarChrInval(Gral.Emunicipio    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.EnoExterio    )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("noExterior"         ,QtarChrInval(Gral.EnoExterio    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.EnoInterio    )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("noInterior"         ,QtarChrInval(Gral.EnoInterio    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Epais          )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("pais"               ,QtarChrInval(Gral.Epais         ))
+*!*				ENDIF
+*!*			
+*!*			* El nodo Domicilio Fiscal se agrega al nodo Emisor 	
+*!*	        nEmisor.AppendChild(nDomiciloFiscal)
+*!*	        
+*!*	        * Se crea el Nodo Expedido En
+*!*	        nExpedidoEn  = CFDXml.CreateNode(1, "ExpedidoEn", "")
+*!*				If Len(QtarChrInval(Gral.Xcalle         )) > 0
+*!*			   	   nExpedidoEn.setAttribute("calle"               ,QtarChrInval(Gral.Xcalle        ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.XcodigoPos    )) > 0
+*!*			   	   nExpedidoEn.setAttribute("codigoPostal"        ,QtarChrInval(Gral.XcodigoPos    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Xcolonia       )) > 0
+*!*			   	   nExpedidoEn.setAttribute("colonia"             ,QtarChrInval(Gral.Xcolonia     ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Xestado        )) > 0
+*!*			   	   nExpedidoEn.setAttribute("estado"              ,QtarChrInval(Gral.Xestado       ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Xlocalidad     )) > 0
+*!*			   	   nExpedidoEn.setAttribute("localidad"           ,QtarChrInval(Gral.Xlocalidad    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Xmunicipio     )) > 0
+*!*			   	   nExpedidoEn.setAttribute("municipio"           ,QtarChrInval(Gral.Xmunicipio    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.XnoExterio    )) > 0
+*!*			   	   nExpedidoEn.setAttribute("noExterior"          ,QtarChrInval(Gral.XnoExterio    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.XnoInterio    )) > 0
+*!*			   	   nExpedidoEn.setAttribute("noInterior"          ,QtarChrInval(Gral.XnoInterio    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Xpais          )) > 0
+*!*			   	   nExpedidoEn.setAttribute("pais"               ,QtarChrInval(Gral.Xpais          ))
+*!*				ENDIF
+*!*			* Se agrega el nodo nExpedidoEn a el nodo Emisor 	
+*!*			nEmisor.AppendChild(nExpedidoEn )
+*!*			
+*!*		* Se agrega el nodo Emisor 	al nodo Comprobante
+*!*	    nComprobante.AppendChild(nEmisor);
+*!*			
+*!*	    * Se crea el Nodo Receptor
+*!*	    nReceptor = CFDXml.CreateNode(1, "Receptor", "")
+*!*			If Len(QtarChrInval(Gral.Rnombre        )) > 0
+*!*			   nReceptor.setAttribute("nombre"             ,QtarChrInval(Gral.Rnombre       ))
+*!*			EndIf
+*!*			If Len(QtarChrInval(Gral.Rrfc           )) > 0
+*!*			   nReceptor.setAttribute("rfc"               ,QtarChrInval(Gral.Rrfc           ))
+*!*			ENDIF
+*!*		
+*!*		    * Se crea el Nodo Domicilio Fiscal del Receptor
+*!*		    nDomiciloFiscal = CFDXml.CreateNode(1, "Domicilio", "")   
+
+*!*				If Len(QtarChrInval(Gral.Rcalle         )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("calle"              ,QtarChrInval(Gral.Rcalle        ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.RcodigoPos    )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("codigoPostal"       ,QtarChrInval(Gral.RcodigoPos    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Rcolonia       )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("colonia"            ,QtarChrInval(Gral.Rcolonia      ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Restado        )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("estado"             ,QtarChrInval(Gral.Restado       ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Rlocalidad     )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("localidad"          ,QtarChrInval(Gral.Rlocalidad    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Rmunicipio     )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("municipio"          ,QtarChrInval(Gral.Rmunicipio    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.RnoExterio    )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("noExterior"         ,QtarChrInval(Gral.RnoExterio    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.RnoInterio    )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("noInterior"         ,QtarChrInval(Gral.RnoInterio    ))
+*!*				EndIf
+*!*				If Len(QtarChrInval(Gral.Rpais          )) > 0
+*!*			   	   nDomiciloFiscal.setAttribute("pais"               ,QtarChrInval(Gral.Rpais         ))
+*!*				ENDIF
+*!*			
+*!*			* El nodo Domicilio Fiscal del Receptor se agrega al nodo nReceptor
+*!*	        nReceptor.AppendChild(nDomiciloFiscal)
+*!*	        
+*!*		* El nodo Receptor se agrega al nodo Comprobante 
+*!*		nComprobante.AppendChild(nReceptor);
+*!*		
+*!*	    * Se crea el Nodo Conceptos
+*!*	    nConceptos = CFDXml.CreateNode(1, "Conceptos", "")
+
+*!*			Select Cnspts
+*!*			Goto Top
+*!*			Do While Not Eof()
+*!*	    		* Se crea el Nodo Concepto
+*!*	        	nConcepto = CFDXml.CreateNode(1 , "Concepto", "")
+*!*	   				If Len(QtarChrInval(Cnspts.cantidad)) > 0
+*!*			   	       nConcepto.setAttribute("cantidad"         ,QtarChrInval(Cnspts.cantidad  ))
+*!*				    EndIf
+*!*	   			    If Len(QtarChrInval(Cnspts.descripcio)) > 0
+*!*			   	       nConcepto.setAttribute("descripcion"      ,QtarChrInval(Cnspts.descripcio))
+*!*				    EndIf
+*!*				    If Len(QtarChrInval(Cnspts.importe)) > 0
+*!*			   	       nConcepto.setAttribute("importe"          ,QtarChrInval(Cnspts.importe   ))
+*!*				    EndIf
+*!*				    If Len(QtarChrInval(Cnspts.unidad)) > 0
+*!*			   	       nConcepto.setAttribute("unidad"           ,QtarChrInval(Cnspts.unidad    ))
+*!*				    EndIf
+*!*				    If Len(QtarChrInval(Cnspts.valorUnita )) > 0
+*!*			   	       nConcepto.setAttribute("valorUnitario"    ,QtarChrInval(Cnspts.valorUnita))
+*!*				    ENDIF
+*!*				   
+*!*	            nConceptos.AppendChild(nConcepto)
+*!*	   		    Skip
+*!*			EndDo 
+*!*	        
+*!*		* El nodo Conceptos se agrega al nodo Comprobante 
+*!*	    nComprobante.AppendChild(nConceptos)
+
+*!*	    * Se crea el Nodo Impuestos
+*!*	    nImpuestos = CFDXml.CreateNode(1, "Impuestos", "")
+
+*!*	    	* Se crea el Nodo Traslados
+*!*	    	nTraslados = CFDXml.CreateNode(1, "Traslados", "")
+
+*!*	        	* Se crea el Nodo Traslado
+*!*	            nTraslado = CFDXml.CreateNode(1 , "Traslado", "")
+
+*!*					If Len(QtarChrInval(Gral.impuesto   )) > 0
+*!*	                	nTraslado.setAttribute("impuesto",QtarChrInval(Gral.impuesto   ))
+*!*					EndIf
+*!*					If Len(QtarChrInval(Gral.tasa       )) > 0
+*!*	                	nTraslado.setAttribute("tasa"    ,QtarChrInval(Gral.tasa       ))
+*!*					EndIf
+*!*					If Len(QtarChrInval(Gral.importe    )) > 0
+*!*	                	nTraslado.setAttribute("importe",QtarChrInval(Gral.importe     ))
+*!*					EndIf
+
+*!*	            * se agrega el nodo traslado al nodo traslados
+*!*	            nTraslados.AppendChild(nTraslado);
+*!*	            
+*!*	        * se agrega el nodo Traslados al nodo Impuestos 
+*!*			nImpuestos.AppendChild(nTraslados)
+*!*			
+*!*	    * se agrega el nodo Impuestos al nodo Comprobante 
+*!*	    nComprobante.AppendChild(nImpuestos);
+*!*	    
+*!*	* se agrega el nodo Comprobante al nodo CFDXml 
+*!*	CFDXml.AppendChild(nComprobante)
+
+*!*	CFDXml.Save(ArchivoXml)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*!*	*!*		xmlCnt = XMLTOCURSOR("archivoxml","",8192)
+
+
+*!*		*!*	* 8192 places incoming XML into open table/cursor
+*!*		*!*	SELECT "curX"
+*!*		*!*	 
+*!*		*!*	 
+*!*		*!*	 PRIVATE oXml, iXml
+*!*		*!*	oXml = CREATEOBJECT("XmlAdapter")
+*!*		*!*	oXml.loadXml(IncomingXML)
+*!*		*!*	iXml = oXml.IXMLDOMElement
+*!*		*!*	IF oXml.isLoaded
+*!*		*!*	   cDate = VAL(iXml.getElementsByTagName("EventDate").item(0).text)
+*!*		*!*	   cInfo = VAL(iXml.getElementsByTagName("EventDetail").item(0).text)
+*!*		*!*	ENDIF
+*!*		*!*	RELEASE oXml, iXm
+*!*	 
+*!*	 ENDFUNC 
  
+*!*	 FUNCTION armarComprobanteXML
+*!*	 PARAMETERS p_idcomprobante
+*!*	 
+*!*	 	v_ubicacionXML = ""
+*!*	 	
+*!*	 	v_idcomprobante = p_idcomprobante
+*!*	 	
+*!*				**** CARGA COMPROBANTE ***
+
+*!*				vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+*!*				LOCAL CFDXml  as XMLField
+*!*				CFDXml = CREATEOBJECT("msxml2.DOMDocument") 
+*!*				
+*!*				CFDXml.
+
+
+*!*				sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
+*!*				sqlmatriz(2)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom "
+*!*				sqlmatriz(3)=" left join puntosventa p on f.pventa = p.pventa "
+*!*				sqlmatriz(4)=" where f.idfactura = "+ ALLTRIM(STR(v_idcomprobante))
+
+*!*				verror=sqlrun(vconeccionF,"factu_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la factura a cargar ",0+48+0,"Error")
+*!*				    *thisform.comprobantecargado = .f.
+*!*				    v_compCargado = .F.
+*!*				ENDIF 
+
+*!*				*** Cargo IMpuestos del comprobante agrupados por tipo de impuesto
+*!*				sqlmatriz(1)="Select fi.*,a.codigo as codigoAfip, a.tipo as tipoAfip, a.detalle as detAfip from  facturasimp fi left join impuestos i on fi.impuesto = i.impuesto "
+*!*				sqlmatriz(2)=" left join afipimpuestos a on i.idafipimp = a.idafipimp " 
+*!*				sqlmatriz(3)=" where fi.idfactura = "+ ALLTRIM(STR(v_idcomprobante))
+
+*!*				verror=sqlrun(vconeccionF,"factImp_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los impuestos de las facturas ",0+48+0,"Error")
+*!*				    *thisform.comprobantecargado = .f.
+*!*				    v_compCargado = .F.
+*!*				ENDIF 
+
+*!*				SELECT factu_sql
+
+*!*				
+*!*	 	
+*!*	 	
+*!*	 	
+*!*	 	
+*!*	 	
+*!*	 	
+*!*	 	RETURN v_ubicacionXML
+*!*	 	
+*!*	ENDFUNC 
+ 	
 * FUNCION QUE PERMITE LA CARGA DEL COMPROBANTE AL SERVICIO LOCAL, PARA LUEGO SER AUTORIZADA
 * PARAMETROS: p_idFactura, ID DEL COMPROBANTE A AUTORIZAR
 FUNCTION cargarCompFE
@@ -1258,11 +1679,7 @@ PARAMETERS p_idFactura
 
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 			
-			
-			
-*			sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
-*			sqlmatriz(2)=" left join afipcompro a on  c.idafipcom = a.idafipcom left join puntosventa p on f.pventa = p.pventa "
-*			sqlmatriz(3)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
 
 			sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
 			sqlmatriz(2)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom "
@@ -1288,37 +1705,21 @@ PARAMETERS p_idFactura
 			    v_compCargado = .F.
 			ENDIF 
 
+
+		
+			
 			SELECT factu_sql
 
-			
 			
 			
 			v_idComprobante = factu_sql.idfactura
 			*id o tipo?
 			v_tipoComprobante = VAL(factu_sql.codAfip)
 			
-			*Tipo doc = 80, CUIT?
-			*¿Que pasa si es consumidor final?
 
 			v_tipoDocCliente= factu_sql.tipodoc
 			v_nroDocCliente	= factu_sql.cuit
 			
-
-*!*				IF factu_sql.tipodoc = '80'
-*!*					v_tipoDocCliente = '80'
-*!*					v_nroDocCliente = factu_sql.cuit
-*!*				ELSE 
-*!*					IF factu_sql.tipodoc = '99'
-*!*						v_tipoDocCliente = '99'
-*!*						v_nroDocCliente = factu_sql.cuit
-*!*					ELSE
-*!*						MESSAGEBOX("El tipo de cocumento no es CUIT ",0+48+0,"Error")
-*!*					    
-*!*					    v_compCargado =.F.
-*!*					ENDIF 
-*!*					
-*!*					
-*!*				ENDIF 
 			
 			v_fechaComprobante = factu_sql.fecha
 			v_importeNeto = factu_sql.neto
@@ -1333,7 +1734,6 @@ PARAMETERS p_idFactura
 			ENDIF 
 			
 
-*!*				SELECT * FROM factImp_sql  INTO TABLE .\factImp
 
 	SET ENGINEBEHAVIOR 70  &&habilitará el comportamiento de Visual FoxPro 7. 
 		SELECT *, SUM(importe) as impTot, SUM(neto) as netoTot FROM factImp_sql GROUP BY impuesto  INTO TABLE .\factImp
@@ -1474,290 +1874,268 @@ PARAMETERS p_idFactura
 		FINALLY
 	ENDTRY
 	RETURN v_compCargado
-ENDFUNC 
+ENDFUNC  
+ 
+*!*	* FUNCION QUE PERMITE LA CARGA DEL COMPROBANTE AL SERVICIO LOCAL, PARA LUEGO SER AUTORIZADA
+*!*	* PARAMETROS: p_idFactura, ID DEL COMPROBANTE A AUTORIZAR
+*!*	FUNCTION cargarCompFE
+*!*	PARAMETERS p_idFactura
+
+
+*!*		v_servicioCargado = .F.
+*!*		v_compCargado = .F.
+*!*		TRY 
+*!*		
+*!*			v_servicioCargado = loBasicHttpBinding_IServicio.servicioIniciado()
+*!*			
+*!*			IF v_servicioCargado  = .t.
+
+*!*				v_idfactura = p_idFactura
+*!*				
+*!*				**** CARGA COMPROBANTE ***
+
+*!*				vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+*!*				
+*!*				
+*!*				
+*!*	*			sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
+*!*	*			sqlmatriz(2)=" left join afipcompro a on  c.idafipcom = a.idafipcom left join puntosventa p on f.pventa = p.pventa "
+*!*	*			sqlmatriz(3)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+*!*				sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
+*!*				sqlmatriz(2)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom "
+*!*				sqlmatriz(3)=" left join puntosventa p on f.pventa = p.pventa "
+*!*				sqlmatriz(4)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+*!*				verror=sqlrun(vconeccionF,"factu_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la factura a cargar ",0+48+0,"Error")
+*!*				    *thisform.comprobantecargado = .f.
+*!*				    v_compCargado = .F.
+*!*				ENDIF 
+
+*!*				*** Cargo IMpuestos del comprobante agrupados por tipo de impuesto
+*!*				sqlmatriz(1)="Select fi.*,a.codigo as codigoAfip, a.tipo as tipoAfip, a.detalle as detAfip from  facturasimp fi left join impuestos i on fi.impuesto = i.impuesto "
+*!*				sqlmatriz(2)=" left join afipimpuestos a on i.idafipimp = a.idafipimp " 
+*!*				sqlmatriz(3)=" where fi.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+*!*				verror=sqlrun(vconeccionF,"factImp_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los impuestos de las facturas ",0+48+0,"Error")
+*!*				    *thisform.comprobantecargado = .f.
+*!*				    v_compCargado = .F.
+*!*				ENDIF 
+
+*!*				SELECT factu_sql
+
+*!*				
+*!*				
+*!*				
+*!*				v_idComprobante = factu_sql.idfactura
+*!*				*id o tipo?
+*!*				v_tipoComprobante = VAL(factu_sql.codAfip)
+*!*				
+*!*				*Tipo doc = 80, CUIT?
+*!*				*¿Que pasa si es consumidor final?
+
+*!*				v_tipoDocCliente= factu_sql.tipodoc
+*!*				v_nroDocCliente	= factu_sql.cuit
+*!*				
+
+*!*	*!*				IF factu_sql.tipodoc = '80'
+*!*	*!*					v_tipoDocCliente = '80'
+*!*	*!*					v_nroDocCliente = factu_sql.cuit
+*!*	*!*				ELSE 
+*!*	*!*					IF factu_sql.tipodoc = '99'
+*!*	*!*						v_tipoDocCliente = '99'
+*!*	*!*						v_nroDocCliente = factu_sql.cuit
+*!*	*!*					ELSE
+*!*	*!*						MESSAGEBOX("El tipo de cocumento no es CUIT ",0+48+0,"Error")
+*!*	*!*					    
+*!*	*!*					    v_compCargado =.F.
+*!*	*!*					ENDIF 
+*!*	*!*					
+*!*	*!*					
+*!*	*!*				ENDIF 
+*!*				
+*!*				v_fechaComprobante = factu_sql.fecha
+*!*				v_importeNeto = factu_sql.neto
+*!*				
+*!*				*** OPERACION EXCENTA???
+*!*				v_importeOpEx = 0
+*!*				*Tratamiento de impuestos
+*!*				IF factu_sql.operexenta = "S"
+*!*					v_importeOpEx = 0
+*!*				ELSE
+*!*				
+*!*				ENDIF 
+*!*				
+
+*!*	*!*				SELECT * FROM factImp_sql  INTO TABLE .\factImp
+
+*!*		SET ENGINEBEHAVIOR 70  &&habilitará el comportamiento de Visual FoxPro 7. 
+*!*			SELECT *, SUM(importe) as impTot, SUM(neto) as netoTot FROM factImp_sql GROUP BY impuesto  INTO TABLE .\factImp
+*!*				
+*!*				 
+*!*				 
+*!*		SET ENGINEBEHAVIOR 90  &&habilitará el comportamiento de Visual FoxPro 9. 
+*!*				
+*!*				v_importeTotalComp = factu_sql.total
+*!*				v_idMoneda = "PES"
+*!*				v_cotizacionMoneda = 1
+*!*			*Concepto se refiere a:
+*!*			*1- Productos
+*!*			*2- Servicios
+*!*			*3- Productos y servicios
+*!*				v_concepto = _SYSCONCEPTOAFIP
+*!*				v_ptoVta = factu_sql.puntov 
+
+*!*				v_1 =	loBasicHttpBinding_IServicio.setIDComprobante(v_idComprobante)
+
+*!*				v_2=	loBasicHttpBinding_IServicio.setTipoComprobante(v_tipoComprobante)
+
+*!*				v_3=	loBasicHttpBinding_IServicio.setDocTipoClienteComprobante(v_tipoDocCliente)
+
+*!*				v_4=		loBasicHttpBinding_IServicio.setNroDocClienteComprobante(ALLTRIM(v_nroDocCliente))
+
+*!*				v_5=		loBasicHttpBinding_IServicio.setFechaComprobante(ALLTRIM(v_fechaComprobante))
+*!*					
+*!*				 
+*!*				
+*!*				v_totalIVA = 0
+*!*				v_totalTributo = 0
+*!*				SELECT factImp
+*!*				GO TOP
+*!*				DO WHILE  NOT EOF()
+*!*					
+*!*					v_impuesto = factImp.impuesto
+*!*					v_detalle  = factImp.detalle
+*!*	*!*					v_importe  = factImp.importe
+*!*	*!*					v_neto	   = factImp.neto
+*!*					v_importe	= factImp.impTot
+*!*					v_neto		= factImp.netoTot
+*!*					v_codAfip  = VAL(ALLTRIM(factImp.codigoafip))
+*!*					v_tipoAfip = factImp.tipoAfip
+*!*					v_detAfip  = factImp.detAfip
+
+*!*					DO case
+*!*					
+*!*						CASE v_tipoAfip = "IVA"
+
+*!*							resp = loBasicHttpBinding_IServicio.agregarAlicIva(v_codAfip,v_neto,v_importe)
+*!*						
+*!*							IF resp = .F.
+*!*								MESSAGEBOX("Error al cargar alicuota IVA",0+48+0,"Error")
+*!*							
+*!*							ELSE
+*!*								v_totalIVA = v_totalIVA + v_importe
+*!*						
+*!*							ENDIF 
+*!*							
+*!*							
+*!*						CASE v_tipoAfip = "TRIBUTO"
+*!*						**REVISAR ALICUOTA (0) EN TRIBUTO 
+
+*!*							resp = loBasicHttpBinding_IServicio.agregarTributo(v_codAfip, 0, v_neto, v_detAfip, v_importe)
+*!*						
+*!*							IF resp = .F.
+*!*								MESSAGEBOX("Error al cargar el TRIBUTO",0+48+0,"Error")
+*!*							
+*!*							ELSE
+*!*								v_totalTributo = v_totalTributo + v_importe
+*!*						
+*!*							ENDIF 
+*!*						
+*!*					
+*!*					ENDCASE 
+*!*					
+*!*					
+*!*				
+*!*					SELECT factImp
+*!*					SKIP 1
+*!*				ENDDO  
+
+*!*					v_importeTributo = v_totalTributo
+*!*					v_importeIva = v_totalIVA
+
+*!*						v_6=		loBasicHttpBinding_IServicio.setImporteNetoComprobante(v_importeNeto)
+
+*!*				v_7=		loBasicHttpBinding_IServicio.setImporteOpExComprobante(v_importeOpEx)
+
+*!*				v_8=		loBasicHttpBinding_IServicio.setImporteTributoComprobante(v_importeTributo)
+
+*!*				v_9=		loBasicHttpBinding_IServicio.setImporteIvaComprobante(v_importeIva)
+
+*!*				v_10 = 		loBasicHttpBinding_IServicio.setImporteTotalComprobante(v_importeTotalComp)
+*!*				
+
+*!*				v_11=		loBasicHttpBinding_IServicio.setIDMonedaComprobante(ALLTRIM(v_idMoneda))
+
+*!*				v_12=		loBasicHttpBinding_IServicio.setCotizacionMonedaComprobante(v_cotizacionMoneda)
+
+*!*				v_13=		loBasicHttpBinding_IServicio.setConceptoComprobante(v_concepto)
+
+*!*				v_14 =			loBasicHttpBinding_IServicio.setPtoVtaComprobante(v_ptoVta)
+
+*!*				v_estadoComp =	loBasicHttpBinding_IServicio.comprobanteCargado()
+*!*				
+*!*						
+*!*				
+*!*				IF v_estadoComp = .T.
+*!*				
+*!*					v_compCargado =.T.
+*!*				ELSE
+*!*				
+*!*				    v_compCargado =	.F.
+
+*!*				ENDIF 
+
+*!*			ELSE
+*!*				  MESSAGEBOX("El servicio de autorización no está Iniciado",0+48+0,"Error")
+
+*!*				    v_compCargado = .F.
+*!*			ENDIF 
+*!*		CATCH TO loException
+*!*			lcErrorMsg="Error: "+TRANSFORM(loException.Errorno)+" - "+loException.Message
+*!*			DO CASE
+*!*				CASE VARTYPE(loBasicHttpBinding_IServicio)#"O"
+*!*					* Handle SOAP error connecting to web service
+*!*				CASE !EMPTY(loBasicHttpBinding_IServicio.FaultCode)
+*!*					* Handle SOAP error calling method
+*!*					lcErrorMsg=lcErrorMsg+CHR(13)+loBasicHttpBinding_IServicio.Detail
+*!*				OTHERWISE
+*!*					* Handle other error
+*!*				ENDCASE
+*!*				* Use for debugging purposes
+*!*				MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+*!*				v_compCargado = .F.
+*!*			FINALLY
+*!*		ENDTRY
+*!*		RETURN v_compCargado
+*!*	ENDFUNC 
 
 
 
 
-
-* FUNCIÓN QUE AUTORIZA EL COMPROBANTE CARGADO EN EL SERVICIO Y QUE SEA EL QUE SE LE INDICA COMO PARÁMETRO
-* PARAMETRO: P_IDFACTURA, ID DEL COMPROBANTE A AUTORIZAR
-FUNCTION autorizarCompFE
-PARAMETERS p_idFactura
-	v_idAutorizar = p_idfactura
-	v_autorizado = .F.
-	v_servicioCargado = .F.
-	v_estadoComp = .F.
-		v_nro = "0"
-		
-	
-	TRY 
-
-		v_servicioCargado = loBasicHttpBinding_IServicio.servicioIniciado()
-
-		v_estadoComp =	loBasicHttpBinding_IServicio.comprobanteCargado()
-
-		v_fechaComp = loBasicHttpBinding_IServicio.getFechaComprobante()
-		
-		CATCH TO loException
-		lcErrorMsg="Error: "+TRANSFORM(loException.Errorno)+" - "+loException.Message
-		DO CASE
-		CASE VARTYPE(loBasicHttpBinding_IServicio)#"O"
-			* Handle SOAP error connecting to web service
-		CASE !EMPTY(loBasicHttpBinding_IServicio.FaultCode)
-			* Handle SOAP error calling method
-			lcErrorMsg=lcErrorMsg+CHR(13)+loBasicHttpBinding_IServicio.Detail
-		OTHERWISE
-			* Handle other error
-		ENDCASE
-		* Use for debugging purposes
-		MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
-		v_autorizado = .F.
-	FINALLY
-	ENDTRY
-
-		IF  v_estadoComp  = .T.		
-
-			v_respuesta=loBasicHttpBinding_IServicio.autorizarComprobante(v_idAutorizar)
-	
-			v_observacion = ""  
-		
-			v_estado = SUBSTR(v_respuesta,1,1)
-			v_obsercacion = ""
-			v_error = ""
-			v_codError = ""
-			IF v_estado = "A"
-				*Arpobado
-				*RAAAANNNNNNNNCCCCCCCCCCCCCCFFFFFFFF
-				v_ptoVta =  SUBSTR(v_respuesta,2,4)
-				v_nro =  SUBSTR(v_respuesta,6,8)
-				v_cae =  SUBSTR(v_respuesta,14,14)
-				v_fechavenc =  SUBSTR(v_respuesta,28,8)
-				*FECHA QUE RETORNA ES FECHAVENC?
-				v_obsercacion = ""
-				v_error = ""
-				v_fecha = cftofc(DATE())
-
-				MESSAGEBOX("Comprobante Autorizado: "+ v_ptovta + " - "+v_nro + " CAE: "+v_cae+"Fecha: "+v_fecha,0+64,"Comprobante Autorizado")
-			
-			
-			*** REGISTRO ESTADO AUTORIZADO PARA FACTURAS ELECTRONICAS ***
-
-			
-				registrarEstado("facturas","idfactura",v_idAutorizar,'I',"AUTORIZADO")
-			
-			
-			
-				*** ACTUALIZO EL NUMERO DEL COMPROBANTE EN FACTURAS
-*				DIMENSION lamatriz7(1,2)
-				
-*				lamatriz7(1,1) = 'numero'
-*				lamatriz7(1,2) = ALLTRIM(v_nro)
-				
-*				p_tipoope     = 'U'
-*				p_condicion   = " idfactura = " + ALLTRIM(STR(v_idAutorizar))
-*				v_titulo      = " LA MODIFICACIÓN "		
-*				p_tabla     = 'facturas'
-*				p_matriz    = 'lamatriz7'
-*				p_conexion  = vconeccionF
-*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
-*				ENDIF  
-				
-				
-				
-				*** ACTUALIZO EL MAXIMO NUMERO EN COMPACTIV ***
-				
-				*Busco el pventa e idcomproba de la factura
-*				vconeccionF=abreycierracon(0,_SYSSCHEMA)	
-*			
-*				sqlmatriz(1)="Select idcomproba, pventa from facturas "
-*				sqlmatriz(2)=" where idfactura = "+ ALLTRIM(STR(v_idfactura))
-*
-*				verror=sqlrun(vconeccionF,"comPvta_sql")
-*				IF verror=.f.  
-*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de comprobante y pventa de la factura ",0+48+0,"Error")
-*
-*				ENDIF 
-*				
-*				SELECT comPvta_sql
-*				GO TOP 
-*
-*				v_idcomproba 	= comPvta_sql.idcomproba
-*				v_pventa		= comPvta_sql.pventa
-*				
-*				*Actualizo compactiv
-*				
-*				DIMENSION lamatriz7(1,2)
-*				
-*				lamatriz7(1,1) = 'maxnumero'
-*				lamatriz7(1,2) = ALLTRIM(v_nro)
-*				
-*				p_tipoope     = 'U'
-*				p_condicion   = " idcomproba = " + ALLTRIM(STR(v_idcomproba )) + " and pventa = "+ALLTRIM(STR(v_pventa))
-*				v_titulo      = " LA MODIFICACIÓN "		
-*				p_tabla     = 'compactiv'
-*				p_matriz    = 'lamatriz7'
-*				p_conexion  = vconeccionF
-*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
-*				ENDIF  
-							
-			ELSE
-
-				IF v_estado = "R"
-					*Rechazado
-					v_respuesta =  SUBSTR(v_respuesta,2)
-					MESSAGEBOX("Comprobante Rechazado: "+ v_respuesta,0+48+0,"Comprobante Rechazado")
-					v_ptoVta = ""
-					v_nro = "0"
-					v_cae = ""
-					v_fechavenc =""
-					
-					*¿La respuesta va en error u observacion¡?
-					v_error = ""
-					v_observacion  = V_respuesta 
-					*¿Falta codigo de error?
-					v_codErro = ""
-						
-					*** REGISTRO ESTADO AUTORIZADO PARA FACTURAS ELECTRONICAS ***
-
-					
-						
-						registrarEstado("facturas","idfactura",v_idAutorizar,'I',"RECHAZADO")
-					 
-				ELSE
-					*Indefinido
-					MESSAGEBOX("Respuesta desconocida",0+48+0,"Error al Autorizar")
-
-				ENDIF 
-			ENDIF 
-			
-				
-			
-			*** Guardar datos en facturasFe
-			DIMENSION lamatriz8(13,2)
-			
-			v_idfe = maxnumeroidx("idfe","I","facturasfe",1)
-			
-			lamatriz8(1,1)='idfe'
-			lamatriz8(1,2)= ALLTRIM(STR(v_idfe))
-			lamatriz8(2,1)='idfactura'
-			lamatriz8(2,2)= ALLTRIM(STR(v_idAutorizar))
-			lamatriz8(3,1)='fecha'
-			*lamatriz8(3,2)= "'"+ALLTRIM(cftofc(thisform.tb_fecha.Value))+"'"
-			*Fecha de la factura
-			lamatriz8(3,2)= "'"+ALLTRIM(v_fechaComp)+"'"
-			lamatriz8(4,1)='resultado'
-			lamatriz8(4,2)= "'"+ALLTRIM(v_estado)+"'"
-			lamatriz8(5,1)='caecesp'
-			lamatriz8(5,2)= "'"+ALLTRIM(v_cae)+"'"
-			lamatriz8(6,1)='caecespven'
-			lamatriz8(6,2)= "'"+ALLTRIM(v_fechavenc)+"'"
-			*Fecha desde CESP
-			lamatriz8(7,1)='caecespfec'
-			lamatriz8(7,2)= "''"
-			lamatriz8(8,1)='pathpdffe'
-			lamatriz8(8,2)= "''"
-			* idtipo comprobante afip
-			lamatriz8(9,1)='idtipofe'
-			lamatriz8(9,2)= "0"
-			lamatriz8(10,1)='idtranafip'
-			lamatriz8(10,2)= "0"
-			*Descripción del error
-			lamatriz8(11,1)='observa'
-			lamatriz8(11,2)= "'"+ALLTRIM(v_observacion)+"'"
-			*Codigo del error
-			lamatriz8(12,1)='coderror'
-			lamatriz8(12,2)= "'"+v_codError+"'"
-				*¿ Que va aca?
-			lamatriz8(13,1)='numerofe'
-			lamatriz8(13,2)=  v_nro
-
-
-		*** Creo siempre un nuevo registro para idfe?
-			p_tipoope     = 'I'
-			p_condicion   = ''
-			v_titulo      = " EL ALTA "
-
-			p_tabla     = 'facturasfe'
-			p_matriz    = 'lamatriz8'
-			p_conexion  = vconeccionF
-			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
-			    
-			    v_autorizado =.F.
-			ENDIF  
-		
-				v_autorizado =.T.
-		
-		ELSE
-		
-			MESSAGEBOX("El servicio no está iniciado o el comprobante no está cargado",0+48+0,"Error")
-			    
-			v_autorizado =.F.
-		
-		
-		ENDIF 
-		
-	RETURN v_autorizado  
-
-ENDFUNC 
 
 * FUNCIÓN PARA AUTORIZAR COMPROBANTES
-* PARAMETROS: P_PUNTOVTA, PUNTO DE VTA DEL COMPROBANTE; P_IDFACTURA, ID DEL COMPROBANTE A AUTORIZAR
-FUNCTION autorizarFE
-PARAMETERS p_puntoVta, p_idFactura
+* PARAMETROS: P_IDCOMPROBANTE, ID DEL COMPROBANTE A AUTORIZAR
+FUNCTION autorizarCompFE
+PARAMETERS p_idcomprobante
 
-v_puntoVta = p_puntoVta
-v_idfactura= p_idFactura
+v_idcomprobante= p_idcomprobante
 v_autorizar = .F.
+v_objconfigurado = .F.
 
-	TRY 
 
 
-	v_servicioCargado = loBasicHttpBinding_IServicio.servicioIniciado()
-	
-	*v_estadoComp =	loBasicHttpBinding_IServicio.comprobanteCargado()
 
-		IF v_servicioCargado  = .F.
-		
-			*El servicio no está cargado
-			*Intenta cargar
-			v_servicioCargado = cargarServicioFE(v_puntoVta)
-			
-			IF v_servicioCargado  = .F.
-				*Comprueba y no está cargado
-				MESSAGEBOX("El servicio para autorizar comprobantes electrónicos no está disponible",0+48+0,"Error al autorizar")
-				v_autorizar = .F.
-			ENDIF  
-			
-
-		ENDIF 
-	CATCH TO loException
-			lcErrorMsg="Error: "+TRANSFORM(loException.Errorno)+" - "+loException.Message
-			DO CASE
-			CASE VARTYPE(loBasicHttpBinding_IServicio)#"O"
-				* Handle SOAP error connecting to web service
-			CASE !EMPTY(loBasicHttpBinding_IServicio.FaultCode)
-				* Handle SOAP error calling method
-				lcErrorMsg=lcErrorMsg+CHR(13)+loBasicHttpBinding_IServicio.Detail
-			OTHERWISE
-				* Handle other error
-			ENDCASE
-			* Use for debugging purposes
-			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
-			v_autorizar = .F.
-		FINALLY
-	ENDTRY	
-		
-		IF v_servicioCargado = .T.
-			***COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO
+***COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO
 	
 			vconeccion=abreycierracon(0,_SYSSCHEMA)	
 				
 				sqlmatriz(1)="Select * from facturasfe "
-				sqlmatriz(2)=" where idfactura = "+ ALLTRIM(STR(v_idfactura))
+				sqlmatriz(2)=" where idfactura = "+ ALLTRIM(STR(v_idcomprobante))
 
 				verror=sqlrun(vconeccion,"factufe_sql")
 				IF verror=.f.  
@@ -1775,7 +2153,7 @@ v_autorizar = .F.
 						
 						IF v_resultado = "A" OR v_caecesp <> ""
 						
-							MESSAGEBOX("El comprobante ID: "+ALLTRIM(STR(v_idfactura))+" ya se encuentra autorizado",0+48+0,"Error al autorizar")
+							MESSAGEBOX("El comprobante ID: "+ALLTRIM(STR(v_idcomprobante))+" ya se encuentra autorizado",0+48+0,"Error al autorizar")
 							v_autorizar = .F.
 							RETURN v_autorizar
 						ENDIF 
@@ -1786,54 +2164,244 @@ v_autorizar = .F.
 					ENDDO 
 				ENDIF 
 
+	TRY 
+		v_tipoObj = TYPE("objModuloAFIP")
+		
+		IF v_tipoObj <> "O" && No se creo el objeto
+		
+			public objModuloAFIP
+			objModuloAFIP = CREATEOBJECT("ModuloAFIP.ModuloAFIP")
+			
+		ENDIF 
+		
+		
+		v_objconfigurado = objModuloAFIP.Configurado
+		
+		IF v_objConfigurado = .F.
+			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
 
-			*Carga el comprobante en el servicio para autorizar
-			*thisform.cargarcomprobantefe
-
-
+			IF v_objconfigurado = .T.
 				
-			v_comprobanteCargado = cargarcompFE(v_idfactura)
-			IF v_comprobanteCargado = .t.
-					*Intenta autorizar el comprobante cargado en el servicio
-				*thisform.autorizarcomprobantefe
-
-
-				v_comprobanteAutorizado = autorizarCompFE(v_idfactura)
+				v_objerror = objModuloAFIP.Error
 				
-				IF v_comprobanteAutorizado  = .T.
+				IF v_objerror = .T.
 				
-					v_autorizar = .T.
-					
-					
-					
-					
-					
-				ELSE
-					MESSAGEBOX("Ha Ocurrido un Error al autorizar el comprobante en el servicio ",0+48+0,"Error")
-				    
-				    v_autorizar = .F.
-				
+					v_errores = ""
+					v_errores = objModuloAFIP.errores
+					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
 				ENDIF 
+					
+				v_observaciones = objModuloAFIP.Observaciones
+				
+				MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
+				
 				
 				
 			ELSE
-
-			    MESSAGEBOX("Ha Ocurrido un Error al cargar el comprobante en el servicio ",0+48+0,"Error")
-			    
-			    v_autorizar = .F.
-			
+				
+				MESSAGEBOX("Configuración NO Cargada correctamente")
+					
+				v_objerror = objModuloAFIP.Error
+				
+				IF v_objerror = .T.
+				
+					v_errores = ""
+					v_errores = objModuloAFIP.errores
+					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+				ENDIF 
+					
+				v_observaciones = objModuloAFIP.Observaciones
+				
+				MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
+				
+				RETURN .F.
+				
 			ENDIF 
 		ENDIF 
-
-			
-
+				
 		
+		
+	
+	CATCH TO loException
+			
+			* Use for debugging purposes
+			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+			v_autorizar = .F.
+			RETURN v_autorizar
+		
+	ENDTRY	
+		
+		
+			
+			** Armo el archivo XML para mandarlo a autorizar
+		
+				v_ubicacionXML = armarComprobanteXML(v_idcomprobante)
+			
+		MESSAGEBOX("Enviando a autorizar COMP:"+ALLTRIM(v_ubicacionXML))
+			** Mando a autorizar el comprobante pasandole la ubicación del archivo  y el ID
+			v_autorizado = objModuloAFIP.autorizarComp(v_ubicacionXML,v_idComprobante)
+			
+			
+			IF v_autorizado = .T.
+			
+				v_autorizar = .T.
+			ELSE
+				MESSAGEBOX("Ha Ocurrido un Error al autorizar el comprobante en el servicio",0+48+0,"Error")
+				
+				
+				v_objerror = objModuloAFIP.Error
+				
+				IF v_objerror = .T.
+				
+					v_errores = ""
+					v_errores = objModuloAFIP.errores
+					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+				ENDIF 
+					
+				v_observaciones = objModuloAFIP.Observaciones
+				
+				MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
+				
+				v_autorizar = .F.
+			ENDIF 	
+				
 
 	RETURN v_autorizar
 
 	
 
 ENDFUNC 
+
+*!*	* FUNCIÓN PARA AUTORIZAR COMPROBANTES
+*!*	* PARAMETROS: P_PUNTOVTA, PUNTO DE VTA DEL COMPROBANTE; P_IDFACTURA, ID DEL COMPROBANTE A AUTORIZAR
+*!*	FUNCTION autorizarFE
+*!*	PARAMETERS p_puntoVta, p_idFactura
+
+*!*	v_puntoVta = p_puntoVta
+*!*	v_idfactura= p_idFactura
+*!*	v_autorizar = .F.
+
+*!*		TRY 
+
+
+*!*		v_servicioCargado = loBasicHttpBinding_IServicio.servicioIniciado()
+*!*		
+*!*		*v_estadoComp =	loBasicHttpBinding_IServicio.comprobanteCargado()
+
+*!*			IF v_servicioCargado  = .F.
+*!*			
+*!*				*El servicio no está cargado
+*!*				*Intenta cargar
+*!*				v_servicioCargado = cargarServicioFE(v_puntoVta)
+*!*				
+*!*				IF v_servicioCargado  = .F.
+*!*					*Comprueba y no está cargado
+*!*					MESSAGEBOX("El servicio para autorizar comprobantes electrónicos no está disponible",0+48+0,"Error al autorizar")
+*!*					v_autorizar = .F.
+*!*				ENDIF  
+*!*				
+
+*!*			ENDIF 
+*!*		CATCH TO loException
+*!*				lcErrorMsg="Error: "+TRANSFORM(loException.Errorno)+" - "+loException.Message
+*!*				DO CASE
+*!*				CASE VARTYPE(loBasicHttpBinding_IServicio)#"O"
+*!*					* Handle SOAP error connecting to web service
+*!*				CASE !EMPTY(loBasicHttpBinding_IServicio.FaultCode)
+*!*					* Handle SOAP error calling method
+*!*					lcErrorMsg=lcErrorMsg+CHR(13)+loBasicHttpBinding_IServicio.Detail
+*!*				OTHERWISE
+*!*					* Handle other error
+*!*				ENDCASE
+*!*				* Use for debugging purposes
+*!*				MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+*!*				v_autorizar = .F.
+*!*			FINALLY
+*!*		ENDTRY	
+*!*			
+*!*			IF v_servicioCargado = .T.
+*!*				***COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO
+*!*		
+*!*				vconeccion=abreycierracon(0,_SYSSCHEMA)	
+*!*					
+*!*					sqlmatriz(1)="Select * from facturasfe "
+*!*					sqlmatriz(2)=" where idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+*!*					verror=sqlrun(vconeccion,"factufe_sql")
+*!*					IF verror=.f.  
+*!*					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la facturasFE",0+48+0,"Error")
+*!*					    v_autorizar = .F.
+*!*					ELSE
+*!*					
+*!*						SELECT factufe_sql
+*!*						GO TOP 
+*!*						
+*!*						DO WHILE NOT EOF()
+*!*							
+*!*							v_resultado = factufe_fe.resultado
+*!*							v_caecesp 	= factufe_fe.caecesp
+*!*							
+*!*							IF v_resultado = "A" OR v_caecesp <> ""
+*!*							
+*!*								MESSAGEBOX("El comprobante ID: "+ALLTRIM(STR(v_idfactura))+" ya se encuentra autorizado",0+48+0,"Error al autorizar")
+*!*								v_autorizar = .F.
+*!*								RETURN v_autorizar
+*!*							ENDIF 
+*!*							
+*!*							SELECT factu_fe
+*!*							SKIP 1
+*!*						
+*!*						ENDDO 
+*!*					ENDIF 
+
+
+*!*				*Carga el comprobante en el servicio para autorizar
+*!*				*thisform.cargarcomprobantefe
+
+
+*!*					
+*!*				v_comprobanteCargado = cargarcompFE(v_idfactura)
+*!*				IF v_comprobanteCargado = .t.
+*!*						*Intenta autorizar el comprobante cargado en el servicio
+*!*					*thisform.autorizarcomprobantefe
+
+
+*!*					v_comprobanteAutorizado = autorizarCompFE(v_idfactura)
+*!*					
+*!*					IF v_comprobanteAutorizado  = .T.
+*!*					
+*!*						v_autorizar = .T.
+*!*						
+*!*						
+*!*						
+*!*						
+*!*						
+*!*					ELSE
+*!*						MESSAGEBOX("Ha Ocurrido un Error al autorizar el comprobante en el servicio ",0+48+0,"Error")
+*!*					    
+*!*					    v_autorizar = .F.
+*!*					
+*!*					ENDIF 
+*!*					
+*!*					
+*!*				ELSE
+
+*!*				    MESSAGEBOX("Ha Ocurrido un Error al cargar el comprobante en el servicio ",0+48+0,"Error")
+*!*				    
+*!*				    v_autorizar = .F.
+*!*				
+*!*				ENDIF 
+*!*			ENDIF 
+
+*!*				
+
+*!*			
+
+*!*		RETURN v_autorizar
+
+*!*		
+
+*!*	ENDFUNC 
 
 * FUNCIÓN PARA IMPRIMIR UNA FACTURA (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
 * PARAMETROS: P_IDFACTURA, P_ESELECTRONICA
@@ -3656,7 +4224,7 @@ ENDIF
 &v_grilla_tag = IIF(SUBSTR(ALLTRIM(&v_grilla_tag),LEN(ALLTRIM(&v_grilla_tag)),1)='+',SUBSTR(ALLTRIM(&v_grilla_tag),1,LEN(ALLTRIM(&v_grilla_tag))-1),ALLTRIM(&v_grilla_tag))
 EJE = "sele "+&v_grilla_tabla
 &EJE 
-EJE = IIF(!EMPTY(&v_grilla_tag),"INDEX ON  ALLTRIM(SUBSTR("+&v_grilla_tag+"+SPACE(200),1,200)) TAG indice "+IIF(SUBSTR(&v_grilla_StatusBarText,1,1) = 'A','ASCENDING','DESCENDING'),"SET ORDER TO ")
+EJE = IIF(!EMPTY(&v_grilla_tag),"INDEX ON  ALLTRIM(SUBSTR("+&v_grilla_tag+"+SPACE(240),1,240)) TAG indice "+IIF(SUBSTR(&v_grilla_StatusBarText,1,1) = 'A','ASCENDING','DESCENDING'),"SET ORDER TO ")
 &EJE
 &p_grilla..refresh 
 
@@ -7363,9 +7931,94 @@ IF FILE(archi) THEN
 ENDIF 
 RETURN ""
 
+*** Función que arma el comprobante en un archivo XML**
+* Busca en la Base de Datos los datos de la factura según el ID pasado como parámetro, 
+* Utiliza la función CURSORTOXML, el formato del nombre xml es: 'factura_<idFactura>', donde <idFactura> es el ID en la tabla facturas
+** Recibe como parámetro el IDFactura
 
-FUNCTION cfgmenues
-	vpathejecuta= _SYSSERVIDOR+_SYSMENUPATH
-	vejecutable = "menu.exe "+_SYSMASTER_SERVER+" "+_SYSMASTER_USER+" "+_SYSMASTER_PASS+" "+_SYSMASTER_PORT+" "+_SYSMYSQL_SERVER+" "+_SYSMYSQL_PORT+" "+_SYSSCHEMA+" "+STRTRAN(_SYSDRVMYSQL," ","|")+" "+_SYSUSUARIO+" 1 "+vpathejecuta
-	=ejecutarexe(vpathejecuta, vejecutable)
+FUNCTION armarComprobanteXML
+PARAMETERS p_idFactura
+
+
+	v_servicioCargado = .F.
+	v_compCargado = .F.
+	v_ubicacionXML = ""
+
+			v_idfactura = p_idFactura
+			
+			**** CARGA COMPROBANTE ***
+
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+			
+
+
+			sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
+			sqlmatriz(2)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom "
+			sqlmatriz(3)=" left join puntosventa p on f.pventa = p.pventa "
+			sqlmatriz(4)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"factu_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la factura a cargar ",0+48+0,"Error")
+			    *thisform.comprobantecargado = .f.
+			    v_compCargado = .F.
+			ENDIF 
+
+			*** Cargo IMpuestos del comprobante agrupados por tipo de impuesto
+			sqlmatriz(1)="Select fi.*,a.codigo as codigoAfip, a.tipo as tipoAfip, a.detalle as detAfip from  facturasimp fi left join impuestos i on fi.impuesto = i.impuesto "
+			sqlmatriz(2)=" left join afipimpuestos a on i.idafipimp = a.idafipimp " 
+			sqlmatriz(3)=" where fi.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"factImp_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los impuestos de las facturas ",0+48+0,"Error")
+			    *thisform.comprobantecargado = .f.
+			    v_compCargado = .F.
+			ENDIF 
+
+			SELECT factImp_sql
+			GO TOP 
+			BROWSE 
+		
+			
+			SELECT f.*,f.cuit as nrodoccli, f.neto as netocomp,i.*,i.neto as netoimpu FROM factu_sql f LEFT JOIN factImp_sql i ON f.idfactura = i.idfactura INTO TABLE tablaFactura
+
+
+			ALTER table tablafactura add COLUMN opexento Y 
+			ALTER table tablafactura ADD COLUMN idmoneda C(3)
+			ALTER table tablafactura ADD COLUMN cotmoneda Y
+			ALTER table tablafactura ADD COLUMN concepto I
+			
+
+			
+			SELECT tablaFactura
+			GO TOP 
+
+			replace ALL opexento WITH 0, idmoneda WITH "PES", cotmoneda WITH 1, concepto WITH _SYSCONCEPTOAFIP
+			
+			SELECT tablaFactura
+			GO TOP 
+			
+*!*				cursoraxml("facimp")
+			v_nombreArchivo = _SYSESTACION+"\"+"factura_"+ALLTRIM(STR(v_idfactura))+".xml"
+			MESSAGEBOX(v_nombreArchivo)
+			v_ret = CURSORTOXML("tablaFactura",v_nombreArchivo,1,512)
+			
+			IF v_ret > 0
+			v_ubicacionXML = v_nombreArchivo
+			ELSE
+			v_ubicacionXML = ""
+			ENDIF 
+			
+			RETURN v_ubicacionXML 
+			
 ENDFUNC 
+
+
+
+	FUNCTION cfgmenues
+		vpathejecuta= _SYSSERVIDOR+_SYSMENUPATH
+		vejecutable = "menu.exe "+_SYSMASTER_SERVER+" "+_SYSMASTER_USER+" "+_SYSMASTER_PASS+" "+_SYSMASTER_PORT+" "+_SYSMYSQL_SERVER+" "+_SYSMYSQL_PORT+" "+_SYSSCHEMA+" "+STRTRAN(_SYSDRVMYSQL," ","|")+" "+_SYSUSUARIO+" 1 "+vpathejecuta
+		=ejecutarexe(vpathejecuta, vejecutable)
+	ENDFUNC 
+			
