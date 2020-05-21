@@ -2120,6 +2120,7 @@ ENDFUNC
 
 * FUNCIÓN PARA AUTORIZAR COMPROBANTES
 * PARAMETROS: P_IDCOMPROBANTE, ID DEL COMPROBANTE A AUTORIZAR
+* RETORNO: Retorna True si no hubo errores al intentar autorizar el comprobante (NO significa que se haya APROBADO), retorna False en caso que haya ocurrido un error en la autorización
 FUNCTION autorizarCompFE
 PARAMETERS p_idcomprobante
 
@@ -2128,42 +2129,42 @@ v_autorizar = .F.
 v_objconfigurado = .F.
 
 
-
-
-***COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO
+	*** COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO **
 	
-			vconeccion=abreycierracon(0,_SYSSCHEMA)	
-				
-				sqlmatriz(1)="Select * from facturasfe "
-				sqlmatriz(2)=" where idfactura = "+ ALLTRIM(STR(v_idcomprobante))
+	vconeccion=abreycierracon(0,_SYSSCHEMA)	
+		
+		sqlmatriz(1)="Select * from facturasfe "
+		sqlmatriz(2)=" where idfactura = "+ ALLTRIM(STR(v_idcomprobante))
 
-				verror=sqlrun(vconeccion,"factufe_sql")
-				IF verror=.f.  
-				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la facturasFE",0+48+0,"Error")
-				    v_autorizar = .F.
-				ELSE
+		verror=sqlrun(vconeccion,"factufe_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la facturasFE",0+48+0,"Error")
+		    v_autorizar = .F.
+		ELSE
+		
+			SELECT factufe_sql
+			GO TOP 
+			
+			DO WHILE NOT EOF()
 				
-					SELECT factufe_sql
-					GO TOP 
-					
-					DO WHILE NOT EOF()
-						
-						v_resultado = factufe_fe.resultado
-						v_caecesp 	= factufe_fe.caecesp
-						
-						IF v_resultado = "A" OR v_caecesp <> ""
-						
-							MESSAGEBOX("El comprobante ID: "+ALLTRIM(STR(v_idcomprobante))+" ya se encuentra autorizado",0+48+0,"Error al autorizar")
-							v_autorizar = .F.
-							RETURN v_autorizar
-						ENDIF 
-						
-						SELECT factu_fe
-						SKIP 1
-					
-					ENDDO 
+				v_resultado = factufe_fe.resultado
+				v_caecesp 	= factufe_fe.caecesp
+				
+				IF v_resultado = "A" OR v_caecesp <> ""
+				
+					MESSAGEBOX("El comprobante ID: "+ALLTRIM(STR(v_idcomprobante))+" ya se encuentra autorizado",0+48+0,"Error al autorizar")
+					v_autorizar = .F.
+					RETURN v_autorizar
 				ENDIF 
-
+				
+				SELECT factu_fe
+				SKIP 1
+			
+			ENDDO 
+		ENDIF 
+		
+	=abreycierracon(vconeccion,"") && Cierro conección
+	
 	TRY 
 		v_tipoObj = TYPE("objModuloAFIP")
 		
@@ -2178,6 +2179,8 @@ v_objconfigurado = .F.
 		v_objconfigurado = objModuloAFIP.Configurado
 		
 		IF v_objConfigurado = .F.
+		
+		
 			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
 
 			IF v_objconfigurado = .T.
@@ -2189,17 +2192,19 @@ v_objconfigurado = .F.
 					v_errores = ""
 					v_errores = objModuloAFIP.errores
 					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+					
+					RETURN .F.
 				ENDIF 
 					
 				v_observaciones = objModuloAFIP.Observaciones
+				IF EMPTY(v_observaciones) = .F.
+					MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
+				ENDIF 
 				
-				MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
-				
-				
-				
+							
 			ELSE
 				
-				MESSAGEBOX("Configuración NO Cargada correctamente")
+				MESSAGEBOX("Configuración del modulo AFIP INCORRECTA")
 					
 				v_objerror = objModuloAFIP.Error
 				
@@ -2224,51 +2229,139 @@ v_objconfigurado = .F.
 	
 	CATCH TO loException
 			
-			* Use for debugging purposes
-			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
-			v_autorizar = .F.
-			RETURN v_autorizar
-		
+		MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+		v_autorizar = .F.
+		RETURN v_autorizar
+
 	ENDTRY	
+						
+	*** Armo el archivo XML para mandarlo a autorizar ***
+
+		v_ubicacionXML = armarComprobanteXML(v_idcomprobante)
+			
+	*** Mando a autorizar el comprobante pasandole la ubicación del archivo  y el ID ***
+	
+		v_respuesta = objModuloAFIP.autorizarComp(v_ubicacionXML,v_idComprobante)
+			
+				
+		v_observaciones = objModuloAFIP.Observaciones
 		
-		
+		IF EMPTY(v_observaciones) = .F.
+			MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))				
+		ENDIF 
+	
+
+		IF v_respuesta = .T. && Hubo respuesta del objeto que maneja el Módulo de AFIP, sin errores
+				MESSAGEBOX("Antes de cargar el cursor")
+			XMLTOCURSOR(v_ubicacionXML,"respuestaComp",512)
+
+		MESSAGEBOX("Despues de cargar el cursor")
+			SELECT respuestaComp
+			GO TOP 
+			BROWSE 
+			IF NOT EOF()
+				*** REGISTRO LA RESPUESTA DEL COMPROBANTE EN LA TABLA facturasfe ***
 			
-			** Armo el archivo XML para mandarlo a autorizar
-		
-				v_ubicacionXML = armarComprobanteXML(v_idcomprobante)
-			
-		MESSAGEBOX("Enviando a autorizar COMP:"+ALLTRIM(v_ubicacionXML))
-			** Mando a autorizar el comprobante pasandole la ubicación del archivo  y el ID
-			v_autorizado = objModuloAFIP.autorizarComp(v_ubicacionXML,v_idComprobante)
-			
-			
-			IF v_autorizado = .T.
-			
-				v_autorizar = .T.
-			ELSE
-				MESSAGEBOX("Ha Ocurrido un Error al autorizar el comprobante en el servicio",0+48+0,"Error")
+						
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
 				
+				*thisform.calcularmaxh
+				v_idfe = maxnumeroidx("idfe","I","facturasfe",1)
+				v_idfactura = respuestaComp.idfactura
+				v_fecha		= ALLTRIM(STR(respuestaComp.fecha))
+				v_resultado	= respuestaComp.resultado
 				
-				v_objerror = objModuloAFIP.Error
-				
-				IF v_objerror = .T.
-				
-					v_errores = ""
-					v_errores = objModuloAFIP.errores
-					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
-				ENDIF 
+				IF ALLTRIM(v_resultado) == "A"
+					v_caecesp	= ALLTRIM(STR(respuestaComp.cespcae,14,0))
+					MESSAGEBOX(TYPE("respuestaComp.caecespven"))
+					v_caecespven= ALLTRIM(STR(respuestaComp.caecespven))
+					v_numerofe	= respuestaComp.numero
 					
-				v_observaciones = objModuloAFIP.Observaciones
+				ELSE
+					v_caecesp	= ""
+					v_caecespven= ""
+					v_numerofe	= 0
+				endif	
 				
-				MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
+				v_observa	= respuestaComp.observa
+				v_errores = respuestaComp.errores
 				
-				v_autorizar = .F.
-			ENDIF 	
+						MESSAGEBOX(ALLTRIM(STR(v_idfe)))
+						MESSAGEBOX(ALLTRIM(STR(v_idfactura)))
+						MESSAGEBOX(ALLTRIM(v_fecha))
+						MESSAGEBOX(ALLTRIM(v_resultado))
+						MESSAGEBOX(ALLTRIM(v_caecesp))
+						MESSAGEBOX(ALLTRIM(v_caecespven))
+						MESSAGEBOX(alltrim(v_observa))
+						MESSAGEBOX(ALLTRIM(v_errores))
+						MESSAGEBOX(ALLTRIM(STR(v_numerofe)))
+					
+				DIMENSION lamatriz(9,2)
 				
+				lamatriz(1,1)='idfe'
+				lamatriz(1,2)=ALLTRIM(STR(v_idfe))
+				lamatriz(2,1)='idfactura'
+				lamatriz(2,2)=ALLTRIM(STR(v_idfactura))
+				lamatriz(3,1)='fecha'
+				lamatriz(3,2)="'"+ALLTRIM(v_fecha)+"'"
+				lamatriz(4,1)='resultado'
+				lamatriz(4,2)="'"+ALLTRIM(v_resultado)+"'"
+				lamatriz(5,1)='caecesp'
+				lamatriz(5,2)="'"+ALLTRIM(v_caecesp)+"'"
+				lamatriz(6,1)='caecespven' 
+				lamatriz(6,2)="'"+ALLTRIM(v_caecespven)+"'"
+				lamatriz(7,1)='observa'
+				lamatriz(7,2)="'"+alltrim(v_observa)+"'"
+				lamatriz(8,1)='errores'
+				lamatriz(8,2)="'"+ALLTRIM(v_errores)+"'"
+				lamatriz(9,1)='numerofe'
+				lamatriz(9,2)=ALLTRIM(STR(v_numerofe))
+
+
+				
+				p_tabla     = 'facturasfe'
+				p_matriz    = 'lamatriz'
+				vconeccionp=abreycierracon(0,_SYSSCHEMA)
+				p_conexion  = vconeccionp
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+				ENDIF	
+				
+				abreycierracon(vconeccionp,"")
+			
+			ENDIF 
+			
+			
+			
+			
+			
+			v_autorizar = .T.
+		ELSE	&& Ocurrieron errores
+			
+			MESSAGEBOX("Ha Ocurrido un Error al autorizar el comprobante en el servicio",0+48+0,"Error")
+						
+			v_objerror = objModuloAFIP.Error
+			
+			IF v_objerror = .T.
+			
+				v_errores = ""
+				v_errores = objModuloAFIP.errores
+				MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+			
+			ENDIF 
+				
+			v_observaciones = objModuloAFIP.Observaciones
+			
+			IF EMPTY(v_observaciones) = .F.
+				MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))				
+			ENDIF 
+			
+			v_autorizar = .F.
+		ENDIF 	
 
 	RETURN v_autorizar
-
-	
 
 ENDFUNC 
 
@@ -4164,6 +4257,9 @@ PARAMETERS param_path ,param_executa
       &vpar_eje
 
 ENDFUNC
+
+
+
 
 */-------------------------------------------------------------
 * Setea los indices en las grillas pasadas como parametros
@@ -7981,13 +8077,18 @@ PARAMETERS p_idFactura
 			BROWSE 
 		
 			
-			SELECT f.*,f.cuit as nrodoccli, f.neto as netocomp,i.*,i.neto as netoimpu FROM factu_sql f LEFT JOIN factImp_sql i ON f.idfactura = i.idfactura INTO TABLE tablaFactura
+			SELECT f.*,f.cuit as nrodoccli, f.neto as netocomp,i.impuesto,i.detalle, i.neto as netoimpu ,i.razon, i.importe,i.codigoafip,i.tipoafip,i.detafip ;
+			FROM factu_sql f LEFT JOIN factImp_sql i ON f.idfactura = i.idfactura INTO TABLE tablaFactura
 
 
 			ALTER table tablafactura add COLUMN opexento Y 
 			ALTER table tablafactura ADD COLUMN idmoneda C(3)
 			ALTER table tablafactura ADD COLUMN cotmoneda Y
 			ALTER table tablafactura ADD COLUMN concepto I
+			ALTER table tablafactura ADD COLUMN resultado C(1)
+			ALTER table tablafactura ADD COLUMN observa C(254)
+			ALTER table tablafactura ADD COLUMN errores C(254)
+
 			
 
 			
@@ -8002,6 +8103,7 @@ PARAMETERS p_idFactura
 *!*				cursoraxml("facimp")
 			v_nombreArchivo = _SYSESTACION+"\"+"factura_"+ALLTRIM(STR(v_idfactura))+".xml"
 			MESSAGEBOX(v_nombreArchivo)
+		
 			v_ret = CURSORTOXML("tablaFactura",v_nombreArchivo,1,512)
 			
 			IF v_ret > 0
@@ -8019,6 +8121,8 @@ ENDFUNC
 	FUNCTION cfgmenues
 		vpathejecuta= _SYSSERVIDOR+_SYSMENUPATH
 		vejecutable = "menu.exe "+_SYSMASTER_SERVER+" "+_SYSMASTER_USER+" "+_SYSMASTER_PASS+" "+_SYSMASTER_PORT+" "+_SYSMYSQL_SERVER+" "+_SYSMYSQL_PORT+" "+_SYSSCHEMA+" "+STRTRAN(_SYSDRVMYSQL," ","|")+" "+_SYSUSUARIO+" 1 "+vpathejecuta
+		MESSAGEBOX(vpathejecuta)
+		MESSAGEBOX(vejecutable)
 		=ejecutarexe(vpathejecuta, vejecutable)
 	ENDFUNC 
 			
