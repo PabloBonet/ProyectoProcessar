@@ -469,7 +469,7 @@ ENDFUNC
 ********** BUSCO SETEO DE BOTONES DE TOOLBARSYS  E ICONOS ***
 FUNCTION settoolbarsys 
 
-	vconeccion=abreycierracon(0,'admindb')
+	vconeccion=abreycierracon(0,_SYSMASTER_SCHEMA)
 
 	sqlmatriz(1)="select * from settoolbarsys"
 
@@ -767,7 +767,7 @@ FUNCTION copyimg
 	ENDIF 
 
 	IF !(ALLTRIM(p_img) == "") THEN 
-		a_archivo = LOWER("img" + ALLTRIM(p_codigo))
+		a_archivo = LOWER(ALLTRIM(p_codigo))
 	ENDIF 
 	
 	
@@ -8017,11 +8017,7 @@ ENDFUNC
 
 
 FUNCTION getLogo
-archi = _SYSPATHARCHIVOS + "\Imagenes\Logo\" + _SYSLOGOEMPRE
-IF FILE(archi) THEN 
-	RETURN archi
-ENDIF 
-archi = _SYSSERVIDOR + "\Imagenes\Logo\" + _SYSLOGOEMPRE
+archi = _SYSESTACION+'\'+_SYSLOGOEMPRE
 IF FILE(archi) THEN 
 	RETURN archi
 ENDIF 
@@ -8118,11 +8114,9 @@ ENDFUNC
 
 
 
-	FUNCTION cfgmenues
-		vpathejecuta= _SYSSERVIDOR+_SYSMENUPATH
-		vejecutable = "menu.exe "+_SYSMASTER_SERVER+" "+_SYSMASTER_USER+" "+_SYSMASTER_PASS+" "+_SYSMASTER_PORT+" "+_SYSMYSQL_SERVER+" "+_SYSMYSQL_PORT+" "+_SYSSCHEMA+" "+STRTRAN(_SYSDRVMYSQL," ","|")+" "+_SYSUSUARIO+" 1 "+vpathejecuta
-		MESSAGEBOX(vpathejecuta)
-		MESSAGEBOX(vejecutable)
-		=ejecutarexe(vpathejecuta, vejecutable)
-	ENDFUNC 
+FUNCTION cfgmenues
+	vpathejecuta= _SYSSERVIDOR+_SYSMENUPATH
+	vejecutable = "menu.exe "+_SYSMASTER_SERVER+" "+_SYSMASTER_SCHEMA+" "+_SYSMASTER_USER+" "+_SYSMASTER_PASS+" "+_SYSMASTER_PORT+" "+_SYSMYSQL_SERVER+" "+_SYSMYSQL_PORT+" "+_SYSSCHEMA+" "+STRTRAN(_SYSDRVMYSQL," ","|")+" "+_SYSUSUARIO+" 1 "+vpathejecuta+" "+_SYSSERVIDOR
+	=ejecutarexe(vpathejecuta, vejecutable)
+ENDFUNC 
 			

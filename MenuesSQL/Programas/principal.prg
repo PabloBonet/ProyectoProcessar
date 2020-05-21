@@ -1,4 +1,4 @@
-parameters par_hostadm, par_useradm, par_passwordadm, par_portadm, par_hostdb, par_portdb, par_schemma, par_drvmysql, par_usuario, par_seleccion, par_arrancaren		
+parameters par_hostadm, par_schemaadm, par_useradm, par_passwordadm, par_portadm, par_hostdb, par_portdb, par_schemma, par_drvmysql, par_usuario, par_seleccion, par_arrancaren,par_system		
 
 _screen.Visible = .t.
 IF par_seleccion = "1" THEN 
@@ -18,8 +18,8 @@ set delete on
 set safety off
 SET DATE TO BRITISH
 
-PUBLIC MYSQL_SERVER, MYSQL_USER, MYSQL_PASS, MYSQL_PORT, MYSQL_DB, MYSQL_PRU, MISCHEMA, MIDESCRIP, MIDRVMYSQL  
-PUBLIC MIICONO, LC_PORT, MIPAPELERA, MIESTACION, MISERVIDOR
+PUBLIC MYSQL_SERVER, MYSQL_USER, MYSQL_PASS, MYSQL_PORT, MYSQL_DB, MYSQL_PRU, MISCHEMA, MIDESCRIP, MIDRVMYSQL, MISCHEMAADM  
+PUBLIC MIICONO, LC_PORT, MIPAPELERA, MIESTACION, MISERVIDOR, MISICONOS
 
 MIESTACION = FULLPATH(CURDIR())
 
@@ -34,12 +34,14 @@ SET DEFAULT TO &MISERVIDOR
 MIDRVMYSQL 	= STRTRAN(par_drvmysql,"|"," ")
 LC_PORT 	= par_portadm
 MIPAPELERA 	= "RECYCLE"
+MISICONOS	= par_system	 
 
 mysql_server = par_hostadm
 mysql_user	 = par_useradm
 mysql_pass	 = par_passwordadm
 mysql_port	 = par_portadm
 mischema	 = par_schemma
+mischemaadm	 = par_schemaadm
 midescrip    = ""
 
 
