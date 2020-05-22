@@ -1,0 +1,12 @@
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Release\EntidadesClass.dll
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Release\EntidadesClass.pdb
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Release\ClienteLoginCms_CS.dll
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Release\ClienteLoginCms_CS.pdb
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Release\ClienteLoginCms_CS.dll.config
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Release\ClienteLoginCms_CS.XmlSerializers.dll
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Release\EntidadesClass.csprojAssemblyReference.cache
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Release\EntidadesClass.csproj.CoreCompileInputs.cache
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Release\EntidadesClass.csproj.CopyComplete
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Release\EntidadesClass.dll
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Release\EntidadesClass.pdb
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Release\EntidadesClass.tlb

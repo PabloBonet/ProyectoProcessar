@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "AkDtOggC05lFN1qzvhRD1AYtA/Muz8uavuf7oc0JTAmN7VXruWazOul6QD9hmcMYURN7NaTL7SNQZBY+F/J4Og==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\pablo\\Documents\\Visual Studio 2019\\Projects\\Librerias\\LibreriaClases\\LibreriaClases.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\pablo\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
+    "C:\\Users\\pablo\\.nuget\\packages\\netstandard.library\\2.0.3\\netstandard.library.2.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

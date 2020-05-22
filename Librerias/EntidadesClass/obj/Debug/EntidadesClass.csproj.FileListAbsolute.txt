@@ -1,0 +1,11 @@
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Debug\EntidadesClass.dll
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Debug\EntidadesClass.pdb
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Debug\ClienteLoginCms_CS.dll
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Debug\ClienteLoginCms_CS.pdb
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Debug\ClienteLoginCms_CS.dll.config
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Debug\EntidadesClass.csprojAssemblyReference.cache
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Debug\EntidadesClass.csproj.CoreCompileInputs.cache
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Debug\EntidadesClass.csproj.CopyComplete
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Debug\EntidadesClass.dll
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Debug\EntidadesClass.pdb
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Debug\EntidadesClass.tlb
