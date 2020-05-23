@@ -1479,7 +1479,14 @@ PARAMETERS p_idcomprobante
 		IF v_objConfigurado = .F.
 		
 		
-			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
+			v_ubicacionCertificado = STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+_SYSNOMBRECERT),"\","\\")
+			v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(_SYSCUIT,'-',''))
+			v_ticketAcceso			= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"TA"+v_cuitSinGuiones),"\","\\")
+			v_log					= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"LOG"+v_cuitSinGuiones),"\","\\")
+			
+						
+*			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
+			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, v_ubicacionCertificado, v_ticketAcceso, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, v_log)
 
 			IF v_objconfigurado = .T.
 				
@@ -1784,10 +1791,8 @@ PARAMETERS p_idFactura, p_esElectronica
 				v_cespcae		= ALLTRIM(factu.cespcae)
 				
 				v_codBarra		= v_cuitEmpresa+v_tipoCompAfip+"0"+v_puntoVta+v_fechaVenc_cae+v_Cespcae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
-				MESSAGEBOX(v_codBarra)
+
 				v_codBarraD 		= calculaDigitoVerif(v_codBarra)
-				
-				MESSAGEBOX(v_codBarraD)
 				
 				SELECT factu
 				replace ALL codBarra WITH v_codBarraD
@@ -3735,8 +3740,8 @@ PARAMETERS p_codigo
 	v_resE4 = v_resE2 + v_sumaPar
 
 
-	v_modulo = resE4 % 10
-	v_dif = 10 - modulo
+	v_modulo = v_resE4 % 10
+	v_dif = 10 - v_modulo 
 	v_digitoVerif = v_dif % 10;
 
 	v_codigo = v_codigo + ALLTRIM(STR(v_digitoVerif))
