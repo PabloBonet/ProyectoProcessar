@@ -7322,12 +7322,12 @@ ENDFUNC
 * pud_conex = puntero a la conexion de la base de datos 
 * pud_tabla = nombre de tabla en la cual se insertara el archivo o se descargara
 * pud_cpoix = nombre del campo indice por el cual buscar
-* pud_valid = valor del campo para realizar la busqueda
+* pud_valid = valor del campo para realizar la busqueda (Puede ser Caracter o Entero)
 * pud_cponom= nombre del campo que contiene el nombre del archivo
 * pud_cpoar = nombre del campo en el cual se insertara el archivo o se descargara
 *
-*Ej Upload 		= updownfile("empresa","empresa","Krumbein","nombrecert","certificado","c:\temp\","archivo.txt",vconeccion,"UV-" ) 
-*Ej Download 	= updownfile("empresa","empresa","Krumbein","nombrecert","certificado","c:\temp\","",vconeccion,"DVC" ) 
+*Ej Upload 		= updownfile("c:\temp\","archivo.txt","UV-",vconeccion,"empresa","empresa","NombreEmpresa","nombrecert","certificado" ) 
+*Ej Download 	= updownfile("c:\temp\","","DVC",vconeccion,"empresa","empresa","NombreEmpresa","nombrecert","certificado") 
 
 FUNCTION UpDwViFile
 PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_valid, pud_cponom, pud_cpoar
