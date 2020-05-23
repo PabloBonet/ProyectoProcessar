@@ -733,7 +733,6 @@ FUNCTION copyarchivo
 			ENDDO 
 			nuevo_completo = ALLTRIM(new_nuevo_completo)	
 			v_ejecutar = "COPY FILE '"+ALLTRIM(viejo_completo)+"' TO '"+ALLTRIM(nuevo_completo)+"'"
-			MESSAGEBOX(v_ejecutar)
 			&v_ejecutar				
 	ENDIF
 
@@ -1479,14 +1478,7 @@ PARAMETERS p_idcomprobante
 		IF v_objConfigurado = .F.
 		
 		
-			v_ubicacionCertificado = STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+_SYSNOMBRECERT),"\","\\")
-			v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(_SYSCUIT,'-',''))
-			v_ticketAcceso			= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"TA"+v_cuitSinGuiones),"\","\\")
-			v_log					= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"LOG"+v_cuitSinGuiones),"\","\\")
-			
-						
-*			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
-			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, v_ubicacionCertificado, v_ticketAcceso, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, v_log)
+			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
 
 			IF v_objconfigurado = .T.
 				
@@ -1791,8 +1783,10 @@ PARAMETERS p_idFactura, p_esElectronica
 				v_cespcae		= ALLTRIM(factu.cespcae)
 				
 				v_codBarra		= v_cuitEmpresa+v_tipoCompAfip+"0"+v_puntoVta+v_fechaVenc_cae+v_Cespcae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
-
+				MESSAGEBOX(v_codBarra)
 				v_codBarraD 		= calculaDigitoVerif(v_codBarra)
+				
+				MESSAGEBOX(v_codBarraD)
 				
 				SELECT factu
 				replace ALL codBarra WITH v_codBarraD
@@ -3740,8 +3734,8 @@ PARAMETERS p_codigo
 	v_resE4 = v_resE2 + v_sumaPar
 
 
-	v_modulo = v_resE4 % 10
-	v_dif = 10 - v_modulo 
+	v_modulo = resE4 % 10
+	v_dif = 10 - modulo
 	v_digitoVerif = v_dif % 10;
 
 	v_codigo = v_codigo + ALLTRIM(STR(v_digitoVerif))
@@ -7318,4 +7312,162 @@ FUNCTION cfgmenues
 	vejecutable = "menu.exe "+_SYSMASTER_SERVER+" "+_SYSMASTER_SCHEMA+" "+_SYSMASTER_USER+" "+_SYSMASTER_PASS+" "+_SYSMASTER_PORT+" "+_SYSMYSQL_SERVER+" "+_SYSMYSQL_PORT+" "+_SYSSCHEMA+" "+STRTRAN(_SYSDRVMYSQL," ","|")+" "+_SYSUSUARIO+" 1 "+vpathejecuta+" "+_SYSSERVIDOR
 	=ejecutarexe(vpathejecuta, vejecutable)
 ENDFUNC 
+
+
+* Funcion para insertar y descargar archivos de la base de datos 
+* PARAMETROS 
+* pud_path	= path completo del archivo a subir o path donde descargarlo
+* pud_arch	= nombre del archivo a subir 
+* pud_updw = ux: sube el archivo a la base, dx: descarga el archivo de la base, uv: sube y muestra el archivo, dv: descarga y muestra el archivo 
+* pud_conex = puntero a la conexion de la base de datos 
+* pud_tabla = nombre de tabla en la cual se insertara el archivo o se descargara
+* pud_cpoix = nombre del campo indice por el cual buscar
+* pud_valid = valor del campo para realizar la busqueda
+* pud_cponom= nombre del campo que contiene el nombre del archivo
+* pud_cpoar = nombre del campo en el cual se insertara el archivo o se descargara
+*
+*Ej Upload 		= updownfile("empresa","empresa","Krumbein","nombrecert","certificado","c:\temp\","archivo.txt",vconeccion,"UV-" ) 
+*Ej Download 	= updownfile("empresa","empresa","Krumbein","nombrecert","certificado","c:\temp\","",vconeccion,"DVC" ) 
+
+FUNCTION UpDwViFile
+PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_valid, pud_cponom, pud_cpoar
+
+	v_mostrar = .t.	
+	IF !EMPTY(pud_path) THEN 
+		IF !(SUBSTR(pud_path,LEN(ALLTRIM(pud_path)),1)="\") THEN 
+			pud_path = ALLTRIM(pud_path)+"\"
+		ENDIF 
+	ENDIF 
+
+	v_archivo_nom= IIF(EMPTY(pud_path) or EMPTY(pud_arch),"",ALLTRIM(pud_path)+ALLTRIM(pud_arch)) 
+
+	IF TYPE('pud_valid') = 'C' THEN
+		pud_valid_a = "'"+ALLTRIM(pud_valid)+"'"
+	ELSE
+		pud_valid_a = ALLTRIM(STR(pud_valid))
+	ENDIF  
+
+	IF LEN(pud_updw) < 1 THEN 
+		RETURN ""
+	ENDIF 
+	
+	IF SUBSTR(UPPER(ALLTRIM(pud_updw)),1,1) = "U" && subir archivo
+	
+			IF !EMPTY(v_archivo_nom) THEN 
+				v_archivo_ins= STRCONV(FILETOSTR(v_archivo_nom),13)
+			ELSE
+				v_archivo_ins=  ""
+				RETURN ""
+			ENDIF 
 			
+				
+	
+			sqlmatriz(1)=" update "+ALLTRIM(pud_tabla)+" set "+pud_cponom+"='"+ALLTRIM(pud_arch)+"', "
+			sqlmatriz(2)=ALLTRIM(pud_cpoar)+"='"+v_archivo_ins+"' " 
+			sqlmatriz(3)=" where "+ALLTRIM(pud_cpoix)+" = "+pud_valid_a
+
+			verror=sqlrun(pud_conex,"updn_ar")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la inserción de Archivos ",0+48+0,"Error")
+			    RETURN ""
+			ENDIF 
+	ENDIF 
+	
+	IF SUBSTR(UPPER(ALLTRIM(pud_updw)),1,1) = "D" && descargar archivo
+
+			sqlmatriz(1)=" select "+pud_cponom+" as nombre, "+ALLTRIM(pud_cpoar)+" as archivo from "+ALLTRIM(pud_tabla)
+			sqlmatriz(2)=" where "+ALLTRIM(pud_cpoix)+" = "+pud_valid_a
+			verror=sqlrun(pud_conex,"updn_ar")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la inserción de Archivos ",0+48+0,"Error")
+			   	USE IN updn_ar
+			    RETURN ""
+			ENDIF 
+			SELECT updn_ar
+			GO TOP 
+			IF !EOF() THEN 
+				IF !EMPTY(updn_ar.nombre) AND !EMPTY(updn_ar.archivo) THEN 
+					v_archivo_down = _SYSESTACION+'\'+ALLTRIM(updn_ar.nombre)
+					STRTOFILE(STRCONV(updn_ar.archivo,14),v_archivo_down)
+
+					v_archivo_nom = v_archivo_down 
+
+					IF LEN(pud_updw) >= 3 THEN 
+						IF SUBSTR(UPPER(ALLTRIM(pud_updw)),3,1) = "C"  && Copiar a Ubicacion especifica
+							IF EMPTY(ALLTRIM(pud_path)) THEN 
+								v_archivo_copy = ALLTRIM(pud_path)+ALLTRIM(updn_ar.nombre)
+								v_ext=JUSTEXT(ALLTRIM(updn_ar.nombre))
+								v_rnom= STRTRAN(updn_ar.nombre,'.'+v_ext,'')
+								v_drv = SYS(5)+'\'
+								SET DEFAULT TO &v_drv
+								v_nuevo_archivo = ALLTRIM(PUTFILE("Archivo",v_rnom,v_ext))
+								v_nuevo_nombre = JUSTFNAME(v_nuevo_archivo)
+								SET DEFAULT TO &_SYSESTACION
+								IF EMPTY(v_nuevo_nombre) THEN 
+									MESSAGEBOX("Debe elegir una ubicacion y un nombre para el archivo a Descargar...",0+64,"Descarga de Archivos")
+									v_mostrar = .f.
+								ELSE 
+									v_archivo_copy = v_nuevo_archivo
+									v_ejecutar = "COPY FILE (v_archivo_nom) TO (v_archivo_copy)"
+									&v_ejecutar				
+								ENDIF 
+							
+							ELSE 
+								v_archivo_copy = ALLTRIM(pud_path)+ALLTRIM(updn_ar.nombre)
+								v_ejecutar = "COPY FILE (v_archivo_nom) TO (v_archivo_copy)"
+								&v_ejecutar				
+							ENDIF 
+							
+						ENDIF 
+					ENDIF 
+
+				ELSE
+					USE IN updn_ar 
+					RETURN ""
+				ENDIF 
+			ELSE 
+			   	USE IN updn_ar
+			   	RETURN ""
+			ENDIF 
+			
+	ENDIF 
+
+	IF LEN(pud_updw) >= 2 AND v_mostrar = .t. THEN 
+		IF SUBSTR(UPPER(ALLTRIM(pud_updw)),2,1) = "V" AND !EMPTY(ALLTRIM(v_archivo_nom)) && Mostrar Archivo
+			APLIC=CREATEOBJECT("WSCript.Shell")
+			APLIC.RUN(v_archivo_nom)
+			RELEASE APLIC 
+		ENDIF 
+	ENDIF 
+
+	USE IN updn_ar	
+	RETURN ALLTRIM(v_archivo_nom)
+	
+ENDFUNC 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
