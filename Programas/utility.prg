@@ -1482,11 +1482,11 @@ PARAMETERS p_idcomprobante
 			v_ubicacionCertificado = STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+_SYSNOMBRECERT),"\","\\")
 			v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(_SYSCUIT,'-',''))
 			v_ticketAcceso			= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"TA"+v_cuitSinGuiones),"\","\\")
-			v_log					= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"LOG"+v_cuitSinGuiones),"\","\\")
+			v_log					= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"LOG"+v_cuitSinGuiones+".txt"),"\","\\")
 			
 						
-*			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
-			v_objconfigurado	= objModuloAFIP.cargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, v_ubicacionCertificado, v_ticketAcceso, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, v_log)
+*			v_objconfigurado	= objModuloAFIP.CargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
+			v_objconfigurado	= objModuloAFIP.CargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, v_ubicacionCertificado, v_ticketAcceso, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, v_log)
 
 			IF v_objconfigurado = .T.
 				
@@ -1495,7 +1495,7 @@ PARAMETERS p_idcomprobante
 				IF v_objerror = .T.
 				
 					v_errores = ""
-					v_errores = objModuloAFIP.errores
+					v_errores = objModuloAFIP.Errores
 					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
 					
 					RETURN .F.
@@ -1516,7 +1516,7 @@ PARAMETERS p_idcomprobante
 				IF v_objerror = .T.
 				
 					v_errores = ""
-					v_errores = objModuloAFIP.errores
+					v_errores = objModuloAFIP.Errores
 					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
 				ENDIF 
 					
@@ -1546,7 +1546,7 @@ PARAMETERS p_idcomprobante
 			
 	*** Mando a autorizar el comprobante pasandole la ubicación del archivo  y el ID ***
 	
-		v_respuesta = objModuloAFIP.autorizarComp(v_ubicacionXML,v_idComprobante)
+		v_respuesta = objModuloAFIP.AutorizarComp(v_ubicacionXML,v_idComprobante)
 			
 				
 		v_observaciones = objModuloAFIP.Observaciones
@@ -1678,7 +1678,7 @@ PARAMETERS p_idcomprobante
 			IF v_objerror = .T.
 			
 				v_errores = ""
-				v_errores = objModuloAFIP.errores
+				v_errores = objModuloAFIP.Errores
 				MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
 			
 			ENDIF 
