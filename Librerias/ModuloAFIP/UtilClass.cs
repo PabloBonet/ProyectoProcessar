@@ -15,94 +15,43 @@ namespace ModuloAFIP
         /// <param name="mensaje"> Mensaje a escribir en el log</param>
         /// <param name="archivoLog">ubicación del archivo de log</param>
         /// <param name="flujoEscritura">Flujo de escritura para el arhivo</param>
-        public static void escribirArchivoLog(string mensaje, FileStream archivoLog, StreamWriter flujoEscritura, string strLog, bool conFecha = false)
+       // public static void EscribirArchivoLog(string mensaje, FileStream archivoLog, StreamWriter flujoEscritura, string strLog, bool conFecha = true)
+        public static void EscribirArchivoLog(string mensaje,  string strLog, bool conFecha = true)
         {
-            /*
-             if (archivoLog != null && flujoEscritura != null)
-             {
+            try
+            {
+                if(strLog.Length > 0)
+                {
+                    if (conFecha)
+                    {
+                        string strFechaHora = "";
 
-                 if (archivoLog.CanWrite)
-                 {
-                     archivoLog = new FileStream(strLog, FileMode.Append, FileAccess.Write);
+                        DateTime fechaHora = DateTime.Now;
 
-                     flujoEscritura = new StreamWriter(archivoLog);
-                 }
-                 else
-                 {
-                 //    archivoLog = new FileStream(strLog, FileMode.Append, FileAccess.Write);
+                        strFechaHora = fechaHora.ToString();
 
-                 //flujoEscritura = new StreamWriter(archivoLog);
-                 }
+                        mensaje = "[" + strFechaHora + "] " + mensaje;
+                    }
 
-             }
-             else
-             {
-                 //Cargar Archivo de LOG
+                    StreamWriter archivoLog = new StreamWriter(strLog, true);
 
-                 if (!File.Exists(strLog)) //Si no existe el archivo, lo creo
-                 {
+                    archivoLog.Write(mensaje);
 
-                     archivoLog = new FileStream(strLog, FileMode.OpenOrCreate);
-                     archivoLog.Close();
+                    archivoLog.Close();
 
-                     archivoLog = new FileStream(strLog, FileMode.Append, FileAccess.Write);
-
-                     flujoEscritura = new StreamWriter(archivoLog);
-
-                 }
-                 else
-                 {
-
-                     archivoLog = new FileStream(strLog, FileMode.Append, FileAccess.Write);
-
-                     flujoEscritura = new StreamWriter(archivoLog);
-
-                 }
-
-             }
+                }
 
 
+            }
+            catch (Exception e)
+            {
+                Exception exep = new Exception("Error al intentar escribir en el archivo de log\n" + e.Message);
+                throw exep;
 
-             if (archivoLog != null && flujoEscritura != null)
-             {
+            }
 
-                 try
-                 {
-
-
-
-
-                     if (conFecha)
-                     {
-                         string strFechaHora = "";
-
-                         DateTime fechaHora = DateTime.Now;
-
-                         strFechaHora = fechaHora.ToString();
-
-                         mensaje = "[" + strFechaHora + "] " + mensaje;
-                     }
-
-
-
-
-                     //Escribo en el archivo
-                     flujoEscritura.WriteLine(mensaje);
-                     flujoEscritura.Flush();
-
-
-                     archivoLog.Close();
-                 }
-                 catch (Exception e)
-                 {
-                     Exception exep = new Exception("Error al intentar escribir en el archivo de log\n" + e.Message);
-                     archivoLog.Close();
-                     throw exep;
-
-                 }
-
-             }
-             */
+             
+             
         }
 
         /// <summary>
@@ -110,7 +59,7 @@ namespace ModuloAFIP
         /// </summary>
         /// <param name="cuit">CUIT con guiones</param>
         /// <returns>Retorna CUIT sin guiones</returns>
-        public static string cambiarFormatoCuitSinGuinoes(string cuit)
+        public static string CambiarFormatoCuitSinGuiones(string cuit)
         {
             string cuitSinGuiones = "";
 

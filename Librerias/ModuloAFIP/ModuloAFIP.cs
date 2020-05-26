@@ -19,30 +19,9 @@ namespace ModuloAFIP
     {
 
         #region constantes
-        // Valores por defecto, CONSTANTES
-
-        const string DEFAULT_URLWSAAWSDL = "";
-        //const string DEFAULT_URLWSAAWSDL_PRUEBA = "https://wsaahomo.afip.gov.ar/ws/services/LoginCms?WSDL";
-        //const string DEFAULT_URLWSAAWSDL_PRODUCCION = "https://wsaa.afip.gov.ar/ws/services/LoginCms?WSDL";
-        const string DEFAULT_SERVICIO = "wsfe";
-        const string DEFAULT_CERTSIGNER = ""; //Certificado con clave privada
-                                              //const string DEFAULT_CERTSIGNER_PRUEBA = ""; //Certificado con clave privada
-                                              //const string DEFAULT_CERTSIGNER_PRODUCCION = ""; //Certificado con clave privada
-        const string DEFAULT_PROXY = null;
-        const string DEFAULT_PROXY_USER = null;
-        const string DEFAULT_PROXY_PASSWORD = null;
-        const string DEFAULT_TA_PRU = "";
-        //const string DEFAULT_TA_PRU = "c:\\FE\\TA\\TicketAccesoPru.xml";
-        //const string DEFAULT_TA_PRO = "c:\\FE\\TA\\TicketAccesoPro.xml";
+       
         const string DEFAULT_CONFIGURACION = "";
-        const int DEFAULT_CANTIDAD_INTENTOS = 10;
-        const int DEFAULT_INTENTOS_OBTENER_TA = 10; //Cantidad de reintento de obtener el TA (mS)
-        const int DEFAULT_INTERVALO_REINICIO = 60000; //Tiempo de reinicio en el caso de algún problema o que el autorizador no responda (mS), despues de X intentos
-        const string DEFAULT_NOMBRE_EMPRESA = "";
-        const string DEFAULT_CUIT_EMPRESA = "";
-        const int DEFAULT_MODO_PRODUCCION = 0;
-        const string DEFAULT_LOG = ".\\log.txt";
-
+     
         #endregion
 
         #region propiedades
@@ -53,34 +32,24 @@ namespace ModuloAFIP
         private string _strIdServicioNegocio;                //ID servicio
         private string _strRutaCertSigner;                   //Ubicación del certificado firmado
         private string _strServAFIP;                         //URL del servicio web de afip de autorización
-        //public string _strRutaCertSignerPru;               //Ubicación del certificado firmado de Prueba
-        //public string _strRutaCertSignerPro;               //Ubicación del certificado firmado de Producción
         private SecureString _strPasswordSecureString;       //Contraseña de seguridad
         private string _strProxy;                            //Proxy de afip
         private string _strProxyUser;                        //Usuario de Proxy
         private string _strProxyPassword;                    //Contraseña de Proxy
         private string _strTicketAcceso;                     //Ubicaicón del Ticket de acceso
-        //public string _strTicketAccesoPru;                 //Ubicaicón del Ticket de acceso de Prueba
-        //public string _strTicketAccesoPro;                 //Ubicaicón del Ticket de acceso de Producción
         private string _strConfiguracion;                    //Ubicación del archivo de configuración
-        private int _cantidadIntentosTA;                     //Cantidad de intentos de obtener TA
-        private int _cantidadIntentosAFIP;                   //Cantidad de intentos de obtener respuesta afip
         private string _strEmpresa;                          //Nombre de la empresa que emite los comprobantes
         private string _strCuit;                             //CUIT de la empresa que emite los comprobantes
         private string _strLog;                              //Ubicación del archivo de LOG
-        //public DispatcherTimer _dispatcherTimer;           //Variable utilizada para controlar el temporizador de lectura
-        //public DispatcherTimer _dispatcherTimerObtenerTA;  //Variable utilizada para controlar el temporizador de obtención del TA
-        //public DispatcherTimer _dispatcherTimerReinicio;   //Variable utilizada para controlar el temporizador de reinicio 
         private bool _error;                                 //Indica si hay errores
         private List<string> _errores;                       //Lista de errores (se actualizará cuando ocurra errores por cada metodo llamado)
         private LoginTicket _ticketAcceso;                   //Variable de Ticket de acceso
-        //public FEClass _facturaElectronica;                //Variable de factura electrónica
-        private FileStream _archivoLog;                      //Variable para manejar el archivo de log
-        private StreamWriter _flujoEscritura;                //Variable para manejar el flujo de escritura
+       // private FileStream _archivoLog;                      //Variable para manejar el archivo de log
+    //    private StreamWriter _flujoEscritura;                //Variable para manejar el flujo de escritura
         private bool _configurado;                           //Indica si está configurado correctamente
         private FEClass _gestionFE;
         private List<string> _observaciones;                    //lista de observaciones
-                                                                // private int _ptoVta;
+                                                       
 
         /// <summary>
         /// Propiedad que indica si hubo errores en algun procedimiento de la DLL
@@ -181,7 +150,7 @@ namespace ModuloAFIP
         /// </summary>
         public ModuloAFIP()
         {
-            inicializar();
+            Inicializar();
 
         }
 
@@ -221,23 +190,21 @@ namespace ModuloAFIP
         /// <summary>
         /// Inicializa las propiedades del objeto llamando a la función de carga de configuración
         /// </summary>
-        private void inicializar()
+        private void Inicializar()
         {
             _configurado = false;
             _strConfiguracion = DEFAULT_CONFIGURACION;
             _strPasswordSecureString = null;
-            _archivoLog = null;
-            _flujoEscritura = null;
+        //    _archivoLog = null;
+        //    _flujoEscritura = null;
             _strLog = "";
             _error = false;
             _errores = new List<string>();
             _ticketAcceso = null;
             _observaciones = null;
-            // _ptoVta = 0;
             _gestionFE = null;
 
-
-            _configurado = cargaConfiguracionArchivo(_strConfiguracion); // Cargo el Archivo de configuración desde el XML
+            _configurado = CargaConfiguracionArchivo(_strConfiguracion); // Cargo el Archivo de configuración desde el XML
 
         }
 
@@ -246,9 +213,9 @@ namespace ModuloAFIP
         /// Carga la configuración desde el archivo XML de configuración seteado en _strConfiguracion
         /// </summary>
         /// <returns>Retorna True si se cargó correctamente el archivo, False en otro caso</returns>
-        private bool cargaXMLConfiguracion(string ubicacionArchivoConf)
+        private bool CargaXMLConfiguracion(string ubicacionArchivoConf)
         {
-            bool retorno = false;
+            bool retorno ;
         
             try
             {
@@ -274,10 +241,10 @@ namespace ModuloAFIP
                     _strProxyPassword = configuracionXML.SelectSingleNode("//proxy_pass").InnerText;
                     _strRutaCertSigner = configuracionXML.SelectSingleNode("//certificado").InnerText;
                     _strTicketAcceso = configuracionXML.SelectSingleNode("//ticket_acceso").InnerText;
-                    _cantidadIntentosTA = Int32.Parse(configuracionXML.SelectSingleNode("//intentos_TA").InnerText);
-                    _cantidadIntentosAFIP = Int32.Parse(configuracionXML.SelectSingleNode("//intentos_AUT").InnerText);
+                   // _cantidadIntentosTA = Int32.Parse(configuracionXML.SelectSingleNode("//intentos_TA").InnerText);
+                    //_cantidadIntentosAFIP = Int32.Parse(configuracionXML.SelectSingleNode("//intentos_AUT").InnerText);
                     _strEmpresa = configuracionXML.SelectSingleNode("//nombre_empresa").InnerText;
-                    _strCuit = UtilClass.cambiarFormatoCuitSinGuinoes(configuracionXML.SelectSingleNode("//cuit_empresa").InnerText);
+                    _strCuit = UtilClass.CambiarFormatoCuitSinGuiones(configuracionXML.SelectSingleNode("//cuit_empresa").InnerText);
                     _strLog = configuracionXML.SelectSingleNode("//log").InnerText;
                     retorno = true;
                 }
@@ -297,9 +264,9 @@ namespace ModuloAFIP
         /// Carga la configuración con los parámetros pasados
         /// </summary>
         /// <returns>Retorna True si se cargó correctamente el archivo, False en otro caso</returns>
-        private bool cargaConfiguracionParametros(string servicio, string serv_urlwsaawsdl, string serv_afip, string proxy, string proxy_user, string proxy_pass, string certificado, string ticket_acceso, int intentos_aut, int intentos_ta, string nombre_empresa, string cuit_empresa, string log)
+        private bool CargaConfiguracionParametros(string servicio, string serv_urlwsaawsdl, string serv_afip, string proxy, string proxy_user, string proxy_pass, string certificado, string ticket_acceso, int intentos_aut, int intentos_ta, string nombre_empresa, string cuit_empresa, string log)
         {
-            bool retorno = false;
+            bool retorno;
 
             try
             {
@@ -321,10 +288,10 @@ namespace ModuloAFIP
                 _strProxyPassword = proxy_pass;
                 _strRutaCertSigner = certificado;
                 _strTicketAcceso = ticket_acceso;
-                _cantidadIntentosTA = intentos_ta;
-                _cantidadIntentosAFIP = intentos_aut;
+             //   _cantidadIntentosTA = intentos_ta;
+             //   _cantidadIntentosAFIP = intentos_aut;
                 _strEmpresa = nombre_empresa;
-                _strCuit = UtilClass.cambiarFormatoCuitSinGuinoes(cuit_empresa);
+                _strCuit = UtilClass.CambiarFormatoCuitSinGuiones(cuit_empresa);
                 _strLog = log;
                 retorno = true;
 
@@ -333,7 +300,6 @@ namespace ModuloAFIP
             {
                 retorno = false;
             }
-
 
 
             return retorno;
@@ -345,7 +311,7 @@ namespace ModuloAFIP
         /// <param name="observacion">Observación que se va a agregar a la lista de observaciones</param>
         /// <param name="conFecha">Agrega la fecha y hora actural a la observación pasada como parámetro</param>
         /// <returns>Retorna True si se agregó correctamente, False en otro caso</returns>
-        private bool agregarObservaciones(string observacion, bool conFecha = false)
+        private bool AgregarObservaciones(string observacion, bool conFecha = false)
         {
             bool r = false;
 
@@ -353,11 +319,9 @@ namespace ModuloAFIP
             if (observacion != null && observacion.Length > 0)
             {
 
-
-
                 if (conFecha)
                 {
-                    string strFechaHora = "";
+                    string strFechaHora;
 
                     DateTime fechaHora = DateTime.Now;
 
@@ -382,9 +346,9 @@ namespace ModuloAFIP
         /// <param name="ubicacionComp">Ubicación del archivo XML con información del comprobante a cargar</param>
         /// <param name="idregistro">IdRegistro del comprobante que se va a cargar, éste parámetro es para corroborar que se esté cargando el comprobante del ID pasado</param>
         /// <returns>Retorna el comprobante, Null en caso de que ocurra un error</returns>
-        private ComprobanteClass cargaComprobante(string ubicacionComp, int idregistro)
+        private ComprobanteClass CargaComprobante(string ubicacionComp, int idregistro)
         {
-            ComprobanteClass retorno = null;
+            ComprobanteClass retorno;
             _observaciones = new List<string>();
             _error = false;
             _errores = new List<string>();
@@ -507,7 +471,6 @@ namespace ModuloAFIP
         }
 
 
-
         #endregion
 
         #region Métodos Públicos
@@ -518,20 +481,20 @@ namespace ModuloAFIP
         /// </summary>
         /// <param name="ubicacionArchivoConf"></param>
         /// <returns>Retorna True si se cargó correctamente la configuración, False en otro caso</returns>
-        public bool cargaConfiguracionArchivo(string ubicacionArchivoConf)
+        public bool CargaConfiguracionArchivo(string ubicacionArchivoConf)
         {
-            bool retorno = false;
+            bool retorno;
             _observaciones = new List<string>();
             _error = false;
             _errores = new List<string>();
 
             try
             {
-                bool xmlCargado = cargaXMLConfiguracion(ubicacionArchivoConf);
+                bool xmlCargado = CargaXMLConfiguracion(ubicacionArchivoConf);
 
                 if (xmlCargado) // Cargo Archivo de LOG y demás propiedades
                 {
-                    //Cargar Archivo de LOG
+                   /* //Cargar Archivo de LOG
                     if (_strLog.Length > 0) // Si tiene asignado un archivo de log
                     {
                         if (!File.Exists(_strLog)) //Si no existe el archivo, lo creo
@@ -562,21 +525,17 @@ namespace ModuloAFIP
                         _strLog = "";
 
                     }
-
+                    */
                     _strPasswordSecureString = new SecureString();
                     _error = false;
                     _errores = new List<string>();
                     _ticketAcceso = null;
                     _observaciones = new List<string>();
-
-                    _gestionFE = new FEClass(_strServAFIP, _strCuit, _archivoLog, _flujoEscritura, _strLog);
-
-
+                    //   _gestionFE = new FEClass(_strServAFIP, _strCuit, _archivoLog, _flujoEscritura, _strLog);
+                    _gestionFE = new FEClass(_strServAFIP, _strCuit,  _strLog);
                     // Cargo el ticket de Acceso
 
-
-
-                    _ticketAcceso = _gestionFE.obtenerTicketAcceso(_strTicketAcceso, _strIdServicioNegocio, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
+                    _ticketAcceso = _gestionFE.ObtenerTicketAcceso(_strTicketAcceso, _strIdServicioNegocio, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
               
                     _observaciones.AddRange(_gestionFE.ListaObservaciones);
                     if (_ticketAcceso != null)
@@ -585,33 +544,31 @@ namespace ModuloAFIP
 
                         string mensaje = "Ticket de Acceso obtenido, válido hasta: " + fecha_expiracion + "\n";
                         //agregarObservaciones(mensaje, true);
-                        UtilClass.escribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                        //  UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                        UtilClass.EscribirArchivoLog(mensaje,  _strLog, true);
                         retorno = true;
                     }
                     else
                     {
                         string mensaje = "No se pudo obtener el Ticket de acceso\n";
                         //agregarObservaciones(mensaje, true);
-                        UtilClass.escribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                        //UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                        UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
                         retorno = false;
                     }
-
-
-
-
-
 
                 }
                 else
                 {
                     _strPasswordSecureString = null;
-                    _archivoLog = null;
-                    _flujoEscritura = null;
+                   // _archivoLog = null;
+                  //  _flujoEscritura = null;
                     _strPasswordSecureString = null;
                     _strLog = "";
                     _error = true;
                     _errores = new List<string>();
                     _errores.Add("No se pudo cargar el Archivo XML de Configuración");
+                 
                     _ticketAcceso = null;
                     _observaciones = null;
                     _ticketAcceso = null;
@@ -620,7 +577,8 @@ namespace ModuloAFIP
             }
             catch (Exception e)
             {
-                agregarObservaciones(e.Message, true);
+                AgregarObservaciones(e.Message, true);
+                UtilClass.EscribirArchivoLog(e.Message, _strLog);
                 retorno = false;
             }
 
@@ -645,16 +603,16 @@ namespace ModuloAFIP
         /// <param name="cuit_empresa"></param>
         /// <param name="log"></param>
         /// <returns></returns>
-        public bool cargaConfiguracion(string servicio, string serv_urlwsaawsdl, string serv_afip, string proxy, string proxy_user, string proxy_pass, string certificado, string ticket_acceso, int intentos_aut, int intentos_ta, string nombre_empresa, string cuit_empresa, string log)
+        public bool CargaConfiguracion(string servicio, string serv_urlwsaawsdl, string serv_afip, string proxy, string proxy_user, string proxy_pass, string certificado, string ticket_acceso, int intentos_aut, int intentos_ta, string nombre_empresa, string cuit_empresa, string log)
         {
             bool retorno = false;
             try
             {
-                bool parametrosCargado = cargaConfiguracionParametros(servicio, serv_urlwsaawsdl, serv_afip, proxy, proxy_user, proxy_pass, certificado, ticket_acceso, intentos_aut, intentos_ta, nombre_empresa, cuit_empresa, log);
+                bool parametrosCargado = CargaConfiguracionParametros(servicio, serv_urlwsaawsdl, serv_afip, proxy, proxy_user, proxy_pass, certificado, ticket_acceso, intentos_aut, intentos_ta, nombre_empresa, cuit_empresa, log);
 
                 if (parametrosCargado) // Cargo Archivo de LOG y demás propiedades
                 {
-                    //Cargar Archivo de LOG
+                   /* //Cargar Archivo de LOG
                     if (_strLog.Length > 0) // Si tiene asignado un archivo de log
                     {
                         if (!File.Exists(_strLog)) //Si no existe el archivo, lo creo
@@ -685,22 +643,19 @@ namespace ModuloAFIP
                         _strLog = "";
 
                     }
-
+                    */
                     _strPasswordSecureString = new SecureString();
                     _error = false;
                     _errores = new List<string>();
                     _ticketAcceso = null;
                     _observaciones = new List<string>();
 
-                    _gestionFE = new FEClass(_strServAFIP, _strCuit, _archivoLog, _flujoEscritura, _strLog);
+                    //  _gestionFE = new FEClass(_strServAFIP, _strCuit, _archivoLog, _flujoEscritura, _strLog);
+                    _gestionFE = new FEClass(_strServAFIP, _strCuit, _strLog);
 
-
-                 
                     // Cargo el ticket de Acceso
 
-
-
-                    _ticketAcceso = _gestionFE.obtenerTicketAcceso(_strTicketAcceso, _strIdServicioNegocio, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
+                    _ticketAcceso = _gestionFE.ObtenerTicketAcceso(_strTicketAcceso, _strIdServicioNegocio, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
        
                     _observaciones.AddRange(_gestionFE.ListaObservaciones);
                     if (_ticketAcceso != null)
@@ -709,14 +664,16 @@ namespace ModuloAFIP
 
                         string mensaje = "Ticket de Acceso obtenido, válido hasta: " + fecha_expiracion + "\n";
                         //agregarObservaciones(mensaje, true);
-                        UtilClass.escribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                        //  UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                        UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
                         retorno = true;
                     }
                     else
                     {
                         string mensaje = "No se pudo obtener el Ticket de acceso\n";
                         //agregarObservaciones(mensaje, true);
-                        UtilClass.escribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                        // UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                        UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
                         retorno = false;
                     }
 
@@ -725,8 +682,8 @@ namespace ModuloAFIP
                 else
                 {
                     _strPasswordSecureString = null;
-                    _archivoLog = null;
-                    _flujoEscritura = null;
+                   // _archivoLog = null;
+                  //  _flujoEscritura = null;
                     _strPasswordSecureString = null;
                     _strLog = "";
                     _error = true;
@@ -735,12 +692,15 @@ namespace ModuloAFIP
                     _ticketAcceso = null;
                     _observaciones = null;
                     _ticketAcceso = null;
+                    UtilClass.EscribirArchivoLog("No se pudo cargar el Archivo XML de Configuración", _strLog);
+
                     retorno = false;
                 }
             }
             catch (Exception e)
             {
-                agregarObservaciones(e.Message, true);
+                AgregarObservaciones(e.Message, true);
+                UtilClass.EscribirArchivoLog(e.Message, _strLog);
                 retorno = false;
             }
 
@@ -749,21 +709,19 @@ namespace ModuloAFIP
         }
 
 
-
-
         /// <summary>
         /// Prueba el servicio del AFIP
         /// </summary>
         /// <param name="nroComp">Número de Tipo de comprobante para usar como prueba</param>
         /// <returns></returns>
-        public bool probarServicio(int ptoVta, int tipoComp = 1)
+        public bool ProbarServicio(int ptoVta, int tipoComp = 1)
         {
 
-            bool r = false;
+            bool r;
 
             try
             {
-                r = _gestionFE.probarServicio(_ticketAcceso, ptoVta, tipoComp);
+                r = _gestionFE.ProbarServicio(_ticketAcceso, ptoVta, tipoComp);
                 _error = false;
                 _errores = new List<string>();
 
@@ -773,16 +731,22 @@ namespace ModuloAFIP
                 r = false;
                 _error = true;
                 _errores.Add(e.Message);
+                UtilClass.EscribirArchivoLog(e.Message, _strLog);
 
             }
 
             return r;
         }
 
-
-        public bool autorizarComp(string ubicacionComp, int idRegistro)
+        /// <summary>
+        /// Autoriza el comprobante cuyos datos están en un xml ubicado en 'ubicadoComp' con el ID pasado como parámetro
+        /// </summary>
+        /// <param name="ubicacionComp">Ubicación del archivo XML con información del comprobante a autorizar</param>
+        /// <param name="idRegistro">ID del registro a autorizar, debe coincidir con el ID registrado en el XML</param>
+        /// <returns>Retorna True si no se generaron errores propios del modulo</returns>
+        public bool AutorizarComp(string ubicacionComp, int idRegistro)
         {
-            bool retorno = false;
+            bool retorno;
             _observaciones = new List<string>();
             _error = false;
             _errores = new List<string>();
@@ -791,19 +755,21 @@ namespace ModuloAFIP
                 if (ubicacionComp == null || ubicacionComp.Length == 0) // Nombre del Archivo de configuración incorrecto
                 {
                     _error = true;
-                    _errores.Add("El nombre del Archivo de configuración es incorrecto");
+                    string mensaje = "El nombre del Archivo de configuración es incorrecto";
+                    _errores.Add(mensaje);
+                    UtilClass.EscribirArchivoLog(mensaje, _strLog);
                     retorno = false;
                 }
                 else
                 {
                  
-                    ComprobanteClass comprobante = cargaComprobante(ubicacionComp, idRegistro);
+                    ComprobanteClass comprobante = CargaComprobante(ubicacionComp, idRegistro);
 
                     if (comprobante != null)
                     {
                        
                         ComprobanteClass comprobanteRespuesta = null;
-                        comprobanteRespuesta = _gestionFE.autorizarComprobante(_ticketAcceso, comprobante, idRegistro);
+                        comprobanteRespuesta = _gestionFE.AutorizarComprobante(_ticketAcceso, comprobante, idRegistro);
 
 
                         if (comprobanteRespuesta != null)
@@ -814,7 +780,9 @@ namespace ModuloAFIP
 
                                 if (ubicacionComp == null || ubicacionComp.Length == 0)
                                 {
-                                    Console.WriteLine("Ubicacion del comprobanteXML Vacia o nula");
+                                    string mensaje = ("Ubicacion del comprobanteXML Vacia o nula");
+                                    UtilClass.EscribirArchivoLog(mensaje, _strLog);
+                               
                                 }
                                 else
                                 {
@@ -832,13 +800,22 @@ namespace ModuloAFIP
                                     
 
                                     comprobanteXML.Save(ubicacionComp);
-                                                                      
+                                    string mensaje = "Respuesta Obtenida: \n";
+                                    mensaje += "\n Resultado: " + comprobanteRespuesta.Resultado;
+                                    mensaje += "\n CESP - CAE: " + comprobanteRespuesta.CAE;
+                                    mensaje += "\n Numero: " + comprobanteRespuesta.NroComprobante.ToString();
+                                    mensaje += "\n Observaciones: "+ comprobanteRespuesta.ObservacionesAFIP;
+                                    mensaje += "\n Errores: " + comprobanteRespuesta.ErroresAFIP;
+
+                                    UtilClass.EscribirArchivoLog(mensaje, _strLog);
                                 }
                             }
                             catch (Exception e)
                             {
                                 _error = true;
-                                _errores.Add("Ocurrio un error: " + e.Message);
+                                string mensaje = "Ocurrio un error: " + e.Message;
+                                _errores.Add(mensaje);
+                                UtilClass.EscribirArchivoLog(mensaje, _strLog);
                                 return false;
                             }
 
@@ -864,61 +841,21 @@ namespace ModuloAFIP
             catch (Exception e)
             {
                 _error = true;
-                _errores.Add("Ocurrio un error: " + e.Message);
+                string mensaje = "Ocurrio un error: " + e.Message;
+                _errores.Add(mensaje);
+                UtilClass.EscribirArchivoLog(mensaje, _strLog);
                 return false;
             }
 
             return retorno;
 
         }
-        /*
-           public string cargaXML(string ubicacionXML)
-               {
-
-                   string retorno = "";
-
-                   try
-                   {
-
-
-
-                       XmlDocument documentoXML = new XmlDocument();
-
-
-                       documentoXML.Load(ubicacionXML);
-
-
-                       int idListaC = Int32.Parse(documentoXML.SelectSingleNode("//idlistac").InnerText);
-                       int idLista = Int32.Parse(documentoXML.SelectSingleNode("//idlista").InnerText);
-                       string detalle = documentoXML.SelectSingleNode("//detalle").InnerText;
-
-
-                       retorno = "IdListaC: " + idListaC + "; idLista: " + idLista + "; Detalle: " + detalle;
-
-
-                   }
-                   catch (Exception e)
-                   {
-                       retorno = "";
-                       return retorno;
-                   }
-
-
-
-                   return retorno;
-               }
-           */
-
+      
 
         #endregion
 
 
-
-
-
-
         #endregion
-
 
 
     }
