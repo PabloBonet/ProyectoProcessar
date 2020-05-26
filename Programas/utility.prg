@@ -7372,19 +7372,27 @@ PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_va
 			sqlmatriz(2)=ALLTRIM(pud_cpoar)+"='"+v_archivo_ins+"' " 
 			sqlmatriz(3)=" where "+ALLTRIM(pud_cpoix)+" = "+pud_valid_a
 
-			verror=sqlrun(pud_conex,"updn_ar")
-			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la inserción de Archivos ",0+48+0,"Error")
-			    RETURN ""
+			verror=SQLEXEC(pud_conex,sqlmatriz(1)+sqlmatriz(2)+sqlmatriz(3),"updn_ar")
+			IF verror < 0
+				MESSAGEBOX("No se puede incertar el reporte Seleccionado ",0+16,"Advertencia")
+				RETURN ""
 			ENDIF 
+			sqlmatriz(1)=""
+			sqlmatriz(2)=""
+			sqlmatriz(3)=""
+
 	ENDIF 
 	
 	IF SUBSTR(UPPER(ALLTRIM(pud_updw)),1,1) = "D" && descargar archivo
 
 			sqlmatriz(1)=" select "+pud_cponom+" as nombre, "+ALLTRIM(pud_cpoar)+" as archivo from "+ALLTRIM(pud_tabla)
 			sqlmatriz(2)=" where "+ALLTRIM(pud_cpoix)+" = "+pud_valid_a
-			verror=sqlrun(pud_conex,"updn_ar")
-			IF verror=.f.  
+
+			verror=SQLEXEC(pud_conex,sqlmatriz(1)+sqlmatriz(2),"updn_ar")
+			sqlmatriz(1)=""
+			sqlmatriz(2)=""
+			
+			IF verror < 0
 			    MESSAGEBOX("Ha Ocurrido un Error en la inserción de Archivos ",0+48+0,"Error")
 			   	USE IN updn_ar
 			    RETURN ""
@@ -7416,12 +7424,14 @@ PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_va
 									v_archivo_copy = v_nuevo_archivo
 									v_ejecutar = "COPY FILE (v_archivo_nom) TO (v_archivo_copy)"
 									&v_ejecutar				
+									v_archivo_nom = v_archivo_copy
 								ENDIF 
 							
 							ELSE 
 								v_archivo_copy = ALLTRIM(pud_path)+ALLTRIM(updn_ar.nombre)
 								v_ejecutar = "COPY FILE (v_archivo_nom) TO (v_archivo_copy)"
 								&v_ejecutar				
+								v_archivo_nom = v_archivo_copy
 							ENDIF 
 							
 						ENDIF 
