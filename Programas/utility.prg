@@ -7445,7 +7445,7 @@ PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_va
 			   	USE IN updn_ar
 			   	RETURN ""
 			ENDIF 
-			
+			USE IN updn_ar		
 	ENDIF 
 
 	IF LEN(pud_updw) >= 2 AND v_mostrar = .t. THEN 
@@ -7456,11 +7456,9 @@ PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_va
 		ENDIF 
 	ENDIF 
 
-	USE IN updn_ar	
 	RETURN ALLTRIM(v_archivo_nom)
 	
 ENDFUNC 
-
 
 
 
