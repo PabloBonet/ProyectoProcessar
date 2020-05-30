@@ -2991,7 +2991,7 @@ PARAMETERS pvar_paramrepo
 			IF v_cantRegistros = 1
 
 				 *** No tiene que seleccionar reportes, imprime con el que tiene predeterminado
-				pvar_retorno = repos_sql.nombre
+				pvar_retorno = ALLTRIM(STR(repos_sql.idreporte))+";" + ALLTRIM(repos_sql.nombre)
 			
 *!*					SELECT repos_sql
 *!*					USE IN repos_sql 
