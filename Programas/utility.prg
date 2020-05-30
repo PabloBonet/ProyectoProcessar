@@ -3192,6 +3192,33 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
 		
 	ENDIF
 
+	IF p_estado = 'ANULADO' THEN 
+
+		DO CASE  
+			CASE lower(v_nomTabla) == 'facturas'
+				sqlmatriz(1)= "delete from cobros where idfactura = "+alltrim(v_indice)
+				
+			CASE lower(v_nomTabla) == 'recibos'
+				sqlmatriz(1)= "delete from cobros where idregipago = "+alltrim(v_indice)+" and idcomproba in ( select idcomproba from comprobantes where tabla='recibos')"
+		
+			CASE lower(v_nomTabla) == 'factuprove'
+				sqlmatriz(1)= "delete from pagosprovfc where idfactprove = "+alltrim(v_indice)
+				
+			CASE lower(v_nomTabla) == 'pagosprov'			
+				sqlmatriz(1)= "delete from pagosprovfc where idpago = "+alltrim(v_indice)+" and idcomproba in ( select idcomproba from comprobantes where tabla='pagosprov')"
+		OTHERWISE
+				sqlmatriz(1)=""
+		ENDCASE 	
+		IF !EMPTY(ALLTRIM(sqlmatriz(1))) THEN 
+			verror=sqlrun(vconeccionF,"borra_rel")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en Eliminacion de Registros de Tablas... ",0+48+0,"Error")
+			    RETURN p_aliasreto  
+			ENDIF		
+		ENDIF 
+	ENDIF 
+
+
 	* me desconecto	
 	=abreycierracon(vconeccionE,"") 
 	RETURN .T.
@@ -7455,7 +7482,9 @@ PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_va
 			RELEASE APLIC 
 		ENDIF 
 	ENDIF 
-
+	IF v_mostrar = .f. THEN 
+		v_archivo_nom = ""
+	ENDIF 
 	RETURN ALLTRIM(v_archivo_nom)
 	
 ENDFUNC 
