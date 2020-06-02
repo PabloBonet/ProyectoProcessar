@@ -6877,7 +6877,7 @@ FUNCTION obtenerCorreos
 	
 	vconeccionM	= abreycierracon(0,_SYSSCHEMA)
 	
-	sqlmatriz(1)=" select cliente, email1, email2 from entidad where entidad = "+ALLTRIM(STR(v_identidad))
+	sqlmatriz(1)=" select apellido,nombre, email from entidad where entidad = "+ALLTRIM(STR(v_identidad))
 
 
 	verror=sqlrun(vconeccionM,"entidades_sql_uti")
@@ -6893,7 +6893,7 @@ FUNCTION obtenerCorreos
 	SELECT entidades_sql_uti
 	GO TOP 
 
-		v_email1	= entidades_sql_uti.email1
+		v_email1	= entidades_sql_uti.email
 		v_email2	= entidades_sql_utiv.email2
 			
 		IF EMPTY(v_email2)
@@ -6921,7 +6921,7 @@ ENDFUNC
 FUNCTION cargaCfgCorreo
 
 
-vconeccionM = abreycierracon(0,_SYSCHEMA)
+vconeccionM = abreycierracon(0,_SYSSCHEMA)
 
 
 	sqlmatriz(1)=" select * FROM correoconf "
