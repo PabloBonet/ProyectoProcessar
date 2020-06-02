@@ -6868,7 +6868,7 @@ FUNCTION obtenerCorreos
 	
 	v_retorno	= ""
 	
-	IF pIdCliente == 0 OR EMPTY(pIdCliente) == .T.
+	IF pIdEntidad == 0 OR EMPTY(pIdEntidad) == .T.
 	
 		RETURN  v_retorno
 	ENDIF 
