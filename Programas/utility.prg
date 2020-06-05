@@ -2950,7 +2950,7 @@ PARAMETERS pvar_paramrepo
 
 		sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet from comprorepo co "
 		sqlmatriz(2)=" left join reportesimp r on co.idreporte = r.idreporte "
-		sqlmatriz(3)=" where co.idcomproba = "+ALLTRIM(STR(v_paramRepo))
+		sqlmatriz(3)=" where co.predeterminado = 'S' and co.idcomproba = "+ALLTRIM(STR(v_paramRepo))
 		verror=sqlrun(vconeccion,"repos_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades ",0+48+0,"Error")
@@ -2966,7 +2966,7 @@ PARAMETERS pvar_paramrepo
 
 			sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet from comprorepo co "
 			sqlmatriz(2)=" left join reportesimp r on co.idreporte = r.idreporte "
-			sqlmatriz(3)=" where co.codigoImpre= '"+ALLTRIM(v_paramRepo)+"'"
+			sqlmatriz(3)=" where  co.predeterminado = 'S' and co.codigoImpre= '"+ALLTRIM(v_paramRepo)+"'"
 			
 			verror=sqlrun(vconeccion,"repos_sql")
 			IF verror=.f.  
@@ -7397,7 +7397,7 @@ PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_va
 			
 				
 	
-			sqlmatriz(1)=" update "+ALLTRIM(pud_tabla)+" set "+pud_cponom+"='"+ALLTRIM(pud_arch)+"', "
+			sqlmatriz(1)=" update "+ALLTRIM(pud_tabla)+" set "+pud_cponom+"='"+STRTRAN(ALLTRIM(pud_arch),' ','_')+"', "
 			sqlmatriz(2)=ALLTRIM(pud_cpoar)+"='"+v_archivo_ins+"' " 
 			sqlmatriz(3)=" where "+ALLTRIM(pud_cpoix)+" = "+pud_valid_a
 
