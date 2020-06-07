@@ -2213,57 +2213,6 @@ PARAMETERS p_idComp, p_idReg
 ENDFUNC 
 
 
-*!*	 *** COPIAR ARCHIVOS ***
-*!*	** PARAMETROS: p_docu: Archivo original; p_pathn: Nueva ubicación; p_codigo: código para diferenciar, p_viejo: Ubicación Origen
-*!*	FUNCTION copydocu
-*!*		PARAMETERS p_docu, p_pathn, p_codigo, p_viejo
-*!*		
-*!*		j = LEN(ALLTRIM(p_docu))
-*!*		LON = J
-*!*		DO WHILE ! (SUBSTR(p_docu,j,1) == "\") AND ! (ALLTRIM(p_docu) == "") AND j > 0
-*!*			j = j - 1
-*!*		ENDDO 
-
-*!*		IF !(ALLTRIM(p_docu) == "") AND J > 0 THEN 
-*!*			viejo_directorio = LOWER(SUBSTR(p_docu,1,J))	
-*!*		ENDIF 
-
-*!*		IF !(ALLTRIM(p_docu) == "") THEN 
-*!*			a_archivo = LOWER(ALLTRIM(p_codigo)+"_"+ALLTRIM(p_viejo))
-*!*		ENDIF 
-*!*		
-*!*		
-*!*		nuevo_completo   = ALLTRIM(p_pathn)+"\"+ALLTRIM(a_archivo)
-*!*		viejo_completo   = LOWER(ALLTRIM(p_docu))
-*!*		
-*!*		IF ALLTRIM(UPPER(viejo_completo))==ALLTRIM(UPPER(nuevo_completo)) THEN 
-*!*			* El Archivo ya esta en el directorio de la red
-*!*		ELSE 
-*!*				v_var = 0	
-*!*				new_nuevo_completo = ALLTRIM(nuevo_completo)
-*!*				DO WHILE FILE(new_nuevo_completo) = .t.
-*!*					v_var = v_var + 1
-*!*					new_nuevo_completo = ALLTRIM(SUBSTR(nuevo_completo,1,(LEN(ALLTRIM(nuevo_completo))-4))+ALLTRIM(STR(v_var))+SUBSTR(nuevo_completo,(LEN(ALLTRIM(nuevo_completo))-3)))
-*!*				ENDDO 
-*!*				nuevo_completo = ALLTRIM(new_nuevo_completo)
-*!*				v_ejecutar = "COPY FILE '"+ALLTRIM(viejo_completo)+"' TO '"+ALLTRIM(nuevo_completo)+"'"
-*!*				MESSAGEBOX(v_ejecutar)
-*!*				&v_ejecutar				
-*!*		ENDIF
-
-*!*		j = LEN(ALLTRIM(nuevo_completo))
-*!*		LON = J
-*!*		DO WHILE ! (SUBSTR(nuevo_completo,j,1) == "\") AND ! (ALLTRIM(nuevo_completo) == "") AND j > 0
-*!*			j = j - 1
-*!*		ENDDO 
-
-*!*		a_archivo = ""
-*!*		IF !(ALLTRIM(nuevo_completo) == "") THEN 
-*!*			a_archivo = ALLTRIM(LOWER(SUBSTR(nuevo_completo,J+1,LON - J + 1)))
-*!*		ENDIF 
-*!*		
-*!*	RETURN a_archivo
-*!*	ENDFUNC 
 
 *** Función que recibe un numero decimal y retorna el RGB equivalente, en una cadena de texto
 FUNCTION decimalARGB
@@ -6781,30 +6730,76 @@ ENDFUNC
 	
 
 FUNCTION CopiarClip
-	v_auxi = ALIAS()
-	IF !EMPTY(v_auxi) THEN 
-		IF (ALLTRIM(FIELD("sel",v_auxi))=='SEL') THEN
-			IF TYPE('sel')='L' THEN 
-				SELECT * FROM &v_auxi INTO CURSOR ccopiarclip WHERE sel = .t. 
-				SELECT ccopiarclip
-				IF _tally = 0  THEN 
-					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip 
+	PARAMETERS p_csv 
+	
+	IF !TYPE('p_csv')='C' THEN 
+		v_auxi = ALIAS()
+		IF !EMPTY(v_auxi) THEN 
+			IF (ALLTRIM(FIELD("sel",v_auxi))=='SEL') THEN
+				IF TYPE('sel')='L' THEN 
+					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip WHERE sel = .t. 
+					SELECT ccopiarclip
+					IF _tally = 0  THEN 
+						SELECT * FROM &v_auxi INTO CURSOR ccopiarclip 
+					ENDIF 
+				ELSE
+					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  			
 				ENDIF 
 			ELSE
-				SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  			
+				SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  	
+			ENDIF  
+			SELECT ccopiarclip
+			v_rec = reccount()
+			IF v_rec > 0 then 
+				_vfp.DataToClip('ccopiarclip',v_rec,3)
+				MESSAGEBOX("Se copiaron los datos al Portapapeles",64)
 			ENDIF 
-		ELSE
-			SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  	
-		ENDIF  
-		SELECT ccopiarclip
-		v_rec = reccount()
-		IF v_rec > 0 then 
-			_vfp.DataToClip('ccopiarclip',v_rec,3)
-			MESSAGEBOX("Se copiaron los datos al Portapapeles",64)
+			USE IN ccopiarclip
+			SELECT &v_auxi
 		ENDIF 
-		USE IN ccopiarclip
-		SELECT &v_auxi
+	ELSE
+		v_auxi = ALIAS()
+		IF !EMPTY(v_auxi) THEN 
+			v_drv = SYS(5)+'\'
+			SET DEFAULT TO &v_drv
+			v_ext = 'CSV'
+			v_tipo = 'csv'
+			DO CASE 
+				CASE EMPTY(p_csv)
+					v_tipo = 'CSV' 
+					v_ext = 'csv'
+				CASE UPPER(p_csv) == 'CSV'
+					v_ext = 'CSV' 
+					v_ext = 'csv'
+				CASE UPPER(p_csv) == 'XLS'
+					v_tipo = 'XLS'
+					v_ext = 'xls'
+				CASE UPPER(p_csv) == 'XL5'
+					v_tipo = 'XL5'
+					v_ext = 'xls'
+				CASE UPPER(p_csv) == 'FOX2X'
+					v_tipo = 'FOX2X'
+					v_ext = 'dbf'
+				CASE UPPER(p_csv) == 'SDF'
+					v_tipo = 'SDF'
+					v_ext = 'txt'
+				OTHERWISE 
+					v_ext = 'CSV' 
+					v_ext = 'csv'
+			ENDCASE 
+			v_nuevo_csv = ALLTRIM(PUTFILE("Archivo",v_auxi,v_ext))
+			IF !EMPTY(v_nuevo_csv) THEN 
+				eje = "COPY TO "+ v_nuevo_csv + " TYPE "+v_tipo
+				&eje
+				APLIC=CREATEOBJECT("WSCript.Shell")
+				APLIC.RUN(v_nuevo_csv)
+				RELEASE APLIC 
+			ENDIF 
+			SET DEFAULT TO &_SYSESTACION	
+			SELECT &v_auxi
+		ENDIF 
 	ENDIF 
+	
 	RETURN 
 ENDFUNC 
 
