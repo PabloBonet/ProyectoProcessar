@@ -1445,8 +1445,8 @@ PARAMETERS p_idcomprobante
 			
 			DO WHILE NOT EOF()
 				
-				v_resultado = factufe_fe.resultado
-				v_caecesp 	= factufe_fe.caecesp
+				v_resultado = factufe_sql.resultado
+				v_caecesp 	= factufe_sql.caecesp
 				
 				IF v_resultado = "A" OR v_caecesp <> ""
 				
@@ -1455,7 +1455,7 @@ PARAMETERS p_idcomprobante
 					RETURN v_autorizar
 				ENDIF 
 				
-				SELECT factu_fe
+				SELECT factufe_sql
 				SKIP 1
 			
 			ENDDO 
