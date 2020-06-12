@@ -2892,6 +2892,7 @@ PARAMETERS pvar_paramrepo
 	v_paramRepo = pvar_paramrepo
 	pvar_retorno = ""
 
+
 	IF TYPE("v_paramRepo") = "N"
 		*** Si el parametro es un NUMERO, el nùmero es el idComproba
 
@@ -2903,7 +2904,7 @@ PARAMETERS pvar_paramrepo
 		verror=sqlrun(vconeccion,"repos_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades ",0+48+0,"Error")
-		    RETURN 
+		    RETURN pvar_retorno
 		ENDIF 
 		
 	ELSE
@@ -2920,12 +2921,11 @@ PARAMETERS pvar_paramrepo
 			verror=sqlrun(vconeccion,"repos_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Reportes ",0+48+0,"Error")
-    		    RETURN 
-
+    		    RETURN pvar_retorno
 			ENDIF 
 		ELSE
-			MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
-		    RETURN 
+*!*				MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
+		    RETURN pvar_retorno
 
 		ENDIF 
 	ENDIF 
@@ -2934,8 +2934,8 @@ PARAMETERS pvar_paramrepo
 		SELECT repos_sql
 		GO TOP 
 		IF  EOF()
-			MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
-			RETURN 
+*!*				MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
+			RETURN pvar_retorno
 		ELSE
 			v_cantRegistros = RECCOUNT()
 
@@ -2953,7 +2953,7 @@ PARAMETERS pvar_paramrepo
 					DO FORM selectreporte WITH v_paramRepo TO  pvar_retorno					
 					
 				ELSE
-					MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
+*!*						MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
 				ENDIF 
 			ENDIF 
 			SELECT repos_sql
@@ -6783,6 +6783,9 @@ FUNCTION CopiarClip
 				CASE UPPER(p_csv) == 'SDF'
 					v_tipo = 'SDF'
 					v_ext = 'txt'
+				CASE UPPER(p_csv) == 'DBF'
+					v_tipo = ''
+					v_ext = 'dbf'
 				OTHERWISE 
 					v_ext = 'CSV' 
 					v_ext = 'csv'
