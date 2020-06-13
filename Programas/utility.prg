@@ -2887,81 +2887,256 @@ ENDFUNC
 * FUNCION DE BUSQUEDA DE REPORTES Y SELECCION DE ACUERDO AL PARAMETRO APLICADO.
 
 FUNCTION fselectreporte 
-PARAMETERS pvar_paramrepo
+PARAMETERS pvar_paramrepo, pvar_tablarepo
 	****************************************
 	v_paramRepo = pvar_paramrepo
 	pvar_retorno = ""
 
+	v_itera = 0
 
-	IF TYPE("v_paramRepo") = "N"
-		*** Si el parametro es un NUMERO, el nùmero es el idComproba
+	DO WHILE v_itera <= 1 && controlo las veces que consulto por un reporte
 
 		vconeccion=abreycierracon(0,_SYSSCHEMA)	
+		IF TYPE("v_paramRepo") = "N"
+			*** Si el parametro es un NUMERO, el nùmero es el idComproba
 
-		sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet from comprorepo co "
-		sqlmatriz(2)=" left join reportesimp r on co.idreporte = r.idreporte "
-		sqlmatriz(3)=" where co.predeterminado = 'S' and co.idcomproba = "+ALLTRIM(STR(v_paramRepo))
-		verror=sqlrun(vconeccion,"repos_sql")
-		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades ",0+48+0,"Error")
-		    RETURN pvar_retorno
-		ENDIF 
-		
-	ELSE
-
-		IF TYPE("v_paramRepo") = "C"
-		*** Si el paràmetro es un CARACTER, se corresponde con el nombre del formulario y metodo
-
-			vconeccion=abreycierracon(0,_SYSSCHEMA)	
 
 			sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet from comprorepo co "
 			sqlmatriz(2)=" left join reportesimp r on co.idreporte = r.idreporte "
-			sqlmatriz(3)=" where  co.predeterminado = 'S' and co.codigoImpre= '"+ALLTRIM(v_paramRepo)+"'"
-			
+			sqlmatriz(3)=" where co.predeterminado = 'S' and co.idcomproba = "+ALLTRIM(STR(v_paramRepo))
 			verror=sqlrun(vconeccion,"repos_sql")
 			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Reportes ",0+48+0,"Error")
-    		    RETURN pvar_retorno
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades ",0+48+0,"Error")
+			    RETURN pvar_retorno
 			ENDIF 
+			
 		ELSE
-*!*				MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
-		    RETURN pvar_retorno
+			IF TYPE("v_paramRepo") = "C"
+			*** Si el paràmetro es un CARACTER, se corresponde con el nombre del formulario y metodo
 
+				sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet from comprorepo co "
+				sqlmatriz(2)=" left join reportesimp r on co.idreporte = r.idreporte "
+				sqlmatriz(3)=" where  co.predeterminado = 'S' and co.codigoImpre= '"+ALLTRIM(LOWER(v_paramRepo))+"'"
+				
+				verror=sqlrun(vconeccion,"repos_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Reportes ",0+48+0,"Error")
+	  				vconeccion=abreycierracon(vconeccion,"")	
+	  		    	RETURN pvar_retorno
+				ENDIF 
+			ELSE
+	*!*				MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
+			    	vconeccion=abreycierracon(vconeccion,"")	
+					RETURN pvar_retorno
+
+			ENDIF 
 		ENDIF 
-	ENDIF 
-
-****************************************
+		vconeccion=abreycierracon(vconeccion,"")	
+		
+	****************************************
 		SELECT repos_sql
 		GO TOP 
-		IF  EOF()
-*!*				MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
-			RETURN pvar_retorno
-		ELSE
-			v_cantRegistros = RECCOUNT()
-
-			IF v_cantRegistros = 1
-
-				 *** No tiene que seleccionar reportes, imprime con el que tiene predeterminado
-				pvar_retorno = ALLTRIM(STR(repos_sql.idreporte))+";" + ALLTRIM(repos_sql.nombre)
-			
-*!*					SELECT repos_sql
-*!*					USE IN repos_sql 
-			*thisform.cmdAceptar.Click
-			ELSE
-				IF v_cantRegistros > 1
-
-					DO FORM selectreporte WITH v_paramRepo TO  pvar_retorno					
-					
-				ELSE
-*!*						MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
+		IF  EOF() THEN 
+			IF MESSAGEBOX("NO EXISTE REPORTE ASIGNADO   "+CHR(13)+CHR(13)+"Seleccione Un Reporte para Asignar..."+CHR(13)+CHR(13)+ ;
+			"-- CLAVE:  "+LOWER(ALLTRIM(IIF(TYPE('v_paramRepo')='C',v_paramRepo,STR(v_paramRepo))))+" --" +CHR(13)+  ;
+			"-- TABLA:  "+LOWER(pvar_tablarepo)+" --"+CHR(13)+CHR(13)+ ;
+			"Desea Seleccionar Un Reporte ? " ;
+			,4+48+0,"Error al obtener el nombre del reporte") = 6 THEN 
+				
+				** Aqui LLamo a la funcion de Carga de Reportes para cargar uno nuevo 
+				** Si lo Ingresa continuo sino retorno	
+				v_cargarepo = 0 
+				v_cargarepo = CargaReporte(v_paramRepo)
+				
+				IF v_cargarepo = 0 THEN 
+					USE IN repos_sql 
+					RETURN pvar_retorno
+				ELSE 
+					v_itera = v_itera + 1
 				ENDIF 
-			ENDIF 
-			SELECT repos_sql
-			USE IN repos_sql 
+			ELSE 
+				v_itera = 2
+			ENDIF 	
+		ELSE 
+			v_itera = 2
 		ENDIF 
-	RETURN 	pvar_retorno 
+	ENDDO 
 	
+****************************************
+	SELECT repos_sql
+	GO TOP 
+	IF  EOF()
+			
+		RETURN pvar_retorno
+	ELSE
+		v_cantRegistros = RECCOUNT()
+
+		IF v_cantRegistros = 1
+
+			 *** No tiene que seleccionar reportes, imprime con el que tiene predeterminado
+			pvar_retorno = ALLTRIM(STR(repos_sql.idreporte))+";" + ALLTRIM(repos_sql.nombre)
+			
+		ELSE
+			IF v_cantRegistros > 1
+				DO FORM selectreporte WITH v_paramRepo TO  pvar_retorno					
+				
+			ELSE
+				MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
+			ENDIF 
+		ENDIF 
+		SELECT repos_sql
+		USE IN repos_sql 
+	ENDIF 
+	
+	RETURN 	pvar_retorno 
 ENDFUNC 
+
+
+* Incerta un Reporte en la tabla reportesimp y agrega una relacion en comprorepo
+* Se utiliza cuando no existe el reporte que el usuario quiere incertar
+* retorna el idreporte si lo pudo insertar, sino devuelve 0
+
+FUNCTION CargaReporte
+PARAMETERS pr_claverepo
+
+	** Primero pido e incerto el reporte en la tabla reportesimp **
+	** cargo el reporte si no existe ** 
+	** si existe solo voy a asociar la nueva clave al reporte existente **
+	v_idcomproreret = 0
+	v_idreporteins = 0 
+
+	v_defa = SYS(5)+'\' 
+	SET DEFAULT TO &v_defa
+
+	v_reportepath = ALLTRIM(GETFILE("rpt","Reporte","Seleccionar",0,"Reportes Sistema"))
+
+	IF EMPTY(v_reportepath) THEN 
+		SET DEFAULT TO &_SYSESTACION 
+		RETURN v_idcomproreret 
+	ENDIF 
+	IF !FILE(v_reportepath) THEN 
+		MESSAGEBOX("El archivo Seleccionado no es Válido o no Existe ",0+16,"Advertencia")
+		SET DEFAULT TO &_SYSESTACION 
+		RETURN v_idcomproreret 
+	ENDIF 
+
+	v_nombrerepo = STRTRAN(LOWER(JUSTFNAME(v_reportepath)),' ','_')
+	v_pathrepo	= JUSTPATH(v_reportepath)
+	SET DEFAULT TO &_SYSESTACION 
+
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="Select idreportea, idreporte, nombre from reportesimp where nombre='"+v_nombrerepo+"'"  
+	verror=sqlrun(vconeccionF,"existerepo_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Tipos de Comprobantes ",0+48+0,"Error")
+	ENDIF 
+	SELECT existerepo_sql 
+	IF EOF() THEN 
+
+		ADIR (arrayreportes,v_reportepath)
+		v_fechahora = DTOS(arrayreportes(1,3))+'-'+ALLTRIM(arrayreportes(1,4))
+		v_tamanio	= arrayreportes(1,2)
+		IF !EMPTY(v_reportepath) THEN 
+			v_reporte_ins = STRCONV(FILETOSTR(v_reportepath),13)
+		ELSE
+			v_reporte_ins = ""
+		ENDIF 
+
+		sqlmatriz(1)="Select MAX(idreportea) as maxidra, MAX(idreporte) as maxidr from reportesimp "  
+		verror=sqlrun(vconeccionF,"maximosid_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Tipos de Comprobantes ",0+48+0,"Error")
+		ENDIF 
+		max_idreporte  = maximosid_sql.maxidr + 1
+		max_idreportea = maximosid_sql.maxidra + 1
+		USE IN maximosid_sql 
+		
+		verror=SQLEXEC(vconeccionF," insert into reportesimp (idreportea, idreporte, nombre, descripcion, fechahora, tamanio, reporte ) "+ ;
+									" values ("+alltrim(STR(max_idreportea))+","+alltrim(str(max_idreporte))+",'"+alltrim(v_nombrerepo)+"',"+"'','"+alltrim(v_fechahora)+"',"+alltrim(STR(v_tamanio))+",'"+v_reporte_ins+"')" ;
+									,"reporte_in")
+		IF verror < 0
+			MESSAGEBOX("No se puede incertar el reporte Seleccionado ",0+16,"Advertencia")
+			SET DEFAULT TO &_SYSESTACION 
+			=abreycierracon(vconeccionF,"")	
+			RETURN v_idcomproreret 
+		ENDIF 
+
+		v_idreporteins = max_idreporte
+				
+	ELSE && el reporte ya existe, solo recupero el idreporte
+		v_idreporteins = existerepo_sql.idreporte 
+	ENDIF 
+	USE IN existerepo_sql	
+
+	**********************************************************************
+	**********************************************************************
+	** Si tengo idreporte para insertar creo el registro con la clave asociada
+	** al idreporte obtenida
+	**********************************************************************
+
+	IF v_idreporteins > 0 THEN 
+
+		IF TYPE("pr_claverepo")='C' THEN 
+			v_idcomproba = 0	
+			v_codigoimpre = LOWER(ALLTRIM(pr_claverepo))
+		ELSE
+			v_idcomproba = pr_claverepo	
+			v_codigoimpre = ""
+		ENDIF 
+		v_idreporte  = v_idreporteins 
+		v_predeterminado = 'S'
+
+		DIMENSION lamatriz(5,2)
+
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		lamatriz(1,1) = 'idcomprore'
+		lamatriz(1,2) = '0'
+		lamatriz(2,1) = 'idcomproba'
+		lamatriz(2,2) = ALLTRIM(STR(v_idcomproba))
+		lamatriz(3,1) = 'codigoimpre'
+		lamatriz(3,2) = "'"+ALLTRIM(v_codigoimpre)+"'"
+		lamatriz(4,1) = 'idreporte'
+		lamatriz(4,2) = ALLTRIM(STR(v_idreporte))
+		lamatriz(5,1) = 'predeterminado'
+		lamatriz(5,2) = "'S'"
+
+		p_tabla     = 'comprorepo'
+		p_matriz    = 'lamatriz'
+		p_conexion  = vconeccionF
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" del Comprobante y Reporte ",0+48+0,"Error")
+		ENDIF 
+
+		sqlmatriz(1)=" select last_insert_id() as maxid "
+		verror=sqlrun(vconeccionF,"ultimoId")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+			=abreycierracon(vconeccionF,"")	
+		    RETURN v_idcomproreret
+		ENDIF 
+		SELECT ultimoId
+		GO TOP 
+		v_idcompro_Ultimo = VAL(ultimoId.maxid)
+		USE IN ultimoId
+
+		v_idcomproreret = v_idcompro_Ultimo
+		
+	ENDIF 
+
+	=abreycierracon(vconeccionF,"")	
+
+	RETURN v_idcomproreret 
+
+ENDFUNC 
+
+
+
+
+
 
 
 *** FUNCION PARA LA OBTENCION DE UNA TABLA O CURSOR CON TODOS LOS ELEMENTOS 
