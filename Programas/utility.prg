@@ -1545,7 +1545,7 @@ PARAMETERS p_idcomprobante
 		v_ubicacionXML = armarComprobanteXML(v_idcomprobante)
 			
 	*** Mando a autorizar el comprobante pasandole la ubicación del archivo  y el ID ***
-	
+	MESSAGEBOX(v_ubicacionXML)
 		v_respuesta = objModuloAFIP.AutorizarComp(v_ubicacionXML,v_idComprobante)
 			
 				
@@ -3132,10 +3132,6 @@ PARAMETERS pr_claverepo
 	RETURN v_idcomproreret 
 
 ENDFUNC 
-
-
-
-
 
 
 
@@ -6903,7 +6899,6 @@ FUNCTION estadoReclamoPorSector
 	
 ENDFUNC 	
 	
-
 FUNCTION CopiarClip
 	PARAMETERS p_csv 
 	
@@ -6980,6 +6975,8 @@ FUNCTION CopiarClip
 	
 	RETURN 
 ENDFUNC 
+
+
 
 
 
@@ -7445,7 +7442,7 @@ PARAMETERS p_idFactura
 			
 
 
-			sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
+			sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov, tc.idtipocompro as idtipocomp from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
 			sqlmatriz(2)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom "
 			sqlmatriz(3)=" left join puntosventa p on f.pventa = p.pventa "
 			sqlmatriz(4)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
@@ -7504,12 +7501,163 @@ PARAMETERS p_idFactura
 			v_ret = CURSORTOXML("tablaFactura",v_nombreArchivo,1,512)
 			
 			IF v_ret > 0
-			v_ubicacionXML = v_nombreArchivo
+				v_ubicacionXML = v_nombreArchivo
 			ELSE
-			v_ubicacionXML = ""
+				v_ubicacionXML = ""
+				RETURN 
+	
+			ENDIF 
+	
+	
+			*** BUSCO COMPROBANTE ASOCIADO PARA NOTA DE CREDITO O NOTA DE DEBITO ***
+			
+			SELECT tablaFactura
+			GO TOP 
+			
+			v_idtipocomp = tablaFactura.idtipocomp
+			v_idcomproba = tablaFactura.idcomproba
+			
+
+			tipoCompObj 	= CREATEOBJECT('tiposcomproclass')
+			
+			v_ubicacionXMLAso	= ""
+			
+			DO CASE 
+				** COMPROBANTES 'A' **	
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO A")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO A")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
+				** COMPROBANTES 'B' **	
+				
+					
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO B")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)						
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO B")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)							
+				** COMPROBANTES 'C' **	
+
+				
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO C")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)										
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO C")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)							
+
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO A MiPyMEs")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
+				
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO A MiPyMEs")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
+					
+				** COMPROBANTES 'B' **	
+
+
+				
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO B MiPyMEs")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)						
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO B MiPyMEs")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)							
+				** COMPROBANTES 'C' **	
+
+
+				
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO C MiPyMEs")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
+				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO C MiPyMEs")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)						
+			ENDCASE 
+			
+			IF EMPTY(v_ubicacionXMLAso) = .F.
+				v_ubicacionXML = ALLTRIM(v_ubicacionXML)+";"+ALLTRIM(v_ubicacionXMLAso)
 			ENDIF 
 			
+			
+			
+			
 			RETURN v_ubicacionXML 
+			
+ENDFUNC 
+
+
+
+
+*** Función que los comprobantes asociados en un archivo XML**
+* Busca en la Base de Datos los datos del comprobante asociados al comprobate de la tabla Facturas cuyo ID es pasado como parámetro, 
+* Utiliza la función CURSORTOXML, el formato del nombre xml es: 'asociados_factura_<idFactura>', donde <idFactura> es el ID en la tabla facturas
+** Recibe como parámetro el IDFactura
+
+FUNCTION armarCompAsociadosFacXML
+PARAMETERS p_idregistro,p_idcomproba
+
+
+	v_servicioCargado = .F.
+	v_compCargado = .F.
+	v_ubicacionXMLA = ""
+
+			v_idfactura = p_idFactura
+			
+			**** CARGA COMPROBANTE ***
+
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+			
+
+
+			sqlmatriz(1)=" Select f.*, a.codigo as codAfip, p.puntov, tc.idtipocompro as idtipocomp  "
+			sqlmatriz(2)=" from linkcompro l left join facturas f on l.idcomprobaB = f.idcomproba and l.idregistroB = f.idfactura left join comprobantes c on f.idcomproba = c.idcomproba "
+			sqlmatriz(3)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom left join puntosventa p on f.pventa = p.pventa "
+			sqlmatriz(4)=" where l.idregistroa = "+ ALLTRIM(STR(v_idfactura))+" and l.idcomprobaa = "+ALLTRIM(STR(p_idcomproba))
+
+			verror=sqlrun(vconeccionF,"factuA_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la factura a cargar ",0+48+0,"Error")
+			    *thisform.comprobantecargado = .f.
+			    v_compCargado = .F.
+			ENDIF 
+			SELECT FactuA_sql
+			GO TOP 
+						
+			SELECT f.*,f.cuit as nrodoccli, f.neto as netocomp ;
+			FROM factuA_sql f INTO TABLE tablaAsoFac
+
+			SELECT tablaAsoFac
+			GO TOP 
+
+*!*				ALTER table tablafactura add COLUMN opexento Y 
+*!*				ALTER table tablafactura ADD COLUMN idmoneda C(3)
+*!*				ALTER table tablafactura ADD COLUMN cotmoneda Y
+*!*				ALTER table tablafactura ADD COLUMN concepto I
+*!*				ALTER table tablafactura ADD COLUMN resultado C(1)
+*!*				ALTER table tablafactura ADD COLUMN observa C(254)
+*!*				ALTER table tablafactura ADD COLUMN errores C(254)
+
+			
+
+			
+			SELECT tablaAsoFac
+			GO TOP 
+
+		
+			
+*!*				cursoraxml("facimp")
+			v_nombreArchivoA = _SYSESTACION+"\"+"asociados_factura_"+ALLTRIM(STR(v_idfactura))+".xml"
+
+		
+			v_ret = CURSORTOXML("tablaAsoFac",v_nombreArchivoA,1,512)
+			
+			IF v_ret > 0
+				v_ubicacionXMLA = v_nombreArchivoA 
+			ELSE
+				v_ubicacionXMLA = ""
+				RETURN 
+	
+			ENDIF 
+	
+	
+			
+			
+			
+			
+			RETURN v_ubicacionXMLA 
 			
 ENDFUNC 
 
