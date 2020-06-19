@@ -1666,7 +1666,7 @@ PARAMETERS p_idcomprobante
 					** Actualizo el maximo numero de comprobante en compactiv
 					IF v_idcomproba > 0 AND v_pventa > 0
 						p_tipoope     = 'U'
-						p_condicion   = " idcomproba = "+ ALLTRIM(STR(v_idcomproba)) +" and pventa = "+ALLTRIM(STR(v_pventa)) 
+						p_condicion   = " idcomproba = "+ ALLTRIM(STR(v_idcomproba)) +" and pventa = "+ALLTRIM(STR(v_pventa))+" and "+ALLTRIM(STR(v_numerofe))+" > maxnumero "
 						v_titulo      = " LA MODIFICACIÓN "
 						
 							DIMENSION lamatriz(1,2)
