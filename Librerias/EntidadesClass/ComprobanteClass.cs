@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace EntidadesClass
 {
@@ -36,9 +37,11 @@ namespace EntidadesClass
         private int _concepto;
         private string _cae;
         private string _fechaVtoCae;
+        private List<CompAsociadoClass> _listaCompAsociados;
         private List<string> _erroresAFIP;
         private List<string> _eventosAFIP;
         private List<string> _observacionesAFIP;
+
 
 
         /// <summary>
@@ -260,6 +263,14 @@ namespace EntidadesClass
             set { _fechaVtoCae = value; }
         }
 
+
+        /// <summary>
+        /// Retorna la lista de comprobantes asociados 
+        /// </summary>
+        public List<CompAsociadoClass> ListaCompAsociados
+        {
+            get { return _listaCompAsociados; }
+        }
         /// <summary>
         /// Retorna la lista de Errores AFIP
         /// </summary>
@@ -370,6 +381,7 @@ namespace EntidadesClass
             _concepto = 0;
             _cae = "";
             _fechaVtoCae = "";
+            _listaCompAsociados = new List<CompAsociadoClass>();
             _erroresAFIP = new List<string>();
             _eventosAFIP = new List<string>();
             _observacionesAFIP = new List<string>();
@@ -577,6 +589,69 @@ namespace EntidadesClass
 
 
             return retorno;
+        }
+
+        public List<string> CargarCompAsociados(string ubicacionAso,string cuitEmisor)
+        {
+
+            List<string> retorno = new List<string>();
+
+            try
+            {
+                if (ubicacionAso == null || ubicacionAso.Length == 0) // Nombre del Archivo de configuración incorrecto
+                {
+                  
+                   retorno.Add("El nombre del Archivo de configuración es incorrecto");
+                    retorno = null;
+                }
+                else
+                {
+
+                 
+
+
+                    XmlDocument compXML = new XmlDocument();
+
+                    compXML.Load(ubicacionAso);
+
+
+
+                    // Cargo la lista de nodos del XML, cada nodo de la lista es un registro en la tabla de facturas de donde proviene el archivo xml
+                    XmlNodeList listaNodosXml = compXML.SelectNodes("//tablaasofac");
+                    int cantNodos = listaNodosXml.Count;
+
+
+                    //Cargo los datos del comprobanteAsociado desde el archivo XML
+                    for (int i = 0; i < cantNodos; i++)
+                    {
+                       
+                        CompAsociadoClass compAsociado = new CompAsociadoClass();
+
+                        XmlNode nodo = listaNodosXml.Item(i);
+
+
+                        compAsociado.IDComprobante = Int32.Parse(compXML.SelectSingleNode("//idfactura").InnerText);
+                        compAsociado.PtoVta = Int32.Parse(compXML.SelectSingleNode("//puntov").InnerText);
+                        compAsociado.NroComprobante = Int32.Parse(compXML.SelectSingleNode("//numero").InnerText);
+                        compAsociado.TipoComprobante = Int32.Parse(compXML.SelectSingleNode("//codafip").InnerText);
+                        compAsociado.FechaComprobante = compXML.SelectSingleNode("//fecha").InnerText;
+                        // compAsociado.CuitEmisor = compXML.SelectSingleNode("//cuitemisor").InnerText;
+                        compAsociado.CuitEmisor = cuitEmisor;
+
+
+                        _listaCompAsociados.Add(compAsociado);
+                    }
+
+                }
+            }
+            catch (Exception e)
+            {
+
+                string mensaje = "Ocurrio un error: " + e.Message;
+                throw new Exception(mensaje);
+            }
+            return retorno;
+
         }
         #endregion
 

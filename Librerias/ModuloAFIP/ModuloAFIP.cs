@@ -346,7 +346,7 @@ namespace ModuloAFIP
         /// <param name="ubicacionComp">Ubicación del archivo XML con información del comprobante a cargar</param>
         /// <param name="idregistro">IdRegistro del comprobante que se va a cargar, éste parámetro es para corroborar que se esté cargando el comprobante del ID pasado</param>
         /// <returns>Retorna el comprobante, Null en caso de que ocurra un error</returns>
-        private ComprobanteClass CargaComprobante(string ubicacionComp, int idregistro)
+        private ComprobanteClass CargaComprobante(string ubicacionCompAso, int idregistro,string cuitEmisor)
         {
             ComprobanteClass retorno;
             _observaciones = new List<string>();
@@ -355,7 +355,7 @@ namespace ModuloAFIP
 
             try
             {
-                if (ubicacionComp == null || ubicacionComp.Length == 0) // Nombre del Archivo de configuración incorrecto
+                if (ubicacionCompAso == null || ubicacionCompAso.Length == 0) // Nombre del Archivo de configuración incorrecto
                 {
                     _error = true;
                     _errores.Add("El nombre del Archivo de configuración es incorrecto");
@@ -364,13 +364,42 @@ namespace ModuloAFIP
                 else
                 {
 
+                    string[] ubicaciones = ubicacionCompAso.Split(';');
+
+
+                    string ubicacionComp = "";
+                    string ubicacionAso = "";
+
+                    int cantUbi = ubicaciones.Length;
+
+                    switch (cantUbi)
+                    {
+
+                        case 1:
+                            ubicacionComp = ubicaciones[0];
+                            ubicacionAso = "";
+                            break;
+                        case 2:
+                            ubicacionComp = ubicaciones[0];
+                            ubicacionAso = ubicaciones[1];
+                            break;
+                        default:
+
+
+                            _error = true;
+                            _errores.Add("El ID del registro pasado como parámetro no coincide con el ID registro del archivo XML");
+                            return null;
+                            break;
+                    }
+
+
                     XmlDocument compXML = new XmlDocument();
-
+                  
                     compXML.Load(ubicacionComp);
-
+                    
                     //Cargo los datos del comprobante desde el archivo XML
                     ComprobanteClass comprobante = new ComprobanteClass();
-
+                   
                     comprobante.IDComprobante = Int32.Parse(compXML.SelectSingleNode("//idfactura").InnerText);
 
                     if (comprobante.IDComprobante != idregistro)
@@ -379,6 +408,7 @@ namespace ModuloAFIP
                         _errores.Add("El ID del registro pasado como parámetro no coincide con el ID registro del archivo XML");
                         return null;
                     }
+               
                     comprobante.PtoVta = Int32.Parse(compXML.SelectSingleNode("//puntov").InnerText);
                     comprobante.NroComprobante = Int32.Parse(compXML.SelectSingleNode("//numero").InnerText);
                     comprobante.TipoComprobante = Int32.Parse(compXML.SelectSingleNode("//codafip").InnerText);
@@ -386,7 +416,7 @@ namespace ModuloAFIP
                     comprobante.DocTipoCliente = Int32.Parse(compXML.SelectSingleNode("//tipodoc").InnerText);
                     comprobante.NroDocCliente = compXML.SelectSingleNode("//nrodoccli").InnerText;
                     comprobante.ImporteNeto = Double.Parse((compXML.SelectSingleNode("//netocomp").InnerText).Replace('.', ','));
-
+                 
                     List<AlicuotaIvaClass> listaIva = new List<AlicuotaIvaClass>();
                     List<TributoComprobanteClass> listaTributo = new List<TributoComprobanteClass>();
 
@@ -397,7 +427,6 @@ namespace ModuloAFIP
                     // Cargo la lista de nodos del XML, cada nodo de la lista es un registro en la tabla de facturas de donde proviene el archivo xml
                     XmlNodeList listaNodosXml = compXML.SelectNodes("//tablafactura");
                     int cantNodos = listaNodosXml.Count;
-
 
 
                     for (int i = 0; i < cantNodos; i++)
@@ -446,15 +475,37 @@ namespace ModuloAFIP
 
 
                     }
-
+                  
                     comprobante.ImporteOpEx = Double.Parse((compXML.SelectSingleNode("//opexento").InnerText).Replace('.', ','));
                     comprobante.ImporteTributo = totalTributo;
                     comprobante.ImporteIva = totalIVA;
                     comprobante.ImporteTotal = Double.Parse((compXML.SelectSingleNode("//total").InnerText).Replace('.', ','));
                     comprobante.IDMoneda = compXML.SelectSingleNode("//idmoneda").InnerText;
+              
                     comprobante.CotizacionMoneda = Double.Parse((compXML.SelectSingleNode("//cotmoneda").InnerText).Replace('.', ','));
                     comprobante.Concepto = Int32.Parse(compXML.SelectSingleNode("//concepto").InnerText);
                     comprobante.Resultado = compXML.SelectSingleNode("//resultado").InnerText;
+            
+
+                    if (ubicacionAso != "")
+                    {
+                        List<string> listaRetorno = comprobante.CargarCompAsociados(ubicacionAso, cuitEmisor);
+
+                        if (listaRetorno != null)
+                        {
+
+                            foreach (string cad in listaRetorno)
+                            {
+                                _error = true;
+                                _errores.Add(cad);
+                                UtilClass.EscribirArchivoLog(cad, _strLog);
+                            }
+
+
+                        }
+                    }
+                   
+
 
                     retorno = comprobante;
                 }
@@ -741,10 +792,10 @@ namespace ModuloAFIP
         /// <summary>
         /// Autoriza el comprobante cuyos datos están en un xml ubicado en 'ubicadoComp' con el ID pasado como parámetro
         /// </summary>
-        /// <param name="ubicacionComp">Ubicación del archivo XML con información del comprobante a autorizar</param>
+        /// <param name="ubicacionComp">Ubicación del archivo XML con información del comprobante a autorizar y ubicacion del archivo con comprobantes asociados en caso que tenga</param>
         /// <param name="idRegistro">ID del registro a autorizar, debe coincidir con el ID registrado en el XML</param>
         /// <returns>Retorna True si no se generaron errores propios del modulo</returns>
-        public bool AutorizarComp(string ubicacionComp, int idRegistro)
+        public bool AutorizarComp(string ubicacionCompAso, int idRegistro)
         {
             bool retorno;
             _observaciones = new List<string>();
@@ -752,7 +803,7 @@ namespace ModuloAFIP
             _errores = new List<string>();
             try
             {
-                if (ubicacionComp == null || ubicacionComp.Length == 0) // Nombre del Archivo de configuración incorrecto
+                if (ubicacionCompAso == null || ubicacionCompAso.Length == 0) // Nombre del Archivo de configuración incorrecto
                 {
                     _error = true;
                     string mensaje = "El nombre del Archivo de configuración es incorrecto";
@@ -762,8 +813,11 @@ namespace ModuloAFIP
                 }
                 else
                 {
-                 
-                    ComprobanteClass comprobante = CargaComprobante(ubicacionComp, idRegistro);
+                   
+
+
+
+                    ComprobanteClass comprobante = CargaComprobante(ubicacionCompAso, idRegistro,_strCuit);
 
                     if (comprobante != null)
                     {
@@ -777,6 +831,34 @@ namespace ModuloAFIP
                                                       
                             try
                             {
+
+                                string[] ubicaciones = ubicacionCompAso.Split(';');
+
+
+                                string ubicacionComp = "";
+                                string ubicacionAso = "";
+
+                                int cantUbi = ubicaciones.Length;
+                                
+                                switch (cantUbi)
+                                {
+
+                                    case 1:
+                                        ubicacionComp = ubicaciones[0];
+                                        ubicacionAso = "";
+                                        break;
+                                    case 2:
+                                        ubicacionComp = ubicaciones[0];
+                                        ubicacionAso = ubicaciones[1];
+                                        break;
+                                    default:
+
+
+                                        _error = true;
+                                        _errores.Add("El ID del registro pasado como parámetro no coincide con el ID registro del archivo XML");
+                                        return false;
+                                        break;
+                                }
 
                                 if (ubicacionComp == null || ubicacionComp.Length == 0)
                                 {

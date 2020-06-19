@@ -818,6 +818,34 @@ namespace ModuloAFIP
                    
                 }
 
+                // Agrego comprobantes asociados
+                if (comprobante.ListaCompAsociados.Count > 0)
+                {
+                    List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.CbteAsoc> listaCompAso = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.CbteAsoc>();
+                    ClienteLoginCms_CS.ar.gov.afip.wswhomo.CbteAsoc compAso = null;
+                    foreach (CompAsociadoClass c in comprobante.ListaCompAsociados)
+                    {
+                        compAso = new ClienteLoginCms_CS.ar.gov.afip.wswhomo.CbteAsoc();
+
+                        compAso.Nro = c.NroComprobante;
+                        compAso.PtoVta = c.PtoVta;
+                        compAso.Tipo = c.TipoComprobante;
+                        
+
+                        if (compAso.Nro > 0 && compAso.PtoVta > 0 && compAso.Tipo > 0)
+                        {
+                            listaCompAso.Add(compAso);
+                        }
+                       
+
+                    }
+
+                    ClienteLoginCms_CS.ar.gov.afip.wswhomo.CbteAsoc[] arrayCompAso = listaCompAso.ToArray();
+
+                    detReq.CbtesAsoc = arrayCompAso;
+              
+                }
+
                 List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest> listaDetalle = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest>();
 
                 listaDetalle.Add(detReq);
@@ -1021,6 +1049,36 @@ namespace ModuloAFIP
                    
 
                 }
+
+
+                // Agrego comprobantes asociados
+                if (comprobante.ListaCompAsociados.Count > 0)
+                {
+                    List<ClienteLoginCms_CS.ar.gov.afip.servicios1.CbteAsoc> listaCompAso = new List<ClienteLoginCms_CS.ar.gov.afip.servicios1.CbteAsoc>();
+                    ClienteLoginCms_CS.ar.gov.afip.servicios1.CbteAsoc compAso = null;
+                    foreach (CompAsociadoClass c in comprobante.ListaCompAsociados)
+                    {
+                        compAso = new ClienteLoginCms_CS.ar.gov.afip.servicios1.CbteAsoc();
+
+                        compAso.Nro = c.NroComprobante;
+                        compAso.PtoVta = c.PtoVta;
+                        compAso.Tipo = c.TipoComprobante;
+
+
+                        if (compAso.Nro > 0 && compAso.PtoVta > 0 && compAso.Tipo > 0)
+                        {
+                            listaCompAso.Add(compAso);
+                        }
+
+
+                    }
+
+                    ClienteLoginCms_CS.ar.gov.afip.servicios1.CbteAsoc[] arrayCompAso = listaCompAso.ToArray();
+
+                    detReq.CbtesAsoc = arrayCompAso;
+
+                }
+
 
                 List<ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAEDetRequest> listaDetalle = new List<ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAEDetRequest>();
 

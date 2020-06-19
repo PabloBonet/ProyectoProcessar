@@ -19,3 +19,4 @@ C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ModuloAFIP\obj\Re
 C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ModuloAFIP\obj\Release\ModuloAFIP.csproj.CopyComplete
 C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ModuloAFIP\obj\Release\ModuloAFIP.dll
 C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ModuloAFIP\obj\Release\ModuloAFIP.pdb
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ModuloAFIP\bin\Release\ModuloAFIP.tlb
