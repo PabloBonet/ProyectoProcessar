@@ -1431,15 +1431,19 @@ PARAMETERS p_idcomprobante
 	
 	vconeccion=abreycierracon(0,_SYSSCHEMA)	
 		
-		sqlmatriz(1)="Select * from facturasfe "
-		sqlmatriz(2)=" where idfactura = "+ ALLTRIM(STR(v_idcomprobante))
+		sqlmatriz(1)="Select f.* from facturasfe f  "
+		sqlmatriz(2)=" where f.idfactura = "+ ALLTRIM(STR(v_idcomprobante))
 
 		verror=sqlrun(vconeccion,"factufe_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la facturasFE",0+48+0,"Error")
 		    v_autorizar = .F.
+		    RETURN 
 		ELSE
-		
+			v_idcomproba = 0
+			v_pventa	= 0
+			
+			
 			SELECT factufe_sql
 			GO TOP 
 			
@@ -1543,9 +1547,9 @@ PARAMETERS p_idcomprobante
 	*** Armo el archivo XML para mandarlo a autorizar ***
 
 		v_ubicacionXML = armarComprobanteXML(v_idcomprobante)
-			
+
 	*** Mando a autorizar el comprobante pasandole la ubicación del archivo  y el ID ***
-	MESSAGEBOX(v_ubicacionXML)
+
 		v_respuesta = objModuloAFIP.AutorizarComp(v_ubicacionXML,v_idComprobante)
 			
 				
@@ -1556,7 +1560,10 @@ PARAMETERS p_idcomprobante
 		ENDIF 
 	
 		IF v_respuesta = .T. && Hubo respuesta del objeto que maneja el Módulo de AFIP, sin errores
-			XMLTOCURSOR(v_ubicacionXML,"respuestaComp",512)
+		
+			vcan_ubica=alines(arreglo,v_ubicacionXML, ";")
+			v_ubicacionCompXML = arreglo(1)
+			XMLTOCURSOR(v_ubicacionCompXML,"respuestaComp",512)
 
 			SELECT respuestaComp
 			GO TOP 
@@ -1573,6 +1580,8 @@ PARAMETERS p_idcomprobante
 				v_idfactura = respuestaComp.idfactura
 				v_fecha		= ALLTRIM(STR(respuestaComp.fecha))
 				v_resultado	= respuestaComp.resultado
+				v_idcomproba= respuestaComp.idcomproba
+				v_pventa	= respuestaComp.pventa
 				
 				IF ALLTRIM(v_resultado) == "A"
 					v_caecesp	= ALLTRIM(STR(respuestaComp.cespcae,14,0))
@@ -1651,6 +1660,32 @@ PARAMETERS p_idcomprobante
 					ENDIF	
 					
 					registrarEstado("facturas","idfactura",v_idfactura,'I',"AUTORIZADO")
+					
+		
+					
+					** Actualizo el maximo numero de comprobante en compactiv
+					IF v_idcomproba > 0 AND v_pventa > 0
+						p_tipoope     = 'U'
+						p_condicion   = " idcomproba = "+ ALLTRIM(STR(v_idcomproba)) +" and pventa = "+ALLTRIM(STR(v_pventa)) 
+						v_titulo      = " LA MODIFICACIÓN "
+						
+							DIMENSION lamatriz(1,2)
+					
+						lamatriz(1,1)='maxnumero'
+						lamatriz(1,2)=ALLTRIM(STR(v_numerofe))
+								
+
+						
+						p_tabla     = 'compactiv'
+						p_matriz    = 'lamatriz'
+						vconeccionp=abreycierracon(0,_SYSSCHEMA)
+						p_conexion  = vconeccionp
+						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+						ENDIF
+					ENDIF 
+						
+					
 					
 				ELSE
 					registrarEstado("facturas","idfactura",v_idfactura,'I',"RECHAZADO")
@@ -7521,58 +7556,61 @@ PARAMETERS p_idFactura
 			tipoCompObj 	= CREATEOBJECT('tiposcomproclass')
 			
 			v_ubicacionXMLAso	= ""
+
 			
 			DO CASE 
 				** COMPROBANTES 'A' **	
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO A")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO A")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO A")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO A")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
 				** COMPROBANTES 'B' **	
 				
 					
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO B")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO B")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)						
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO B")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO B")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)							
 				** COMPROBANTES 'C' **	
 
 				
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO C")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO C")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)										
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO C")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO C")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)							
 
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO A MiPyMEs")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO A MiPyMEs")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
 				
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO A MiPyMEs")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO A MiPyMEs")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
 					
 				** COMPROBANTES 'B' **	
 
 
 				
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO B MiPyMEs")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO B MiPyMEs")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)						
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO B MiPyMEs")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO B MiPyMEs")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)							
 				** COMPROBANTES 'C' **	
 
 
 				
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO C MiPyMEs")
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO C MiPyMEs")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
-				CASE v_idtipocomp = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO C MiPyMEs")
-					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)						
+				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO C MiPyMEs")
+					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)
+				
+										
 			ENDCASE 
+
 			
 			IF EMPTY(v_ubicacionXMLAso) = .F.
 				v_ubicacionXML = ALLTRIM(v_ubicacionXML)+";"+ALLTRIM(v_ubicacionXMLAso)
 			ENDIF 
 			
-			
-			
+	
 			
 			RETURN v_ubicacionXML 
 			
