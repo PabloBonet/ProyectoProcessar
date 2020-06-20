@@ -1,0 +1,1070 @@
+** Procedimientos y Funciones para Emision de Facturas Batch **
+
+*/ Generacion de Facturas para un Período determinado
+*/ Recibe como parametro el período para el cual se debe generar la Facturación 
+*/ Obtiene los datos del servicio a facturar y los vencimientos del registro en "factulotes"
+*/ Las entidades que deben facturarse se encuentran en "factulotese"
+
+FUNCTION GenerarFacturas
+PARAMETERS par_idperiodo
+	WAIT WINDOWS "Generando Facturación, Aguarde... " NOWAIT 
+
+	vartmp = frandom()
+	var_retorno = 0
+
+
+	*/***********************
+	*/Obtengo las Listas de Precios de Artículos
+	*/
+	vlistaspre = 'listaspre'+vartmp  
+	=GetListasPrecios(vlistaspre)
+	vlistasprea = vlistaspre+'a'
+	vlistaspreb = vlistaspre+'b'
+	SELECT &vlistasprea
+	INDEX ON STR(idlista)+'|'+ALLTRIM(articulo) TAG idlarti
+	SELECT &vlistaspreb
+
+	 vconeFacturar=abreycierracon(0,_SYSSCHEMA)	
+
+	** Elimino las facturas temporarias del lote antes de generar nuevamente
+	** 
+	sqlmatriz(1)="delete from  facturasimptmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(par_idperiodo)+" )"
+	verror=sqlrun(vconeFacturar,"elim_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Conceptos para Facturar ",0+48+0,"Error")
+	ENDIF 
+	
+	sqlmatriz(1)="delete from  detafactutmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(par_idperiodo)+" )"
+	verror=sqlrun(vconeFacturar,"elim_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Conceptos para Facturar ",0+48+0,"Error")
+	ENDIF 
+
+	sqlmatriz(1)="delete from  facturastmp where idperiodo = "+STR(par_idperiodo)
+	verror=sqlrun(vconeFacturar,"elim_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Conceptos para Facturar ",0+48+0,"Error")
+	ENDIF 
+	*******************************************************************************	
+
+	*/*************
+	* Comienzo la generacion buscando el lote a facturar y sus clientes
+	*/
+	sqlmatriz(1)="Select * from conceptoser "
+	verror=sqlrun(vconeFacturar,"conceptoser_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Conceptos para Facturar ",0+48+0,"Error")
+	ENDIF 
+	vconceptoser_sql= 'conceptoser_sql'+vartmp
+	SELECT &vconceptoser_sql
+	GO TOP 
+	IF EOF() THEN  
+		MESSAGEBOX("No se han Encontrado Conceptos para Facturación...",0+16," Generación de Facturas ")
+		=abreycierracon(vconeFacturar,"")
+		RETURN var_retorno 
+	ENDIF 
+
+
+	*/*************
+	* Buscar Impuestos de Artículos y Conceptos y guardarlos en una sola tabla 
+	*/
+	sqlmatriz(1)="Select a.articulo, 00000 as idconcepto , i.* from articulosimp a left join impuestos i on a.impuesto = i.impuesto union "
+	sqlmatriz(2)="select '                              ' as articulo, c.idconcepto, p.* from conceptoimpu c left join impuestos p on p.impuesto = c.impuesto"
+	verror=sqlrun(vconeFacturar,"impuestosac_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Impuestos para Artículos ",0+48+0,"Error")
+	ENDIF 
+	vimpuestosac_sql= 'impuestosac_sql'+vartmp
+	vimpuestosac = 'impuestosac'+vartmp
+	SELECT &vimpuestosac_sql
+	GO TOP 
+	IF EOF() THEN  
+		MESSAGEBOX("No se han Encontrado Conceptos para Facturación...",0+16," Generación de Facturas ")
+		=abreycierracon(vconeFacturar,"")
+		RETURN var_retorno 
+	ENDIF 
+	SELECT * FROM  &vimpuestosac_sql INTO TABLE &vimpuestosac
+	ALTER table &vimpuestosac alter COLUMN idconcepto n(10)
+	
+
+	*/*************
+	* Comienzo la generacion buscando el lote a facturar y sus clientes
+	*/
+	sqlmatriz(1)="Select * from factulotes where idperiodo = "+STR(par_idperiodo)
+	verror=sqlrun(vconeFacturar,"factulotes_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Período a Facturar ",0+48+0,"Error")
+	ENDIF 
+	vfactulotes_sql= 'factulotes_sql'+vartmp
+	SELECT &vfactulotes_sql
+	GO TOP 
+	IF EOF() THEN  
+		MESSAGEBOX("No se ha Grabado el Período para el cual se desea Generar la Facturacion...",0+16," Generación de Facturas ")
+		=abreycierracon(vconeFacturar,"")
+		RETURN var_retorno 
+	ENDIF 
+
+
+	*/*************
+	* Busco los comprobantes y puntos de ventas que se utilizaran segun el servicio y la condicion de IVA 
+	*/ de la entidad 
+	
+	sqlmatriz(1)=" Select s.*, c.tipo, p.maxnumero, p.puntov  from compiservi s left join comprobantes c on s.idcomproba = c.idcomproba "
+	sqlmatriz(2)=" left join compactiv p on ( p.pventa = s.pventa and p.idcomproba = s.idcomproba ) "
+	sqlmatriz(3)=" where s.servicio = "+STR( &vfactulotes_sql..servicio )
+	verror=sqlrun(vconeFacturar,"compiservi_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Impuestos para Artículos ",0+48+0,"Error")
+	ENDIF 
+	vcompiservi_sql	= 'compiservi_sql'+vartmp
+	vcompiservi 	= 'compiservi'+vartmp
+	SELECT &vcompiservi_sql
+	GO TOP 
+	IF EOF() THEN  
+		MESSAGEBOX("No se han Encontrado Conceptos para Facturación...",0+16," Generación de Facturas ")
+		=abreycierracon(vconeFacturar,"")
+		RETURN var_retorno 
+	ENDIF 	
+	SELECT * FROM  &vcompiservi_sql INTO TABLE &vcompiservi
+
+	
+	*/*************
+	* Obtengo las entidades a facturar para el lote solicitado 
+	*/
+	sqlmatriz(1)="Select e.idperiodoe, h.* from factulotese e left join entidadesh h on h.identidadh = e.identidadh where e.idperiodo = "+STR(par_idperiodo)
+	verror=sqlrun(vconeFacturar,"entidadeshf_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
+	ENDIF 
+	ventidadeshf_sql = 'entidadeshf_sql'+vartmp
+	SELECT &ventidadeshf_sql 
+	GO TOP 
+	IF EOF() THEN  
+		MESSAGEBOX("No se han Seleccionado Entidades para Generar la Facturacion...",0+16," Generación de Facturas ")
+		=abreycierracon(vconeFacturar,"")
+		RETURN var_retorno  
+	ENDIF 
+
+
+	*/*************
+	* Obtengo las Bocas de Servicios 
+	*/
+	sqlmatriz(1)=" Select e.idperiodoe, b.* from bocaservicios b left join factulotese e on e.identidadh = b.identidadh "
+	sqlmatriz(2)=" where b.facturar = 'S'  and e.idperiodo = "+STR(par_idperiodo)
+	verror=sqlrun(vconeFacturar,"bocaserviciosf_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
+	ENDIF 
+	vbocaserviciosf_sql = 'bocaserviciosf_sql'+vartmp
+	SELECT &vbocaserviciosf_sql 
+	GO TOP 
+	IF EOF() THEN  
+		MESSAGEBOX("No se han Seleccionado Entidades para Generar la Facturacion...",0+16," Generación de Facturas ")
+		=abreycierracon(vconeFacturar,"")
+		RETURN var_retorno  
+	ENDIF 
+	
+	
+	*/*************
+	* Obtengo el detalle de todos los conceptos o detalles que debo facturar cargado a las entidades Seleccionadas
+	*/
+	sqlmatriz(1)="Select e.idperiodoe, f.* from entidadesd f left join factulotese e on e.identidadh = f.identidadh where f.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
+	verror=sqlrun(vconeFacturar,"entidadesdf_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
+	ENDIF 
+	ventidadesdf_sql = 'entidadesdf_sql'+vartmp
+	SELECT &ventidadesdf_sql
+	GO TOP 
+	IF EOF() THEN  
+		MESSAGEBOX("No se han Seleccionado Entidades para Generar la Facturacion...",0+16," Generación de Facturas ")
+		=abreycierracon(vconeFacturar,"")
+		RETURN var_retorno  
+	ENDIF 
+
+	v_fechaemite = &vfactulotes_sql..fechaemite
+	
+	*/*************
+	* Obtengo las Cuotas de los detalles a facturar en el servicio
+	*/
+	sqlmatriz(1)=" Select e.idperiodoe, c.* from entidadesdc c left join entidadesd d on d.identidadd = c.identidadd "
+	sqlmatriz(2)=" left join factulotese e on e.identidadh = d.identidadh "
+	sqlmatriz(3)=" where c.idfactura = 0 and c.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(4)=" and c.fechavenc >='"+v_fechaemite+"' order by idcuotasd desc " 
+	verror=sqlrun(vconeFacturar,"entidadesdcf_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Cuotas a Facturar del Período a Facturar ",0+48+0,"Error")
+	ENDIF 
+	ventidadesdcf_sql = 'entidadesdcf_sql'+vartmp
+	SELECT &ventidadesdcf_sql 
+	GO TOP 
+	ventidadesdcf = 'entidadesdcf'+vartmp
+	SET ENGINEBEHAVIOR  70
+	SELECT * FROM &ventidadesdcf_sql INTO TABLE &ventidadesdcf ORDER BY identidadd GROUP BY identidadd 
+	SET ENGINEBEHAVIOR 90
+	SELECT &ventidadesdcf 
+	INDEX on identidadd TAG identidadd 
+	
+
+	
+	*// Calculo el Valor Actualizado para todos los Detalles de Artículos y Conceptos a Facturar 
+	ventidadesdf = 'entidadesdf'+vartmp 
+	SELECT * FROM &ventidadesdf_sql INTO TABLE &ventidadesdf
+	SELECT &ventidadesdf
+	ALTER table &ventidadesdf ADD COLUMN nrocuota i
+	ALTER table &ventidadesdf ADD COLUMN cantcuotas i
+	ALTER table &ventidadesdf ADD COLUMN netocuota y
+	ALTER table &ventidadesdf ADD COLUMN idcuotasd i 
+	
+	* Actualizo precios segun listas de precios solo para Articulos Facturados = idconcepto = 0
+	SET RELATION TO STR(idlista)+'|'+ALLTRIM(articulo) INTO &vlistasprea
+	SET RELATION TO identidadd INTO &ventidadesdcf ADDITIVE 
+	
+	GO TOP 
+	replace ALL detalle WITH &vlistasprea..detalle, unidad WITH &vlistasprea..unidad , unitario WITH &vlistasprea..pventa, ;
+					nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
+					netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd FOR idconcepto = 0
+
+	
+	
+	* Actualizo para Conceptos Facturados segun Fórmulas de Calculo = idconcepto > 0
+	vconceptoser = 'conceptoser'+vartmp
+	SELECT * FROM &vconceptoser_sql INTO TABLE &vconceptoser
+	SELECT &vconceptoser
+	INDEX on idconcepto TAG idconcepto 
+	
+	SELECT &ventidadesdf
+	SET RELATION TO idconcepto INTO &vconceptoser ADDITIVE 
+
+	GO TOP 
+	v_fechaemite = &vfactulotes_sql..fechaemite
+	SCAN FOR ( &ventidadesdf..idconcepto > 0 ) AND !EOF() 
+		IF  ( &vconceptoser..facturar = 'S') THEN 
+			IF  ( &vconceptoser..vigencia = '1' ) OR  ( &vconceptoser..vigencia = '2' AND &vconceptoser..vigedesde<=v_fechaemite AND v_fechaemite <= &vconceptoser..vigehasta )  THEN 			
+				C   = &vconceptoser..cantidad
+				I   = &vconceptoser..importe 
+				Fun = &vconceptoser..funcion
+				IF !EMPTY(Fun) THEN 
+					imp_unitario = &Fun
+				ELSE 
+					imp_unitario = 0
+				ENDIF 
+				replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
+					nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
+					netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd 
+				
+			ELSE 
+				replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
+			ENDIF 
+		ELSE 
+			replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
+		ENDIF 
+	ENDSCAN 
+
+	
+	SELECT &ventidadesdf
+	GO TOP 
+	UPDATE &ventidadesdf SET unitario=netocuota, cantidad=1 WHERE idcuotasd > 0
+	UPDATE &ventidadesdf SET neto=unitario * cantidad 
+	GO TOP 
+	SET RELATION TO 
+
+		
+	**************************************************************************************
+	*/ Calculo los Impuestos a aplicar para los Detalles a Facturar 
+	*/ Uniendo detalles e impuestos en una nueva tabla 
+	ventidadesdif = 'entidadesdif'+vartmp
+	SELECT d.*,i.impuesto, i.detalle as detimpu, i.razon, i.baseimpon, d.neto as impuestos FROM &ventidadesdf d LEFT JOIN  &vimpuestosac i ON d.idconcepto=i.idconcepto WHERE d.idconcepto > 0 UNION  ;
+	SELECT e.*,j.impuesto, j.detalle as detimpu, j.razon, j.baseimpon, e.neto as impuestos FROM &ventidadesdf e LEFT JOIN  &vimpuestosac j ON ALLTRIM(e.articulo)==ALLTRIM(j.articulo) WHERE e.idconcepto = 0 AND !EMPTY(e.articulo) ;
+	into table &ventidadesdif
+	SELECT &ventidadesdif 
+	UPDATE &ventidadesdif SET impuestos = ( neto * razon / 100 )
+	
+	
+	**************************************************************************************
+	*/ Genero una Tabla con todos los datos de entidades y detalles de facturas e impuestos
+	*/ Es el total facturado discriminado por conceptos, articulos e impuestos. 
+	vfacturaciontot = 'facturaciontot'+vartmp
+	SELECT h.*, i.idconcepto, i.articulo, i.detalle, i.abreviado, i.cantidad, i.unitario, i.neto, i.unidad, i.identidadd, i.mensual, i.facturar, i.padron, i.idlista,  ;
+			i.idcuotasd, i.nrocuota, i.cantcuotas, i.impuesto, i.detimpu, i.razon, i.baseimpon, i.impuestos ;
+			from &ventidadesdif i LEFT JOIN &ventidadeshf_sql h ON h.identidadh = i.identidadh INTO TABLE &vfacturaciontot ORDER BY h.identidadh 
+		
+	**/ Impuestos para Facturacion 
+	vfacturasimptmp = 'facturasimptmp'+vartmp 
+	SELECT identidadh as idfactura, identidadh, impuesto, detimpu as detalle, razon, neto, impuestos as importe, idconcepto, articulo ;
+		FROM &ventidadesdif INTO TABLE &vfacturasimptmp 
+
+
+	**/ Detalles para Facturacion 
+	vdetafactutmp = 'detafactutmp'+vartmp 
+	SET ENGINEBEHAVIOR 70
+	SELECT identidadh, identidadh as idfacturah, identidadh as idfactura,  articulo, idconcepto , cantidad, unidad, cantidad as cantidadfc, unidad as unidadfc, ;
+			detalle, unitario, neto, SUM(impuestos) as impuestos, SUM(razon) as razon, neto as total, " " as codigocta, " " as nombrecta, nrocuota as cuota, cantcuotas , padron, idcuotasd,  ;
+			STR(identidadh)+STR(idconcepto)+ALLTRIM(articulo) as orden ;
+		FROM &ventidadesdif INTO TABLE &vdetafactutmp  ORDER BY orden GROUP BY orden 
+
+	SELECT &vdetafactutmp
+	UPDATE &vdetafactutmp SET total = ( impuestos + neto )
+	COUNT TO vCantidad_D	
+
+	**/ Cabecera para Facturacion 
+	vfacturastmp = 'facturastmp'+vartmp 
+	SELECT h.* , h.identidadh as idfactura, h.identidadh as idcomproba, h.identidadh as pventa, h.identidadh as numero, 'X' as tipo,   ;
+			&vfactulotes_sql..fechaemite as fecha, &vfactulotes_sql..idperiodo as idperiodo, &vfactulotes_sql..fechavenc1 as fechavenc1, ;
+			&vfactulotes_sql..fechavenc2 as fechavenc2, &vfactulotes_sql..fechavenc3 as fechavenc3,&vfactulotes_sql..proxvenc as proxvenc, ;
+			&vfactulotes_sql..cesp as cespcae, &vfactulotes_sql..cespvence as caevence, ; 
+			1 as idtipopera, SUM(d.neto) as neto, SUM(d.neto) as subtotal, 0 as descuento, 0 as recargo, SUM(d.total) as total, ;
+			SUM(d.impuestos) as totalimpu, 'N' as operexenta, 'N' as anulado, "" as observa1, "" as observa2, "" as observa3, "" as observa4 ;
+		FROM &vdetafactutmp d LEFT JOIN &ventidadeshf_sql h ON h.identidadh = d.identidadh INTO TABLE &vfacturastmp ORDER BY h.identidadh GROUP BY h.identidadh
+	
+	COUNT TO vCantidad_F	
+		
+		
+	**/ Cargo la Numeracion de Facturas y Detalle en tabla temporaria
+
+
+	var_idfactura_ini = maxnumeroidx("idfactura","I","facturastmp",0)
+	var_idfactura_fin = maxnumeroidx("idfactura","I","facturastmp",vCantidad_F)
+
+	var_idfacturah_ini = maxnumeroidx("idfacturah","I","detafactutmp",0)
+	var_idfacturah_fin = maxnumeroidx("idfacturah","I","detafactutmp",vCantidad_F)			
+
+	** Calcularlo cuando Grabo en la Tabla Temporaria
+	**thisform.tb_numero.Value = maxnumerocom(VAL(v_idcom),thisform.pventa ,1)
+
+	
+	SELECT &vcompiservi
+	INDEX on iva TAG iva 
+	
+	SELECT &vfacturastmp 
+	SET RELATION TO iva INTO &vcompiservi
+	replace ALL  idfactura WITH RECNO()+var_idfactura_ini, idcomproba WITH &vcompiservi..idcomproba, ;
+		pventa WITH &vcompiservi..pventa, tipo WITH &vcompiservi..tipo, numero WITH &vcompiservi..maxnumero 
+		
+	INDEX on identidadh TAG identidadh
+	SET RELATION TO 
+
+	
+	SELECT &vdetafactutmp  
+	SET RELATION TO identidadh INTO &vfacturastmp
+	replace ALL  idfacturah WITH RECNO()+var_idfacturah_ini, idfactura WITH &vfacturastmp..idfactura
+	SET RELATION TO 
+	
+	SELECT &vfacturasimptmp
+	SET RELATION TO identidadh INTO &vfacturastmp
+	replace ALL  idfactura WITH &vfacturastmp..idfactura
+	SET RELATION TO 
+	
+
+	*************************************************************************
+	*************************************************************************
+	*/ Actualizacion de Numeros de Facturas */
+	vnumeracion = 'numeracion'+vartmp
+	SELECT idcomproba, pventa, 'nume_'+ALLTRIM(STR(idcomproba))+'_'+ALLTRIM(STR(pventa)) as grupo FROM &vfacturastmp INTO TABLE &vnumeracion ORDER BY grupo GROUP BY grupo 
+	SELECT &vnumeracion 
+	GO TOP 
+	DO WHILE !EOF()
+		eje = ALLTRIM(&vnumeracion..grupo)+"=maxnumerocom("+STR(&vnumeracion..idcomproba)+","+str(&vnumeracion..pventa)+" ,0)"
+		&eje
+		SELECT &vnumeracion 
+		SKIP 
+	ENDDO 
+	
+	SELECT &vfacturastmp 
+	GO TOP 
+	DO WHILE !EOF()
+		eje = "nume_"+ALLTRIM(STR(idcomproba))+'_'+ALLTRIM(STR(pventa))+" = nume_"+ALLTRIM(STR(idcomproba))+"_"+ALLTRIM(STR(pventa))+" + 1 "
+		&eje 
+		SELECT &vfacturastmp 
+		eje = "replace "+vfacturastmp+".numero WITH nume_"+ALLTRIM(STR(idcomproba))+'_'+ALLTRIM(STR(pventa))
+		&eje
+		SKIP 
+	ENDDO 	
+	SET ENGINEBEHAVIOR 70
+	
+	= CargarFacturas ( vfacturastmp, vdetafactutmp, vfacturasimptmp, vconeFacturar)
+	
+	=abreycierracon(vconeFacturar,"")
+	
+	USE IN &vlistasprea
+	USE IN &vlistaspreb
+	USE IN &vconceptoser_sql
+	USE IN &vimpuestosac_sql
+	USE IN &vimpuestosac
+	USE IN &vfactulotes_sql
+	USE IN &vcompiservi_sql
+	USE IN &vcompiservi
+	USE IN &ventidadeshf_sql 
+	USE IN &vbocaserviciosf_sql 
+	USE IN &ventidadesdf_sql 
+	USE IN &ventidadesdf
+	USE IN &vconceptoser 
+	USE IN &ventidadesdif 
+	USE IN &vfacturaciontot 
+	USE IN &vfacturasimptmp 
+	USE IN &vdetafactutmp 
+	USE IN &vfacturastmp 
+
+	WAIT CLEAR 
+	
+	var_retorno = 1
+	RETURN var_retorno 
+ENDFUNC 
+
+
+
+**/ Incerta las Facturas Generadas en la Base de Datos en 
+** la tabla facturastmp, detafactutmp, facturasimptmp
+** Recibe como Parametro las Tablas de facturas, detalle, facturasimp
+**
+FUNCTION CargarFacturas 
+PARAMETERS pfacturas, pdetafactu, pfacturasimp, pcone
+
+	IF pcone = 0 THEN 
+		vconeccionFa = abreycierracon(0,_SYSSCHEMA)	
+	ELSE
+		vconeccionFa = pcone
+	ENDIF 
+
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+	
+	SELECT &pfacturas
+	GO TOP 
+	DIMENSION lamatriz1(54,2)
+
+	DO WHILE !EOF() 
+	
+		*** GUARDA DATOS DE CABECERA DE LA FACTURA
+		lamatriz1(1,1)='idfactura'
+		lamatriz1(1,2)= ALLTRIM(STR(&pfacturas..idfactura))
+		lamatriz1(2,1)='idcomproba'
+		lamatriz1(2,2)=ALLTRIM(STR(&pfacturas..idcomproba))
+		lamatriz1(3,1)='pventa'
+		lamatriz1(3,2)= ALLTRIM(STR(&pfacturas..pventa))
+		lamatriz1(4,1)='numero'
+		lamatriz1(4,2)=ALLTRIM(STR(&pfacturas..numero))
+		lamatriz1(5,1)='tipo'
+		lamatriz1(5,2)="'"+ALLTRIM(&pfacturas..tipo)+"'"
+		lamatriz1(6,1)='fecha'
+		lamatriz1(6,2)="'"+ALLTRIM(&pfacturas..fecha)+"'"
+		lamatriz1(7,1)='entidad'
+		lamatriz1(7,2)=ALLTRIM(STR(&pfacturas..entidad))
+		lamatriz1(8,1)='servicio'
+		lamatriz1(8,2)= ALLTRIM(STR(&pfacturas..servicio))
+		lamatriz1(9,1)='cuenta'
+		lamatriz1(9,2)= ALLTRIM(STR(&pfacturas..cuenta))
+		lamatriz1(10,1)='apellido'
+		lamatriz1(10,2)= "'"+ALLTRIM(&pfacturas..apellido)+"'"
+		lamatriz1(11,1)='nombre'
+		lamatriz1(11,2)= "'"+ALLTRIM(&pfacturas..nombre)+"'"
+		lamatriz1(12,1)='direccion'
+		lamatriz1(12,2)= "'"+ALLTRIM(&pfacturas..direccion)+"'"
+		lamatriz1(13,1)='localidad'
+		lamatriz1(13,2)= "'"+ALLTRIM(&pfacturas..localidad)+"'"
+		lamatriz1(14,1)='iva'
+		lamatriz1(14,2)= ALLTRIM(STR(&pfacturas..iva))
+		lamatriz1(15,1)='cuit'
+		lamatriz1(15,2)= "'"+ALLTRIM(&pfacturas..cuit)+"'"
+		lamatriz1(16,1)='tipodoc'
+		lamatriz1(16,2)= "'"+ALLTRIM(&pfacturas..tipodoc)+"'"
+		lamatriz1(17,1)='dni'
+		lamatriz1(17,2)= ALLTRIM(STR(&pfacturas..dni))
+		lamatriz1(18,1)='telefono'
+		lamatriz1(18,2)= "'"+ALLTRIM(&pfacturas..telefono)+"'"
+		lamatriz1(19,1)='cp'
+		lamatriz1(19,2)= "'"+ALLTRIM(&pfacturas..cp)+"'"
+		lamatriz1(20,1)='fax'
+		lamatriz1(20,2)= "'"+ALLTRIM(&pfacturas..fax)+"'"
+		lamatriz1(21,1)='email' 
+		lamatriz1(21,2)= "'"+ALLTRIM(&pfacturas..email)+"'"
+		lamatriz1(22,1)='transporte'
+		lamatriz1(22,2)= ALLTRIM(STR(0))
+		lamatriz1(23,1)='nomtransp'
+		lamatriz1(23,2)= "'"+ALLTRIM(" ")+"'"
+		lamatriz1(24,1)='direntrega'
+		lamatriz1(24,2)= "'"+ALLTRIM(" ")+"'"
+		lamatriz1(25,1)='stock'
+		lamatriz1(25,2)= "'"+ALLTRIM("N")+"'"
+		lamatriz1(26,1)='idtipoopera'
+		lamatriz1(26,2)= ALLTRIM(STR(&pfacturas..idtipopera))
+		lamatriz1(27,1)='neto'
+		lamatriz1(27,2)= ALLTRIM(STR(&pfacturas..neto,13,4))
+		lamatriz1(28,1)='subtotal'
+		lamatriz1(28,2)= ALLTRIM(STR(&pfacturas..subtotal,13,4))
+		lamatriz1(29,1)='descuento'
+		lamatriz1(29,2)= ALLTRIM(STR(&pfacturas..descuento,13,4))
+		lamatriz1(30,1)='recargo'
+		lamatriz1(30,2)= ALLTRIM(STR(&pfacturas..recargo,13,4))
+		lamatriz1(31,1)='total'
+		lamatriz1(31,2)= ALLTRIM(STR(&pfacturas..total,13,4))
+		lamatriz1(32,1)='totalimpu'
+		lamatriz1(32,2)= ALLTRIM(STR(&pfacturas..totalimpu,13,4))
+		lamatriz1(33,1)='operexenta'
+		lamatriz1(33,2)= "'"+ALLTRIM(&pfacturas..operexenta)+"'"
+		lamatriz1(34,1)='anulado'
+		lamatriz1(34,2)= "'"+ALLTRIM(&pfacturas..anulado)+"'"
+		lamatriz1(35,1)='observa1'
+		lamatriz1(35,2)= "'"+ALLTRIM(&pfacturas..observa1)+"'"
+		lamatriz1(36,1)='observa2'
+		lamatriz1(36,2)= "'"+ALLTRIM(&pfacturas..observa2)+"'"
+		lamatriz1(37,1)='observa3'
+		lamatriz1(37,2)= "'"+ALLTRIM(&pfacturas..observa3)+"'"
+		lamatriz1(38,1)='observa4'
+		lamatriz1(38,2)= "'"+ALLTRIM(&pfacturas..observa4)+"'"
+		lamatriz1(39,1)='idperiodo'
+		lamatriz1(39,2)= ALLTRIM(STR(&pfacturas..idperiodo))
+		lamatriz1(40,1)='ruta1'
+		lamatriz1(40,2)= ALLTRIM(STR(&pfacturas..ruta1))
+		lamatriz1(41,1)='folio1'
+		lamatriz1(41,2)= ALLTRIM(STR(&pfacturas..folio1))
+		lamatriz1(42,1)='ruta2'
+		lamatriz1(42,2)= ALLTRIM(STR(&pfacturas..ruta2))
+		lamatriz1(43,1)='folio2'
+		lamatriz1(43,2)= ALLTRIM(STR(&pfacturas..folio2))
+		lamatriz1(44,1)='fechavenc1'
+		lamatriz1(44,2)= "'"+ALLTRIM(&pfacturas..fechavenc1)+"'"
+		lamatriz1(45,1)='fechavenc2'
+		lamatriz1(45,2)= "'"+ALLTRIM(&pfacturas..fechavenc2)+"'"
+		lamatriz1(46,1)='fechavenc3'
+		lamatriz1(46,2)= "'"+ALLTRIM(&pfacturas..fechavenc3)+"'"
+		lamatriz1(47,1)='proxvenc'
+		lamatriz1(47,2)= "'"+ALLTRIM(&pfacturas..proxvenc)+"'"
+		lamatriz1(48,1)='confirmada'
+		lamatriz1(48,2)= "'"+ALLTRIM("N")+"'"
+		lamatriz1(49,1)='astoconta'
+		lamatriz1(49,2)= ALLTRIM(STR(0))
+		lamatriz1(50,1)='deudacta'
+		lamatriz1(50,2)= ALLTRIM(STR(0,13,4))
+		lamatriz1(51,1)='cespcae'
+		lamatriz1(51,2)= "'"+ALLTRIM(&pfacturas..cespcae)+"'"
+		lamatriz1(52,1)='caecespven'
+		lamatriz1(52,2)= "'"+ALLTRIM(&pfacturas..caevence)+"'"
+		lamatriz1(53,1)='vendedor'
+		lamatriz1(53,2)= ALLTRIM(STR(1))
+		lamatriz1(54,1)='identidadh'
+		lamatriz1(54,2)= ALLTRIM(STR(&pfacturas..identidadh))
+
+
+		p_tabla     = 'facturastmp'
+		p_matriz    = 'lamatriz1'
+		p_conexion  = vconeccionFa 
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+		    RETURN 
+		ENDIF  
+
+		SELECT &pfacturas
+		SKIP 
+	ENDDO 
+
+	SELECT &pdetafactu
+	GO TOP 
+	DIMENSION lamatriz2(22,2) 
+	DO WHILE !EOF() 
+
+		lamatriz2(1,1)='idfactura'
+		lamatriz2(1,2)= ALLTRIM(STR(&pdetafactu..idfactura))
+		lamatriz2(2,1)='idfacturah'
+		lamatriz2(2,2)= ALLTRIM(STR(&pdetafactu..idfacturah))
+		lamatriz2(3,1)='articulo'
+		lamatriz2(3,2)= "'"+ALLTRIM(&pdetafactu..articulo)+"'"
+		lamatriz2(4,1)='idconcepto'
+		lamatriz2(4,2)= ALLTRIM(STR(&pdetafactu..idconcepto))
+		lamatriz2(5,1)='servicio'
+		lamatriz2(5,2)= ALLTRIM(STR(0))
+		lamatriz2(6,1)='cantidad'
+		lamatriz2(6,2)= ALLTRIM(STR(&pdetafactu..cantidad))
+		lamatriz2(7,1)='unidad'
+		lamatriz2(7,2)= "'"+ALLTRIM(&pdetafactu..unidad)+"'"
+		lamatriz2(8,1)='cantidadfc'
+		lamatriz2(8,2)= ALLTRIM(str(&pdetafactu..cantidadfc,13,4))
+		lamatriz2(9,1)='unidadfc'
+		lamatriz2(9,2)= "'"+ALLTRIM(&pdetafactu..unidadfc)+"'"
+		lamatriz2(10,1)='detalle'
+		lamatriz2(10,2)= "'"+ALLTRIM(&pdetafactu..detalle)+"'"
+		lamatriz2(11,1)='unitario'
+		lamatriz2(11,2)= ALLTRIM(STR(&pdetafactu..unitario,13,4))
+		lamatriz2(12,1)='impuestos'
+		lamatriz2(12,2)= ALLTRIM(STR(&pdetafactu..impuestos,13,4))
+		lamatriz2(13,1)='total'
+		lamatriz2(13,2)= ALLTRIM(STR(&pdetafactu..total,13,4))
+		lamatriz2(14,1)='codigocta'
+		lamatriz2(14,2)= "'"+ALLTRIM(&pdetafactu..codigocta)+"'"
+		lamatriz2(15,1)='nombrecta'
+		lamatriz2(15,2)= "'"+ALLTRIM(&pdetafactu..nombrecta)+"'"
+		lamatriz2(16,1)='cuota'
+		lamatriz2(16,2)= ALLTRIM(STR(&pdetafactu..cuota))
+		lamatriz2(17,1)='cantcuotas'
+		lamatriz2(17,2)= ALLTRIM(STR(&pdetafactu..cantcuotas))
+		lamatriz2(18,1)='padron' 
+		lamatriz2(18,2)= ALLTRIM(STR(&pdetafactu..padron))
+		lamatriz2(19,1)='impuesto'
+		lamatriz2(19,2)= ALLTRIM(STR(0))
+		lamatriz2(20,1)='razonimp'
+		lamatriz2(20,2)= ALLTRIM(STR(&pdetafactu..razon,13,4))
+		lamatriz2(21,1)='neto'
+		lamatriz2(21,2)= ALLTRIM(STR(&pdetafactu..neto,13,4))
+		lamatriz2(22,1)='idcuotasd'
+		lamatriz2(22,2)= ALLTRIM(STR(&pdetafactu..idcuotasd,13,4))
+
+		p_tabla     = 'detafactutmp'
+		p_matriz    = 'lamatriz2'
+		p_conexion  = vconeccionFa 
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+		ENDIF						
+
+		SELECT &pdetafactu
+		SKIP 
+	ENDDO 
+	
+	SELECT &pfacturasimp
+	GO TOP 
+	DIMENSION lamatriz3(8,2)
+	DO WHILE !EOF() 
+	
+		lamatriz3(1,1)='idfactura'
+		lamatriz3(1,2)= ALLTRIM(STR(&pfacturasimp..idfactura))
+		lamatriz3(2,1)= 'impuesto'
+		lamatriz3(2,2)= ALLTRIM(STR(&pfacturasimp..impuesto))
+		lamatriz3(3,1)= 'detalle'
+		lamatriz3(3,2)= "'"+ALLTRIM(&pfacturasimp..detalle)+"'"
+		lamatriz3(4,1)= 'neto'
+		lamatriz3(4,2)= ALLTRIM(STR(&pfacturasimp..neto,13,4))
+		lamatriz3(5,1)= 'razon'
+		lamatriz3(5,2)= ALLTRIM(STR(&pfacturasimp..razon,13,4))
+		lamatriz3(6,1)= 'importe'
+		lamatriz3(6,2)= ALLTRIM(STR(&pfacturasimp..importe,13,4))
+		lamatriz3(7,1)= 'articulo'
+		lamatriz3(7,2)= "'"+ALLTRIM(&pfacturasimp..articulo)+"'"
+		lamatriz3(8,1)= 'idconcepto'
+		lamatriz3(8,2)= ALLTRIM(STR(&pfacturasimp..idconcepto))
+					
+		p_tabla     = 'facturasimptmp'
+		p_matriz    = 'lamatriz3'
+		p_conexion  = vconeccionFa 
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+		ENDIF
+
+		SELECT &pfacturasimp
+		SKIP 		
+	ENDDO 		
+	
+	RELEASE lamatriz1
+	RELEASE lamatriz2
+	RELEASE lamatriz3
+	
+	RETURN 
+	
+ENDFUNC 	
+
+
+
+	
+*/** Controla la Facturación de un Perido para informar el Estado de la Misma. 
+*/** Valores Retornados 
+*/		0-No Se han Seleccionado Entidades a Facturar para el Periodo 		
+*/		1-No Generado
+*/ 		2-Generado y Pendiente de Confirmar (No pasado a Facturación)
+*/ 		3-Generado y Confirmado, (Pasado a Facturacion)
+*/		4-No existe el Lote a Facturar Solicitado
+*/**********************************************************
+FUNCTION CtrlFcPeriodo
+PARAMETERS pa_idperiodo
+	vretorno = 0
+	vconexx=abreycierracon(0,_SYSSCHEMA)	
+
+
+	sqlmatriz(1)="Select * from factulotes where idperiodo = "+STR(pa_idperiodo)
+	verror=sqlrun(vconexx,"factulotes_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Lotes del Período a Facturar ",0+48+0,"Error")
+	ENDIF 
+	SELECT factulotes_sql
+	IF EOF()
+		USE 
+		vretorno = "4-No Existe el Lote a Facturar Solicitado "
+		=abreycierracon(vconexx,"")
+		RETURN vretorno 
+	ELSE 
+		IF factulotes_sql.confirmado = 'S' THEN 
+			USE 
+			vretorno = "3-Generado y Confirmado.(Pasado a Facturacion)"
+			=abreycierracon(vconexx,"")
+			RETURN vretorno 
+		ENDIF 
+	ENDIF 
+
+
+	sqlmatriz(1)="Select idperiodo from facturas where idperiodo = "+ALLTRIM(STR(pa_idperiodo))+" limit 1 "
+	verror=sqlrun(vconexx,"facturas_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Facturas del Período ",0+48+0,"Error")
+	ENDIF 
+	SELECT facturas_sql
+	IF !EOF()
+		USE 
+		vretorno = "3-Generado y Confirmado.(Pasado a Facturacion)"
+		=abreycierracon(vconexx,"")
+		RETURN vretorno 
+	ENDIF 
+
+
+	sqlmatriz(1)="Select * from factulotese where idperiodo = "+STR(pa_idperiodo)+" limit 1 "
+	verror=sqlrun(vconexx,"factulotese_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
+	ENDIF 
+	SELECT factulotese_sql
+	IF EOF()
+		USE 
+		vretorno = "0-No Se han Seleccionado Entidades a Facturar para el Periodo"
+		=abreycierracon(vconexx,"")
+		RETURN vretorno 
+	ENDIF 
+	
+	
+	sqlmatriz(1)="Select idperiodo from facturastmp where idperiodo = "+STR(pa_idperiodo)+" limit 1 "
+	verror=sqlrun(vconexx,"facturastmp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA FacturasTmp del Período ",0+48+0,"Error")
+	ENDIF 
+	SELECT facturastmp_sql
+	IF EOF()
+		vretorno = "1-No Generado"
+	ELSE 
+		vretorno = "2-Generado y Pendiente de Confirmar (No pasado a Facturación)"
+	ENDIF 
+	USE 
+	=abreycierracon(vconexx,"")
+	RETURN vretorno
+
+ENDFUNC 
+	
+	
+	
+	
+*/** Confirma el Período Facturado , pasa de la tabla de facturas tmporarias 
+*/   a la tabla de facturas finales. 
+*/  pasa 3 tablas : Facturas -  detafactu - facturasimp
+*/
+*/**********************************************************
+FUNCTION ConfFcPeriodo
+PARAMETERS pcon_idperiodo
+	vretorno = 0
+	
+	* Calculo los valores para incertar los idregistros en facturacion 
+	idfactura_ini = maxnumeroidx("idfactura","I","facturas",0) + 1
+
+	idfacturah_ini = maxnumeroidx("idfacturah","I","detafactu",0) +1
+
+	idestadosreg_ini = maxnumeroidx("idestadosreg","I","estadosreg",0) +1
+
+
+	vcone=abreycierracon(0,_SYSSCHEMA)	
+
+
+	sqlmatriz(1)=" create temporary table factutmpt as ( select * from facturastmp  where idperiodo = "+STR(pcon_idperiodo)+" )"
+	verror=sqlrun(vcone,"facturastmpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+	sqlmatriz(1)=" create temporary table detatmpt as ( select * from detafactutmp  where idfactura in "
+	sqlmatriz(2)=" ( select idfactura from facturastmp where idperiodo = "+STR(pcon_idperiodo)+" ) ) "
+	verror=sqlrun(vcone,"detafactutmpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Detalles Temporarios del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+	sqlmatriz(1)=" create temporary table imputmpt as ( select * from facturasimptmp  where idfactura in "
+	sqlmatriz(2)=" ( select idfactura from facturastmp where idperiodo = "+STR(pcon_idperiodo)+" ) ) "
+	verror=sqlrun(vcone,"imputmpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Impuestos Temporarios del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+
+	* Obtengo los Minimos y Maximos de los id de facturas y de Detalles de Facturas 
+	sqlmatriz(1)=" select COUNT(1) as registros, MAX(idfactura) as maxid, MIN(idfactura) as minid from  factutmpt "
+	verror=sqlrun(vcone,"cantidadfc_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	SELECT cantidadfc_sql 
+
+
+	sqlmatriz(1)=" select COUNT(1) as registros, MAX(idfacturah) as maxidh, MIN(idfacturah) as minidh from  detatmpt "
+	verror=sqlrun(vcone,"cantidaddh_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	SELECT cantidaddh_sql 
+
+	
+	var_cantidadfc = IIF(TYPE('cantidadfc_sql.registros')='C',VAL(cantidadfc_sql.registros),cantidadfc_sql.registros)
+	var_maxid	   = cantidadfc_sql.maxid
+	var_minid	   = cantidadfc_sql.minid
+
+	var_cantidaddh = IIF(TYPE('cantidaddh_sql.registros')='C',VAL(cantidaddh_sql.registros),cantidaddh_sql.registros)
+	var_maxidh	   = cantidaddh_sql.maxidh
+	var_minidh	   = cantidaddh_sql.minidh
+	
+	* Corrijo idfactura en el temporario de Factura
+	sqlmatriz(1)=" update factutmpt set idfactura = idfactura + ( "+STR(idfactura_ini)+" - "+STR(var_minid)+" )"
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+
+	* Corrijo idfactura en el temporario de Detalle de Factura
+	sqlmatriz(1)=" update detatmpt set idfactura = idfactura + ( "+STR(idfactura_ini)+" - "+STR(var_minid)+" ), idfacturah = idfacturah + ( "+STR(idfacturah_ini)+" - "+STR(var_minidh)+") "
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+	* Corrijo idfactura en el temporario de Impuestos de Facturas 
+	sqlmatriz(1)=" update imputmpt set idfactura = idfactura + ( "+STR(idfactura_ini)+" - "+STR(var_minid)+" ) "
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+
+	* Corrijo la Numeracion de la Factura en el temporario de Facturas
+	*************************************************************************
+	*************************************************************************
+	*/ Actualizacion de Numeros de Facturas */
+	*sqlmatriz(1)=" select idcomproba, pventa, COUNT(1) as registros, MAX(numero) as maxnum, MIN(numero) as minnum, concat(idcomproba,pventa) as orden from  factutmpt  group by orden "
+	sqlmatriz(1)=" select  f.idcomproba, f.pventa, COUNT(1) as registros, MAX(f.numero) as maxnum, MIN(f.numero) as minnum, c.maxnumero, "
+	sqlmatriz(2)=" concat(f.idcomproba,f.pventa) as orden from  factutmpt f left join compactiv c on f.idcomproba = c.idcomproba and f.pventa = c.pventa  group by orden	"
+	verror=sqlrun(vcone,"cantidadnu_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Cantidades de Numeros de Facturas ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	SELECT cantidadnu_sql 
+	GO TOP 
+	DO WHILE !EOF()
+		var_cantidadnu = IIF(TYPE('cantidadnu_sql.registros')='C',VAL(cantidadnu_sql.registros),cantidadnu_sql.registros)
+		var_maxinum	   = cantidadnu_sql.maxnum
+		var_mininum	   = cantidadnu_sql.minnum
+		numero_ini	   = cantidadnu_sql.maxnumero + 1
+		
+		* Corrijo numero de factura  temporario de Factura
+		sqlmatriz(1)=" update factutmpt set numero = numero + ( "+STR(numero_ini)+" - "+STR(var_mininum)+" ) where idcomproba = "+STR(cantidadnu_sql.idcomproba)+" and pventa = "+STR(cantidadnu_sql.pventa)
+		verror=sqlrun(vcone,"selfcpt_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		ENDIF 
+
+		SELECT cantidadnu_sql 
+		SKIP 
+	ENDDO 
+	
+
+********************************************************************************
+	** Iserto desde las tablas temporarias en Facturas, detafactu, facturasimp
+
+	sqlmatriz(1)=" insert into facturas ( idfactura, idcomproba, pventa, numero, tipo, fecha, entidad, servicio, cuenta, apellido, "
+	sqlmatriz(2)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
+	sqlmatriz(3)=" stock, idtipoopera, neto, subtotal, descuento, recargo, total, totalimpu, operexenta, anulado, observa1, observa2, "
+	sqlmatriz(4)=" observa3, observa4, idperiodo, ruta1, folio1, ruta2, folio2, fechavenc1, fechavenc2, fechavenc3, proxvenc, confirmada, "
+	sqlmatriz(5)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh )"
+	sqlmatriz(6)=" select idfactura, idcomproba, pventa, numero, tipo, fecha, entidad, servicio, cuenta, apellido, "
+	sqlmatriz(7)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
+	sqlmatriz(8)=" stock, idtipoopera, neto, subtotal, descuento, recargo, total, totalimpu, operexenta, anulado, observa1, observa2, "
+	sqlmatriz(9)=" observa3, observa4, idperiodo, ruta1, folio1, ruta2, folio2, fechavenc1, fechavenc2, fechavenc3, proxvenc, confirmada, "
+	sqlmatriz(10)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh from factutmpt  "
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+
+	sqlmatriz(1)=" insert into detafactu ( idfacturah, idfactura, articulo, idconcepto, servicio, cantidad, unidad, cantidadfc, unidadfc, "
+	sqlmatriz(2)=" detalle, unitario, impuestos, total, codigocta, nombrecta, cuota, cantcuotas, padron, impuesto, razonimp, neto, idcuotasd ) "
+	sqlmatriz(3)=" select  idfacturah, idfactura, articulo, idconcepto, servicio, cantidad, unidad, cantidadfc, unidadfc, "
+	sqlmatriz(4)=" detalle, unitario, impuestos, total, codigocta, nombrecta, cuota, cantcuotas, padron, impuesto, razonimp, neto, idcuotasd from detatmpt  "
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+		
+	sqlmatriz(1)=" insert into facturasimp ( idfactura, impuesto, detalle, neto, razon, importe, articulo, idconcepto ) "
+	sqlmatriz(2)=" select idfactura, impuesto, detalle, neto, razon, importe, articulo, idconcepto from imputmpt  "
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+
+
+	*/***************************************
+	*/ Registro el Estado de la Factura Confirmada de acuerdo a su tipo 
+	*/ Si el punto de Venta es Electronico queda "PENDIENTE AUTORIZACION"
+	*/ En otro caso queda "AUTORIZADO"
+
+	sqlmatriz(6)=" select * from puntosventa where pventa in ( select pventa from factutmpt ) "
+	verror=sqlrun(vcone,"ptoVta_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Puntos de Venta ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	SELECT ptoVta_sql 
+	GO TOP 
+	IF ptoVta_sql.electronica = 'S'
+		v_estador = "PENDIENTE AUTORIZACION"		
+	ELSE
+		v_estador = "AUTORIZADO"
+	ENDIF 
+	sqlmatriz(6)=" select * from estadosr where nombre = '"+ALLTRIM(v_estador)+"'"
+	verror=sqlrun(vcone,"estador_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Estados de Registros ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	SELECT estador_sql 
+	GO TOP 
+	v_idestador = estador_sql.idestadosr
+
+	sqlmatriz(1)=" select COUNT(1) as registros, MAX(idfactura) as maxidr, MIN(idfactura) as minidr from  factutmpt "
+	verror=sqlrun(vcone,"cantidadre_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	SELECT cantidadre_sql
+	var_cantidadre = IIF(TYPE('cantidadre_sql.registros')='C',VAL(cantidadre_sql.registros),cantidadre_sql.registros)
+	var_maxidr	   = cantidadre_sql.maxidr
+	var_minidr	   = cantidadre_sql.minidr
+
+
+	sqlmatriz(1)=" create temporary table estatmpt as ( select ( idfactura + ( "+STR(idestadosreg_ini )+" - "+STR(var_minidr)+" )) as idestadosreg, 'facturas' as tabla,  'idfactura' as campo, "
+	sqlmatriz(2)=" idfactura as id, "+STR(v_idestador)+" as idestador, 'I' as tipo, '"+DTOS(DATE())+TIME()+"' as fecha "
+	sqlmatriz(3)=" from factutmpt ) "
+	verror=sqlrun(vcone,"estatmp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en el Armado de estados Temporarios  ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	
+
+	sqlmatriz(1)=" insert into estadosreg ( idestadosreg, tabla, campo, id, idestador, tipo, fecha ) "
+	sqlmatriz(2)=" select idestadosreg, tabla, campo, id, idestador, tipo, fecha from estatmpt "
+	verror=sqlrun(vcone,"estadosreg_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	
+
+	************* Actualizo el maximo numero de los comprobantes para cada punto de venta y comprobante facturado 
+	SELECT cantidadnu_sql 
+	GO TOP 
+	DO WHILE !EOF()
+		var_cantidadnu = IIF(TYPE('cantidadnu_sql.registros')='C',VAL(cantidadnu_sql.registros),cantidadnu_sql.registros)
+
+		sqlmatriz(1)=" update compactiv set maxnumero = maxnumero + "+STR(var_cantidadnu)+"  where idcomproba = "+STR(cantidadnu_sql.idcomproba)+" and pventa = "+STR(cantidadnu_sql.pventa)
+		verror=sqlrun(vcone,"actual_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion del Maximo Numero de Comprobante por punto de venta ",0+48+0,"Error")
+		ENDIF 
+		
+		SELECT cantidadnu_sql 
+		SKIP 
+	ENDDO 
+
+	*/**************************************
+	*/ Coloco Confirmado el Lote de Facturacion ya que se pasaron todas las Facturas 
+
+	sqlmatriz(1)=" update factulotes set confirmado = 'S' where idperiodo = "+STR(pcon_idperiodo)
+	verror=sqlrun(vcone,"confirma_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error Al Confirmar el Lote de Facturacion  ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+	
+	*/**************************************
+	*/ Elimino las facturas de los archivos Temporarios para el lote confirmado despues de terminar 
+	** 
+	sqlmatriz(1)="delete from  facturasimptmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(pcon_idperiodo)+" )"
+	verror=sqlrun(vcone,"elim_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de FacturasImpTmp ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	
+	sqlmatriz(1)="delete from  detafactutmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(pcon_idperiodo)+" )"
+	verror=sqlrun(vcone,"elim_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de detfactuTmp ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+	sqlmatriz(1)="delete from  facturastmp where idperiodo = "+STR(pcon_idperiodo)
+	verror=sqlrun(vcone,"elim_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de FacturasTmp  ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	*******************************************************************************	
+
+
+	=abreycierracon(vcone,"")
+	
+	* Calculo los valores para incertar los idregistros en facturacion 
+	idfactura_fin 	 = maxnumeroidx("idfactura","I","facturas",var_cantidadfc) 
+	idfacturah_fin 	 = maxnumeroidx("idfacturah","I","detafactu",var_cantidaddh ) 
+	idestadosreg_fin = maxnumeroidx("idestadosreg","I","estadosreg",var_cantidadre ) 
+
+	USE IN cantidadfc_sql
+	USE IN cantidaddh_sql
+	USE IN cantidadnu_sql
+	USE IN ptoVta_sql 
+	USE IN estador_sql
+	USE IN cantidadre_sql
+
+
+	RETURN vretorno
+
+ENDFUNC 	
