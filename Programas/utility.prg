@@ -150,7 +150,7 @@ FUNCTION CIERRAAPP
 CLOSE ALL 
 CLOSE TABLES ALL 
 SET SAFETY OFF 
-_screen.Visible= .F. 
+_screen.Visible= .F.
 SET DEFAULT TO &_SYSESTACION 
 
 IF TYPE("_SYSFILESTMP") = "C" THEN 
@@ -1544,6 +1544,8 @@ PARAMETERS p_idcomprobante
 
 	ENDTRY	
 						
+						
+					
 	*** Armo el archivo XML para mandarlo a autorizar ***
 
 		v_ubicacionXML = armarComprobanteXML(v_idcomprobante)
@@ -1574,7 +1576,7 @@ PARAMETERS p_idcomprobante
 				p_tipoope     = 'I'
 				p_condicion   = ''
 				v_titulo      = " EL ALTA "
-				
+				ALTER table respuestaComp alter COLUMN idcomproba I
 				*thisform.calcularmaxh
 				v_idfe = maxnumeroidx("idfe","I","facturasfe",1)
 				v_idfactura = respuestaComp.idfactura
@@ -1596,9 +1598,10 @@ PARAMETERS p_idcomprobante
 					v_autorizar = .F.
 				endif	
 				
-				v_observa	= respuestaComp.observa
-				v_errores = respuestaComp.errores
-									
+*!*					v_observa	= respuestaComp.observa
+*!*					v_errores = respuestaComp.errores
+				v_observa	= STRTRAN(respuestaComp.observa,"'","")
+				v_errores = STRTRAN(respuestaComp.errores,"'","")
 				DIMENSION lamatriz(9,2)
 				
 				lamatriz(1,1)='idfe'
@@ -1667,6 +1670,7 @@ PARAMETERS p_idcomprobante
 					IF v_idcomproba > 0 AND v_pventa > 0
 						p_tipoope     = 'U'
 						p_condicion   = " idcomproba = "+ ALLTRIM(STR(v_idcomproba)) +" and pventa = "+ALLTRIM(STR(v_pventa))+" and "+ALLTRIM(STR(v_numerofe))+" > maxnumero "
+					
 						v_titulo      = " LA MODIFICACIÓN "
 						
 							DIMENSION lamatriz(1,2)
@@ -7657,9 +7661,34 @@ PARAMETERS p_idregistro,p_idcomproba
 			SELECT f.*,f.cuit as nrodoccli, f.neto as netocomp ;
 			FROM factuA_sql f INTO TABLE tablaAsoFac
 
+
+			sqlmatriz(1)=" Select f.*, a.codigo as codAfip, p.puntov, tc.idtipocompro as idtipocomp  "
+			sqlmatriz(2)=" from linkcompro l left join facturas f on l.idcomprobaA = f.idcomproba and l.idregistroA = f.idfactura left join comprobantes c on f.idcomproba = c.idcomproba "
+			sqlmatriz(3)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom left join puntosventa p on f.pventa = p.pventa "
+			sqlmatriz(4)=" where l.idregistrob = "+ ALLTRIM(STR(v_idfactura))+" and l.idcomprobab = "+ALLTRIM(STR(p_idcomproba))
+
+			verror=sqlrun(vconeccionF,"factuB_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la factura a cargar ",0+48+0,"Error")
+			    *thisform.comprobantecargado = .f.
+			    v_compCargado = .F.
+			ENDIF 
+			SELECT FactuB_sql
+			GO TOP 
+						
+			SELECT f.*,f.cuit as nrodoccli, f.neto as netocomp ;
+			FROM factuB_sql f INTO TABLE tablaAsoFacB
+
+
+			SELECT tablaAsoFacB
+			
+			APPEND FROM tablaAsoFac
+
+
 			SELECT tablaAsoFac
 			GO TOP 
 
+			
 *!*				ALTER table tablafactura add COLUMN opexento Y 
 *!*				ALTER table tablafactura ADD COLUMN idmoneda C(3)
 *!*				ALTER table tablafactura ADD COLUMN cotmoneda Y
@@ -7850,10 +7879,53 @@ PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_va
 	
 ENDFUNC 
 
+*****
+*Funcion que cambia la fecha del comprobante pasado como parámetro a la fecha actual
+*
+*Parametros:ID del comprobante, tabla
+*Retorna True o False en caso de que se haya registrado correctamente o no 
+*****
+
+FUNCTION  actualizarFechaComp
+PARAMETERS p_idregistro, p_tabla
 
 
+	v_retorno = .F.
+	IF p_idregistro > 0
+		
+		v_fechaActual = DTOS(DATE())
+		*** Modifico la cabecera del reclamo ***
+		DIMENSION lamatriz(1,2)
+		
+		
+		lamatriz(1,1)='fecha'
+		lamatriz(1,2)="'"+ALLTRIM(v_fechaActual)+"'"
+		
+		vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+		
+		p_tipoope   = 'U'
+		p_condicion = "idfactura = "+ALLTRIM(STR(p_idregistro))
+		v_titulo    = " EL MODIFICACION "
+		p_tabla     = ALLTRIM(v_tabla)
+		p_matriz    = 'lamatriz'
+		p_conexion  = vconeccionA
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en ",0+48+0,"Error")
 
+		   v_retorno = .F.
+		  ELSE
+		  v_retorno = .T.
+		ENDIF  
+			* me desconecto	
+		=abreycierracon(vconeccionA,"")
+	ELSE
+		v_retorno = .F.
+	ENDIF 
+		RETURN v_retorno
 
+ENDFUNC 
+
+		
 
 
 
