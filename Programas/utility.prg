@@ -459,6 +459,7 @@ ENDPROC
 
 
 FUNCTION winexec (tcExe)
+	MESSAGEBOX(tcexe)
 	&tcExe
 ENDFUNC 
 
@@ -732,6 +733,7 @@ FUNCTION copyarchivo
 			ENDDO 
 			nuevo_completo = ALLTRIM(new_nuevo_completo)	
 			v_ejecutar = "COPY FILE '"+ALLTRIM(viejo_completo)+"' TO '"+ALLTRIM(nuevo_completo)+"'"
+			MESSAGEBOX(v_ejecutar)
 			&v_ejecutar				
 	ENDIF
 
@@ -1757,7 +1759,6 @@ PARAMETERS p_idcomprobante, p_nomsg
 	RETURN v_autorizar
 
 ENDFUNC 
-
 
 * FUNCIÓN PARA IMPRIMIR UNA FACTURA (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
 * PARAMETROS: P_IDFACTURA, P_ESELECTRONICA
