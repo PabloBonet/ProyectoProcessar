@@ -1068,3 +1068,55 @@ PARAMETERS pcon_idperiodo
 	RETURN vretorno
 
 ENDFUNC 	
+
+
+
+*/** Si los comprobantes del Perido pasado son Electrónicos
+*/   Pide la Autorización al Afip para cada uno de los Comprobantes
+*/   del Período pasado como parametro, siempre y cuando sean de un 
+*/   Punto de Venta Electrónico
+*/**********************************************************
+FUNCTION AutoFcPeriodo
+PARAMETERS paut_idperiodo
+
+	vretorno = 0
+	vconectar=abreycierracon(0,_SYSSCHEMA)	
+
+	
+*!*		tipoComproObj 	= CREATEOBJECT('tiposcomproclass')
+*!*		tipoOpObj		= CREATEOBJECT('tipooperacionclass')
+*!*		oeObj			= CREATEOBJECT('oeclass')
+	estObj	= CREATEOBJECT('estadosclass')
+*!*		tipoMStockobj	= CREATEOBJECT('tipomstockclass')
+	estAnulado    = estObj.getIDestado("ANULADO")
+	estAutorizado = estObj.getIDestado("AUTORIZADO")
+	RELEASE estObj
+	
+	sqlmatriz(1)=" Select f.* from facturas f left join ultimoestado u on f.idfactura = u.id "
+	sqlmatriz(2)=" left join puntosventa p on p.pventa = f.pventa "
+	sqlmatriz(3)=" where f.idperiodo = "+STR(paut_idperiodo)
+	sqlmatriz(4)=" and u.tabla = 'facturas' and p.electronica = 'S' and  u.idestador <> "+ALLTRIM(str(estAnulado))+" and u.idestador <> "+ALLTRIM(str(estAutorizado))
+	
+	verror=sqlrun(vconectar,"facturase_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas a Autorizar ",0+48+0,"Error")
+	ENDIF 
+	=abreycierracon(vconectar,"")
+	SELECT facturase_sql
+	GO TOP 
+	vcomproautorizado = .t. 
+	DO WHILE !EOF() AND vcomproautorizado = .t. 
+	
+*!*			v_puntovta 	 = thisform.puntovta
+		v_id_factura = facturase_sql.idfactura 
+		
+		vcomproautorizado =   autorizarCompFE(v_id_factura, .F. )
+		
+		SELECT facturase_sql 
+		SKIP 
+	ENDDO 
+	=abreycierracon(vconectar,"")
+	RETURN vretorno
+ENDFUNC 
+
+

@@ -459,7 +459,6 @@ ENDPROC
 
 
 FUNCTION winexec (tcExe)
-	MESSAGEBOX(tcexe)
 	&tcExe
 ENDFUNC 
 
@@ -733,7 +732,6 @@ FUNCTION copyarchivo
 			ENDDO 
 			nuevo_completo = ALLTRIM(new_nuevo_completo)	
 			v_ejecutar = "COPY FILE '"+ALLTRIM(viejo_completo)+"' TO '"+ALLTRIM(nuevo_completo)+"'"
-			MESSAGEBOX(v_ejecutar)
 			&v_ejecutar				
 	ENDIF
 
@@ -1420,7 +1418,7 @@ ENDFUNC
 * PARAMETROS: P_IDCOMPROBANTE, ID DEL COMPROBANTE A AUTORIZAR
 * RETORNO: Retorna True si no hubo errores al intentar autorizar el comprobante (NO significa que se haya APROBADO), retorna False en caso que haya ocurrido un error en la autorización
 FUNCTION autorizarCompFE
-PARAMETERS p_idcomprobante
+PARAMETERS p_idcomprobante, p_nomsg
 
 	v_idcomprobante= p_idcomprobante
 	v_autorizar = .F.
@@ -1436,7 +1434,9 @@ PARAMETERS p_idcomprobante
 
 		verror=sqlrun(vconeccion,"factufe_sql")
 		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la facturasFE",0+48+0,"Error")
+			IF p_nomsg = .f. THEN 
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la facturasFE",0+48+0,"Error")
+		   	ENDIF 
 		    v_autorizar = .F.
 		    RETURN 
 		ELSE
@@ -1454,7 +1454,9 @@ PARAMETERS p_idcomprobante
 				
 				IF v_resultado = "A" OR v_caecesp <> ""
 				
-					MESSAGEBOX("El comprobante ID: "+ALLTRIM(STR(v_idcomprobante))+" ya se encuentra autorizado",0+48+0,"Error al autorizar")
+					IF p_nomsg = .f. THEN 
+						MESSAGEBOX("El comprobante ID: "+ALLTRIM(STR(v_idcomprobante))+" ya se encuentra autorizado",0+48+0,"Error al autorizar")
+					ENDIF 
 					v_autorizar = .F.
 					RETURN v_autorizar
 				ENDIF 
@@ -1500,34 +1502,42 @@ PARAMETERS p_idcomprobante
 				
 					v_errores = ""
 					v_errores = objModuloAFIP.Errores
-					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+					IF p_nomsg = .f. THEN 
+						MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+					ENDIF 
 					
 					RETURN .F.
 				ENDIF 
 					
 				v_observaciones = objModuloAFIP.Observaciones
 				IF EMPTY(v_observaciones) = .F.
-					MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
+					IF p_nomsg = .f. THEN 
+						MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
+					ENDIF 
 				ENDIF 
 				
 							
 			ELSE
-				
-				MESSAGEBOX("Configuración del modulo AFIP INCORRECTA")
-					
+				IF p_nomsg = .f. THEN 	
+					MESSAGEBOX("Configuración del modulo AFIP INCORRECTA")
+				ENDIF 					
 				v_objerror = objModuloAFIP.Error
 				
 				IF v_objerror = .T.
 				
 					v_errores = ""
 					v_errores = objModuloAFIP.Errores
-					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+					IF p_nomsg = .f. THEN 
+						MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+					ENDIF 
 				ENDIF 
 					
 				v_observaciones = objModuloAFIP.Observaciones
 				
-				MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
-				
+				IF p_nomsg = .f. THEN 
+					MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))
+				ENDIF 
+						
 				RETURN .F.
 				
 			ENDIF 
@@ -1538,7 +1548,9 @@ PARAMETERS p_idcomprobante
 	
 	CATCH TO loException
 			
-		MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+		IF p_nomsg = .f. THEN 
+			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+		ENDIF 
 		v_autorizar = .F.
 		RETURN v_autorizar
 
@@ -1556,9 +1568,12 @@ PARAMETERS p_idcomprobante
 			
 				
 		v_observaciones = objModuloAFIP.Observaciones
-		
+
+			
 		IF EMPTY(v_observaciones) = .F.
-			MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))				
+			IF p_nomsg = .f. THEN 
+				MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))				
+			ENDIF 
 		ENDIF 
 	
 		IF v_respuesta = .T. && Hubo respuesta del objeto que maneja el Módulo de AFIP, sin errores
@@ -1685,7 +1700,9 @@ PARAMETERS p_idcomprobante
 						vconeccionp=abreycierracon(0,_SYSSCHEMA)
 						p_conexion  = vconeccionp
 						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+							IF p_nomsg = .f. THEN 
+							    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+							ENDIF 
 						ENDIF
 					ENDIF 
 						
@@ -1710,22 +1727,28 @@ PARAMETERS p_idcomprobante
 			
 		ELSE	&& Ocurrieron errores
 			
-			MESSAGEBOX("Ha Ocurrido un Error al autorizar el comprobante en el servicio",0+48+0,"Error")
-						
+			IF p_nomsg = .f. THEN 
+				MESSAGEBOX("Ha Ocurrido un Error al autorizar el comprobante en el servicio",0+48+0,"Error")
+			ENDIF 					
 			v_objerror = objModuloAFIP.Error
 			
 			IF v_objerror = .T.
 			
 				v_errores = ""
 				v_errores = objModuloAFIP.Errores
-				MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
-			
+
+				IF p_nomsg = .f. THEN 
+					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+				ENDIF 			
 			ENDIF 
 				
 			v_observaciones = objModuloAFIP.Observaciones
+
 			
 			IF EMPTY(v_observaciones) = .F.
-				MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))				
+				IF p_nomsg = .f. THEN 
+					MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))				
+				ENDIF 
 			ENDIF 
 			
 			v_autorizar = .F.
