@@ -459,7 +459,6 @@ ENDPROC
 
 
 FUNCTION winexec (tcExe)
-	MESSAGEBOX(tcexe)
 	&tcExe
 ENDFUNC 
 
@@ -733,7 +732,6 @@ FUNCTION copyarchivo
 			ENDDO 
 			nuevo_completo = ALLTRIM(new_nuevo_completo)	
 			v_ejecutar = "COPY FILE '"+ALLTRIM(viejo_completo)+"' TO '"+ALLTRIM(nuevo_completo)+"'"
-			MESSAGEBOX(v_ejecutar)
 			&v_ejecutar				
 	ENDIF
 
@@ -2244,8 +2242,11 @@ PARAMETERS p_idComp, p_idReg
 		v_usuario		= _SYSUSUARIO
 		v_idcomproba	= p_idComp
 		v_idregicomp	=  p_idReg
-
-		DIMENSION lamatriz3(5,2)
+		v_fecha			= DTOS(DATE())
+		v_hora			= TIME()
+		
+		
+		DIMENSION lamatriz3(7,2)
 		
 			
 		lamatriz3(1,1)='idcajareh'
@@ -2258,7 +2259,11 @@ PARAMETERS p_idComp, p_idReg
 		lamatriz3(4,2)= ALLTRIM(STR(v_idcomproba))
 		lamatriz3(5,1)='idregicomp'
 		lamatriz3(5,2)= ALLTRIM(STR(v_idregicomp))
-		
+		lamatriz3(6,1)='fecha'
+		lamatriz3(6,2)="'"+ALLTRIM(v_fecha)+"'"
+		lamatriz3(7,1)='hora'
+		lamatriz3(7,2)="'"+ALLTRIM(v_hora)+"'"
+
 			
 		p_tipoope     = 'I'
 		p_condicion   = ''
@@ -3234,7 +3239,7 @@ p_aliasreto  = ""
 	SELECT gruposall_sql
 	GO TOP 
 	IF EOF()
-		MESSAGEBOX("No hay Grupos para Seleccionar...")
+
 		RETURN p_aliasreto  
 	ENDIF
 	v_nomtabla = "grupotmp0"
@@ -7949,8 +7954,175 @@ PARAMETERS p_idregistro, p_tabla
 
 ENDFUNC 
 
+
+
+
+*** Retorna el tipo de movimiento registrado según el comprobante, el tipo de pago, la cuenta y la caja
+** Parametros:
+**		P_idtipocompro: ID del tipo de comprobante
+**		P_idtipopago: ID del tipo de pago que se está realizando
+**		P_idcajareca: ID de la caja registradora (SI es 0, significa que va a obtener cualquier caja)
+**		P_idcuenta: ID de la cuenta (SI es 0, significa que va a obtener cualquier cuenta)
+**
+** Retorno: Retorna el movimiento registrado para la combinación de parámetros
+***
+FUNCTION movimientoTPago
+PARAMETERS P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta
+
+	
+	v_retorno = ""
+	
+	IF P_idtipocompro > 0 AND P_idtipopago > 0 AND P_idcajareca >= 0 AND P_idcuenta >= 0
+	
+		&& Están correctos los parámetros	
+	ELSE
+	
+		v_retorno  = ""
+	
+		RETURN v_retorno
+	
+	ENDIF 
+	
+	vconeccionM = abreycierracon(0,_SYSSCHEMA)
+	
+	*** Busco los cheques relacionados a detallecobros ***
+	
+
+*!*		sqlmatriz(1)=" select idtipocompro, idtipopago,idcajareca, idcuenta, movimiento, (if(idcajareca = 0,0,1)*2+if(idcuenta = 0,0,1)) as valor "
+*!*		sqlmatriz(2)=" FROM pmovitp "
+*!*		sqlmatriz(3)=" where idtipocompro = "+ALLTRIM(STR(p_idtipocompro))+" and idtipopago = "+ALLTRIM(STR(P_idtipopago))
+	
+		sqlmatriz(1)= " select idtipocompro, idtipopago,idcajareca, idcuenta, movimiento, ((if(idtipocompro = " +ALLTRIM(STR(p_idtipocompro))+" or idtipocompro = 0,1,0)) + "
+		sqlmatriz(2)= " (if(idtipopago = "+ALLTRIM(STR(p_idtipopago))+" or idtipopago = 0,1,0)) + (if(idcajareca = "+ALLTRIM(STR(P_idcajareca))+" or idcajareca = 0,1,0)) + "
+		sqlmatriz(3)= " (if(idcuenta = "+ALLTRIM(STR(P_idcuenta))+" or idcuenta = 0,1,0))) as coincide, (if(idtipopago = 0,0,1)*4+if(idcuenta = 0,0,1)*2+if(idcajareca = 0,0,1)) as valor "
+		sqlmatriz(4)= " FROM pmovitp  having coincide = 4 order by valor desc "
+
+	verror=sqlrun(vconeccionM ,"pmovitp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los parámetros de movimientos ",0+48+0,"Error")
+	    RETURN ""  
+	ENDIF
+	
+	=abreycierracon(vconeccionM ,"")	
+
+	SELECT pmovitp_sql
+	GO TOP 
+
+	IF NOT EOF()
 		
+		v_retorno = pmovitp_sql.movimiento
+		
+*!*			
+*!*			SELECT * FROM pmovitp_sql INTO TABLE pmovitp
+*!*			ALTER table pmovitp alter COLUMN valor I
+*!*			v_valor = pmovitp.valor
+*!*			MESSAGEBOX(ALLTRIM(STR(v_valor)))
+*!*			DO CASE
+*!*				CASE v_valor = 0
+*!*					SELECT * FROM pmovitp WHERE idcajareca = 0 and idcuenta  = 0 INTO TABLE pmovitp_aux
+*!*				CASE v_valor = 1
+*!*					SELECT * FROM pmovitp WHERE  idcuenta  = P_idcuenta INTO TABLE pmovitp_aux
+*!*				CASE v_valor = 2
+*!*					SELECT * FROM pmovitp WHERE  idcajareca = P_idcajareca  INTO TABLE pmovitp_aux
+*!*				CASE v_valor = 3
+*!*					SELECT * FROM pmovitp WHERE  idcajareca = P_idcajareca and idcuenta  = P_idcuenta INTO TABLE pmovitp_aux
+*!*				OTHERWISE
+*!*					RETURN ""
+*!*			ENDCASE
+*!*			
+*!*			SELECT pmovitp_aux
+*!*			GO TOP 
+*!*			IF NOT EOF()
+*!*				v_retorno = pmovitp_aux.movimiento
+*!*			
+*!*			ELSE
+*!*				v_retorno = ""
+*!*			ENDIF 
+	
+		
+	ELSE
+		v_retorno = ""
+	
+	ENDIF 
+
+
+	RETURN v_retorno
+
+ENDFUNC 
 
 
 
+
+*** Guardo un registro en la tabla de movitpago
+** PARAMETROS: 
+**	P_idtipopago: ID del tipo de pago que se quiere registrar
+**	P_tabla: Nombre de la tabla asociada al tipo de pago ('CHEQUE', 'CUPON'...) 
+**	P_campo: Nombre del campo indice de la tabla
+**	P_idregistro: Numero de registro de la tabla correspondiente al campo pasado como parámetro
+**	P_idacajareca: ID de la caja recaudadora (Si es 0 se puede tomar como que es para cualquier caja) 
+**	P_idcuenta: ID de la cuenta (Si es 0 se puede tomar como que es para cualquier caja)
+**  P_idcomproba: ID del tipo de comprobante 
+**	Retorno: Retorna True si se guardó correctamente, False en otro caso
+***
+FUNCTION guardarMoviTPago
+PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro
 			
+	v_retorno = .F.	
+	
+	
+
+
+	v_movimiento	=  movimientoTPago(P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta)
+
+	IF EMPTY(ALLTRIM(v_movimiento)) == .T. && No retorno ningún movimiento, no se va a registrar el movimiento
+		v_retorno = .F.
+		RETURN v_retorno
+	
+	ENDIF 
+
+
+	v_fecha			= DTOS(DATE())
+	v_hora			= TIME()
+	
+	
+	DIMENSION lamatriz3(10,2)
+	
+		
+	lamatriz3(1,1)='idmovitp'
+	lamatriz3(1,2)= "0"
+	lamatriz3(2,1)='idtipopago'
+	lamatriz3(2,2)= ALLTRIM(STR(p_idtipopago))
+	lamatriz3(3,1)='tabla'
+	lamatriz3(3,2)= "'"+ALLTRIM(P_tabla)+"'"
+	lamatriz3(4,1)='campo'
+	lamatriz3(4,2)= "'"+ALLTRIM(P_campo)+"'"
+	lamatriz3(5,1)='idregistro'
+	lamatriz3(5,2)= ALLTRIM(STR(P_idregistro))
+	lamatriz3(6,1)='idcajareca'
+	lamatriz3(6,2)= ALLTRIM(STR(P_idcajareca))
+	lamatriz3(7,1)='idcuenta'
+	lamatriz3(7,2)=ALLTRIM(STR(P_idcuenta))
+	lamatriz3(8,1)='fecha'
+	lamatriz3(8,2)="'"+ALLTRIM(v_fecha)+"'"
+	lamatriz3(9,1)='hora'
+	lamatriz3(9,2)="'"+ALLTRIM(v_hora)+"'"
+	lamatriz3(10,1)='movimiento'
+	lamatriz3(10,2)="'"+ALLTRIM(v_movimiento)+"'"
+	
+
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+	p_tabla     = 'movitpago'
+	p_matriz    = 'lamatriz3'
+	p_conexion  = vconeccionF
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+	    RETURN .F.
+	ENDIF	
+
+	RETURN .T.
+
+ENDFUNC 
+
+
