@@ -8012,34 +8012,6 @@ PARAMETERS P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta
 		
 		v_retorno = pmovitp_sql.movimiento
 		
-*!*			
-*!*			SELECT * FROM pmovitp_sql INTO TABLE pmovitp
-*!*			ALTER table pmovitp alter COLUMN valor I
-*!*			v_valor = pmovitp.valor
-*!*			MESSAGEBOX(ALLTRIM(STR(v_valor)))
-*!*			DO CASE
-*!*				CASE v_valor = 0
-*!*					SELECT * FROM pmovitp WHERE idcajareca = 0 and idcuenta  = 0 INTO TABLE pmovitp_aux
-*!*				CASE v_valor = 1
-*!*					SELECT * FROM pmovitp WHERE  idcuenta  = P_idcuenta INTO TABLE pmovitp_aux
-*!*				CASE v_valor = 2
-*!*					SELECT * FROM pmovitp WHERE  idcajareca = P_idcajareca  INTO TABLE pmovitp_aux
-*!*				CASE v_valor = 3
-*!*					SELECT * FROM pmovitp WHERE  idcajareca = P_idcajareca and idcuenta  = P_idcuenta INTO TABLE pmovitp_aux
-*!*				OTHERWISE
-*!*					RETURN ""
-*!*			ENDCASE
-*!*			
-*!*			SELECT pmovitp_aux
-*!*			GO TOP 
-*!*			IF NOT EOF()
-*!*				v_retorno = pmovitp_aux.movimiento
-*!*			
-*!*			ELSE
-*!*				v_retorno = ""
-*!*			ENDIF 
-	
-		
 	ELSE
 		v_retorno = ""
 	
@@ -8109,18 +8081,73 @@ PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta
 	lamatriz3(10,1)='movimiento'
 	lamatriz3(10,2)="'"+ALLTRIM(v_movimiento)+"'"
 	
-
+	vconeccionMo = abreycierracon(0,_SYSSCHEMA)
+	
 	p_tipoope     = 'I'
 	p_condicion   = ''
 	v_titulo      = " EL ALTA "
 	p_tabla     = 'movitpago'
 	p_matriz    = 'lamatriz3'
-	p_conexion  = vconeccionF
+	p_conexion  = vconeccionMo
 	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+	
+		=abreycierracon(vconeccionMo ,"")	
+
 	    RETURN .F.
 	ENDIF	
+	=abreycierracon(vconeccionMo ,"")	
+	RETURN .T.
 
+ENDFUNC 
+
+*** Funcion de busqueda de movimientos de Tipos de pago según los parametros pasados como parámetros
+**  Si el parámetro recibido es CERO, lo ignora en la condición trayendo todos los registros para ese parámetro
+** Parametros:
+*	p_idtipopago: ID del tipo de pago 
+* 	p_idcaja:	ID de la caja registradora
+*	p_idcuenta: ID de la cuenta
+*	p_tabla,p_campo,p_idregistro: Tabla, campo e ID del registro asociado al tipo de pago
+*	p_movimiento: movimiento registrado
+*	p_tablaRet: Nombre de la tabla de retorno
+*** Retorno: Retorna True si se obtuvo correctamente los registros del movimiento; False en otro caso.
+***
+FUNCTION moviTipoPago
+PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movimiento,p_tablaRet
+
+*!*		IF p_idtipopago < 0 OR p_idcaja < 0 OR p_idcuenta OR ALLTRIM(p_tablaRet) == "" OR p_idregistro < 0
+*!*		
+*!*			RETURN .F.
+*!*		
+*!*		ENDIF 
+
+	v_registro = IIF(EMPTY(ALLTRIM(p_tabla)) = .T. or EMPTY(ALLTRIM(p_campo)) = .T. or p_idregistro = 0,.F.,.T.)
+
+	v_valorTp= IIF(P_idtipopago > 0," and idtipopago = "+ALLTRIM(STR(p_idtipopago)),"")
+	v_valorCa=IIF(P_idcaja > 0," and idcajareca = "+ALLTRIM(STR(P_idcaja)),"")
+	v_valorCu=IIF(P_idcuenta > 0," and idcuenta = "+ALLTRIM(STR(P_idcuenta)),"")
+	v_valorRe=IIF(p_idregistro > 0," and tabla = '"+ALLTRIM(p_tabla)+ "' and campo = '"+ALLTRIM(p_campo)+"' and idregistro = "+ALLTRIM(STR(p_idregistro)),"")
+	v_valorMo=IIF(EMPTY(ALLTRIM(p_movimiento)) =.F.," and movimiento = '"+ALLTRIM(p_movimiento)+"'","")
+
+	
+	v_condicion = ALLTRIM(v_valorTP)+ALLTRIM(v_valorCa)+ALLTRIM(v_valorCu)+ALLTRIM(v_valorRe)
+	
+	vconeccionMo = abreycierracon(0,_SYSSCHEMA)
+	
+	sqlmatriz(1)=" select * "
+	sqlmatriz(2)=" from movitpago "
+	sqlmatriz(3)=" where 1 = 1 "+ALLTRIM(v_condicion)
+
+
+	verror=sqlrun(vconeccionMo ,p_tablaRet)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los movimientos ",0+48+0,"Error")
+	=abreycierracon(vconeccionMo ,"")	
+	    RETURN .F.  
+	ENDIF
+	
+	
+	=abreycierracon(vconeccionMo ,"")	
 	RETURN .T.
 
 ENDFUNC 

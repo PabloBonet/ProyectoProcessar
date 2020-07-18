@@ -1,0 +1,78 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema trsoftdb
+--
+
+CREATE DATABASE IF NOT EXISTS trsoftdb;
+USE trsoftdb;
+
+--
+-- Temporary table structure for view `maxidtipop`
+--
+DROP TABLE IF EXISTS `maxidtipop`;
+DROP VIEW IF EXISTS `maxidtipop`;
+CREATE TABLE `maxidtipop` (
+  `idmovitp` int(10) unsigned,
+  `tabla` char(100),
+  `campo` char(100),
+  `idregistro` int(10) unsigned
+);
+
+--
+-- Temporary table structure for view `ultimomovitpago`
+--
+DROP TABLE IF EXISTS `ultimomovitpago`;
+DROP VIEW IF EXISTS `ultimomovitpago`;
+CREATE TABLE `ultimomovitpago` (
+  `idmovitp` int(10) unsigned,
+  `idtipopago` int(10) unsigned,
+  `tabla` char(100),
+  `campo` char(100),
+  `idregistro` int(10) unsigned,
+  `idcajareca` int(10) unsigned,
+  `idcuenta` int(10) unsigned,
+  `fecha` char(8),
+  `hora` char(8),
+  `movimiento` char(20)
+);
+
+--
+-- Definition of view `maxidtipop`
+--
+
+DROP TABLE IF EXISTS `maxidtipop`;
+DROP VIEW IF EXISTS `maxidtipop`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `maxidtipop` AS select max(`movitpago`.`idmovitp`) AS `idmovitp`,`movitpago`.`tabla` AS `tabla`,`movitpago`.`campo` AS `campo`,`movitpago`.`idregistro` AS `idregistro` from `movitpago` group by `movitpago`.`tabla`,`movitpago`.`campo`,`movitpago`.`idregistro`;
+
+--
+-- Definition of view `ultimomovitpago`
+--
+
+DROP TABLE IF EXISTS `ultimomovitpago`;
+DROP VIEW IF EXISTS `ultimomovitpago`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `ultimomovitpago` AS select `t`.`idmovitp` AS `idmovitp`,`t`.`idtipopago` AS `idtipopago`,`t`.`tabla` AS `tabla`,`t`.`campo` AS `campo`,`t`.`idregistro` AS `idregistro`,`t`.`idcajareca` AS `idcajareca`,`t`.`idcuenta` AS `idcuenta`,`t`.`fecha` AS `fecha`,`t`.`hora` AS `hora`,`t`.`movimiento` AS `movimiento` from (`maxidtipop` `m` left join `movitpago` `t` on((`m`.`idmovitp` = `t`.`idmovitp`)));
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
