@@ -1,0 +1,88 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar
+--
+
+CREATE DATABASE IF NOT EXISTS processar;
+USE processar;
+
+--
+-- Definition of table `datosextra`
+--
+
+DROP TABLE IF EXISTS `datosextra`;
+CREATE TABLE `datosextra` (
+  `iddatosex` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `propiedad` char(100) NOT NULL,
+  `valor` text NOT NULL,
+  PRIMARY KEY (`iddatosex`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `datosextra`
+--
+
+/*!40000 ALTER TABLE `datosextra` DISABLE KEYS */;
+INSERT INTO `datosextra` (`iddatosex`,`propiedad`,`valor`) VALUES 
+ (1,'CUIT','2022141497'),
+ (2,'CBU','01101010101'),
+ (6,'Nuevo Valor','Cargar Nuevos Valores'),
+ (8,'Nueva Propiedad','cualquier valor'),
+ (9,'Nuevo Valor','dfd'),
+ (10,'PATENTE AUTO','MHF 027'),
+ (11,'PATENTE AUTO','FDKLDFSAKLMFD}\r\n\r\nSADKDFSKLJFDSAKLFDS\r\n');
+/*!40000 ALTER TABLE `datosextra` ENABLE KEYS */;
+
+
+--
+-- Definition of table `reldatosextra`
+--
+
+DROP TABLE IF EXISTS `reldatosextra`;
+CREATE TABLE `reldatosextra` (
+  `idreldex` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `iddatosex` int(10) unsigned NOT NULL,
+  `tabla` char(100) NOT NULL,
+  `idregistro` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idreldex`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `reldatosextra`
+--
+
+/*!40000 ALTER TABLE `reldatosextra` DISABLE KEYS */;
+INSERT INTO `reldatosextra` (`idreldex`,`iddatosex`,`tabla`,`idregistro`) VALUES 
+ (2,2,'entidades',1),
+ (6,6,'entidades',5),
+ (8,8,'entidades',1),
+ (9,9,'entidades',1),
+ (10,10,'entidades',1),
+ (11,11,'entidades',4);
+/*!40000 ALTER TABLE `reldatosextra` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -4484,202 +4484,6 @@ ENDFUNC
 
 
 
-**********************************************************************
-**********************************************************************
-** Funcion que devuelve el asiento modelo armado a partir de un 
-** codigo o modelo de asiento**
-FUNCTION GenAstoContable
-PARAMETERS par_modelo, par_tabla, par_registro, par_tablaret
-
-	v_indicetabla = getIdTabla(par_tabla) && Obtengo el nombre del campo indice de la tabla
-	var_retorno = ""
-	**** El Modelo de Asiento Seleccionado ***
-	vconeccionATO=abreycierracon(0,_SYSSCHEMA)	
-
-	** Campos con los Valores que deben calcular el resultado a imputar a cada cuenta ***
-	sqlmatriz(1)=" Select ac.idastomode, ac.idastocuenta as idastocuen, ac.idcpoconta, ac.dh, ac.detalle, "
-	sqlmatriz(2)="   av.tabla, av.campo, av.opera, av.idastovalor as idastoval from astovalor av left join astocuenta ac on av.idastocuenta=ac.idastocuenta "
-	sqlmatriz(3)=" where ac.idastomode = "+ALLTRIM(STR(par_modelo))
-	verror=sqlrun(vconeccionATO,"AstoValorA_sql")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de AstoCuenta ",0+48+0,"Error")
-	    =abreycierracon(vconeccionATO,"")
-	    RETURN var_retorno
-	ENDIF
-
-	** Obtiene los registros que daran como resultado la cuenta a la cual debera imputarse el importe correspondiente calculado arriba ** 
-	sqlmatriz(1)=" Select a.idastomode, a.idastocuenta as idastocuen, a.idcpoconta, a.dh, a.detalle, "
-	sqlmatriz(2)="   	  c.tabla, c.campo, c.tipo, c.detalle as detacpo,   "
-	sqlmatriz(3)="   	  cg.valor1,cg.compara, cg.valor2, cg.codigocta, cg.tablag, cg.campog, cg.tipog, cg.idcpocontag as idcpocontg  "
-	sqlmatriz(4)=" from campocontag cg "
-	sqlmatriz(5)=" left join campoconta c on c.idcpoconta=cg.idcpoconta "
-	sqlmatriz(6)=" left join astocuenta a on a.idcpoconta=cg.idcpoconta "
-	sqlmatriz(7)=" where a.idastomode = "+ALLTRIM(STR(par_modelo))
-	verror=sqlrun(vconeccionATO,"AstoCuentaA_sql")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de AstoCuenta ",0+48+0,"Error")
-	    =abreycierracon(vconeccionATO,"")
-	    RETURN var_retorno
-	ENDIF
-
-
-	SELECT AstoValorA_sql
-	SELECT AstoCuentaA_sql
-
-**********************************************
-***	Armado del valor  de las cuentas a imputar 
-
-	SELECT * FROM AstoValorA_sql INTO TABLE .\AstoValorA
-	ALTER table AstoValorA ADD importe y
-	ZAP 
-	SELECT AstoValorA_sql 
-	GO TOP 
-	
-	DO WHILE !EOF() 
-		
-		sqlmatriz(1)=" Select "+ALLTRIM(AstoValorA_sql.campo)+" as importe from "+ALLTRIM(AstoValorA_sql.tabla)
-		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
-			
-		verror=sqlrun(vconeccionATO,"tablacampo")
-		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA en el Campo a Imputar de la Tabla Seleccionada ",0+48+0,"Error")
-		    =abreycierracon(vconeccionATO,"")
-		    RETURN var_retorno
-		ENDIF
-		
-		SELECT tablacampo
-		GO top
-		DO WHILE !EOF()
-			SELECT AstoValorA
-			INSERT INTO AstoValorA VALUES (AstoValorA_sql.idastomode, AstoValorA_sql.idastocuen, AstoValorA_sql.idcpoconta, AstoValorA_sql.dh, ;
-										   AstoValorA_sql.detalle, AstoValorA_sql.tabla, AstoValorA_sql.campo, AstoValorA_sql.opera, ;
-										   AstoValorA_sql.idastoval, tablacampo.importe)
-			SELECT tablacampo 
-			SKIP 
-		ENDDO 
-				
-		SELECT AstoValorA_sql
-		SKIP 
-	ENDDO 
-
-	SELECT AstoValorA
-	REPLACE ALL importe WITH importe * opera 
-	
-*****************************************************************
-***** Agrupo para obtener el monto final a imputar a cada cuenta
-	SET ENGINEBEHAVIOR 70 
-	 
-	SELECT idastomode, idastocuen, idcpoconta, dh, detalle, SUM(importe) as importe ;
-		FROM AstoValorA INTO TABLE AstoValorB ORDER BY idastocuen GROUP BY idastocuen
-	
-	SET ENGINEBEHAVIOR 90 
-	
-	SELECT AstoValorB
-	
-*************************************************************************
-** Obtengo el la Cuenta que se deberá imputar ***************************
-	SELECT * FROM AstoCuentaA_sql INTO TABLE .\AstoCuentaA
-	ALTER table AstoCuentaA ADD valor c(100)
-	ZAP 
-	SELECT AstoCuentaA_sql 
-	GO TOP 
-	DO WHILE !EOF() 
-		
-		sqlmatriz(1)=" Select "+ALLTRIM(AstoCuentaA_sql.campo)+" as valor from "+ALLTRIM(AstoCuentaA_sql.tabla)
-		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
-		verror=sqlrun(vconeccionATO,"tablacuenta")
-		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la Cuenta Seleccionada ",0+48+0,"Error")
-		    =abreycierracon(vconeccionATO,"")
-		    RETURN var_retorno
-		ENDIF
-
-		SELECT tablacuenta
-		GO top
-		DO WHILE !EOF()
-			var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),STR(tablacuenta.valor,12,2),tablacuenta.valor)
-			v_incerta = .f.
-			DO CASE 
-				CASE UPPER(AstoCuentaA_sql.compara)="TODOS"
-					v_incerta = .t.
-				CASE UPPER(AstoCuentaA_sql.compara)="ENTRE"
-					IF ALLTRIM(var_valor) >= ALLTRIM(AstoCuentaA_sql.valor1) AND ALLTRIM(var_valor) <= ALLTRIM(AstoCuentaA_sql.valor2) THEN 
-						v_incerta = .t.
-					ENDIF 
-				CASE UPPER(AstoCuentaA_sql.compara)="MAYOR"
-					IF var_valor > AllTRIM(AstoCuentaA_sql.valor1) THEN 
-						v_incerta = .t.
-					ENDIF 
-				CASE UPPER(AstoCuentaA_sql.compara)="MAYOR O IGUAL"
-					IF var_valor >= AllTRIM(AstoCuentaA_sql.valor1) THEN 
-						v_incerta = .t.
-					ENDIF 
-				CASE UPPER(AstoCuentaA_sql.compara)="MENOR"
-					IF var_valor < AllTRIM(AstoCuentaA_sql.valor1) THEN 
-						v_incerta = .t.
-					ENDIF 
-				CASE UPPER(AstoCuentaA_sql.compara)="MENOR O IGUAL"
-					IF var_valor <= AllTRIM(AstoCuentaA_sql.valor1) THEN 
-						v_incerta = .t.
-					ENDIF 
-				CASE UPPER(AstoCuentaA_sql.compara)="DISTINTO"
-					IF var_valor <> AllTRIM(AstoCuentaA_sql.valor1) THEN 
-						v_incerta = .t.
-					ENDIF 
-			ENDCASE 
-			
-			SELECT AstoCuentaA
-			IF v_incerta = .t. THEN 
-				INSERT INTO AstoCuentaA VALUES (AstoCuentaA_sql.idastomode, AstoCuentaA_sql.idastocuen, AstoCuentaA_sql.idcpoconta, AstoCuentaA_sql.dh, ;
-										   AstoCuentaA_sql.detalle, AstoCuentaA_sql.tabla, AstoCuentaA_sql.campo, AstoCuentaA_sql.tipo, ;
-										   AstoCuentaA_sql.detacpo, AstoCuentaA_sql.valor1, AstoCuentaA_sql.compara, AstoCuentaA_sql.valor2, ;
-										   AstoCuentaA_sql.codigocta, AstoCuentaA_sql.tablag, AstoCuentaA_sql.campog, AstoCuentaA_sql.tipog,AstoCuentaA_sql.idcpocontg,var_valor)
-			ENDIF 
-			SELECT tablacuenta
-			SKIP 
-		ENDDO 
-				
-		SELECT AstoCuentaA_sql
-		SKIP 
-		
-	ENDDO 
-
-	 =abreycierracon(vconeccionATO,"")
-	 
-	 SELECT AstoCuentaA
-	 GO TOP 
-
-	 ************* Union de las dos partes que componen el Asiento, ************************************
-	 ************* Se Unen el Valor o Importe a Imputar con la Cuenta que recibe la Imputación *********
-
-	 SELECT AVB.idastomode, AVB.idastocuen, AVB.idcpoconta, AVB.dh, AVB.detalle, AVB.importe ,AVB.importe as debe ,AVB.importe as haber , ;
-	 		 ACA.codigocta, ACA.valor, ACA.idcpocontg, SPACE(50) as tabla, 10000000000 as registro  ;
-	 FROM  AstoValorB AVB left join AstoCuentaA ACA on AVB.idastocuen = ACA.idastocuen ;
-	 INTO TABLE AstoFinalA 
-	 
-	 SELECT AstoFinalA
-	 GO TOP 
-	 replace ALL debe WITH IIF((((dh='D' AND importe > 0) OR (dh='H' AND importe < 0 ))),ABS(importe),0), haber WITH IIF((((dh='H' AND importe > 0) OR (dh='D' AND importe < 0))),ABS(importe),0), ;
-	 			tabla WITH par_tabla, registro WITH par_registro 
-
-	 SELECT  idastomode, codigocta, debe, haber, tabla, registro FROM AstoFinalA INTO TABLE &par_tablaret 
-	 COPY TO &par_tablaret DELIMITED WITH ""
-	
-	 USE IN AstoCuentaA_sql
-	 USE IN AstoValorA_sql
-	 USE IN AstoCuentaA
-	 USE IN AstoValorA
-	 USE IN AstoValorB
-	 USE IN AstoFinalA
-	 USE IN tablacuenta
-	 USE IN tablacampo
-	 USE IN &par_tablaret 
-	 var_retorno = par_tablaret 	 
-	 RETURN var_retorno 
-	
-ENDFUNC 
-
-
 **** FUNCIÓN PARA GENERAR AJUSTES DE UN COMPROBANTE de PROVEEDOR
 ** PARAMETROS: 	P_idtipomov: ID de la tabla tipomstock (Indica el tipo de ajuste a realizar)
 ***				P_idcomproba: ID de la tabla comprobante (comprobante relacionado al ajuste)
@@ -6032,7 +5836,8 @@ PARAMETERS par_asiento
 	
 	IF !EMPTY(varastovalido) THEN 
 		MESSAGEBOX("No se Puede Grabar el Asiento: "+varastovalido)
-		RETURN .F.
+*		RETURN .F.
+		RETURN 0
 	ENDIF 
 	
 	** Obtengo el idasiento nuevo y el numero de asiento nuevo
@@ -6143,10 +5948,9 @@ PARAMETERS par_asiento
 	
 	
 	=abreycierracon(vconeccionp,"")	
-	RETURN .T.
+	RETURN v_idasiento
 	 
 ENDFUNC 
-
 
 
 
@@ -8153,3 +7957,81 @@ PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movim
 ENDFUNC 
 
 
+*/ Contabilizacion de Operaciones
+* Recibe como parametros la tabla, el Idregistro y la conexion, 
+* Verifica que el registro de la tabla pasada ya no esté contabilizado , si es asi no contabiliza, 
+* de otra manera genera y graba el asiento.
+*  RETORNA : NUMERO DE ASIENTO GENERADO "IDASIENTO", 
+* 		   : 0 SI NO GENERO EL ASIENTO 
+*		   : -1 SI NO LO GENERÓ Y EL OPERADOR DEBIERA INGRESARLO, esto se controla con una variable publica : _SYSMCONTABLE de seteo 
+*			que indica si el operador debe ingresar o no los asientos al no encontrar un modelo adecuado
+*          : -2 NO Generó el Asiento porque no está habilitado el Módulo Contable
+
+FUNCTION ContabilizaMov
+	PARAMETERS pcont_tabla, pcont_id, pcont_conex
+	
+	IF TYPE('_SYSCONTABLE') <> 'N' THEN 
+		ret_idasiento = -2
+		RETURN ret_idasiento 
+	ELSE 
+		IF _SYSCONTABLE < 0 OR _SYSCONTABLE > 3  THEN 
+			ret_idasiento = -2
+			RETURN ret_idasiento 		
+		ENDIF 
+		IF _SYSCONTABLE = 0 THEN 
+			ret_idasiento = -2
+			RETURN ret_idasiento 					
+		ENDIF 
+		IF _SYSCONTABLE = 3 THEN 
+			ret_idasiento = -1
+		ENDIF 
+	ENDIF 
+	ret_idasiento = 0
+	IF pcont_conex = 0 THEN 
+		vcone_conta=abreycierracon(0,_SYSSCHEMA)
+	ELSE
+		vcone_conta = pcont_conex
+	ENDIF 
+
+	* Verifico si el registro pasado ya no está contabilizado *
+	
+	sqlmatriz(1)= " select idastocompro, idasiento, idregicomp, tabla  "
+	sqlmatriz(2)= " from asientoscompro where tabla = '"+ALLTRIM(pcont_tabla)+"' and idregicomp="+alltrim(STR(pcont_id))
+	verror=sqlrun(vcone_conta ,"conta_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los parámetros de movimientos ",0+48+0,"Error")
+	    RETURN ""  
+	ENDIF	
+	SELECT conta_sql
+	GO TOP 
+	IF !EOF() AND RECNO() = 1 THEN 
+		 ret_idasiento = conta_sql.idasiento
+	ELSE  
+	    *********************************************************
+		para_tablaret 	= 'astopropuesto'
+		para_tabla 			= ALLTRIM(pcont_tabla)
+		para_registro 		= pcont_id
+		para_filtromodelo	= FiltroAstoModelo (para_tabla, para_registro,vcone_conta)
+
+		IF !EMPTY(para_filtromodelo) THEN 
+			para_filtro 	= INT(VAL(SUBSTR(para_filtromodelo,1,4)))
+			para_modelo 	= INT(VAL(SUBSTR(para_filtromodelo,5,4)))
+					
+			rettabla=GenAstoContable(para_modelo, para_tabla, para_registro,para_filtro,1,1,para_tablaret)
+			IF !EMPTY(rettabla) THEN 
+				var_grabo = IncerAstoContable(rettabla) && Graba el Asiento recibido como parametro 
+				ret_idasiento = var_grabo
+			ENDIF 
+		ENDIF 
+	ENDIF 
+	
+	IF pcont_conex = 0 THEN 
+		=abreycierracon(vcone_conta,"")
+	ENDIF 
+
+	IF (_SYSCONTABLE = 1 OR _SYSCONTABLE = 3) AND ret_idasiento = 0 THEN 
+		ret_idasiento = -1
+	ENDIF 
+
+	RETURN ret_idasiento
+ENDFUNC 
