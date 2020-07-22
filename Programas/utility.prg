@@ -5835,7 +5835,7 @@ PARAMETERS par_asiento
 	USE IN cuentainvalida
 	
 	IF !EMPTY(varastovalido) THEN 
-		MESSAGEBOX("No se Puede Grabar el Asiento: "+varastovalido)
+*!*			MESSAGEBOX("No se Puede Grabar el Asiento: "+varastovalido)
 *		RETURN .F.
 		RETURN 0
 	ENDIF 
@@ -7970,6 +7970,7 @@ ENDFUNC
 FUNCTION ContabilizaMov
 	PARAMETERS pcont_tabla, pcont_id, pcont_conex
 	
+	ret_idasiento = 0
 	IF TYPE('_SYSCONTABLE') <> 'N' THEN 
 		ret_idasiento = -2
 		RETURN ret_idasiento 
@@ -7986,45 +7987,75 @@ FUNCTION ContabilizaMov
 			ret_idasiento = -1
 		ENDIF 
 	ENDIF 
-	ret_idasiento = 0
 	IF pcont_conex = 0 THEN 
 		vcone_conta=abreycierracon(0,_SYSSCHEMA)
 	ELSE
 		vcone_conta = pcont_conex
 	ENDIF 
 
-	* Verifico si el registro pasado ya no está contabilizado *
-	
-	sqlmatriz(1)= " select idastocompro, idasiento, idregicomp, tabla  "
-	sqlmatriz(2)= " from asientoscompro where tabla = '"+ALLTRIM(pcont_tabla)+"' and idregicomp="+alltrim(STR(pcont_id))
-	verror=sqlrun(vcone_conta ,"conta_sql")
+	* Verifico Si el comprobante pasado para contabilizar tiene habilitada la contabilización
+	sqlmatriz(1)= " select * from comprobantes where tabla = '"+ALLTRIM(pcont_tabla)+"'"
+	verror=sqlrun(vcone_conta ,"escompro_sql")
 	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los parámetros de movimientos ",0+48+0,"Error")
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Comprobantes ",0+48+0,"Error")
 	    RETURN ""  
 	ENDIF	
-	SELECT conta_sql
+	SELECT escompro_sql
 	GO TOP 
 	IF !EOF() AND RECNO() = 1 THEN 
-		 ret_idasiento = conta_sql.idasiento
-	ELSE  
-	    *********************************************************
-		para_tablaret 	= 'astopropuesto'
-		para_tabla 			= ALLTRIM(pcont_tabla)
-		para_registro 		= pcont_id
-		para_filtromodelo	= FiltroAstoModelo (para_tabla, para_registro,vcone_conta)
+		vnombreidx = obtenerCampoIndice(ALLTRIM(pcont_tabla))
+		sqlmatriz(1)= " select t.idcomproba, c.astoconta from "+ALLTRIM(pcont_tabla)+" t "
+		sqlmatriz(2)= " left join comprobantes c on c.idcomproba = t.idcomproba "
+		sqlmatriz(3)= " where "+ALLTRIM(vnombreidx)+" = "+alltrim(STR(pcont_id))
+		verror=sqlrun(vcone_conta ,"asentar_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda movimientos de tablas ",0+48+0,"Error")
+		    RETURN ""  
+		ENDIF	
+		SELECT asentar_sql
+		IF asentar_sql.astoconta = 'N' THEN 
+			ret_idasiento = -2
+		ENDIF 
+		USE IN asentar_sql
+	ENDIF 
+	USE IN escompro_sql
 
-		IF !EMPTY(para_filtromodelo) THEN 
-			para_filtro 	= INT(VAL(SUBSTR(para_filtromodelo,1,4)))
-			para_modelo 	= INT(VAL(SUBSTR(para_filtromodelo,5,4)))
-					
-			rettabla=GenAstoContable(para_modelo, para_tabla, para_registro,para_filtro,1,1,para_tablaret)
-			IF !EMPTY(rettabla) THEN 
-				var_grabo = IncerAstoContable(rettabla) && Graba el Asiento recibido como parametro 
-				ret_idasiento = var_grabo
+
+
+	* Verifico si el registro pasado ya no está contabilizado , si es que tiene que contabilizarlo *
+
+	IF ret_idasiento = 0 THEN 
+		sqlmatriz(1)= " select idastocompro, idasiento, idregicomp, tabla  "
+		sqlmatriz(2)= " from asientoscompro where tabla = '"+ALLTRIM(pcont_tabla)+"' and idregicomp="+alltrim(STR(pcont_id))
+		verror=sqlrun(vcone_conta ,"conta_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los parámetros de movimientos ",0+48+0,"Error")
+		    RETURN ""  
+		ENDIF	
+		SELECT conta_sql
+		GO TOP 
+		IF !EOF() AND RECNO() = 1 THEN 
+			 ret_idasiento = conta_sql.idasiento
+		ELSE  
+		    *********************************************************
+			para_tablaret 	= 'astopropuesto'
+			para_tabla 			= ALLTRIM(pcont_tabla)
+			para_registro 		= pcont_id
+			para_filtromodelo	= FiltroAstoModelo (para_tabla, para_registro,vcone_conta)
+
+			IF !EMPTY(para_filtromodelo) THEN 
+				para_filtro 	= INT(VAL(SUBSTR(para_filtromodelo,1,4)))
+				para_modelo 	= INT(VAL(SUBSTR(para_filtromodelo,5,4)))
+						
+				rettabla=GenAstoContable(para_modelo, para_tabla, para_registro,para_filtro,1,1,para_tablaret)
+				IF !EMPTY(rettabla) THEN 
+					var_grabo = IncerAstoContable(rettabla) && Graba el Asiento recibido como parametro 
+					ret_idasiento = var_grabo
+				ENDIF 
 			ENDIF 
 		ENDIF 
 	ENDIF 
-	
+		
 	IF pcont_conex = 0 THEN 
 		=abreycierracon(vcone_conta,"")
 	ENDIF 
@@ -8034,4 +8065,135 @@ FUNCTION ContabilizaMov
 	ENDIF 
 
 	RETURN ret_idasiento
+ENDFUNC 
+
+
+
+*/ Contabilizacion de Operaciones Manuales
+* Recibe como parametros la tabla, el Idregistro y la conexion, 
+* Verifica que el registro de la tabla pasada ya no esté contabilizado , si es asi no contabiliza, 
+* de otra manera genera y graba el asiento.
+*  RETORNA : NUMERO DE ASIENTO GENERADO "IDASIENTO", 
+* 		   : 0 SI NO GENERO EL ASIENTO 
+
+FUNCTION ContabilizaManual
+	PARAMETERS pcont_tabla, pcont_id, pcont_conex, pcont_tasiento
+	
+	reto_idasiento = 0
+	IF TYPE('_SYSCONTABLE') <> 'N' THEN 
+		reto_idasiento = -2
+		RETURN reto_idasiento 
+	ELSE 
+		IF _SYSCONTABLE < 0 OR _SYSCONTABLE > 3  THEN 
+			reto_idasiento = -2
+			RETURN ret_idasiento 		
+		ENDIF 
+		IF _SYSCONTABLE = 0 THEN 
+			reto_idasiento = -2
+			RETURN ret_idasiento 					
+		ENDIF 
+		IF _SYSCONTABLE = 3 THEN 
+			reto_idasiento = -1
+		ENDIF 
+	ENDIF 
+	IF pcont_conex = 0 THEN 
+		vcone_conta=abreycierracon(0,_SYSSCHEMA)
+	ELSE
+		vcone_conta = pcont_conex
+	ENDIF 
+
+	* Verifico si el registro pasado ya no está contabilizado , si es que tiene que contabilizarlo *
+
+		sqlmatriz(1)= " select idastocompro, idasiento, idregicomp, tabla  "
+		sqlmatriz(2)= " from asientoscompro where tabla = '"+ALLTRIM(pcont_tabla)+"' and idregicomp="+alltrim(STR(pcont_id))
+		verror=sqlrun(vcone_conta ,"conta_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los parámetros de movimientos ",0+48+0,"Error")
+		    RETURN ""  
+		ENDIF	
+		SELECT conta_sql
+		GO TOP 
+		IF !EOF() AND RECNO() = 1 THEN 
+			reto_idasiento = conta_sql.idasiento
+			USE IN conta_sql 
+		ELSE  
+		    *********************************************************
+			USE IN conta_sql 
+			v_nomIndice	 = obtenerCampoIndice(ALLTRIM(pcont_tabla))
+			v_detallecom = fdescribecompro(pcont_tabla,v_nomIndice,pcont_id)
+
+			para_tablaret 		= 'astopropuesto'
+			para_tabla 			= ALLTRIM(pcont_tabla)
+			para_registro 		= pcont_id
+			para_filtromodelo	= FiltroAstoModelo (para_tabla, para_registro,vcone_conta)
+
+			IF !EMPTY(para_filtromodelo) THEN 
+				para_filtro 	= INT(VAL(SUBSTR(para_filtromodelo,1,4)))
+				para_modelo 	= INT(VAL(SUBSTR(para_filtromodelo,5,4)))
+				rettabla=GenAstoContable(para_modelo, para_tabla, para_registro,para_filtro,1,1,para_tablaret)
+			ELSE
+				rettabla = ""
+			ENDIF 	
+ 
+ 			DO FORM abmasientosconta WITH 0, rettabla,v_detallecom, pcont_tasiento	TO reto_idasiento	&& LLama a la Carga de Asientos con un asiento predeterminado
+
+
+			IF reto_idasiento > 0 THEN 
+
+			*** INSERTO LA RELACION CON EL COMPROBANTE***			
+
+				*** SI HUBIERE ALGUNA RELACION CON EL COMPROBANTE DE ALGUN ASIENTO ANTES ***
+				sqlmatriz(1)=" DELETE FROM asientoscompro WHERE tabla = '"+ALLTRIM(para_tabla)+"' and idregicomp="+ALLTRIM(STR(para_registro))
+				verror=sqlrun(vcone_conta,"asiento1")
+
+				DIMENSION lamatrizR(4,2)
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+						
+						*thisform.calcularmaxh
+				v_idastocompro = maxnumeroidx("idastocompro","I","asientoscompro",1,.T.)
+							
+				lamatrizR(1,1)='idastocompro'
+				lamatrizR(1,2)=ALLTRIM(STR(v_idastocompro))
+				lamatrizR(2,1)='idasiento'
+				lamatrizR(2,2)=ALLTRIM(STR(reto_idasiento))
+				lamatrizR(3,1)='idregicomp'
+				lamatrizR(3,2)=ALLTRIM(STR(para_registro))
+				lamatrizR(4,1)='tabla'
+				lamatrizR(4,2)="'"+ALLTRIM(para_tabla)+"'"
+
+						
+				p_tabla     = 'asientoscompro'
+				p_matriz    = 'lamatrizR'
+				p_conexion  = vcone_conta
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+				ENDIF						
+				RELEASE lamatrizR 
+			ENDIF 
+		ENDIF 
+
+		
+	IF pcont_conex = 0 THEN 
+		=abreycierracon(vcone_conta,"")
+	ENDIF 
+
+	RETURN reto_idasiento
+ENDFUNC 
+
+
+** Funcion de Llamada a Contabilizar los comprobantes recibidos como parametros. 
+* Parametros:
+* 		pcomp_tabla : Tabla que contiene el registro del comprobante a contabilizar
+*		pcomp_id	: id del registro a buscar para contabilizar
+*		pcomp_con	: conexion a la base de datos , si es 0, entonces abre una nueva conexion, sino usa una abierta
+*		pcomp_impo 	: Importe total del comprobante a contabilizar, si es para contabilización manual	
+FUNCTION ContabilizaCompro
+	PARAMETERS pcomp_tabla, pcomp_id, pcomp_con, pcomp_impo
+	v_idasienton= ContabilizaMov(pcomp_tabla,  pcomp_id, pcomp_con )
+	IF v_idasienton = -1 THEN 
+		v_idasienton = ContabilizaManual(pcomp_tabla,  pcomp_id, pcomp_con,pcomp_impo)
+	ENDIF 
+	RETURN v_idasienton
 ENDFUNC 
