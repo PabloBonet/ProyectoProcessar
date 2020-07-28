@@ -200,7 +200,7 @@ ENDIF
  
    
     _SYSMENUSYSTEM =cNameMenuMP+".MPR"
-	DO &_SYSMENUSYSTEM
+*!*		DO &_SYSMENUSYSTEM
 *!*	    &EJE 
 *!*	    COMPILE (THISFORM.cNameMenuMP+".MPR")
 *!*	  ENDPROC
