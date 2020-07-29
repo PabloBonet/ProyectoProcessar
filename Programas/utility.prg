@@ -8264,7 +8264,7 @@ PARAMETERS P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta
 	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 	
 	*** Busco los cheques relacionados a detallecobros ***
-	
+
 
 *!*		sqlmatriz(1)=" select idtipocompro, idtipopago,idcajareca, idcuenta, movimiento, (if(idcajareca = 0,0,1)*2+if(idcuenta = 0,0,1)) as valor "
 *!*		sqlmatriz(2)=" FROM pmovitp "
@@ -8275,6 +8275,7 @@ PARAMETERS P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta
 		sqlmatriz(3)= " (if(idcuenta = "+ALLTRIM(STR(P_idcuenta))+" or idcuenta = 0,1,0))) as coincide, (if(idtipopago = 0,0,1)*4+if(idcuenta = 0,0,1)*2+if(idcajareca = 0,0,1)) as valor "
 		sqlmatriz(4)= " FROM pmovitp  having coincide = 4 order by valor desc "
 
+		
 	verror=sqlrun(vconeccionM ,"pmovitp_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los parámetros de movimientos ",0+48+0,"Error")
@@ -8320,7 +8321,7 @@ PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta
 	v_retorno = .F.	
 	
 	
-
+	
 
 	v_movimiento	=  movimientoTPago(P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta)
 
