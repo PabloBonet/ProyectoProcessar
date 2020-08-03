@@ -1,0 +1,84 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar
+--
+
+CREATE DATABASE IF NOT EXISTS processar;
+USE processar;
+
+--
+-- Definition of table `anularp`
+--
+
+DROP TABLE IF EXISTS `anularp`;
+CREATE TABLE `anularp` (
+  `idanularp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idcomproba` int(10) unsigned NOT NULL,
+  `pventa` int(10) unsigned NOT NULL,
+  `numero` int(10) unsigned NOT NULL,
+  `fecha` varchar(45) NOT NULL,
+  `idrecibo` int(10) unsigned NOT NULL,
+  `idpago` int(10) unsigned NOT NULL,
+  `detallecp` char(50) NOT NULL,
+  `importe` float(13,4) NOT NULL,
+  PRIMARY KEY (`idanularp`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `anularp`
+--
+
+/*!40000 ALTER TABLE `anularp` DISABLE KEYS */;
+INSERT INTO `anularp` (`idanularp`,`idcomproba`,`pventa`,`numero`,`fecha`,`idrecibo`,`idpago`,`detallecp`,`importe`) VALUES 
+ (1,27,1,1,'20200730',0,0,'',719.0000),
+ (2,27,1,3,'20200730',9,0,'detallepagos',704.0000),
+ (3,27,1,4,'20200730',8,0,'detallepagos',719.0000),
+ (4,27,1,5,'20200730',8,0,'detallepagos',719.0000),
+ (5,27,1,6,'20200730',8,0,'detallepagos',719.0000),
+ (6,27,1,7,'20200730',8,0,'detallepagos',719.0000),
+ (7,27,1,8,'20200730',8,0,'detallepagos',719.0000),
+ (8,27,1,9,'20200730',9,0,'detallepagos',704.0000),
+ (9,27,1,10,'20200731',8,0,'detallepagos',719.0000),
+ (10,27,1,11,'20200731',9,0,'detallepagos',704.0000),
+ (11,27,1,12,'20200731',10,0,'detallepagos',1837.8300),
+ (12,27,1,13,'20200731',11,0,'detallepagos',1837.8300),
+ (13,27,1,14,'20200731',11,0,'detallepagos',1837.8300),
+ (14,27,1,15,'20200731',11,0,'detallepagos',1837.8300),
+ (15,27,1,16,'20200731',11,0,'detallepagos',1837.8300),
+ (16,27,1,17,'20200731',11,0,'detallepagos',1837.8300),
+ (17,27,1,18,'20200731',11,0,'detallepagos',1837.8300),
+ (18,27,1,19,'20200731',11,0,'detallepagos',1837.8300),
+ (19,27,1,20,'20200731',12,0,'detallepagos',1837.8300),
+ (20,27,1,21,'20200801',13,0,'detallepagos',1837.8300),
+ (21,27,1,22,'20200801',13,0,'detallepagos',1837.8300),
+ (22,27,1,23,'20200801',13,0,'detallepagos',1837.8300),
+ (23,27,1,24,'20200801',13,0,'detallepagos',1837.8300),
+ (24,28,1,1,'20200803',0,9,'detallecobros',1621.0000),
+ (25,27,1,25,'20200803',9,0,'detallepagos',704.0000);
+/*!40000 ALTER TABLE `anularp` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
