@@ -9,6 +9,7 @@ using System.Xml;
 using System.Reflection;
 using System.Runtime.Remoting;
 using EntidadesClass;
+using System.Net;
 
 namespace ModuloAFIP
 {
@@ -1261,6 +1262,8 @@ namespace ModuloAFIP
             string strTicketRespuesta;
             bool pedirTA = true;
             DateTime fechHoraActual = DateTime.Now;
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
             if (File.Exists(ubicacion_TA)) //Si existe, cargo el TA de la ubicación local
             {              
@@ -1324,7 +1327,8 @@ namespace ModuloAFIP
             {
                 //Obtener el Ticket de Acceso del Web Service
                 if (pedirTA)
-                {                  
+                {           
+                    
                     objTicketRespuesta = new LoginTicket();
                
                     strTicketRespuesta = objTicketRespuesta.ObtenerLoginTicketResponse(strIdServicioNegocio, strUrlWsaaWsdl, strRutaCertSigner, strPasswordSecureString, strProxy, strProxyUser, strProxyPassword, blnVerboseMode);

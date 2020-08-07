@@ -23,7 +23,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.Web.Services.WebServiceBindingAttribute(Name="ServiceSoap", Namespace="http://ar.gov.afip.dif.FEV1/")]
@@ -796,8 +796,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -810,7 +810,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private long cuitField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Token {
             get {
                 return this.tokenField;
@@ -820,7 +820,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Sign {
             get {
                 return this.signField;
@@ -830,7 +830,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public long Cuit {
             get {
                 return this.cuitField;
@@ -841,8 +841,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -853,7 +853,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string descField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public short Id {
             get {
                 return this.idField;
@@ -863,7 +863,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Desc {
             get {
                 return this.descField;
@@ -874,8 +874,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -888,7 +888,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public PaisTipo[] ResultGet {
             get {
                 return this.resultGetField;
@@ -898,7 +898,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -908,7 +908,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -919,8 +919,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -931,7 +931,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string msgField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int Code {
             get {
                 return this.codeField;
@@ -941,7 +941,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Msg {
             get {
                 return this.msgField;
@@ -952,8 +952,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -964,7 +964,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string msgField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int Code {
             get {
                 return this.codeField;
@@ -974,7 +974,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Msg {
             get {
                 return this.msgField;
@@ -985,8 +985,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1001,7 +1001,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string fchHastaField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int Id {
             get {
                 return this.idField;
@@ -1011,7 +1011,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Desc {
             get {
                 return this.descField;
@@ -1021,7 +1021,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchDesde {
             get {
                 return this.fchDesdeField;
@@ -1031,7 +1031,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchHasta {
             get {
                 return this.fchHastaField;
@@ -1042,8 +1042,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1056,7 +1056,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public DocTipo[] ResultGet {
             get {
                 return this.resultGetField;
@@ -1066,7 +1066,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1076,7 +1076,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1087,8 +1087,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1103,7 +1103,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string fchHastaField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int Id {
             get {
                 return this.idField;
@@ -1113,7 +1113,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Desc {
             get {
                 return this.descField;
@@ -1123,7 +1123,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchDesde {
             get {
                 return this.fchDesdeField;
@@ -1133,7 +1133,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchHasta {
             get {
                 return this.fchHastaField;
@@ -1144,8 +1144,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1158,7 +1158,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public CbteTipo[] ResultGet {
             get {
                 return this.resultGetField;
@@ -1168,7 +1168,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1178,7 +1178,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1189,15 +1189,15 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://ar.gov.afip.dif.FEV1/")]
     public partial class PtoVenta {
         
-        private short nroField;
+        private int nroField;
         
         private string emisionTipoField;
         
@@ -1205,8 +1205,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string fchBajaField;
         
-        /// <comentarios/>
-        public short Nro {
+        /// <remarks/>
+        public int Nro {
             get {
                 return this.nroField;
             }
@@ -1215,7 +1215,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string EmisionTipo {
             get {
                 return this.emisionTipoField;
@@ -1225,7 +1225,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Bloqueado {
             get {
                 return this.bloqueadoField;
@@ -1235,7 +1235,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchBaja {
             get {
                 return this.fchBajaField;
@@ -1246,8 +1246,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1260,7 +1260,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public PtoVenta[] ResultGet {
             get {
                 return this.resultGetField;
@@ -1270,7 +1270,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1280,7 +1280,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1291,8 +1291,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1307,7 +1307,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string fchHastaField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int Id {
             get {
                 return this.idField;
@@ -1317,7 +1317,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Desc {
             get {
                 return this.descField;
@@ -1327,7 +1327,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchDesde {
             get {
                 return this.fchDesdeField;
@@ -1337,7 +1337,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchHasta {
             get {
                 return this.fchHastaField;
@@ -1348,8 +1348,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1362,7 +1362,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public ConceptoTipo[] ResultGet {
             get {
                 return this.resultGetField;
@@ -1372,7 +1372,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1382,7 +1382,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1393,8 +1393,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1409,7 +1409,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string fchHastaField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Id {
             get {
                 return this.idField;
@@ -1419,7 +1419,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Desc {
             get {
                 return this.descField;
@@ -1429,7 +1429,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchDesde {
             get {
                 return this.fchDesdeField;
@@ -1439,7 +1439,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchHasta {
             get {
                 return this.fchHastaField;
@@ -1450,8 +1450,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1464,7 +1464,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public OpcionalTipo[] ResultGet {
             get {
                 return this.resultGetField;
@@ -1474,7 +1474,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1484,7 +1484,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1495,8 +1495,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1511,7 +1511,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string fchHastaField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Id {
             get {
                 return this.idField;
@@ -1521,7 +1521,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Desc {
             get {
                 return this.descField;
@@ -1531,7 +1531,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchDesde {
             get {
                 return this.fchDesdeField;
@@ -1541,7 +1541,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchHasta {
             get {
                 return this.fchHastaField;
@@ -1552,8 +1552,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1566,7 +1566,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public IvaTipo[] ResultGet {
             get {
                 return this.resultGetField;
@@ -1576,7 +1576,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1586,7 +1586,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1597,8 +1597,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1613,7 +1613,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string fchHastaField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Id {
             get {
                 return this.idField;
@@ -1623,7 +1623,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Desc {
             get {
                 return this.descField;
@@ -1633,7 +1633,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchDesde {
             get {
                 return this.fchDesdeField;
@@ -1643,7 +1643,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchHasta {
             get {
                 return this.fchHastaField;
@@ -1654,8 +1654,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1668,7 +1668,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public Moneda[] ResultGet {
             get {
                 return this.resultGetField;
@@ -1678,7 +1678,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1688,7 +1688,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1699,8 +1699,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1715,7 +1715,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string fchHastaField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public short Id {
             get {
                 return this.idField;
@@ -1725,7 +1725,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Desc {
             get {
                 return this.descField;
@@ -1735,7 +1735,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchDesde {
             get {
                 return this.fchDesdeField;
@@ -1745,7 +1745,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchHasta {
             get {
                 return this.fchHastaField;
@@ -1756,8 +1756,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1770,7 +1770,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public TributoTipo[] ResultGet {
             get {
                 return this.resultGetField;
@@ -1780,7 +1780,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1790,7 +1790,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1801,8 +1801,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1815,7 +1815,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string fchCotizField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string MonId {
             get {
                 return this.monIdField;
@@ -1825,7 +1825,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double MonCotiz {
             get {
                 return this.monCotizField;
@@ -1835,7 +1835,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchCotiz {
             get {
                 return this.fchCotizField;
@@ -1846,8 +1846,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1860,7 +1860,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public Cotizacion ResultGet {
             get {
                 return this.resultGetField;
@@ -1870,7 +1870,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1880,7 +1880,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1891,9 +1891,9 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
+    /// <remarks/>
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECAEASinMovResponse))]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1906,7 +1906,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private int ptoVtaField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string CAEA {
             get {
                 return this.cAEAField;
@@ -1916,7 +1916,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchProceso {
             get {
                 return this.fchProcesoField;
@@ -1926,7 +1926,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int PtoVta {
             get {
                 return this.ptoVtaField;
@@ -1937,8 +1937,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1951,7 +1951,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Resultado {
             get {
                 return this.resultadoField;
@@ -1961,7 +1961,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -1971,7 +1971,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -1982,8 +1982,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -1996,7 +1996,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAEASinMov[] ResultGet {
             get {
                 return this.resultGetField;
@@ -2006,7 +2006,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -2016,7 +2016,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -2027,8 +2027,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2051,7 +2051,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Obs[] observacionesField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string CAEA {
             get {
                 return this.cAEAField;
@@ -2061,7 +2061,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int Periodo {
             get {
                 return this.periodoField;
@@ -2071,7 +2071,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public short Orden {
             get {
                 return this.ordenField;
@@ -2081,7 +2081,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchVigDesde {
             get {
                 return this.fchVigDesdeField;
@@ -2091,7 +2091,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchVigHasta {
             get {
                 return this.fchVigHastaField;
@@ -2101,7 +2101,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchTopeInf {
             get {
                 return this.fchTopeInfField;
@@ -2111,7 +2111,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchProceso {
             get {
                 return this.fchProcesoField;
@@ -2121,7 +2121,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Obs[] Observaciones {
             get {
                 return this.observacionesField;
@@ -2132,8 +2132,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2144,7 +2144,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string msgField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int Code {
             get {
                 return this.codeField;
@@ -2154,7 +2154,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Msg {
             get {
                 return this.msgField;
@@ -2165,8 +2165,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2179,7 +2179,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAEAGet ResultGet {
             get {
                 return this.resultGetField;
@@ -2189,7 +2189,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -2199,7 +2199,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -2210,8 +2210,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2226,7 +2226,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Err[] errorsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAEACabResponse FeCabResp {
             get {
                 return this.feCabRespField;
@@ -2236,7 +2236,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAEADetResponse[] FeDetResp {
             get {
                 return this.feDetRespField;
@@ -2246,7 +2246,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -2256,7 +2256,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -2267,8 +2267,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2276,10 +2276,10 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     public partial class FECAEACabResponse : FECabResponse {
     }
     
-    /// <comentarios/>
+    /// <remarks/>
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECAEACabResponse))]
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECAECabResponse))]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2300,7 +2300,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string reprocesoField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public long Cuit {
             get {
                 return this.cuitField;
@@ -2310,7 +2310,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int PtoVta {
             get {
                 return this.ptoVtaField;
@@ -2320,7 +2320,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int CbteTipo {
             get {
                 return this.cbteTipoField;
@@ -2330,7 +2330,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchProceso {
             get {
                 return this.fchProcesoField;
@@ -2340,7 +2340,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int CantReg {
             get {
                 return this.cantRegField;
@@ -2350,7 +2350,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Resultado {
             get {
                 return this.resultadoField;
@@ -2360,7 +2360,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Reproceso {
             get {
                 return this.reprocesoField;
@@ -2371,8 +2371,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2380,8 +2380,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     public partial class FECAECabResponse : FECabResponse {
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2390,7 +2390,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string cAEAField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string CAEA {
             get {
                 return this.cAEAField;
@@ -2401,10 +2401,10 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
+    /// <remarks/>
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECAEADetResponse))]
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECAEDetResponse))]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2427,7 +2427,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Obs[] observacionesField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int Concepto {
             get {
                 return this.conceptoField;
@@ -2437,7 +2437,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int DocTipo {
             get {
                 return this.docTipoField;
@@ -2447,7 +2447,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public long DocNro {
             get {
                 return this.docNroField;
@@ -2457,7 +2457,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public long CbteDesde {
             get {
                 return this.cbteDesdeField;
@@ -2467,7 +2467,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public long CbteHasta {
             get {
                 return this.cbteHastaField;
@@ -2477,7 +2477,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string CbteFch {
             get {
                 return this.cbteFchField;
@@ -2487,7 +2487,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Resultado {
             get {
                 return this.resultadoField;
@@ -2497,7 +2497,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Obs[] Observaciones {
             get {
                 return this.observacionesField;
@@ -2508,8 +2508,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2520,7 +2520,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string cAEFchVtoField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string CAE {
             get {
                 return this.cAEField;
@@ -2530,7 +2530,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string CAEFchVto {
             get {
                 return this.cAEFchVtoField;
@@ -2541,8 +2541,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2553,7 +2553,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private FECAEADetRequest[] feDetReqField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAEACabRequest FeCabReq {
             get {
                 return this.feCabReqField;
@@ -2563,7 +2563,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAEADetRequest[] FeDetReq {
             get {
                 return this.feDetReqField;
@@ -2574,8 +2574,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2583,10 +2583,10 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     public partial class FECAEACabRequest : FECabRequest {
     }
     
-    /// <comentarios/>
+    /// <remarks/>
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECAEACabRequest))]
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECAECabRequest))]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2599,7 +2599,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private int cbteTipoField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int CantReg {
             get {
                 return this.cantRegField;
@@ -2609,7 +2609,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int PtoVta {
             get {
                 return this.ptoVtaField;
@@ -2619,7 +2619,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int CbteTipo {
             get {
                 return this.cbteTipoField;
@@ -2630,8 +2630,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2639,8 +2639,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     public partial class FECAECabRequest : FECabRequest {
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2649,7 +2649,9 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string cAEAField;
         
-        /// <comentarios/>
+        private string cbteFchHsGenField;
+        
+        /// <remarks/>
         public string CAEA {
             get {
                 return this.cAEAField;
@@ -2658,13 +2660,23 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
                 this.cAEAField = value;
             }
         }
+        
+        /// <remarks/>
+        public string CbteFchHsGen {
+            get {
+                return this.cbteFchHsGenField;
+            }
+            set {
+                this.cbteFchHsGenField = value;
+            }
+        }
     }
     
-    /// <comentarios/>
+    /// <remarks/>
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECAEADetRequest))]
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECAEDetRequest))]
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECompConsResponse))]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2713,7 +2725,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Opcional[] opcionalesField;
         
-        /// <comentarios/>
+        private Comprador[] compradoresField;
+        
+        private Periodo periodoAsocField;
+        
+        /// <remarks/>
         public int Concepto {
             get {
                 return this.conceptoField;
@@ -2723,7 +2739,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int DocTipo {
             get {
                 return this.docTipoField;
@@ -2733,7 +2749,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public long DocNro {
             get {
                 return this.docNroField;
@@ -2743,7 +2759,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public long CbteDesde {
             get {
                 return this.cbteDesdeField;
@@ -2753,7 +2769,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public long CbteHasta {
             get {
                 return this.cbteHastaField;
@@ -2763,7 +2779,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string CbteFch {
             get {
                 return this.cbteFchField;
@@ -2773,7 +2789,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double ImpTotal {
             get {
                 return this.impTotalField;
@@ -2783,7 +2799,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double ImpTotConc {
             get {
                 return this.impTotConcField;
@@ -2793,7 +2809,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double ImpNeto {
             get {
                 return this.impNetoField;
@@ -2803,7 +2819,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double ImpOpEx {
             get {
                 return this.impOpExField;
@@ -2813,7 +2829,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double ImpTrib {
             get {
                 return this.impTribField;
@@ -2823,7 +2839,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double ImpIVA {
             get {
                 return this.impIVAField;
@@ -2833,7 +2849,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchServDesde {
             get {
                 return this.fchServDesdeField;
@@ -2843,7 +2859,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchServHasta {
             get {
                 return this.fchServHastaField;
@@ -2853,7 +2869,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchVtoPago {
             get {
                 return this.fchVtoPagoField;
@@ -2863,7 +2879,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string MonId {
             get {
                 return this.monIdField;
@@ -2873,7 +2889,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double MonCotiz {
             get {
                 return this.monCotizField;
@@ -2883,7 +2899,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public CbteAsoc[] CbtesAsoc {
             get {
                 return this.cbtesAsocField;
@@ -2893,7 +2909,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Tributo[] Tributos {
             get {
                 return this.tributosField;
@@ -2903,7 +2919,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public AlicIva[] Iva {
             get {
                 return this.ivaField;
@@ -2913,7 +2929,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Opcional[] Opcionales {
             get {
                 return this.opcionalesField;
@@ -2922,10 +2938,30 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
                 this.opcionalesField = value;
             }
         }
+        
+        /// <remarks/>
+        public Comprador[] Compradores {
+            get {
+                return this.compradoresField;
+            }
+            set {
+                this.compradoresField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public Periodo PeriodoAsoc {
+            get {
+                return this.periodoAsocField;
+            }
+            set {
+                this.periodoAsocField = value;
+            }
+        }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2938,7 +2974,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private long nroField;
         
-        /// <comentarios/>
+        private string cuitField;
+        
+        private string cbteFchField;
+        
+        /// <remarks/>
         public int Tipo {
             get {
                 return this.tipoField;
@@ -2948,7 +2988,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int PtoVta {
             get {
                 return this.ptoVtaField;
@@ -2958,7 +2998,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public long Nro {
             get {
                 return this.nroField;
@@ -2967,10 +3007,30 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
                 this.nroField = value;
             }
         }
+        
+        /// <remarks/>
+        public string Cuit {
+            get {
+                return this.cuitField;
+            }
+            set {
+                this.cuitField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public string CbteFch {
+            get {
+                return this.cbteFchField;
+            }
+            set {
+                this.cbteFchField = value;
+            }
+        }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -2987,7 +3047,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private double importeField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public short Id {
             get {
                 return this.idField;
@@ -2997,7 +3057,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Desc {
             get {
                 return this.descField;
@@ -3007,7 +3067,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double BaseImp {
             get {
                 return this.baseImpField;
@@ -3017,7 +3077,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double Alic {
             get {
                 return this.alicField;
@@ -3027,7 +3087,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double Importe {
             get {
                 return this.importeField;
@@ -3038,8 +3098,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -3052,7 +3112,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private double importeField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int Id {
             get {
                 return this.idField;
@@ -3062,7 +3122,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double BaseImp {
             get {
                 return this.baseImpField;
@@ -3072,7 +3132,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public double Importe {
             get {
                 return this.importeField;
@@ -3083,8 +3143,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -3095,7 +3155,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string valorField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Id {
             get {
                 return this.idField;
@@ -3105,7 +3165,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Valor {
             get {
                 return this.valorField;
@@ -3116,9 +3176,87 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://ar.gov.afip.dif.FEV1/")]
+    public partial class Comprador {
+        
+        private int docTipoField;
+        
+        private long docNroField;
+        
+        private double porcentajeField;
+        
+        /// <remarks/>
+        public int DocTipo {
+            get {
+                return this.docTipoField;
+            }
+            set {
+                this.docTipoField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public long DocNro {
+            get {
+                return this.docNroField;
+            }
+            set {
+                this.docNroField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public double Porcentaje {
+            get {
+                return this.porcentajeField;
+            }
+            set {
+                this.porcentajeField = value;
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://ar.gov.afip.dif.FEV1/")]
+    public partial class Periodo {
+        
+        private string fchDesdeField;
+        
+        private string fchHastaField;
+        
+        /// <remarks/>
+        public string FchDesde {
+            get {
+                return this.fchDesdeField;
+            }
+            set {
+                this.fchDesdeField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public string FchHasta {
+            get {
+                return this.fchHastaField;
+            }
+            set {
+                this.fchHastaField = value;
+            }
+        }
+    }
+    
+    /// <remarks/>
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(FECompConsResponse))]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -3126,8 +3264,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     public partial class FECAEDetRequest : FEDetRequest {
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -3150,7 +3288,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private int cbteTipoField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string Resultado {
             get {
                 return this.resultadoField;
@@ -3160,7 +3298,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string CodAutorizacion {
             get {
                 return this.codAutorizacionField;
@@ -3170,7 +3308,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string EmisionTipo {
             get {
                 return this.emisionTipoField;
@@ -3180,7 +3318,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchVto {
             get {
                 return this.fchVtoField;
@@ -3190,7 +3328,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string FchProceso {
             get {
                 return this.fchProcesoField;
@@ -3200,7 +3338,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Obs[] Observaciones {
             get {
                 return this.observacionesField;
@@ -3210,7 +3348,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int PtoVta {
             get {
                 return this.ptoVtaField;
@@ -3220,7 +3358,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int CbteTipo {
             get {
                 return this.cbteTipoField;
@@ -3231,31 +3369,21 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://ar.gov.afip.dif.FEV1/")]
     public partial class FECompConsultaResponse {
         
-        private Err[] errorsField;
-        
         private FECompConsResponse resultGetField;
+        
+        private Err[] errorsField;
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
-        public Err[] Errors {
-            get {
-                return this.errorsField;
-            }
-            set {
-                this.errorsField = value;
-            }
-        }
-        
-        /// <comentarios/>
+        /// <remarks/>
         public FECompConsResponse ResultGet {
             get {
                 return this.resultGetField;
@@ -3265,7 +3393,17 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
+        public Err[] Errors {
+            get {
+                return this.errorsField;
+            }
+            set {
+                this.errorsField = value;
+            }
+        }
+        
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -3276,8 +3414,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -3290,7 +3428,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private int ptoVtaField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int CbteTipo {
             get {
                 return this.cbteTipoField;
@@ -3300,7 +3438,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public long CbteNro {
             get {
                 return this.cbteNroField;
@@ -3310,7 +3448,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int PtoVta {
             get {
                 return this.ptoVtaField;
@@ -3321,15 +3459,13 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://ar.gov.afip.dif.FEV1/")]
     public partial class FERecuperaLastCbteResponse {
-        
-        private Err[] errorsField;
         
         private int ptoVtaField;
         
@@ -3337,19 +3473,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private int cbteNroField;
         
+        private Err[] errorsField;
+        
         private Evt[] eventsField;
         
-        /// <comentarios/>
-        public Err[] Errors {
-            get {
-                return this.errorsField;
-            }
-            set {
-                this.errorsField = value;
-            }
-        }
-        
-        /// <comentarios/>
+        /// <remarks/>
         public int PtoVta {
             get {
                 return this.ptoVtaField;
@@ -3359,7 +3487,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int CbteTipo {
             get {
                 return this.cbteTipoField;
@@ -3369,7 +3497,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public int CbteNro {
             get {
                 return this.cbteNroField;
@@ -3379,7 +3507,17 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
+        public Err[] Errors {
+            get {
+                return this.errorsField;
+            }
+            set {
+                this.errorsField = value;
+            }
+        }
+        
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -3390,8 +3528,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -3404,7 +3542,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private string authServerField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public string AppServer {
             get {
                 return this.appServerField;
@@ -3414,7 +3552,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string DbServer {
             get {
                 return this.dbServerField;
@@ -3424,7 +3562,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public string AuthServer {
             get {
                 return this.authServerField;
@@ -3435,8 +3573,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -3449,7 +3587,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Evt[] eventsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public int RegXReq {
             get {
                 return this.regXReqField;
@@ -3459,7 +3597,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -3469,7 +3607,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -3480,8 +3618,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -3496,7 +3634,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private Err[] errorsField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAECabResponse FeCabResp {
             get {
                 return this.feCabRespField;
@@ -3506,7 +3644,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAEDetResponse[] FeDetResp {
             get {
                 return this.feDetRespField;
@@ -3516,7 +3654,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Evt[] Events {
             get {
                 return this.eventsField;
@@ -3526,7 +3664,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public Err[] Errors {
             get {
                 return this.errorsField;
@@ -3537,8 +3675,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         }
     }
     
-    /// <comentarios/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1055.0")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.3752.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -3549,7 +3687,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private FECAEDetRequest[] feDetReqField;
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAECabRequest FeCabReq {
             get {
                 return this.feCabReqField;
@@ -3559,7 +3697,7 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
         }
         
-        /// <comentarios/>
+        /// <remarks/>
         public FECAEDetRequest[] FeDetReq {
             get {
                 return this.feDetReqField;
@@ -3571,11 +3709,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FECAESolicitarCompletedEventHandler(object sender, FECAESolicitarCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FECAESolicitarCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3597,11 +3735,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FECompTotXRequestCompletedEventHandler(object sender, FECompTotXRequestCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FECompTotXRequestCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3623,11 +3761,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEDummyCompletedEventHandler(object sender, FEDummyCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEDummyCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3649,11 +3787,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FECompUltimoAutorizadoCompletedEventHandler(object sender, FECompUltimoAutorizadoCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FECompUltimoAutorizadoCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3675,11 +3813,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FECompConsultarCompletedEventHandler(object sender, FECompConsultarCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FECompConsultarCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3701,11 +3839,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FECAEARegInformativoCompletedEventHandler(object sender, FECAEARegInformativoCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FECAEARegInformativoCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3727,11 +3865,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FECAEASolicitarCompletedEventHandler(object sender, FECAEASolicitarCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FECAEASolicitarCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3753,11 +3891,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FECAEASinMovimientoConsultarCompletedEventHandler(object sender, FECAEASinMovimientoConsultarCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FECAEASinMovimientoConsultarCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3779,11 +3917,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FECAEASinMovimientoInformarCompletedEventHandler(object sender, FECAEASinMovimientoInformarCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FECAEASinMovimientoInformarCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3805,11 +3943,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FECAEAConsultarCompletedEventHandler(object sender, FECAEAConsultarCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FECAEAConsultarCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3831,11 +3969,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetCotizacionCompletedEventHandler(object sender, FEParamGetCotizacionCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetCotizacionCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3857,11 +3995,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetTiposTributosCompletedEventHandler(object sender, FEParamGetTiposTributosCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetTiposTributosCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3883,11 +4021,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetTiposMonedasCompletedEventHandler(object sender, FEParamGetTiposMonedasCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetTiposMonedasCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3909,11 +4047,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetTiposIvaCompletedEventHandler(object sender, FEParamGetTiposIvaCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetTiposIvaCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3935,11 +4073,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetTiposOpcionalCompletedEventHandler(object sender, FEParamGetTiposOpcionalCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetTiposOpcionalCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3961,11 +4099,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetTiposConceptoCompletedEventHandler(object sender, FEParamGetTiposConceptoCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetTiposConceptoCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -3987,11 +4125,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetPtosVentaCompletedEventHandler(object sender, FEParamGetPtosVentaCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetPtosVentaCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -4013,11 +4151,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetTiposCbteCompletedEventHandler(object sender, FEParamGetTiposCbteCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetTiposCbteCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -4039,11 +4177,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetTiposDocCompletedEventHandler(object sender, FEParamGetTiposDocCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetTiposDocCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
@@ -4065,11 +4203,11 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     public delegate void FEParamGetTiposPaisesCompletedEventHandler(object sender, FEParamGetTiposPaisesCompletedEventArgs e);
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.6.1055.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.3752.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class FEParamGetTiposPaisesCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {

@@ -10,3 +10,4 @@ C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\ob
 C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Release\EntidadesClass.dll
 C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\obj\Release\EntidadesClass.pdb
 C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Release\EntidadesClass.tlb
+C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\EntidadesClass\bin\Release\System.Web.Services.dll

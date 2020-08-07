@@ -39,4 +39,3 @@ C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ClienteLoginCms_C
 C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ClienteLoginCms_CS\obj\Release\ClienteLoginCms_CS.pdb
 C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ClienteLoginCms_CS\obj\Release\ClienteLoginCms_CS.XmlSerializers.dll
 C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ClienteLoginCms_CS\bin\Release\ClienteLoginCms_CS.tlb
-C:\Users\pablo\Documents\Visual Studio 2019\Projects\Librerias\ClienteLoginCms_CS\obj\Release\ClienteLoginCms_CS.csprojAssemblyReference.cache

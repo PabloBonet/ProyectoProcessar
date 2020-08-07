@@ -69,6 +69,7 @@
           <s:element minOccurs="0" maxOccurs="1" name="Tributos" type="tns:ArrayOfTributo" />
           <s:element minOccurs="0" maxOccurs="1" name="Iva" type="tns:ArrayOfAlicIva" />
           <s:element minOccurs="0" maxOccurs="1" name="Opcionales" type="tns:ArrayOfOpcional" />
+          <s:element minOccurs="0" maxOccurs="1" name="Compradores" type="tns:ArrayOfComprador" />
         </s:sequence>
       </s:complexType>
       <s:complexType name="ArrayOfCbteAsoc">
@@ -82,6 +83,7 @@
           <s:element minOccurs="1" maxOccurs="1" name="PtoVta" type="s:int" />
           <s:element minOccurs="1" maxOccurs="1" name="Nro" type="s:long" />
           <s:element minOccurs="0" maxOccurs="1" name="Cuit" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CbteFch" type="s:string" />
         </s:sequence>
       </s:complexType>
       <s:complexType name="ArrayOfTributo">
@@ -119,6 +121,18 @@
         <s:sequence>
           <s:element minOccurs="0" maxOccurs="1" name="Id" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="Valor" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfComprador">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="Comprador" nillable="true" type="tns:Comprador" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Comprador">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="DocTipo" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="DocNro" type="s:long" />
+          <s:element minOccurs="1" maxOccurs="1" name="Porcentaje" type="s:double" />
         </s:sequence>
       </s:complexType>
       <s:element name="FECAESolicitarResponse">
@@ -349,6 +363,7 @@
           <s:extension base="tns:FEDetRequest">
             <s:sequence>
               <s:element minOccurs="0" maxOccurs="1" name="CAEA" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="CbteFchHsGen" type="s:string" />
             </s:sequence>
           </s:extension>
         </s:complexContent>
@@ -727,7 +742,7 @@
       </s:complexType>
       <s:complexType name="PtoVenta">
         <s:sequence>
-          <s:element minOccurs="1" maxOccurs="1" name="Nro" type="s:short" />
+          <s:element minOccurs="1" maxOccurs="1" name="Nro" type="s:int" />
           <s:element minOccurs="0" maxOccurs="1" name="EmisionTipo" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="Bloqueado" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="FchBaja" type="s:string" />
