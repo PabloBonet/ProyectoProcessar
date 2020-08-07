@@ -26,7 +26,7 @@ ON KEY LABEL CTRL+F4 DO SALIRMENU
 ON KEY LABEL ESC DO SETEO_ESC 
 ON KEY LABEL CTRL+F11 MESSAGEBOX(_screen.ActiveForm.name)
 
-SET PROCEDURE TO UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg 
+SET PROCEDURE TO UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg , ftp_class.prg
 SET CLASSLIB TO  toolbarsys.vcx
 SET CLASSLIB TO crystalreports.vcx additive
 SET CLASSLIB TO util.vcx ADDITIVE 
@@ -44,7 +44,7 @@ WAIT windows "Verificando Conexion con Base de Datos... Aguarde..." NOWAIT
 =LEECONFIG()
 
 *** SETEO  Y DEFINICION DE VARIABLES PUBLICAS Y DE INICIO
-PUBLIC _SYSSERVIDOR , _SYSMENUSYSTEM, _SYSMODULO , _SYSUSUARIO , _SYSVERSION , _SYSIP, _SYSHOST, _SYSLISTAPRECIO, _SYSBGPROCE
+PUBLIC _SYSSERVIDOR , _SYSMENUSYSTEM, _SYSMODULO , _SYSUSUARIO , _SYSVERSION , _SYSIP, _SYSHOST, _SYSLISTAPRECIO, _SYSBGPROCE, _SYSVERSION
 PUBLIC _SYSMASTER_SERVER ,_SYSMASTER_USER, _SYSMASTER_PASS ,_SYSMASTER_USER , _SYSMYSQL_PORT , _SYSMASTER_SCHEMA, _SYSMASTER_DESC 
 
 PUBLIC SQLMATRIZ(20)
@@ -99,6 +99,30 @@ _screen.windowstate= 2
 WAIT CLEAR 
 
 
+*!*	****************
+*!*	**** OBTIENE LA VERSION ACTUAL
+*!* ****
+
+v_archivoversion = STRTRAN(LOWER(ALLTRIM(JUSTFNAME(SYS(16,1)))),'.exe','ver.txt')
+PUNTERO = FOPEN(v_archivoversion,0)
+IF PUNTERO > 0 THEN
+	_SYSVERSION  = ALLTRIM(FGETS(PUNTERO))
+	IF EMPTY(ALLTRIM(_SYSVERSION)) THEN 
+		_SYSVERSION ="0.0.0"			
+	ENDIF
+	=FCLOSE(PUNTERO)
+ELSE
+	PUNTERO = FCREATE(v_archivoversion)
+	IF PUNTERO > 0 THEN 
+		FPUTS(PUNTERO,"0.0.0")
+		FCLOSE(PUNTERO)
+	ENDIF 
+	_SYSVERSION = "0.0.0"
+ENDIF
+
+
+****************************************************
+*!*	****************
 
 =DEFVARPUBLICAS ('varpublicas')
 
@@ -110,9 +134,8 @@ _SYSLISTAPRECIO	= ""
 
 _SYSMASTER_DESC		= _SYSDESCRIP  
 
-
 _screen.BackColor 	= &_SYSCOLORFONDO
-_screen.Caption 	= _SYSTITULO
+_screen.Caption 	= _SYSTITULO +" V." + _SYSVERSION
 
 _SYSIP = IPADDRESS(1)
 _SYSHOST= IPADDRESS(2)
@@ -133,9 +156,7 @@ SET DEFAULT TO &_SYSESTACION
 
 ON SHUTDOWN DO CERRAR_TODO
 
-*!*	****************
-*!*	****************
-*!*	****************
+
   
 toolbarsys.dock(1)
 
@@ -161,7 +182,7 @@ toolbarsys.dock(1)
 	SET SYSMENU TO 
 	
 	DO FORM LOGIN TO LOGEO
-	
+
 	IF LOGEO > 0 THEN 
 	  	KEYBOARD '{F10}'
 		toolbarsys.show 

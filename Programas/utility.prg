@@ -8978,10 +8978,35 @@ PARAMETERS pca_idasiento,pca_DH, pca_tablaOri, pca_idOri, pca_tablaDes, pca_idDe
 ENDFUNC 
 
 
+*/* Manejo de funciones de Error para las conexiones FTP
 
-
-
-
+PROCEDURE MENSAJE_ERROR
+LPARAMETERS toFTP, tcMensaje
+LOCAL KEY_ENTER
+  
+  #DEFINE MSG_BOTON_OK    0
+  #DEFINE MSG_ICONO_STOP 16
+  
+  KEY_ENTER = 13
+  
+  tcMensaje = Alltrim(tcMensaje)
+  tcMensaje = Strtran(tcMensaje, Chr(0), "")
+  
+  tcMensaje = '"' + Strtran(tcMensaje, "*", '" + Chr(KEY_ENTER) + "') + '"'
+  
+  TRY
+    tcMensaje = Evaluate(tcMensaje)
+  CATCH
+  ENDTRY
+  
+  =MessageBox(tcMensaje, MSG_ICONO_STOP + MSG_BOTON_OK, "Hay un problema...")
+  
+  WITH toFTP
+    .cMensajeError    = ""
+    .nCodigoResultado = 0
+  ENDWITH
+  
+ENDPROC
 
 
 
