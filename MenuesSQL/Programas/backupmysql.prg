@@ -104,7 +104,7 @@ FUNCTION backupmysql(xControl, xCamino)
 	=FWRITE(xApunta,xContenido)
 	=FPUTS(xApunta," ")
 	
-	xContenido = "copy "+ALLTRIM(MIPATHBACKUP)+"pkzip25.exe "+ALLTRIM(xCamino)
+	xContenido = "copy "+ALLTRIM(MISERVIDOR)+"\pkzip25.exe "+ALLTRIM(xCamino)
 	=FWRITE(xApunta,xContenido)
 	=FPUTS(xApunta," ")
 	
