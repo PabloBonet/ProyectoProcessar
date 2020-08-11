@@ -8664,7 +8664,7 @@ PARAMETERS pan_idcomproba, pan_idregistro
 				SELECT detalle
 				GO TOP 							
 				DIMENSION lamatriz(6,2)
-				DIMENSION lamatrizL(9,2)
+				DIMENSION lamatrizL(8,2)
 			
 				DO WHILE NOT EOF() AND RECNO() >= 1
 				
@@ -8767,8 +8767,7 @@ PARAMETERS pan_idcomproba, pan_idregistro
 						lamatrizL(7,2)=ALLTRIM(STR(v_idregistro))
 						lamatrizL(8,1)='fecha'
 						lamatrizL(8,2)="'"+ALLTRIM(v_fecha)+"'"
-						lamatrizL(9,1)='hora'
-						lamatrizL(9,2)="'"+ALLTRIM(v_hora)+"'"
+						
 								
 						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")		    
