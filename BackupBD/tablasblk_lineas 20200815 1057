@@ -1,0 +1,137 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar
+--
+
+CREATE DATABASE IF NOT EXISTS processar;
+USE processar;
+
+--
+-- Definition of table `lineas`
+--
+
+DROP TABLE IF EXISTS `lineas`;
+CREATE TABLE `lineas` (
+  `linea` char(20) NOT NULL,
+  `detalle` char(254) NOT NULL,
+  `codigoctac` char(20) NOT NULL,
+  `codigoctav` char(20) NOT NULL,
+  `margen` float(13,4) NOT NULL,
+  PRIMARY KEY (`linea`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `lineas`
+--
+
+/*!40000 ALTER TABLE `lineas` DISABLE KEYS */;
+INSERT INTO `lineas` (`linea`,`detalle`,`codigoctac`,`codigoctav`,`margen`) VALUES 
+ ('01','VARIOS','01','01',0.0000);
+/*!40000 ALTER TABLE `lineas` ENABLE KEYS */;
+
+
+--
+-- Definition of table `tablasblk`
+--
+
+DROP TABLE IF EXISTS `tablasblk`;
+CREATE TABLE `tablasblk` (
+  `tabla` char(50) NOT NULL,
+  PRIMARY KEY (`tabla`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `tablasblk`
+--
+
+/*!40000 ALTER TABLE `tablasblk` DISABLE KEYS */;
+INSERT INTO `tablasblk` (`tabla`) VALUES 
+ ('afipcompro'),
+ ('afipimpuestos'),
+ ('afiptipodocu'),
+ ('bibliotecaf'),
+ ('compactiv'),
+ ('compiservi'),
+ ('comprobantes'),
+ ('comprorepo'),
+ ('condfiscal'),
+ ('empresa'),
+ ('estadosr'),
+ ('importadatos'),
+ ('impuestos'),
+ ('impuestospro'),
+ ('localidades'),
+ ('logsystem'),
+ ('menusql'),
+ ('modulossys'),
+ ('monedas'),
+ ('otestados'),
+ ('otetapas'),
+ ('otparametros'),
+ ('ottiposmovi'),
+ ('ottiposobs'),
+ ('paises'),
+ ('perfilmh'),
+ ('perfilmp'),
+ ('perfilusu'),
+ ('provincias'),
+ ('puntosventa'),
+ ('recestado'),
+ ('recprob'),
+ ('recsector'),
+ ('rectipo'),
+ ('reportesimp'),
+ ('servicios'),
+ ('seteolog'),
+ ('sucursales'),
+ ('sucursalpventa'),
+ ('tabladescrip'),
+ ('tablasautoinc'),
+ ('tablasblk'),
+ ('tablasidx'),
+ ('tipoasiento'),
+ ('tipocajabanco'),
+ ('tipocompro'),
+ ('tipocuenta'),
+ ('tipodocumento'),
+ ('tipoimpuesto'),
+ ('tipomaterial'),
+ ('tipomovctap'),
+ ('tipomovotint'),
+ ('tipomstock'),
+ ('tiponp'),
+ ('tipooperacion'),
+ ('tipoot'),
+ ('tipopagos'),
+ ('tiposervicio'),
+ ('toe'),
+ ('usuarios'),
+ ('varpublicas'),
+ ('zonas');
+/*!40000 ALTER TABLE `tablasblk` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
