@@ -1,0 +1,89 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar
+--
+
+CREATE DATABASE IF NOT EXISTS processar;
+USE processar;
+
+--
+-- Definition of table `otinterna`
+--
+
+DROP TABLE IF EXISTS `otinterna`;
+CREATE TABLE `otinterna` (
+  `idotint` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idot` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `cantidad` float(13,4) NOT NULL,
+  `cantidaduf` float(13,4) NOT NULL,
+  `idmovotint` int(10) unsigned NOT NULL,
+  `idlinkcomp` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idotint`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `otinterna`
+--
+
+/*!40000 ALTER TABLE `otinterna` DISABLE KEYS */;
+INSERT INTO `otinterna` (`idotint`,`idot`,`fecha`,`cantidad`,`cantidaduf`,`idmovotint`,`idlinkcomp`) VALUES 
+ (1,40,'20200819',5.0000,0.0000,1,3),
+ (2,41,'20200819',10.0000,0.0000,1,3),
+ (3,40,'20200819',5.0000,0.0000,1,4),
+ (4,41,'20200819',10.0000,0.0000,1,4),
+ (5,40,'20200820',5.0000,0.0000,1,7),
+ (6,41,'20200820',10.0000,0.0000,1,7),
+ (7,40,'20200820',5.0000,0.0000,1,8),
+ (8,41,'20200820',10.0000,0.0000,1,8);
+/*!40000 ALTER TABLE `otinterna` ENABLE KEYS */;
+
+
+--
+-- Definition of table `tipomovotint`
+--
+
+DROP TABLE IF EXISTS `tipomovotint`;
+CREATE TABLE `tipomovotint` (
+  `idmovotint` int(10) unsigned NOT NULL DEFAULT '0',
+  `detalle` char(254) NOT NULL DEFAULT '',
+  `operacion` int(11) NOT NULL DEFAULT '1',
+  `codigo` char(50) NOT NULL,
+  PRIMARY KEY (`idmovotint`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `tipomovotint`
+--
+
+/*!40000 ALTER TABLE `tipomovotint` DISABLE KEYS */;
+INSERT INTO `tipomovotint` (`idmovotint`,`detalle`,`operacion`,`codigo`) VALUES 
+ (1,'ENTREGA',-1,'ENTREGA'),
+ (2,'ANULACION',1,'ANU');
+/*!40000 ALTER TABLE `tipomovotint` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
