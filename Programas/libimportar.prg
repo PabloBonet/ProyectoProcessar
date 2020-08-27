@@ -1480,3 +1480,464 @@ ENDFUNC
 
 
 *******************************************************
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/ FINAL  Carga de Cablemodems FlowDat
+*/------------------------------------------------------------------------------------------------------------
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ Carga de Entidades
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaEntidades
+	PARAMETERS p_idimportap, p_archivo, p_func
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Entidades -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		if file(".\entidadescar.dbf") THEN
+			if used("entidadescar") then
+				sele entidadescar
+				use
+			endif
+			DELETE FILE .\entidadescar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\entidadescar FREE (entidad I, apellido C(100), nombre c(100), cargo C(100), compania C(100), cuit C(13), direccion C(100), ;
+					localidad C(10), iva I,fechaalta C(8), telefono C(50), cp C(50), fax C(50), ;
+					email C(254), web C(254), dni I, tipodoc C(3),  ;
+					fechanac C(8), idafiptipd I)			
+					
+		SELECT entidadescar 
+*		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+
+		DIMENSION lamatriz(19,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		GO TOP 
+		DO WHILE !EOF()
+			lamatriz(1,1) = 'entidad'
+			lamatriz(1,2) = ALLTRIM(STR(entidadescar.entidad))
+			lamatriz(2,1) = 'apellido'
+			lamatriz(2,2) = "'"+ALLTRIM(entidadescar.apellido)+"'"
+			lamatriz(3,1) = 'nombre'
+			lamatriz(3,2) = "'"+ALLTRIM(entidadescar.nombre)+"'"
+			lamatriz(4,1) = 'cargo'
+			lamatriz(4,2) = "'"+ALLTRIM(entidadescar.cargo)+"'"
+			lamatriz(5,1) = 'compania'
+			lamatriz(5,2) = "'"+ALLTRIM(entidadescar.compania)+"'"
+			lamatriz(6,1) = 'cuit'
+			lamatriz(6,2) = "'"+ALLTRIM(entidadescar.cuit)+"'"
+			lamatriz(7,1) = 'direccion'
+			lamatriz(7,2) = "'"+ALLTRIM(entidadescar.direccion)+"'"
+			lamatriz(8,1) = 'localidad'
+			lamatriz(8,2) = "'"+ALLTRIM(entidadescar.localidad)+"'"
+			lamatriz(9,1) = 'fechaalta'
+			lamatriz(9,2) = "'"+ALLTRIM(entidadescar.fechaalta)+"'"
+			lamatriz(10,1) = 'telefono'
+			lamatriz(10,2) = "'"+ALLTRIM(entidadescar.telefono)+"'"
+			lamatriz(11,1) = 'cp'
+			lamatriz(11,2) = "'"+ALLTRIM(entidadescar.cp)+"'"
+			lamatriz(12,1) = 'fax'
+			lamatriz(12,2) = "'"+ALLTRIM(entidadescar.fax)+"'"
+			lamatriz(13,1) = 'email'
+			lamatriz(13,2) = "'"+ALLTRIM(entidadescar.email)+"'"
+			lamatriz(14,1) = 'web'
+			lamatriz(14,2) = "'"+ALLTRIM(entidadescar.web)+"'"
+			lamatriz(15,1) = 'dni'
+			lamatriz(15,2) = ALLTRIM(STR(entidadescar.dni))
+			lamatriz(16,1) = 'tipodoc'
+			lamatriz(16,2) = "'"+ALLTRIM(entidadescar.tipodoc)+"'"
+			lamatriz(17,1) = 'iva'
+			lamatriz(17,2) = ALLTRIM(STR(entidadescar.iva))
+			lamatriz(18,1) = 'fechanac'
+			lamatriz(18,2) = "'"+ALLTRIM(entidadescar.fechanac)+"'"
+			lamatriz(19,1) = 'idafiptipod'
+			lamatriz(19,2) = ALLTRIM(STR(entidadescar.idafiptipd))
+			
+
+			p_tabla     = 'entidades'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Cablemodems ",0+48+0,"Error")
+			ENDIF 
+			
+			SELECT entidadescar
+			SKIP 					
+		ENDDO 
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT entidadescar
+	USE IN entidadescar
+	ENDIF 	&& 1- Carga de Archivo de CPP -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos de Claro
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+		=fconsutablas(p_idimportap,'entidades',.T.)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+*/ FINAL  Carga de Entidades
+*/------------------------------------------------------------------------------------------------------------
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ Carga de Lineas
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaLineas
+	PARAMETERS p_idimportap, p_archivo, p_func
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Lineas -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		if file(".\lineascar.dbf") THEN
+			if used("lineascar") then
+				sele lineascar
+				use
+			endif
+			DELETE FILE .\lineascar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\lineascar FREE (linea C(20), detalle C(254), codigoctac c(20), codigoctav C(20), margen N(13,4), codmin C(50), codmax C(50))			
+					
+		SELECT lineascar
+*		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+
+		DIMENSION lamatriz(7,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		GO TOP 
+		DO WHILE !EOF()
+			lamatriz(1,1) = 'linea'
+			lamatriz(1,2) = "'"+ALLTRIM(lineascar.linea)+"'"
+			lamatriz(2,1) = 'detalle'
+			lamatriz(2,2) = "'"+ALLTRIM(lineascar.detalle)+"'"
+			lamatriz(3,1) = 'codigoctac'
+			lamatriz(3,2) = "'"+ALLTRIM(lineascar.codigoctac)+"'"
+			lamatriz(4,1) = 'codigoctav'
+			lamatriz(4,2) = "'"+ALLTRIM(lineascar.codigoctav)+"'"
+			lamatriz(5,1) = 'margen'
+			lamatriz(5,2) = ALLTRIM(STR(lineascar.margen))
+			lamatriz(6,1) = 'codmin'
+			lamatriz(6,2) = "'"+ALLTRIM(lineascar.codmin)+"'"
+			lamatriz(7,1) = 'codmax'
+			lamatriz(7,2) = "'"+ALLTRIM(lineascar.codmax)+"'"
+			
+
+			p_tabla     = 'lineas'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lineas ",0+48+0,"Error")
+			ENDIF 
+			
+			SELECT lineascar
+			SKIP 					
+		ENDDO 
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT lineascar
+	USE IN lineascar
+	ENDIF 	&& 1- Carga de Archivo de CPP -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos de Claro
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+		=fconsutablas(p_idimportap,'lineascar',.T.)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+*/ FINAL  Carga de Lineas
+*/------------------------------------------------------------------------------------------------------------
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ Carga de Articulos con articulosimp,listaprecioh (solo para lista 1)
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaArticulos
+	PARAMETERS p_idimportap, p_archivo, p_func
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Articulos -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		if file(".\articuloscar.dbf") THEN
+			if used("articuloscar") then
+				sele articuloscar
+				use
+			endif
+			DELETE FILE .\articuloscar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\articuloscar FREE (articulo C(50), detalle C(254), unidad C(200), abrevia C(50), codbarra C(100), costo n(13,4), linea C(20), ;
+		ctrlstock C(1), observa C(254), ocultar C(1), stockmin N(13,4), desc1 N(13,4), desc2 N(13,4), desc3 N(13,4), desc4 N(13,4), desc5 N(13,4), moneda I, ;
+		impuesto I, margen N(13,4))			
+					
+		SELECT articuloscar 
+*		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+
+		GO TOP 
+		
+		IF NOT EOF()
+		
+			*** Borro las tablas que voy a ingresar ***
+			
+			*** Borro articulos ***
+			sqlmatriz(1)="delete from articulos "
+			verror=sqlrun(vconeccion,"NoUso")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulos ",0+48+0,"Eliminación de Registros")
+			    RETURN -9
+			ENDIF 
+			
+			*** Borro articulosimp ***
+			sqlmatriz(1)="delete from articulosimp "
+			verror=sqlrun(vconeccion,"NoUso")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulosimp ",0+48+0,"Eliminación de Registros")
+			    RETURN -9
+			ENDIF 
+					
+			*** Borro listaprecioh (lista 1) ***
+			sqlmatriz(1)="delete from listaprecioh where idlista = 1 "
+			verror=sqlrun(vconeccion,"NoUso")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
+			    RETURN -9
+			ENDIF 
+			
+			v_maximoListah = 0
+			*** Calulo el Maximo de listaprecioh ***
+			sqlmatriz(1)="select MAX(listah) as maxi from listaprecioh  "
+			verror=sqlrun(vconeccion,"maxLIstah")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
+			    RETURN -9
+			ELSE
+				v_maximoListah = maxLIstah.maxi
+				    
+			ENDIF 
+						
+						
+		ENDIF 
+	
+		
+
+		v_idartimp = 0
+		v_fechaAct = ALLTRIM(DTOS(DATE()))
+
+		DIMENSION lamatriz(17,2)
+		DIMENSION lamatriz2(3,2)
+		DIMENSION lamatriz3(5,2)
+		
+		
+		
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		SELECT articuloscar 
+		GO TOP 
+		DO WHILE !EOF()
+		
+		
+			lamatriz(1,1) = 'articulo'
+			lamatriz(1,2) = "'"+ALLTRIM(articuloscar.articulo)+"'"
+			lamatriz(2,1) = 'detalle'
+			lamatriz(2,2) = "'"+ALLTRIM(articuloscar.detalle)+"'"
+			lamatriz(3,1) = 'unidad'
+			lamatriz(3,2) = "'"+ALLTRIM(articuloscar.unidad)+"'"
+			lamatriz(4,1) = 'abrevia'
+			lamatriz(4,2) = "'"+ALLTRIM(articuloscar.abrevia)+"'"
+			lamatriz(5,1) = 'codbarra'
+			lamatriz(5,2) = "'"+ALLTRIM(articuloscar.codbarra)+"'"
+			lamatriz(6,1) = 'costo'
+			lamatriz(6,2) = ALLTRIM(STR(articuloscar.costo,13,4))
+			lamatriz(7,1) = 'linea'
+			lamatriz(7,2) = "'"+ALLTRIM(articuloscar.linea)+"'"
+			lamatriz(8,1) = 'ctrkstock'
+			lamatriz(8,2) = "'"+ALLTRIM(articuloscar.ctrlstock)+"'"
+			lamatriz(9,1) = 'observa'
+			lamatriz(9,2) = "'"+ALLTRIM(articuloscar.observa)+"'"
+			lamatriz(10,1) = 'ocultar'
+			lamatriz(10,2) = "'"+ALLTRIM(articuloscar.ocultar)+"'"
+			lamatriz(11,1) = 'stockmin'
+			lamatriz(11,2) = ALLTRIM(STR(articuloscar.stockmin))
+			lamatriz(12,1) = 'desc1'
+			lamatriz(12,2) = ALLTRIM(STR(articuloscar.desc1,13,4))
+			lamatriz(13,1) = 'desc2'
+			lamatriz(13,2) = ALLTRIM(STR(articuloscar.desc2,13,4))
+			lamatriz(14,1) = 'desc3'
+			lamatriz(14,2) = ALLTRIM(STR(articuloscar.desc3,13,4))
+			lamatriz(15,1) = 'desc4'
+			lamatriz(15,2) = ALLTRIM(STR(articuloscar.desc4,13,4))
+			lamatriz(16,1) = 'desc5'
+			lamatriz(16,2) = ALLTRIM(STR(articuloscar.desc5,13,4))
+			lamatriz(17,1) = 'moneda'
+			lamatriz(17,2) = ALLTRIM(STR(articuloscar.moneda))
+					
+
+			p_tabla     = 'articulos'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos ",0+48+0,"Error")
+			ELSE
+			
+				
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+				
+				v_idartimp = v_idartimp + 1
+				lamatriz2(1,1)='idartimp'
+				lamatriz2(1,2)= ALLTRIM(v_idartimp)
+				lamatriz2(2,1)='articulo'
+				lamatriz2(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+				lamatriz2(3,1)='impuesto'
+				lamatriz2(3,2)=ALLTRIM(STR(articuloscar.impuesto))
+	
+	
+				p_tabla     = 'articulosimp'
+				p_matriz    = 'lamatriz2'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Impuestos ",0+48+0,"Error")
+				ELSE
+	
+				
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					
+					v_maximoListah = v_maximoListah + 1
+					lamatriz3(1,1)='idlistah'
+					lamatriz3(1,2)= ALLTRIM(STR(v_maximoListah))
+					lamatriz3(2,1)='idlista'
+					lamatriz3(2,2)= "1" && LISTA 1
+					lamatriz3(3,1)='articulo'
+					lamatriz3(3,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+					lamatriz3(4,1)='margen'
+					lamatriz3(4,2)=ALLTRIM(STR(articuloscar.margen,13,4))
+					lamatriz3(5,1)='fechaalta'
+					lamatriz3(5,2)="'"+ALLTRIM(v_fechaAct)+"'"
+		
+		
+					p_tabla     = 'listaprecioh'
+					p_matriz    = 'lamatriz3'
+					p_conexion  = vconeccionF
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lista de Precios ",0+48+0,"Error")
+							
+					ENDIF 
+				ENDIF 
+	
+	
+			ENDIF 
+			
+			SELECT articuloscar
+			SKIP 					
+		ENDDO 
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT articuloscar
+	USE IN articuloscar
+	ENDIF 	&& 1- Carga de Archivo de CPP -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos de Claro
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+		=fconsutablas(p_idimportap,'articulos',.T.)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
