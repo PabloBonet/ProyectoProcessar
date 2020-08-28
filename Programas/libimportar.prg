@@ -1718,7 +1718,7 @@ ENDFUNC
 
 */------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
-*/ Carga de Articulos con articulosimp,listaprecioh (solo para lista 1)
+*/ Carga de Articulos con articulosimp,listaprecioh (solo para lista 1), articulospro
 */------------------------------------------------------------------------------------------------------------
 FUNCTION CargaArticulos
 	PARAMETERS p_idimportap, p_archivo, p_func
@@ -1754,7 +1754,7 @@ FUNCTION CargaArticulos
 
 		CREATE TABLE .\articuloscar FREE (articulo C(50), detalle C(254), unidad C(200), abrevia C(50), codbarra C(100), costo n(13,4), linea C(20), ;
 		ctrlstock C(1), observa C(254), ocultar C(1), stockmin N(13,4), desc1 N(13,4), desc2 N(13,4), desc3 N(13,4), desc4 N(13,4), desc5 N(13,4), moneda I, ;
-		impuesto I, margen N(13,4))			
+		impuesto I, margen N(13,4),proveedor I,codigop C(50))			
 					
 		SELECT articuloscar 
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
@@ -1789,31 +1789,50 @@ FUNCTION CargaArticulos
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
 			    RETURN -9
+			ENDIF
+			
+			*** Borro articulospro ***
+			sqlmatriz(1)="delete from articulospro "
+			verror=sqlrun(vconeccion,"NoUso")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulospro ",0+48+0,"Eliminación de Registros")
+			    RETURN -9
 			ENDIF 
+			 
 			
 			v_maximoListah = 0
 			*** Calulo el Maximo de listaprecioh ***
-			sqlmatriz(1)="select MAX(listah) as maxi from listaprecioh  "
+			sqlmatriz(1)="select MAX(idlistah) as maxi from listaprecioh  "
 			verror=sqlrun(vconeccion,"maxLIstah")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
 			    RETURN -9
 			ELSE
-				v_maximoListah = maxLIstah.maxi
-				    
+				v_maximoListah = IIF(ISNULL(maxLIstah.maxi)=.T.,0,maxLIstah.maxi)
+				v_maximoListah = v_maximoListah + 1
+				** Modifico el indice idlistah para que tome el maximo valor como el indice autoincremental **
+				sqlmatriz(1)="alter table listaprecioh auto_increment = "+ALLTRIM(STR(v_maximoListah ))
+				verror=sqlrun(vconeccion,"modifauto")
+				IF verror=.f.  
+			    	MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh(Error al modificar el autoincremental)",0+48+0,"Eliminación de Registros")
+			    	RETURN -9
+				ENDIF 
 			ENDIF 
-						
-						
+					
+							
 		ENDIF 
 	
 		
 
 		v_idartimp = 0
+		v_idartpro = 0
+		*v_idlistah = v_maximoListah 
 		v_fechaAct = ALLTRIM(DTOS(DATE()))
 
 		DIMENSION lamatriz(17,2)
 		DIMENSION lamatriz2(3,2)
 		DIMENSION lamatriz3(5,2)
+		DIMENSION lamatriz4(4,2)
 		
 		
 		
@@ -1825,7 +1844,7 @@ FUNCTION CargaArticulos
 		GO TOP 
 		DO WHILE !EOF()
 		
-		
+		*** Cargo el articulo en tabla articulos ***
 			lamatriz(1,1) = 'articulo'
 			lamatriz(1,2) = "'"+ALLTRIM(articuloscar.articulo)+"'"
 			lamatriz(2,1) = 'detalle'
@@ -1840,7 +1859,7 @@ FUNCTION CargaArticulos
 			lamatriz(6,2) = ALLTRIM(STR(articuloscar.costo,13,4))
 			lamatriz(7,1) = 'linea'
 			lamatriz(7,2) = "'"+ALLTRIM(articuloscar.linea)+"'"
-			lamatriz(8,1) = 'ctrkstock'
+			lamatriz(8,1) = 'ctrlstock'
 			lamatriz(8,2) = "'"+ALLTRIM(articuloscar.ctrlstock)+"'"
 			lamatriz(9,1) = 'observa'
 			lamatriz(9,2) = "'"+ALLTRIM(articuloscar.observa)+"'"
@@ -1869,14 +1888,14 @@ FUNCTION CargaArticulos
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos ",0+48+0,"Error")
 			ELSE
 			
-				
+			*** Cargo el el impuesto del articulo en tabla articulosimp ***
 				p_tipoope     = 'I'
 				p_condicion   = ''
 				v_titulo      = " EL ALTA "
 				
 				v_idartimp = v_idartimp + 1
 				lamatriz2(1,1)='idartimp'
-				lamatriz2(1,2)= ALLTRIM(v_idartimp)
+				lamatriz2(1,2)= ALLTRIM(STR(v_idartimp))
 				lamatriz2(2,1)='articulo'
 				lamatriz2(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
 				lamatriz2(3,1)='impuesto'
@@ -1888,18 +1907,19 @@ FUNCTION CargaArticulos
 				p_conexion  = vconeccionF
 				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Impuestos ",0+48+0,"Error")
-				ELSE
-	
 				
+				ENDIF 
+				
+			*** Cargo el margen del articulo en tabla listaprecioh ***
 					p_tipoope     = 'I'
 					p_condicion   = ''
 					v_titulo      = " EL ALTA "
-					
-					v_maximoListah = v_maximoListah + 1
+					v_idlista	 = 1
+					v_idlistah = 0
 					lamatriz3(1,1)='idlistah'
-					lamatriz3(1,2)= ALLTRIM(STR(v_maximoListah))
+					lamatriz3(1,2)= ALLTRIM(STR(v_idlistah))
 					lamatriz3(2,1)='idlista'
-					lamatriz3(2,2)= "1" && LISTA 1
+					lamatriz3(2,2)= ALLTRIM(STR(v_idlista))
 					lamatriz3(3,1)='articulo'
 					lamatriz3(3,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
 					lamatriz3(4,1)='margen'
@@ -1915,8 +1935,30 @@ FUNCTION CargaArticulos
 					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lista de Precios ",0+48+0,"Error")
 							
 					ENDIF 
-				ENDIF 
+					
+					
+				*** Cargo el proveedor asociado al articulo y el codigo del proveedor en tabla articulosimp***
+					p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+				
+				v_idartpro = v_idartpro + 1
+				lamatriz4(1,1)='idartpro'
+				lamatriz4(1,2)= ALLTRIM(STR(v_idartpro))
+				lamatriz4(2,1)='articulo'
+				lamatriz4(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+				lamatriz4(3,1)='entidad'
+				lamatriz4(3,2)=ALLTRIM(STR(articuloscar.proveedor))
+				lamatriz4(4,1)='codigop'
+				lamatriz4(4,2)="'"+ALLTRIM(articuloscar.codigop)+"'"	
 	
+				p_tabla     = 'articulospro'
+				p_matriz    = 'lamatriz4'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Proveedor ",0+48+0,"Error")
+				
+				ENDIF 
 	
 			ENDIF 
 			
@@ -1930,10 +1972,10 @@ FUNCTION CargaArticulos
 	ENDIF 	&& 1- Carga de Archivo de CPP -
 */**************************************************************
 */**************************************************************
-*/ && 2- Visualiza Datos de Claro
-	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
-		=fconsutablas(p_idimportap,'articulos',.T.)
-	ENDIF && 2- Visualiza Datos de CPP -
+*!*	*/ && 2- Visualiza Datos de Claro
+*!*		IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+*!*			=fconsutablas(p_idimportap,'articulos',.T.)
+*!*		ENDIF && 2- Visualiza Datos de CPP -
 */**************************************************************
 	lreto = p_func
 	RETURN lreto
