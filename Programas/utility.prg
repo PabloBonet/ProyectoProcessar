@@ -7134,9 +7134,9 @@ IF vtmp_recalcular = .t. THEN
 	fvlistaprecioc_sql 	= 'listaprecioc_sql'+vtmp 
 	fvarticulosimp_sql	= 'articulosimp_sql'+vtmp
 
-	sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact  from articulos a "
+	sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot  from articulos a "
 	sqlmatriz(2)=" left join lineas l on l.linea = a.linea "
-	sqlmatriz(3)=" left join articulostock s on s.articulo = a.articulo left join ultimoartcosto u on a.articulo = u.articulo " 
+	sqlmatriz(3)=" left join articulostock s on s.articulo = a.articulo " 
 	verror=sqlrun(vconeccionF,fvarticulos_sql)
 	IF verror=.f.
 		MESSAGEBOX("No se puede obtener  Articulos ",0+16,"Advertencia")
@@ -7178,7 +7178,7 @@ IF vtmp_recalcular = .t. THEN
 	SELECT p.idlista, SUBSTR(p.detalle+SPACE(254),1,254) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.idlistap, p.actualiza, l.idlistah, ;  
 		a.articulo, a.detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea, a.ctrlstock, a.ocultar, ;
 		a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
-		a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact ;
+		a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot ;
 	 	FROM &fvlistaprecioh_sql l ;
 		LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
 		LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
@@ -7189,7 +7189,7 @@ IF vtmp_recalcular = .t. THEN
 	SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
 		a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.detalinea, a.ctrlstock, a.ocultar, ;
 		a.stockmin, a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
-		a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,a.fechaact   ;
+		a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot   ;
 		FROM &fvarticulos_sql a ;
 		LEFT JOIN &fvarticulosimp_sql i  ON a.articulo = i.articulo ;
 		INTO TABLE &fvarticulos
@@ -9008,66 +9008,16 @@ LOCAL KEY_ENTER
 ENDPROC
 
 
-*******************************************************************************
 
 
-*** Función para guardar el Historico de actualización de costo del artículo ****
-**Parametros: articulo: codigo del articulo a actualizar; costo: costo del articulo actualizado; coneccion: Conección a la Base de Datos
-** Retorno: Retorna True si se Guarda correctamente, False en caso contrario
-*******
 
 
-FUNCTION guardaHistCostoArt
-PARAMETERS p_articulo, p_costo, p_conexion
 
-v_conexion = 0
 
-IF TYPE('p_conexion') = 'N'
-	IF p_conexion <= 0
-		v_conexion = abreycierracon(0,_SYSSCHEMA)
-	
-	ENDIF 
-ELSE
-	v_conexion = abreycierracon(0,_SYSSCHEMA)
 
-ENDIF 
 
- IF (EMPTY(p_articulo) =.T.) OR p_costo < -1 OR v_conexion <= 0
- 
- 	
- 	MESSAGEBOX("Ha ocurrido un error al intentar registrar el historial de costo del articulo (Parámetros Incorrectos)",0+16+0,"No se pudo guardar el historial de costos")
- 	RETURN .F.
- ENDIF 
 
-	v_idartcosto = 0
-	v_fechahora = ALLTRIM(DTOS(DATE())+TIME())
 
-	DIMENSION lamatriz(4,2)
-
-	lamatriz(1,1)='idartcosto'
-	lamatriz(1,2)=ALLTRIM(STR(v_idartcosto))
-	lamatriz(2,1)='articulo'
-	lamatriz(2,2)="'"+ALLTRIM(p_articulo)+"'"
-	lamatriz(3,1)='costo'
-	lamatriz(3,2)=ALLTRIM(STR(p_costo,13,4))
-	lamatriz(4,1)='fecha'
-	lamatriz(4,2)="'"+ALLTRIM(v_fechahora)+"'"
-
-	p_tipoope     = 'I'
-	p_condicion   = ''
-	v_titulo      = " EL ALTA "
-	p_tabla     = 'articostos'
-	p_matriz    = 'lamatriz'
-	p_conexionar  = v_conexion 
-	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexionar) = .F.  
-	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
-
-	    RETURN .F.
-	ENDIF						
-
-	RETURN .T.
-
-ENDFUNC 
 
 
 
