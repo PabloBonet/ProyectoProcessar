@@ -1831,7 +1831,7 @@ FUNCTION CargaArticulos
 
 		DIMENSION lamatriz(17,2)
 		DIMENSION lamatriz2(3,2)
-		DIMENSION lamatriz3(5,2)
+		DIMENSION lamatriz3(6,2)
 		DIMENSION lamatriz4(4,2)
 		
 		
@@ -1887,7 +1887,9 @@ FUNCTION CargaArticulos
 			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos ",0+48+0,"Error")
 			ELSE
-			
+				 *** Guardo el historial del costo del articulo ***
+				   guardaHistCostoArt(articuloscar.articulo, articuloscar.cost, vconeccionF)
+				 
 			*** Cargo el el impuesto del articulo en tabla articulosimp ***
 				p_tipoope     = 'I'
 				p_condicion   = ''
@@ -1916,6 +1918,8 @@ FUNCTION CargaArticulos
 					v_titulo      = " EL ALTA "
 					v_idlista	 = 1
 					v_idlistah = 0
+					v_fehcaAct 		= ALLTRIM(DTOS(DATE())+TIME())
+							
 					lamatriz3(1,1)='idlistah'
 					lamatriz3(1,2)= ALLTRIM(STR(v_idlistah))
 					lamatriz3(2,1)='idlista'
@@ -1926,6 +1930,8 @@ FUNCTION CargaArticulos
 					lamatriz3(4,2)=ALLTRIM(STR(articuloscar.margen,13,4))
 					lamatriz3(5,1)='fechaalta'
 					lamatriz3(5,2)="'"+ALLTRIM(v_fechaAct)+"'"
+					lamatriz3(6,1)='fechaact'
+					lamatriz3(6,2)= ALLTRIM(v_fehcaAct)
 		
 		
 					p_tabla     = 'listaprecioh'
@@ -1959,6 +1965,7 @@ FUNCTION CargaArticulos
 				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Proveedor ",0+48+0,"Error")
 				
 				ENDIF 
+				
 	
 			ENDIF 
 			
