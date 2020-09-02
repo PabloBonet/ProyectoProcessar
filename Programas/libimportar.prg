@@ -1888,7 +1888,7 @@ FUNCTION CargaArticulos
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos ",0+48+0,"Error")
 			ELSE
 				 *** Guardo el historial del costo del articulo ***
-				   guardaHistCostoArt(articuloscar.articulo, articuloscar.cost, vconeccionF)
+				   guardaHistCostoArt(articuloscar.articulo, articuloscar.cost)
 				 
 			*** Cargo el el impuesto del articulo en tabla articulosimp ***
 				p_tipoope     = 'I'
@@ -1931,7 +1931,7 @@ FUNCTION CargaArticulos
 					lamatriz3(5,1)='fechaalta'
 					lamatriz3(5,2)="'"+ALLTRIM(v_fechaAct)+"'"
 					lamatriz3(6,1)='fechaact'
-					lamatriz3(6,2)= ALLTRIM(v_fehcaAct)
+					lamatriz3(6,2)= "'"+ALLTRIM(v_fehcaAct)+"'"
 		
 		
 					p_tabla     = 'listaprecioh'
