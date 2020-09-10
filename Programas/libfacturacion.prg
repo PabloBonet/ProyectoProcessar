@@ -59,7 +59,7 @@ PARAMETERS par_idperiodo
 	SELECT &vconceptoser_sql
 	GO TOP 
 	IF EOF() THEN  
-		MESSAGEBOX("No se han Encontrado Conceptos para Facturación...",0+16," Generación de Facturas ")
+		MESSAGEBOX("No se han Encontrado Conceptos para Facturación 1...",0+16," Generación de Facturas ")
 		=abreycierracon(vconeFacturar,"")
 		RETURN var_retorno 
 	ENDIF 
@@ -79,7 +79,7 @@ PARAMETERS par_idperiodo
 	SELECT &vimpuestosac_sql
 	GO TOP 
 	IF EOF() THEN  
-		MESSAGEBOX("No se han Encontrado Conceptos para Facturación...",0+16," Generación de Facturas ")
+		MESSAGEBOX("No se han Encontrado Conceptos para Facturación 2...",0+16," Generación de Facturas ")
 		=abreycierracon(vconeFacturar,"")
 		RETURN var_retorno 
 	ENDIF 
@@ -121,7 +121,7 @@ PARAMETERS par_idperiodo
 	SELECT &vcompiservi_sql
 	GO TOP 
 	IF EOF() THEN  
-		MESSAGEBOX("No se han Encontrado Conceptos para Facturación...",0+16," Generación de Facturas ")
+		MESSAGEBOX("No se han Encontrado Relacion entre Comprobantes y Servicios para Facturacion ...",0+16," Generación de Facturas ")
 		=abreycierracon(vconeFacturar,"")
 		RETURN var_retorno 
 	ENDIF 	
@@ -215,6 +215,7 @@ PARAMETERS par_idperiodo
 	ALTER table &ventidadesdf ADD COLUMN cantcuotas i
 	ALTER table &ventidadesdf ADD COLUMN netocuota y
 	ALTER table &ventidadesdf ADD COLUMN idcuotasd i 
+	ALTER TABLE &ventidadesdf ADD COLUMN ejecucion i 
 	
 	* Actualizo precios segun listas de precios solo para Articulos Facturados = idconcepto = 0
 	SET RELATION TO STR(idlista)+'|'+ALLTRIM(articulo) INTO &vlistasprea
@@ -235,32 +236,67 @@ PARAMETERS par_idperiodo
 	
 	SELECT &ventidadesdf
 	SET RELATION TO idconcepto INTO &vconceptoser ADDITIVE 
+	replace ALL ejecucion WITH &vconceptoser..ejecucion 
 
-	GO TOP 
-	v_fechaemite = &vfactulotes_sql..fechaemite
-	SCAN FOR ( &ventidadesdf..idconcepto > 0 ) AND !EOF() 
-		IF  ( &vconceptoser..facturar = 'S') THEN 
-			IF  ( &vconceptoser..vigencia = '1' ) OR  ( &vconceptoser..vigencia = '2' AND &vconceptoser..vigedesde<=v_fechaemite AND v_fechaemite <= &vconceptoser..vigehasta )  THEN 			
-				C   = &vconceptoser..cantidad
-				I   = &vconceptoser..importe 
-				Fun = &vconceptoser..funcion
-				IF !EMPTY(Fun) THEN 
-					imp_unitario = &Fun
-				ELSE 
-					imp_unitario = 0
-				ENDIF 
-				replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
-					nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
-					netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd 
+	** EJECUTA CALCULANDO CONCEPTOS POR NIVELES
+	FOR ieje = 0 TO 3 
+	
+		SELECT &ventidadesdf 
+		GO TOP 
+		v_fechaemite = &vfactulotes_sql..fechaemite
+		SCAN FOR ( &ventidadesdf..idconcepto > 0 ) AND !EOF() AND (&ventidadesdf..ejecucion = ieje) 
+			IF  ( &vconceptoser..facturar = 'S') THEN 
+				IF  ( &vconceptoser..vigencia = '1' ) OR  ( &vconceptoser..vigencia = '2' AND &vconceptoser..vigedesde<=v_fechaemite AND v_fechaemite <= &vconceptoser..vigehasta )  THEN 			
+					C   = &vconceptoser..cantidad
+					I   = &vconceptoser..importe 
+					Fun = &vconceptoser..funcion
+					IF !EMPTY(Fun) THEN 
+					
+	*********************************************************				
+	*/ Definir los Parametros a agregar a la funcion para calculo				
+
+						IF SUBSTR(Fun,1,1)='=' THEN 
+							Fun=STRTRAN(Fun,'=','')
+							IF UPPER(SUBSTR(Fun,1,2))='FP' THEN 
+								
+								vartablaauxi = ""
+								IF ieje > 0 THEN 
+									varentih = &ventidadesdf..identidadh
+									vartablaauxi = 'auxiconceptos'
+									SELECT articulo, (unitario * cantidad) as neto from &ventidadesdf INTO cursor &vartablaauxi WHERE identidadh = varentih AND (unitario*cantidad)  > 0 AND ejecucion < ieje
+								ENDIF 
+
+								varparconceptos = IIF(EMPTY(vartablaauxi),"",'"'+vartablaauxi+'"')
+								
+								SELECT &ventidadesdf 
+
+								Fun = STRTRAN(STRTRAN(STRTRAN(Fun,'(','('+ALLTRIM(STR(par_idperiodo))+','+ALLTRIM(STR(&ventidadesdf..identidadh))+','+ALLTRIM(STR(&ventidadesdf..idconcepto))+','+ALLTRIM(STR(vconeFacturar))+','+ALLTRIM(varparconceptos)+','),',,',','),',)',')')
+								imp_unitario = &Fun
+
+							ENDIF 
+						ELSE
+							imp_unitario = &Fun					
+						ENDIF 
+						
+	****************************************************					
+					ELSE 
+						imp_unitario = 0
+					ENDIF 
 				
+					SELECT &ventidadesdf
+					replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
+						nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
+						netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd 
+					
+				ELSE 
+					replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
+				ENDIF 
 			ELSE 
-				replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
+				replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
 			ENDIF 
-		ELSE 
-			replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
-		ENDIF 
-	ENDSCAN 
-
+		ENDSCAN 
+		
+	ENDFOR 
 	
 	SELECT &ventidadesdf
 	GO TOP 
