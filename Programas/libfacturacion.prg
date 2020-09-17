@@ -246,6 +246,8 @@ PARAMETERS par_idperiodo
 		v_fechaemite = &vfactulotes_sql..fechaemite
 		SCAN FOR ( &ventidadesdf..idconcepto > 0 ) AND !EOF() AND (&ventidadesdf..ejecucion = ieje) 
 			IF  ( &vconceptoser..facturar = 'S') THEN 
+				imp_cantidad = 1				
+				imp_unitario = 0					
 				IF  ( &vconceptoser..vigencia = '1' ) OR  ( &vconceptoser..vigencia = '2' AND &vconceptoser..vigedesde<=v_fechaemite AND v_fechaemite <= &vconceptoser..vigehasta )  THEN 			
 					C   = &vconceptoser..cantidad
 					I   = &vconceptoser..importe 
@@ -254,7 +256,6 @@ PARAMETERS par_idperiodo
 					
 	*********************************************************				
 	*/ Definir los Parametros a agregar a la funcion para calculo				
-
 						IF SUBSTR(Fun,1,1)='=' THEN 
 							Fun=STRTRAN(Fun,'=','')
 							IF UPPER(SUBSTR(Fun,1,2))='FP' THEN 
@@ -263,7 +264,7 @@ PARAMETERS par_idperiodo
 								IF ieje > 0 THEN 
 									varentih = &ventidadesdf..identidadh
 									vartablaauxi = 'auxiconceptos'
-									SELECT articulo, (unitario * cantidad) as neto from &ventidadesdf INTO cursor &vartablaauxi WHERE identidadh = varentih AND (unitario*cantidad)  > 0 AND ejecucion < ieje
+									SELECT articulo, cantidad, (unitario * cantidad) as neto from &ventidadesdf INTO cursor &vartablaauxi WHERE identidadh = varentih AND (unitario*cantidad)  > 0 AND ejecucion < ieje
 								ENDIF 
 
 								varparconceptos = IIF(EMPTY(vartablaauxi),"",'"'+vartablaauxi+'"')
@@ -271,7 +272,19 @@ PARAMETERS par_idperiodo
 								SELECT &ventidadesdf 
 
 								Fun = STRTRAN(STRTRAN(STRTRAN(Fun,'(','('+ALLTRIM(STR(par_idperiodo))+','+ALLTRIM(STR(&ventidadesdf..identidadh))+','+ALLTRIM(STR(&ventidadesdf..idconcepto))+','+ALLTRIM(STR(vconeFacturar))+','+ALLTRIM(varparconceptos)+','),',,',','),',)',')')
-								imp_unitario = &Fun
+								V_retfun = &Fun
+								
+								IF TYPE('V_retfun')='C' THEN 
+									ALINES(ARR_CAN_IMP,V_retfun,4,';')
+									imp_cantidad0 = ARR_CAN_IMP(1)
+									imp_unitario0 = ARR_CAN_IMP(2)
+									
+									imp_cantidad = IIF(TYPE('imp_cantidad0')='C',VAL(imp_cantidad0),imp_cantidad0)
+									imp_unitario = IIF(TYPE('imp_unitario0')='C',val(imp_unitario0),imp_unitario0)
+
+								ELSE					
+									imp_unitario = V_retfun
+								ENDIF 
 
 							ENDIF 
 						ELSE
@@ -282,11 +295,13 @@ PARAMETERS par_idperiodo
 					ELSE 
 						imp_unitario = 0
 					ENDIF 
-				
+
+					
+									
 					SELECT &ventidadesdf
-					replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
-						nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
-						netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd 
+					replace articulo WITH &vconceptoser..concepto, detalle  WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
+						nrocuota  WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
+						netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd, cantidad WITH ( cantidad * imp_cantidad )
 					
 				ELSE 
 					replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
@@ -302,6 +317,7 @@ PARAMETERS par_idperiodo
 	GO TOP 
 	UPDATE &ventidadesdf SET unitario=netocuota, cantidad=1 WHERE idcuotasd > 0
 	UPDATE &ventidadesdf SET neto=unitario * cantidad 
+	
 	GO TOP 
 	SET RELATION TO 
 
@@ -310,8 +326,11 @@ PARAMETERS par_idperiodo
 	*/ Calculo los Impuestos a aplicar para los Detalles a Facturar 
 	*/ Uniendo detalles e impuestos en una nueva tabla 
 	ventidadesdif = 'entidadesdif'+vartmp
-	SELECT d.*,i.impuesto, i.detalle as detimpu, i.razon, i.baseimpon, d.neto as impuestos FROM &ventidadesdf d LEFT JOIN  &vimpuestosac i ON d.idconcepto=i.idconcepto WHERE d.idconcepto > 0 UNION  ;
-	SELECT e.*,j.impuesto, j.detalle as detimpu, j.razon, j.baseimpon, e.neto as impuestos FROM &ventidadesdf e LEFT JOIN  &vimpuestosac j ON ALLTRIM(e.articulo)==ALLTRIM(j.articulo) WHERE e.idconcepto = 0 AND !EMPTY(e.articulo) ;
+*!*		SELECT d.*,i.impuesto, i.detalle as detimpu, i.razon, i.baseimpon, d.neto as impuestos FROM &ventidadesdf d LEFT JOIN  &vimpuestosac i ON d.idconcepto=i.idconcepto WHERE d.idconcepto > 0 UNION  ;
+*!*		SELECT e.*,j.impuesto, j.detalle as detimpu, j.razon, j.baseimpon, e.neto as impuestos FROM &ventidadesdf e LEFT JOIN  &vimpuestosac j ON ALLTRIM(e.articulo)==ALLTRIM(j.articulo) WHERE e.idconcepto = 0 AND !EMPTY(e.articulo) ;
+*!*		into table &ventidadesdif
+	SELECT d.*,i.impuesto, i.detalle as detimpu, i.razon, i.baseimpon, d.neto as impuestos FROM &ventidadesdf d LEFT JOIN  &vimpuestosac i ON d.idconcepto=i.idconcepto WHERE (d.idconcepto > 0  AND d.neto <> 0 ) UNION  ;
+	SELECT e.*,j.impuesto, j.detalle as detimpu, j.razon, j.baseimpon, e.neto as impuestos FROM &ventidadesdf e LEFT JOIN  &vimpuestosac j ON ALLTRIM(e.articulo)==ALLTRIM(j.articulo) WHERE e.idconcepto = 0 AND !EMPTY(e.articulo) AND e.neto <> 0 ;
 	into table &ventidadesdif
 	SELECT &ventidadesdif 
 	UPDATE &ventidadesdif SET impuestos = ( neto * razon / 100 )
@@ -363,7 +382,7 @@ PARAMETERS par_idperiodo
 	var_idfactura_fin = maxnumeroidx("idfactura","I","facturastmp",vCantidad_F)
 
 	var_idfacturah_ini = maxnumeroidx("idfacturah","I","detafactutmp",0)
-	var_idfacturah_fin = maxnumeroidx("idfacturah","I","detafactutmp",vCantidad_F)			
+	var_idfacturah_fin = maxnumeroidx("idfacturah","I","detafactutmp",vCantidad_D)			
 
 	** Calcularlo cuando Grabo en la Tabla Temporaria
 	**thisform.tb_numero.Value = maxnumerocom(VAL(v_idcom),thisform.pventa ,1)
