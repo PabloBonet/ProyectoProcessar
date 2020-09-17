@@ -168,7 +168,9 @@ PARAMETERS par_idperiodo
 	*/*************
 	* Obtengo el detalle de todos los conceptos o detalles que debo facturar cargado a las entidades Seleccionadas
 	*/
-	sqlmatriz(1)="Select e.idperiodoe, f.* from entidadesd f left join factulotese e on e.identidadh = f.identidadh where f.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
+	sqlmatriz(2)=" left join conceptoser c on c.idconcepto = f.idconcepto "
+	sqlmatriz(3)=" where f.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	verror=sqlrun(vconeFacturar,"entidadesdf_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
