@@ -4124,10 +4124,10 @@ PARAMETERS p_idremito, p_esElectronica
 	IF v_idremito > 0
 		
 		*** Busco los datos de la factura y el detalle
-		IF v_esElectronica  = .T.
+*!*			IF v_esElectronica  = .T.
 
-		
-		ELSE
+*!*			
+*!*			ELSE
 			
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
@@ -4139,13 +4139,12 @@ PARAMETERS p_idremito, p_esElectronica
 			sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
 			sqlmatriz(7)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
 			sqlmatriz(8)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))
-
 			verror=sqlrun(vconeccionF,"rec_det_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del Remito",0+48+0,"Error")
 			ENDIF
 		
-		ENDIF 
+*!*			ENDIF 
 		
 	
 		SELECT * FROM rec_det_sql INTO TABLE remi
@@ -7857,7 +7856,6 @@ FUNCTION guardarMoviTPago
 PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro
 			
 	v_retorno = .F.	
-	
 	
 
 
