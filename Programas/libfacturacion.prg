@@ -68,8 +68,8 @@ PARAMETERS par_idperiodo
 	*/*************
 	* Buscar Impuestos de Artículos y Conceptos y guardarlos en una sola tabla 
 	*/
-	sqlmatriz(1)="Select a.articulo, 00000 as idconcepto , i.* from articulosimp a left join impuestos i on a.impuesto = i.impuesto union "
-	sqlmatriz(2)="select '                              ' as articulo, c.idconcepto, p.* from conceptoimpu c left join impuestos p on p.impuesto = c.impuesto"
+	sqlmatriz(1)=" Select a.articulo, 00000 as idconcepto , i.*, 0 as iva from articulosimp a left join impuestos i on a.impuesto = i.impuesto union "
+	sqlmatriz(2)=" select '                              ' as articulo, c.idconcepto, p.*, c.iva from conceptoimpu c left join impuestos p on p.impuesto = c.impuesto "
 	verror=sqlrun(vconeFacturar,"impuestosac_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Impuestos para Artículos ",0+48+0,"Error")
@@ -85,6 +85,8 @@ PARAMETERS par_idperiodo
 	ENDIF 
 	SELECT * FROM  &vimpuestosac_sql INTO TABLE &vimpuestosac
 	ALTER table &vimpuestosac alter COLUMN idconcepto n(10)
+	ALTER table &vimpuestosac alter COLUMN iva 		  n(10)
+
 	
 
 	*/*************
@@ -168,9 +170,10 @@ PARAMETERS par_idperiodo
 	*/*************
 	* Obtengo el detalle de todos los conceptos o detalles que debo facturar cargado a las entidades Seleccionadas
 	*/
-	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
+	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
 	sqlmatriz(2)=" left join conceptoser c on c.idconcepto = f.idconcepto "
-	sqlmatriz(3)=" where f.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(3)=" left join entidadesh h on h.identidadh = f.identidadh "
+	sqlmatriz(4)=" where f.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	verror=sqlrun(vconeFacturar,"entidadesdf_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
@@ -327,17 +330,21 @@ PARAMETERS par_idperiodo
 	**************************************************************************************
 	*/ Calculo los Impuestos a aplicar para los Detalles a Facturar 
 	*/ Uniendo detalles e impuestos en una nueva tabla 
+	
+
 	ventidadesdif = 'entidadesdif'+vartmp
 *!*		SELECT d.*,i.impuesto, i.detalle as detimpu, i.razon, i.baseimpon, d.neto as impuestos FROM &ventidadesdf d LEFT JOIN  &vimpuestosac i ON d.idconcepto=i.idconcepto WHERE d.idconcepto > 0 UNION  ;
 *!*		SELECT e.*,j.impuesto, j.detalle as detimpu, j.razon, j.baseimpon, e.neto as impuestos FROM &ventidadesdf e LEFT JOIN  &vimpuestosac j ON ALLTRIM(e.articulo)==ALLTRIM(j.articulo) WHERE e.idconcepto = 0 AND !EMPTY(e.articulo) ;
 *!*		into table &ventidadesdif
-	SELECT d.*,i.impuesto, i.detalle as detimpu, i.razon, i.baseimpon, d.neto as impuestos FROM &ventidadesdf d LEFT JOIN  &vimpuestosac i ON d.idconcepto=i.idconcepto WHERE (d.idconcepto > 0  AND d.neto <> 0 ) UNION  ;
-	SELECT e.*,j.impuesto, j.detalle as detimpu, j.razon, j.baseimpon, e.neto as impuestos FROM &ventidadesdf e LEFT JOIN  &vimpuestosac j ON ALLTRIM(e.articulo)==ALLTRIM(j.articulo) WHERE e.idconcepto = 0 AND !EMPTY(e.articulo) AND e.neto <> 0 ;
+	SELECT d.*,IIF(ISNULL(i.impuesto),0,i.impuesto) as impuesto, IIF(ISNULL(i.detalle),'',i.detalle) as detimpu, IIF(ISNULL(i.razon),0,i.razon) as razon, IIF(ISNULL(i.baseimpon),0,i.baseimpon) as baseimpon, ;
+		IIF(ISNULL(i.iva),0,i.iva) as iva, IIF(ISNULL(d.neto),0,d.neto) as impuestos FROM &ventidadesdf d LEFT JOIN  &vimpuestosac i ON (d.idconcepto=i.idconcepto AND d.iva = i.iva) WHERE (d.idconcepto > 0  AND d.neto <> 0 ) UNION  ;
+	SELECT e.*,IIF(ISNULL(j.impuesto),0,j.impuesto) as impuesto, IIF(ISNULL(j.detalle),'',j.detalle) as detimpu, IIF(ISNULL(j.razon),0,j.razon) as razon, IIF(ISNULL(j.baseimpon),0,j.baseimpon) as baseimpon, ;
+		IIF(ISNULL(j.iva),0,j.iva) as iva, IIF(ISNULL(e.neto),0,e.neto) as impuestos FROM &ventidadesdf e LEFT JOIN  &vimpuestosac j ON (ALLTRIM(e.articulo)==ALLTRIM(j.articulo) AND e.iva = j.iva) WHERE e.idconcepto = 0 AND !EMPTY(e.articulo) AND e.neto <> 0 ;
 	into table &ventidadesdif
 	SELECT &ventidadesdif 
 	UPDATE &ventidadesdif SET impuestos = ( neto * razon / 100 )
-	
-	
+
+
 	**************************************************************************************
 	*/ Genero una Tabla con todos los datos de entidades y detalles de facturas e impuestos
 	*/ Es el total facturado discriminado por conceptos, articulos e impuestos. 
@@ -345,7 +352,7 @@ PARAMETERS par_idperiodo
 	SELECT h.*, i.idconcepto, i.articulo, i.detalle, i.abreviado, i.cantidad, i.unitario, i.neto, i.unidad, i.identidadd, i.mensual, i.facturar, i.padron, i.idlista,  ;
 			i.idcuotasd, i.nrocuota, i.cantcuotas, i.impuesto, i.detimpu, i.razon, i.baseimpon, i.impuestos ;
 			from &ventidadesdif i LEFT JOIN &ventidadeshf_sql h ON h.identidadh = i.identidadh INTO TABLE &vfacturaciontot ORDER BY h.identidadh 
-		
+
 	**/ Impuestos para Facturacion 
 	vfacturasimptmp = 'facturasimptmp'+vartmp 
 	SELECT identidadh as idfactura, identidadh, impuesto, detimpu as detalle, razon, neto, impuestos as importe, idconcepto, articulo ;
@@ -359,6 +366,7 @@ PARAMETERS par_idperiodo
 			detalle, unitario, neto, SUM(impuestos) as impuestos, SUM(razon) as razon, neto as total, " " as codigocta, " " as nombrecta, nrocuota as cuota, cantcuotas , padron, idcuotasd,  ;
 			STR(identidadh)+STR(idconcepto)+ALLTRIM(articulo) as orden ;
 		FROM &ventidadesdif INTO TABLE &vdetafactutmp  ORDER BY orden GROUP BY orden 
+
 
 	SELECT &vdetafactutmp
 	UPDATE &vdetafactutmp SET total = ( impuestos + neto )
