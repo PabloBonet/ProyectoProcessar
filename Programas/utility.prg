@@ -7091,12 +7091,18 @@ ENDFUNC
 */****
 * Obtiene todas las listas de precios con los Precios Actualizados 
 * La lista 0 corresponde a la basica de articulos sin Calculo de Costos
-* Recibe como parametro el nombre de la tabla en la cual retornará las listas 
+* Recibe como parametro el nombre de la tabla en la cual retornará las listas y la condicion fiscal (por defecto es la 1)
 ***********************************************************************
 FUNCTION GetListasPrecios	
-PARAMETERS p_nombrearchivo
+PARAMETERS p_nombrearchivo, p_condfis
 vtmp_recalcular = .f. 
 vtmp = frandom()
+
+v_condFis = 1
+
+IF TYPE('p_condfis') = 'N'
+	v_condFis = p_condfis
+ENDIF 
 
 IF EMPTY(_SYSLISTAPRECIO)  THEN 
 	_SYSLISTAPRECIO = 'syslistapre'
@@ -7153,7 +7159,8 @@ IF vtmp_recalcular = .t. THEN
 		MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
 		RETURN 
 	ENDIF 
-	sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto group by a.articulo " 
+*	sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto group by a.articulo " 
+	sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto where a.iva = "+ALLTRIM(STR(v_condfis))+" group by a.articulo " 
 	verror=sqlrun(vconeccionF,fvarticulosimp_sql)
 	IF verror=.f.
 		MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
