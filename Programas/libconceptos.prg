@@ -26,6 +26,65 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 ENDFUNC 
 
 
+*/---------------------------------------------------------------------------
+* Función Global Calculo de Porcentajes sobre Conceptos  .
+FUNCTION FPGCOMBO
+PARAMETERS pper_conexion ,pper_periodo, pper_identidadh,pper_iva, pper_cantidad, pper_identidadd, pper_conceptos
+
+
+	vcond = " in ('"+ALLTRIM(STRTRAN(STRTRAN(pper_conceptos,"=",''),",","','"))+"')"
+
+	** CONCEPTOS **
+	sqlmatriz(1)=" select 0 as idperiodoe, idconcepto, concepto as articulo, detalle, abrevia as abreviado, importe as unitario, importe as neto, "
+	sqlmatriz(2)=" 		unidad, 0 as identidadh, 0 as identidadd, 'S' as mensual, facturar, padron, cantidad, 1 as idlista, funcion, 1 as iva, 'N' as compuesto "
+	sqlmatriz(3)=" from conceptoser  " 
+	sqlmatriz(4)=" where compuesto = 'N' and concepto "+vcond
+	verror=sqlrun(pper_conexion,"concefalta")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA De Articulos Faltantes ",0+48+0,"Error")
+	    RETURN 0
+	ENDIF 	
+	SELECT * FROM concefalta INTO TABLE agregacombo
+	SELECT agregacombo
+	ALTER table agregacombo alter COLUMN idperiodoe n(10)
+	ALTER table agregacombo alter COLUMN identidadh n(10)
+	ALTER table agregacombo alter COLUMN identidadd n(10)
+	ALTER table agregacombo alter COLUMN idlista n(10)
+	ALTER table agregacombo alter COLUMN iva n(10)
+	ALTER table agregacombo alter COLUMN articulo c(20)
+	replace ALL idperiodoe WITH pper_periodo, identidadh WITH pper_identidadh, iva WITH pper_iva, cantidad WITH (cantidad * pper_cantidad), identidadd WITH pper_identidadd
+	USE IN concefalta
+*!*		USE IN agregacombo 
+	
+	
+	** ARTICULOS **
+	sqlmatriz(1)=" select 0 as idperiodoe,  0 as idconcepto, a.articulo, a.detalle, a.abrevia as abreviado, ((h.margen/100+1)* a.costo) as unitario, ((h.margen/100+1)* a.costo) as neto, "
+	sqlmatriz(2)=" unidad, 0 as identidadh, 0 as identidadd, 'S' as mensual, 'S' as facturar, 0 as padron, 1 as cantidad , 1 as idlista, 'C*I' as funcion, 1 as iva, 'N' as compuesto "
+ 	sqlmatriz(3)=" from articulos a left join listaprecioh h on a.articulo = h.articulo "
+	sqlmatriz(4)=" where h.idlista = 1 and a.articulo "+vcond
+	verror=sqlrun(pper_conexion,"artifalta")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA De Articulos Faltantes ",0+48+0,"Error")
+	    RETURN 0
+	ENDIF 	
+	SELECT * FROM artifalta INTO TABLE agregaarti
+	SELECT agregaarti
+	ALTER table agregaarti alter COLUMN idperiodoe n(10)
+	ALTER table agregaarti alter COLUMN identidadh n(10)
+	ALTER table agregaarti alter COLUMN identidadd n(10)
+	ALTER table agregaarti alter COLUMN idlista n(10)
+	ALTER table agregaarti alter COLUMN iva n(10)
+	ALTER table agregaarti alter COLUMN cantidad n(10)
+	replace ALL idperiodoe WITH pper_periodo, identidadh WITH pper_identidadh, iva WITH pper_iva, cantidad WITH pper_cantidad ,neto WITH (pper_cantidad * unitario), identidadd WITH pper_identidadd
+	USE IN artifalta
+	SELECT agregacombo
+	APPEND FROM agregaarti
+	USE IN agregacombo 
+	USE IN agregaarti
+
+	RETURN "agregacombo"
+ENDFUNC 
+
 
 */------------------------------------------------------------------------------------------------------------
 */ FUNCIONES DE CONCEPTOS PARA CALCULO DE FACTURACION DE TELEFONIA FIJA 
@@ -369,3 +428,102 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 	
 ENDFUNC 
 ******************************************************************************
+
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ FUNCIONES DE CONCEPTOS PARA CALCULO DE FACTURACION DE TELEFONIA CELULAR
+
+*** Función para Cálculo Abono y Cargos de la Telefonia Celular
+*** Cargar como parametros el item del cual se quiere obtener el valor 
+*** 1-Abono
+*** 2-Servicio
+*** 3-Cargos
+*** 4-Aire
+*** 5-Discado Nacional
+*** 6-Discado Internacional
+*** 7-Minutos
+*** 8-Datos
+*** 9-Equipos
+*** 10-Varios
+FUNCTION FPTCELULAR
+PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
+
+	DO CASE 
+		CASE pper_c = 1
+			vcampo = 'tabono'
+		CASE pper_c = 2
+			vcampo = 'tserv'
+		CASE pper_c = 3
+			vcampo = 'tcargos'
+		CASE pper_c = 4
+			vcampo = 'taire'
+		CASE pper_c = 5
+			vcampo = 'tldn'
+		CASE pper_c = 6
+			vcampo = 'tldi'
+		CASE pper_c = 7
+			vcampo = 'tldim'
+		CASE pper_c = 8
+			vcampo = 'tdata'
+		CASE pper_c = 9
+			vcampo = 'teq'
+		CASE pper_c = 10
+			vcampo = 'tvarios'
+		OTHERWISE 
+			vcampo = ""
+	ENDCASE 
+	
+	IF EMPTY(vcampo) THEN 
+		RETURN 0.00
+	ENDIF 
+
+	sqlmatriz(1)=" select * from factulotes  " 
+	sqlmatriz(4)=" where idperiodo ="+STR(pper_periodo)
+	verror=sqlrun(pper_conexion,"periodocs")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Periodo a facturar ",0+48+0,"Error")
+	    RETURN 0
+	ENDIF 
+	
+	vfechad = ""
+	vfechah = ""
+	SELECT periodocs
+	IF !EOF() THEN 
+		vfechad = periodocs.fechad
+		vfechah = periodocs.fechah
+	ENDIF 
+	USE IN  periodocs 
+	IF EMPTY(vfechad) OR EMPTY(vfechah) THEN 
+		RETURN 0	
+	ENDIF 
+
+	sqlmatriz(1)=" select b.identidadh, m.*  from bocaservicios b " 
+	sqlmatriz(2)=" left join factclaro m on TRIM(m.bocanumero) = TRIM(b.bocanumero) "
+	sqlmatriz(3)=" left join importadatosp p on p.idimportap = m.idimportap "
+	sqlmatriz(4)=" where b.identidadh ="+STR(pper_identidadh)+" and p.fechad >= '"+vfechad+"' and p.fechah <= '"+vfechah+"' "
+	sqlmatriz(5)="       and b.facturar = 'S' and b.habilitado = 'S' "
+	verror=sqlrun(pper_conexion,"medicionescs")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Mediciones de Telefonia ",0+48+0,"Error")
+	    RETURN 0 
+	ENDIF 
+
+
+	
+	vtotalconsumo  = 0.00
+	SELECT medicionescs
+	GO TOP 
+	IF !EOF() THEN 
+		CALCULATE SUM(&vcampo) TO vtotalconsumo 
+	ENDIF 
+	USE 	
+	
+	RETURN vtotalconsumo 
+	
+ENDFUNC 
+******************************************************************************
+

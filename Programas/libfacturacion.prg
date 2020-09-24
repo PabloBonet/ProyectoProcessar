@@ -68,7 +68,7 @@ PARAMETERS par_idperiodo
 	*/*************
 	* Buscar Impuestos de Artículos y Conceptos y guardarlos en una sola tabla 
 	*/
-	sqlmatriz(1)=" Select a.articulo, 00000 as idconcepto , i.*, 0 as iva from articulosimp a left join impuestos i on a.impuesto = i.impuesto union "
+	sqlmatriz(1)=" Select a.articulo, 00000 as idconcepto , i.*, a.iva as iva from articulosimp a left join impuestos i on a.impuesto = i.impuesto union "
 	sqlmatriz(2)=" select '                              ' as articulo, c.idconcepto, p.*, c.iva from conceptoimpu c left join impuestos p on p.impuesto = c.impuesto "
 	verror=sqlrun(vconeFacturar,"impuestosac_sql"+vartmp)
 	IF verror=.f.  
@@ -87,8 +87,9 @@ PARAMETERS par_idperiodo
 	ALTER table &vimpuestosac alter COLUMN idconcepto n(10)
 	ALTER table &vimpuestosac alter COLUMN iva 		  n(10)
 
-	
 
+	
+	*/*************
 	*/*************
 	* Comienzo la generacion buscando el lote a facturar y sus clientes
 	*/
@@ -169,8 +170,8 @@ PARAMETERS par_idperiodo
 	
 	*/*************
 	* Obtengo el detalle de todos los conceptos o detalles que debo facturar cargado a las entidades Seleccionadas
-	*/
-	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
+	*/ - sin los conceptos compuestos 
+	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva, ifnull(c.compuesto,'N') as compuesto  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
 	sqlmatriz(2)=" left join conceptoser c on c.idconcepto = f.idconcepto "
 	sqlmatriz(3)=" left join entidadesh h on h.identidadh = f.identidadh "
 	sqlmatriz(4)=" where f.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
@@ -181,11 +182,53 @@ PARAMETERS par_idperiodo
 	ventidadesdf_sql = 'entidadesdf_sql'+vartmp
 	SELECT &ventidadesdf_sql
 	GO TOP 
+
 	IF EOF() THEN  
 		MESSAGEBOX("No se han Seleccionado Entidades para Generar la Facturacion...",0+16," Generación de Facturas ")
 		=abreycierracon(vconeFacturar,"")
 		RETURN var_retorno  
 	ENDIF 
+
+	SELECT * FROM &ventidadesdf_sql INTO TABLE ventidadesdf
+
+*******************************************************************************************************************
+****** Obtengo los conceptos compuestos de aquellos que debo facturar para agregar los items correspondientes *****
+*******************************************************************************************************************
+
+	*/*************
+	* Obtengo el detalle de todos los conceptos o detalles que debo facturar cargado a las entidades Seleccionadas
+	*/ - QUE CORRESPONDEN A ACONCEPTOS COMPUESTOS ** 
+	
+	
+	ventidadesdfcomp = 'entidadesdfcomp'+vartmp
+	SELECT * FROM &ventidadesdf_sql INTO TABLE &ventidadesdfcomp WHERE compuesto = 'S' 
+	IF _TALLY > 0 THEN 
+		SELECT &ventidadesdfcomp 
+		GO TOP 
+		DO WHILE !EOF()
+			vcombo=""
+			vcombo = fpgcombo(vconeFacturar, &ventidadesdfcomp..idperiodoe, &ventidadesdfcomp..identidadh, &ventidadesdfcomp..iva, &ventidadesdfcomp..cantidad,&ventidadesdfcomp..identidadd ,&ventidadesdfcomp..funcion )
+			IF !EMPTY(vcombo)
+				SELECT &ventidadesdf_sql 
+				
+				USE &vcombo IN 0
+				SELECT &vcombo
+				SELECT &ventidadesdf_sql 
+				APPEND FROM &vcombo 
+			
+			ENDIF 		
+			SELECT &ventidadesdfcomp 
+			SKIP 
+		ENDDO 
+	ENDIF 
+	USE IN &ventidadesdfcomp
+
+
+
+*******************************************************************************************************************
+
+
+
 
 	v_fechaemite = &vfactulotes_sql..fechaemite
 	
@@ -205,7 +248,7 @@ PARAMETERS par_idperiodo
 	GO TOP 
 	ventidadesdcf = 'entidadesdcf'+vartmp
 	SET ENGINEBEHAVIOR  70
-	SELECT * FROM &ventidadesdcf_sql INTO TABLE &ventidadesdcf ORDER BY identidadd GROUP BY identidadd 
+	SELECT * FROM &ventidadesdcf_sql INTO TABLE &ventidadesdcf  ORDER BY identidadd GROUP BY identidadd 
 	SET ENGINEBEHAVIOR 90
 	SELECT &ventidadesdcf 
 	INDEX on identidadd TAG identidadd 
@@ -214,13 +257,14 @@ PARAMETERS par_idperiodo
 	
 	*// Calculo el Valor Actualizado para todos los Detalles de Artículos y Conceptos a Facturar 
 	ventidadesdf = 'entidadesdf'+vartmp 
-	SELECT * FROM &ventidadesdf_sql INTO TABLE &ventidadesdf
+	SELECT * FROM &ventidadesdf_sql INTO TABLE &ventidadesdf WHERE compuesto = 'N'
 	SELECT &ventidadesdf
 	ALTER table &ventidadesdf ADD COLUMN nrocuota i
 	ALTER table &ventidadesdf ADD COLUMN cantcuotas i
 	ALTER table &ventidadesdf ADD COLUMN netocuota y
 	ALTER table &ventidadesdf ADD COLUMN idcuotasd i 
 	ALTER TABLE &ventidadesdf ADD COLUMN ejecucion i 
+	
 	
 	* Actualizo precios segun listas de precios solo para Articulos Facturados = idconcepto = 0
 	SET RELATION TO STR(idlista)+'|'+ALLTRIM(articulo) INTO &vlistasprea
@@ -250,7 +294,7 @@ PARAMETERS par_idperiodo
 		GO TOP 
 		v_fechaemite = &vfactulotes_sql..fechaemite
 		SCAN FOR ( &ventidadesdf..idconcepto > 0 ) AND !EOF() AND (&ventidadesdf..ejecucion = ieje) 
-			IF  ( &vconceptoser..facturar = 'S') THEN 
+			IF  ( &vconceptoser..facturar = 'S' ) THEN 
 				imp_cantidad = 1				
 				imp_unitario = 0					
 				IF  ( &vconceptoser..vigencia = '1' ) OR  ( &vconceptoser..vigencia = '2' AND &vconceptoser..vigedesde<=v_fechaemite AND v_fechaemite <= &vconceptoser..vigehasta )  THEN 			
@@ -364,7 +408,7 @@ PARAMETERS par_idperiodo
 	SET ENGINEBEHAVIOR 70
 	SELECT identidadh, identidadh as idfacturah, identidadh as idfactura,  articulo, idconcepto , cantidad, unidad, cantidad as cantidadfc, unidad as unidadfc, ;
 			detalle, unitario, neto, SUM(impuestos) as impuestos, SUM(razon) as razon, neto as total, " " as codigocta, " " as nombrecta, nrocuota as cuota, cantcuotas , padron, idcuotasd,  ;
-			STR(identidadh)+STR(idconcepto)+ALLTRIM(articulo) as orden ;
+			identidadd, STR(identidadh)+STR(idconcepto)+STR(identidadd)+ALLTRIM(articulo) as orden ;
 		FROM &ventidadesdif INTO TABLE &vdetafactutmp  ORDER BY orden GROUP BY orden 
 
 
