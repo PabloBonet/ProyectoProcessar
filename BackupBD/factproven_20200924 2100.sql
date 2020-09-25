@@ -1,0 +1,65 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema trsoftdb
+--
+
+CREATE DATABASE IF NOT EXISTS trsoftdb;
+USE trsoftdb;
+
+--
+-- Definition of table `factuprovec`
+--
+
+DROP TABLE IF EXISTS `factuprovec`;
+CREATE TABLE `factuprovec` (
+  `idfacprovc` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idfactprove` int(10) unsigned NOT NULL,
+  `idcupon` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idfacprovc`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `factuprovec`
+--
+
+/*!40000 ALTER TABLE `factuprovec` DISABLE KEYS */;
+INSERT INTO `factuprovec` (`idfacprovc`,`idfactprove`,`idcupon`) VALUES 
+ (1,50,18),
+ (2,50,19),
+ (3,51,22),
+ (4,53,21),
+ (5,53,27),
+ (6,54,22),
+ (7,54,27),
+ (8,55,18),
+ (9,56,18),
+ (10,57,18),
+ (11,58,18),
+ (12,59,18);
+/*!40000 ALTER TABLE `factuprovec` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
