@@ -1896,8 +1896,6 @@ PARAMETERS p_idRecibo
 		
 		*** Busco los datos del recibo
 					
-				
-		
 			sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetacobro, dc.idtipopago, dc.importe as impCobrado, dc.idcuenta, tp.detalle as tipopago, cb.codcuenta, "
 			sqlmatriz(2)=" com.comprobante as nomcomp from recibos r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba "
 			sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom " 
@@ -1905,51 +1903,17 @@ PARAMETERS p_idRecibo
 			sqlmatriz(5)=" left join tipopagos tp on dc.idtipopago = tp.idtipopago left join cajabancos cb on dc.idcuenta = cb.idcuenta "
 			sqlmatriz(6)=" where r.idrecibo = "+ ALLTRIM(STR(v_idrecibo))
 
-*!*				sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetacobro, dc.idtipopago, dc.importe as impCobrado, dc.idcuenta, tp.detalle as tipopago, cb.codcuenta, "
-*!*				sqlmatriz(2)=" com.comprobante as nomcomp from recibos r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba,cpl "
-*!*				sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom " 
-*!*				sqlmatriz(4)=" left join entidades e on r.entidad = e.entidad left join detallecobros dc on r.idcomproba = dc.idcomproba and r.idrecibo = dc.idregistro "
-*!*				sqlmatriz(5)=" left join tipopagos tp on dc.idtipopago = tp.idtipopago left join cajabancos cb on dc.idcuenta = cb.idcuenta "
-*!*				sqlmatriz(6)=" left join (SELECT c.*,concat('CHEQUE N°: ',ch.serie,' ',ch.numero,' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
-*!*				sqlmatriz(7)=" from cobropagolink c left join cheques ch on c.idregistro = ch.idcheque left join bancos b on ch.idbanco = b.idbanco where c.tabla = 'cheques' union " 
-*!*				sqlmatriz(8)=" where c.tabla = 'cupones') as cpl on dc.iddetacobro = cpl.registrocp "
-*!*				sqlmatriz(9)=" where r.idrecibo = "+ ALLTRIM(STR(v_idrecibo))+" and cpl.tablacp = 'detallecobros'"
-*!*			
-			
-			
-*!*				
-*!*				
-*!*				sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetacobro, dc.idtipopago, dc.importe as impCobrado, "
-*!*	 			sqlmatriz(2)="dc.idcuenta, tp.detalle as tipopagod, cb.codcuenta, com.comprobante as nomcomp,cpl.descrip as tipopago "
-*!*	  			sqlmatriz(3)="from recibos r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com "
-*!*	  			sqlmatriz(4)="on r.idcomproba = com.idcomproba left join  tipocompro t on com.idtipocompro = t.idtipocompro "
-*!*	  			sqlmatriz(5)="left join  afipcompro a on t.idafipcom = a.idafipcom left join  entidades e on r.entidad = e.entidad "
-*!*	  			sqlmatriz(6)="left join  detallecobros dc on r.idcomproba = dc.idcomproba and r.idrecibo = dc.idregistro "
-*!*	 			sqlmatriz(7)="left join  tipopagos tp on dc.idtipopago = tp.idtipopago left join  cajabancos cb on dc.idcuenta = cb.idcuenta "
-*!*	 			sqlmatriz(8)="left join (SELECT c.*,concat('CHEQUE N°: ',ch.serie,' ',ch.numero,' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
-*!*	 			sqlmatriz(9)="from  cobropagolink c left join  cheques ch on c.idregistro = ch.idcheque left join  bancos b "
-*!*	 			sqlmatriz(10)="on ch.idbanco = b.idbanco where c.tabla = 'cheques' union "
-*!*	 			 sqlmatriz(11)="SELECT c.*,concat('CUPÓN N°: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip "
-*!*	  			sqlmatriz(12)="from  cobropagolink c left join  cupones cu on c.idregistro = cu.idcupon where c.tabla = 'cupones') as cpl "
-*!*	  			sqlmatriz(13)=" on dc.iddetacobro = cpl.registrocp  where r.idrecibo = "+ ALLTRIM(STR(v_idrecibo))+" and cpl.tablacp = 'detallecobros' "
-
 			verror=sqlrun(vconeccionF,"recibo_sql_ua")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del recibo",0+48+0,"Error")
 			ENDIF
-		
-		
-		
-		
 			
 		SELECT *,iddetacobro as iddetac FROM recibo_sql_ua INTO TABLE recibo_sql_u 
-	ALTER table recibo_sql_u alter COLUMN tipopago C(254) 
+		ALTER table recibo_sql_u alter COLUMN tipopago C(254) 
 
-	SELECT recibo_sql_u
-	GO TOP 
-		
-		
-		
+		SELECT recibo_sql_u
+		GO TOP 
+				
 		SELECT iddetac FROM recibo_sql_u WHERE ALLTRIM(tipopago) == "CUPONES" OR ALLTRIM(tipopago) == "CHEQUE" INTO TABLE detallecobrosid_sql
 		
 		v_iddetcobros =""
@@ -1973,17 +1937,13 @@ PARAMETERS p_idRecibo
 		ELSE
 			v_iddetcobros = "c.registrocp in ("+ALLTRIM(v_iddetcobros) +")"		
 		ENDIF 
-
-		
-		
 		
 			sqlmatriz(1)=" SELECT c.*,concat('CHEQUE N°: ',ch.serie,' ',ch.numero,' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
  			sqlmatriz(2)=" from  cobropagolink c left join  cheques ch on c.idregistro = ch.idcheque left join  bancos b "
  			sqlmatriz(3)=" on ch.idbanco = b.idbanco where c.tabla = 'cheques' and c.tablacp = 'detallecobros' and "+ALLTRIM(v_iddetcobros)+" union "
- 			 sqlmatriz(4)=" SELECT c.*,concat('CUPÓN N°: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip "
+ 			sqlmatriz(4)=" SELECT c.*,concat('CUPÓN N°: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip "
   			sqlmatriz(5)=" from  cobropagolink c left join  cupones cu on c.idregistro = cu.idcupon where c.tabla = 'cupones' and c.tablacp = 'detallecobros' and "+ALLTRIM(v_iddetcobros)
-  			
-  			
+  			  			
 			verror=sqlrun(vconeccionF,"che_cup_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del recibo",0+48+0,"Error")
@@ -2022,10 +1982,6 @@ PARAMETERS p_idRecibo
 		ENDDO 
 		
 		
-		
-		
-		
-
 		SELECT * FROM recibo_sql_u INTO TABLE .\recibo
 				
 		SELECT recibo
@@ -2047,14 +2003,10 @@ PARAMETERS p_idRecibo
 				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de cobros relacionados al recibo ",0+48+0,"Error")
 				ENDIF
 			
-		
-		
-		
 			SELECT * FROM cobros_sql_u INTO TABLE .\cobros
 			SELECT cobros
 			GO TOP 
 			
-		
 		
 			ALTER table recibo ADD COLUMN strImporte C(250)
 			
@@ -2077,8 +2029,7 @@ PARAMETERS p_idRecibo
 			MESSAGEBOX("Error al cargar el recibo para imprimir",0+48+0,"Error al cargar el recibo")
 			RETURN 	
 		ENDIF 
-		
-		
+				
 
 	ELSE
 		MESSAGEBOX("NO se pudo recuperar el recibo el ID <= 0",0+16,"Error al imprimir")
@@ -6099,13 +6050,90 @@ PARAMETERS p_idpagoProv
 			sqlmatriz(5)=" left join tipopagos tp on dc.idtipopago = tp.idtipopago left join cajabancos cb on dc.idcuenta = cb.idcuenta "
 			sqlmatriz(6)=" where r.idpago = "+ ALLTRIM(STR(v_idpagoProv))
 
-			verror=sqlrun(vconeccionF,"pagoprov_sql_u")
+			verror=sqlrun(vconeccionF,"pagoprov_sql_ua")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del Pago a Proveedor",0+48+0,"Error")
 			ENDIF
 		
 		 
 		
+		
+		
+		
+		
+		
+		SELECT *,iddetapago as iddetap FROM pagoprov_sql_ua INTO TABLE pagoprov_sql_u
+		ALTER table pagoprov_sql_u alter COLUMN tipopago C(254) 
+
+		SELECT pagoprov_sql_u
+		GO TOP 
+				
+		SELECT iddetap FROM pagoprov_sql_u WHERE ALLTRIM(tipopago) == "CUPONES" OR ALLTRIM(tipopago) == "CHEQUE" INTO TABLE detallepagosid_sql
+		
+		v_iddetpagos =""
+		
+		SELECT detallepagosid_sql
+		GO TOP 
+		
+		DO WHILE NOT EOF()
+		
+			SELECT detallepagosid_sql
+			v_iddetpagos = v_iddetpagos + IIF(EMPTY(v_iddetpagos)=.T., "",",")+ ALLTRIM(STR(detallepagosid_sql.iddetap))
+		
+			SELECT detallepagosid_sql
+			SKIP 1
+		
+		ENDDO 
+		
+
+		IF EMPTY(v_iddetpagos) = .T.
+				v_iddetpagos = "false"
+		ELSE
+			v_iddetpagos = "c.registrocp in ("+ALLTRIM(v_iddetpagos) +")"		
+		ENDIF 
+		
+			sqlmatriz(1)=" SELECT c.*,concat('CHEQUE N°: ',ch.serie,' ',ch.numero,' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
+ 			sqlmatriz(2)=" from  cobropagolink c left join  cheques ch on c.idregistro = ch.idcheque left join  bancos b "
+ 			sqlmatriz(3)=" on ch.idbanco = b.idbanco where c.tabla = 'cheques' and c.tablacp = 'detallepagos' and "+ALLTRIM(v_iddetpagos)+" union "
+ 			sqlmatriz(4)=" SELECT c.*,concat('CUPÓN N°: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip "
+  			sqlmatriz(5)=" from  cobropagolink c left join  cupones cu on c.idregistro = cu.idcupon where c.tabla = 'cupones' and c.tablacp = 'detallepagos' and "+ALLTRIM(v_iddetpagos)
+  			  			
+			verror=sqlrun(vconeccionF,"che_cup_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del recibo",0+48+0,"Error")
+			ENDIF
+		
+		
+		SELECT che_cup_sql
+		GO top
+		
+		
+		SELECT pagoprov_sql_u
+		GO TOP 
+		
+		DO WHILE NOT EOF()
+			
+			v_tipopago = pagoprov_sql_u.tipopago
+			
+			IF ALLTRIM(v_tipopago) == "CUPONES" OR ALLTRIM(v_tipopago) == "CHEQUE"
+			
+				v_idDetapago = pagoprov_sql_u.iddetap
+			
+				SELECT che_cup_sql 
+				GO TOP 
+				LOCATE FOR registrocp = v_idDetapago
+				
+				SELECT pagoprov_sql_u
+				replace tipopago WITH che_cup_sql.descrip
+			
+			ENDIF 
+			
+		
+		
+			SELECT pagoprov_sql_u
+			SKIP 1
+		
+		ENDDO 
 		
 		
 		
@@ -7204,6 +7232,8 @@ ENDFUNC
 ***********************************************************************
 FUNCTION GetListasPrecios	
 PARAMETERS p_nombrearchivo, p_condfis
+
+
 vtmp_recalcular = .f. 
 vtmp = frandom()
 
@@ -7290,8 +7320,8 @@ IF vtmp_recalcular = .t. THEN
 	fvlistasartp = 'listasartp'+vtmp 
 	fvarticulos = 'articulos'+vtmp 
 
-	SELECT p.idlista, SUBSTR(p.detalle+SPACE(254),1,254) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.idlistap, p.actualiza, l.idlistah, ;  
-		a.articulo, a.detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea, a.ctrlstock, a.ocultar, ;
+	SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.idlistap, p.actualiza, l.idlistah, ;  
+		a.articulo, SUBSTR(a.detalle+SPACE(200),1,200) as detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea, a.ctrlstock, a.ocultar, ;
 		a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
 		a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact ;
 	 	FROM &fvlistaprecioh_sql l ;
@@ -7315,11 +7345,13 @@ IF vtmp_recalcular = .t. THEN
 	GO TOP 
 	replace razonimpu WITH 0 FOR ISNULL(razonimpu)
 
+
 	SELECT * FROM &fvlistasart INTO TABLE &fvlistasartp
 	SELECT &fvlistasartp
 	INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
 	SELECT &fvlistasart
 	SET RELATION TO STR(idlistap)+'#'+ALLTRIM(articulo) INTO &fvlistasartp 
+
 
 
 	fvlistas = 'listas'+vtmp
@@ -7372,7 +7404,7 @@ IF vtmp_recalcular = .t. THEN
 	USE IN maximolis
 	
 	SELECT * FROM &fvlistasart 			INTO TABLE syslistaprea	
-	SELECT idlistac, idlista, SUBSTR(detalle+SPACE(254),1,254) as detalle, cuotas, razon, idfinancia, habilitado   FROM &fvlistaprecioc_sql  	INTO TABLE syslistapreb	
+	SELECT idlistac, idlista, SUBSTR(detalle+SPACE(200),1,200) as detalle, cuotas, razon, idfinancia, habilitado   FROM &fvlistaprecioc_sql  	INTO TABLE syslistapreb	
 
 	USE IN &fvlistas  
 	USE IN &fvlistasart  
@@ -7413,6 +7445,7 @@ ENDIF
 RETURN v_nombreretorno 
 
 ENDFUNC 
+
 
 
 FUNCTION getLogo
