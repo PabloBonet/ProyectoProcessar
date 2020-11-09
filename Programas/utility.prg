@@ -1938,10 +1938,10 @@ PARAMETERS p_idRecibo
 			v_iddetcobros = "c.registrocp in ("+ALLTRIM(v_iddetcobros) +")"		
 		ENDIF 
 		
-			sqlmatriz(1)=" SELECT c.*,concat('CHEQUE N°: ',ch.serie,' ',ch.numero,' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
+			sqlmatriz(1)=" SELECT c.*,concat('CHEQUE Nro: ',ch.serie,' ',ch.numero,' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
  			sqlmatriz(2)=" from  cobropagolink c left join  cheques ch on c.idregistro = ch.idcheque left join  bancos b "
  			sqlmatriz(3)=" on ch.idbanco = b.idbanco where c.tabla = 'cheques' and c.tablacp = 'detallecobros' and "+ALLTRIM(v_iddetcobros)+" union "
- 			sqlmatriz(4)=" SELECT c.*,concat('CUPÓN N°: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip "
+ 			sqlmatriz(4)=" SELECT c.*,concat('CUPÓN Nro: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip "
   			sqlmatriz(5)=" from  cobropagolink c left join  cupones cu on c.idregistro = cu.idcupon where c.tabla = 'cupones' and c.tablacp = 'detallecobros' and "+ALLTRIM(v_iddetcobros)
   			  			
 			verror=sqlrun(vconeccionF,"che_cup_sql")
@@ -6092,10 +6092,10 @@ PARAMETERS p_idpagoProv
 			v_iddetpagos = "c.registrocp in ("+ALLTRIM(v_iddetpagos) +")"		
 		ENDIF 
 		
-			sqlmatriz(1)=" SELECT c.*,concat('CHEQUE N°: ',ch.serie,' ',ch.numero,' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
+			sqlmatriz(1)=" SELECT c.*,concat('CHEQUE Nro: ',ch.serie,' ',ch.numero,' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
  			sqlmatriz(2)=" from  cobropagolink c left join  cheques ch on c.idregistro = ch.idcheque left join  bancos b "
  			sqlmatriz(3)=" on ch.idbanco = b.idbanco where c.tabla = 'cheques' and c.tablacp = 'detallepagos' and "+ALLTRIM(v_iddetpagos)+" union "
- 			sqlmatriz(4)=" SELECT c.*,concat('CUPÓN N°: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip "
+ 			sqlmatriz(4)=" SELECT c.*,concat('CUPÓN Nro: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip "
   			sqlmatriz(5)=" from  cobropagolink c left join  cupones cu on c.idregistro = cu.idcupon where c.tabla = 'cupones' and c.tablacp = 'detallepagos' and "+ALLTRIM(v_iddetpagos)
   			  			
 			verror=sqlrun(vconeccionF,"che_cup_sql")
