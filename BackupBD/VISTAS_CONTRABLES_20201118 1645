@@ -1,0 +1,194 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar
+--
+
+CREATE DATABASE IF NOT EXISTS processar;
+USE processar;
+
+--
+-- Temporary table structure for view `anularppdtp`
+--
+DROP TABLE IF EXISTS `anularppdtp`;
+DROP VIEW IF EXISTS `anularppdtp`;
+CREATE TABLE `anularppdtp` (
+  `idanularp` int(10) unsigned,
+  `iddetacobro` int(10) unsigned,
+  `idtipopago` int(10) unsigned,
+  `detatipo` char(254),
+  `importe` float(13,4),
+  `opera` int(11),
+  `idcuenta` int(10) unsigned,
+  `codcuenta` char(100),
+  `detacta` char(254),
+  `idbanco` int(10) unsigned,
+  `cuentabco` char(100)
+);
+
+--
+-- Temporary table structure for view `anularprdtp`
+--
+DROP TABLE IF EXISTS `anularprdtp`;
+DROP VIEW IF EXISTS `anularprdtp`;
+CREATE TABLE `anularprdtp` (
+  `idanularp` int(10) unsigned,
+  `iddetapago` int(10) unsigned,
+  `idtipopago` int(10) unsigned,
+  `detatipo` char(254),
+  `importe` float(13,4),
+  `opera` int(11),
+  `idcuenta` int(10) unsigned,
+  `codcuenta` char(100),
+  `detacta` char(254),
+  `idbanco` int(10) unsigned,
+  `cuentabco` char(100)
+);
+
+--
+-- Temporary table structure for view `cajaiecedtp`
+--
+DROP TABLE IF EXISTS `cajaiecedtp`;
+DROP VIEW IF EXISTS `cajaiecedtp`;
+CREATE TABLE `cajaiecedtp` (
+  `idcajaie` int(10) unsigned,
+  `iddetapago` int(10) unsigned,
+  `idtipopago` int(10) unsigned,
+  `detatipo` char(254),
+  `importe` float(13,4),
+  `opera` int(11),
+  `idcuenta` int(10) unsigned,
+  `codcuenta` char(100),
+  `detacta` char(254),
+  `idbanco` int(10) unsigned,
+  `cuentabco` char(100)
+);
+
+--
+-- Temporary table structure for view `cajaiecidtp`
+--
+DROP TABLE IF EXISTS `cajaiecidtp`;
+DROP VIEW IF EXISTS `cajaiecidtp`;
+CREATE TABLE `cajaiecidtp` (
+  `idcajaie` int(10) unsigned,
+  `iddetacobro` int(10) unsigned,
+  `idtipopago` int(10) unsigned,
+  `detatipo` char(254),
+  `importe` float(13,4),
+  `opera` int(11),
+  `idcuenta` int(10) unsigned,
+  `codcuenta` char(100),
+  `detacta` char(254),
+  `idbanco` int(10) unsigned,
+  `cuentabco` char(100)
+);
+
+--
+-- Temporary table structure for view `pagosprovdtp`
+--
+DROP TABLE IF EXISTS `pagosprovdtp`;
+DROP VIEW IF EXISTS `pagosprovdtp`;
+CREATE TABLE `pagosprovdtp` (
+  `idpago` int(10) unsigned,
+  `iddetapago` int(10) unsigned,
+  `idtipopago` int(10) unsigned,
+  `detatipo` char(254),
+  `importe` float(13,4),
+  `opera` int(11),
+  `idcuenta` int(10) unsigned,
+  `codcuenta` char(100),
+  `detacta` char(254),
+  `idbanco` int(10) unsigned,
+  `cuentabco` char(100)
+);
+
+--
+-- Temporary table structure for view `recibosdtp`
+--
+DROP TABLE IF EXISTS `recibosdtp`;
+DROP VIEW IF EXISTS `recibosdtp`;
+CREATE TABLE `recibosdtp` (
+  `idrecibo` int(10) unsigned,
+  `iddetacobro` int(10) unsigned,
+  `idtipopago` int(10) unsigned,
+  `detatipo` char(254),
+  `importe` float(13,4),
+  `opera` int(11),
+  `idcuenta` int(10) unsigned,
+  `codcuenta` char(100),
+  `detacta` char(254),
+  `idbanco` int(10) unsigned,
+  `cuentabco` char(100)
+);
+
+--
+-- Definition of view `anularppdtp`
+--
+
+DROP TABLE IF EXISTS `anularppdtp`;
+DROP VIEW IF EXISTS `anularppdtp`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `anularppdtp` AS select `a`.`idanularp` AS `idanularp`,`d`.`iddetacobro` AS `iddetacobro`,`d`.`idtipopago` AS `idtipopago`,`t`.`detalle` AS `detatipo`,`d`.`importe` AS `importe`,`t`.`opera` AS `opera`,`d`.`idcuenta` AS `idcuenta`,`c`.`codcuenta` AS `codcuenta`,`c`.`detalle` AS `detacta`,`c`.`idbanco` AS `idbanco`,`c`.`cuentabco` AS `cuentabco` from (((`anularp` `a` left join `detallecobros` `d` on(((`a`.`idcomproba` = `d`.`idcomproba`) and (`a`.`idanularp` = `d`.`idregistro`)))) left join `tipopagos` `t` on((`t`.`idtipopago` = `d`.`idtipopago`))) left join `cajabancos` `c` on((`c`.`idcuenta` = `d`.`idcuenta`))) where (trim(`a`.`detallecp`) = 'detallecobros');
+
+--
+-- Definition of view `anularprdtp`
+--
+
+DROP TABLE IF EXISTS `anularprdtp`;
+DROP VIEW IF EXISTS `anularprdtp`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `anularprdtp` AS select `a`.`idanularp` AS `idanularp`,`d`.`iddetapago` AS `iddetapago`,`d`.`idtipopago` AS `idtipopago`,`t`.`detalle` AS `detatipo`,`d`.`importe` AS `importe`,`t`.`opera` AS `opera`,`d`.`idcuenta` AS `idcuenta`,`c`.`codcuenta` AS `codcuenta`,`c`.`detalle` AS `detacta`,`c`.`idbanco` AS `idbanco`,`c`.`cuentabco` AS `cuentabco` from (((`anularp` `a` left join `detallepagos` `d` on(((`a`.`idcomproba` = `d`.`idcomproba`) and (`a`.`idanularp` = `d`.`idregistro`)))) left join `tipopagos` `t` on((`t`.`idtipopago` = `d`.`idtipopago`))) left join `cajabancos` `c` on((`c`.`idcuenta` = `d`.`idcuenta`))) where (trim(`a`.`detallecp`) = 'detallepagos');
+
+--
+-- Definition of view `cajaiecedtp`
+--
+
+DROP TABLE IF EXISTS `cajaiecedtp`;
+DROP VIEW IF EXISTS `cajaiecedtp`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `cajaiecedtp` AS select `ce`.`idcajaie` AS `idcajaie`,`d`.`iddetapago` AS `iddetapago`,`d`.`idtipopago` AS `idtipopago`,`t`.`detalle` AS `detatipo`,`d`.`importe` AS `importe`,`t`.`opera` AS `opera`,`d`.`idcuenta` AS `idcuenta`,`c`.`codcuenta` AS `codcuenta`,`c`.`detalle` AS `detacta`,`c`.`idbanco` AS `idbanco`,`c`.`cuentabco` AS `cuentabco` from (((`cajaie` `ce` left join `detallepagos` `d` on(((`ce`.`idcomproba` = `d`.`idcomproba`) and (`ce`.`idcajaie` = `d`.`idregistro`)))) left join `tipopagos` `t` on((`t`.`idtipopago` = `d`.`idtipopago`))) left join `cajabancos` `c` on((`c`.`idcuenta` = `d`.`idcuenta`))) where (trim(`ce`.`detallecp`) = 'detallepagos');
+
+--
+-- Definition of view `cajaiecidtp`
+--
+
+DROP TABLE IF EXISTS `cajaiecidtp`;
+DROP VIEW IF EXISTS `cajaiecidtp`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `cajaiecidtp` AS select `ci`.`idcajaie` AS `idcajaie`,`d`.`iddetacobro` AS `iddetacobro`,`d`.`idtipopago` AS `idtipopago`,`t`.`detalle` AS `detatipo`,`d`.`importe` AS `importe`,`t`.`opera` AS `opera`,`d`.`idcuenta` AS `idcuenta`,`c`.`codcuenta` AS `codcuenta`,`c`.`detalle` AS `detacta`,`c`.`idbanco` AS `idbanco`,`c`.`cuentabco` AS `cuentabco` from (((`cajaie` `ci` left join `detallecobros` `d` on(((`ci`.`idcomproba` = `d`.`idcomproba`) and (`ci`.`idcajaie` = `d`.`idregistro`)))) left join `tipopagos` `t` on((`t`.`idtipopago` = `d`.`idtipopago`))) left join `cajabancos` `c` on((`c`.`idcuenta` = `d`.`idcuenta`))) where (trim(`ci`.`detallecp`) = 'detallecobros');
+
+--
+-- Definition of view `pagosprovdtp`
+--
+
+DROP TABLE IF EXISTS `pagosprovdtp`;
+DROP VIEW IF EXISTS `pagosprovdtp`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `pagosprovdtp` AS select `p`.`idpago` AS `idpago`,`d`.`iddetapago` AS `iddetapago`,`d`.`idtipopago` AS `idtipopago`,`t`.`detalle` AS `detatipo`,`d`.`importe` AS `importe`,`t`.`opera` AS `opera`,`d`.`idcuenta` AS `idcuenta`,`c`.`codcuenta` AS `codcuenta`,`c`.`detalle` AS `detacta`,`c`.`idbanco` AS `idbanco`,`c`.`cuentabco` AS `cuentabco` from (((`pagosprov` `p` left join `detallepagos` `d` on(((`p`.`idcomproba` = `d`.`idcomproba`) and (`p`.`idpago` = `d`.`idregistro`)))) left join `tipopagos` `t` on((`t`.`idtipopago` = `d`.`idtipopago`))) left join `cajabancos` `c` on((`c`.`idcuenta` = `d`.`idcuenta`)));
+
+--
+-- Definition of view `recibosdtp`
+--
+
+DROP TABLE IF EXISTS `recibosdtp`;
+DROP VIEW IF EXISTS `recibosdtp`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `recibosdtp` AS select `r`.`idrecibo` AS `idrecibo`,`d`.`iddetacobro` AS `iddetacobro`,`d`.`idtipopago` AS `idtipopago`,`t`.`detalle` AS `detatipo`,`d`.`importe` AS `importe`,`t`.`opera` AS `opera`,`d`.`idcuenta` AS `idcuenta`,`c`.`codcuenta` AS `codcuenta`,`c`.`detalle` AS `detacta`,`c`.`idbanco` AS `idbanco`,`c`.`cuentabco` AS `cuentabco` from (((`recibos` `r` left join `detallecobros` `d` on(((`r`.`idcomproba` = `d`.`idcomproba`) and (`r`.`idrecibo` = `d`.`idregistro`)))) left join `tipopagos` `t` on((`t`.`idtipopago` = `d`.`idtipopago`))) left join `cajabancos` `c` on((`c`.`idcuenta` = `d`.`idcuenta`)));
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
