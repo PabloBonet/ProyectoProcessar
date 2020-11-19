@@ -2349,16 +2349,25 @@ PARAMETERS p_idtransferencia
 
 
 
-*!*		v_idcajamovip = p_idcajamovip
-*!*		
-*!*		IF v_idcajamovip > 0
-*!*			
-*!*			vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
-*!*			
-*!*			*** Busco los datos del recibo
-*!*						
+	v_idtransfe = p_idtransferencia
+	
+	IF v_idtransfe > 0
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+		
+		*** Busco los datos del recibo
+		 sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip,com.comprobante as nomcomp, cd.detalle as ctaDes, co.detalle as ctaOri,d.idtipopago, d.iddetacobro, d.importe as importetp,cpl.descrip as desccpl,tp.detalle as tipopago "
+         sqlmatriz(2)=" FROM transferencias r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro t on com.idtipocompro = t.idtipocompro"
+		sqlmatriz(3)=" left join afipcompro a on t.idafipcom = a.idafipcom left join cajabancos cd on r.idcuentad = cd.idcuenta left join cajabancos co on r.idcuentao = co.idcuenta "
+		sqlmatriz(4)="  left join detallecobros d   on r.idtransfe = d.idregistro left join tipopagos tp on d.idtipopago = tp.idtipopago left join (SELECT c.*,concat('CHEQUE Nro: ',ch.serie,' ',ch.numero, "
+		sqlmatriz(5)=" concat(' FV: ',substr(ch.fechavence,7,2),'/',substr(ch.fechavence,5,2),'/',substr(ch.fechavence,1,4)),' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
+		sqlmatriz(6)=" from cobropagolink c left join cheques ch on c.idregistro = ch.idcheque left join bancos b on ch.idbanco = b.idbanco where c.tabla = 'cheques' and c.tablacp = 'detallecobros' union "
+		sqlmatriz(7)="	SELECT c.*,concat('CUPÓN Nro: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip  from cobropagolink c left join cupones cu on c.idregistro = cu.idcupon "
+		sqlmatriz(8)="	where c.tabla = 'cupones' and c.tablacp = 'detallecobros') as cpl on d.iddetacobro = cpl.registrocp	"
+		sqlmatriz(9)=" where r.idcomproba = d.idcomproba and d.idregistro = "+ALLTRIM(STR(v_idtransfe))
 
-*!*			sqlmatriz(1)= " Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip,h.idcajamovh, h.idtipopago,h.importe as importetp, tp.detalle as tipopago, "
+*!*		
+*!*				sqlmatriz(1)= " Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip,h.idcajamovh, h.idtipopago,h.importe as importetp, tp.detalle as tipopago, "
 *!*			sqlmatriz(2)= " com.comprobante as nomcomp, cpl.descrip as desccpl, cd.detalle as cajaDes, co.detalle as cajaOri from cajamovip r left join cajarecauda cd on r.idcajarecd = cd.idcajareca left join cajarecauda co on r.idcajareco = co.idcajareca "
 *!*			sqlmatriz(3)=" left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom "
 *!*			sqlmatriz(4)=" left join cajamovih h on r.idcajamovp = h.idcajamovp left join tipopagos tp on h.idtipopago = tp.idtipopago "
@@ -2367,67 +2376,68 @@ PARAMETERS p_idtransferencia
 *!*			sqlmatriz(7)= " SELECT c.*,concat('CUPÓN Nro: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip  from cobropagolink c left join cupones cu on c.idregistro = cu.idcupon "
 *!*			sqlmatriz(8)= " where c.tabla = 'cupones' and c.tablacp = 'cajamovih') as cpl on h.idcajamovh = cpl.registrocp "
 *!*			sqlmatriz(9)=" where r.idcajamovp = "+ALLTRIM(STR(p_idcajamovip))
-*!*				verror=sqlrun(vconeccionF,"cajamovip_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la Transferencia de Caja",0+48+0,"Error")
-*!*				    RETURN 
-*!*				ENDIF
-*!*										
-*!*			
-*!*			SELECT cajamovip_sql
-*!*			GO TOP 
-*!*			
-*!*			DO WHILE NOT EOF()
-*!*				
-*!*				v_idtipopago	= IIF(ISNULL(cajamovip_sql.idtipopago) = .T.,0,cajamovip_sql.idtipopago)	
-*!*				
-*!*				v_tipopago		= IIF(ISNULL(cajamovip_sql.tipopago) = .T.,"",cajamovip_sql.tipopago)	
-*!*			
-*!*				DO CASE
-*!*					CASE ALLTRIM(v_tipoPago) == "CUPONES"
-*!*						v_tipoPago = IIF(ISNULL(cajamovip_sql.desccpl) or EMPTY(cajamovip_sql.desccpl),"CUPONES",cajamovip_sql.desccpl)
-*!*					CASE ALLTRIM(v_tipoPago) == "CHEQUE"
-*!*						v_tipoPago =IIF(ISNULL(cajamovip_sql.desccpl) or EMPTY(cajamovip_sql.desccpl),"CHEQUE",cajamovip_sql.desccpl)
-*!*					OTHERWISE
-*!*						
+		
+			verror=sqlrun(vconeccionF,"transfecta_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la Transferencia de Cuentas",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+									
+		
+		SELECT transfecta_sql
+		GO TOP 
+		
+		DO WHILE NOT EOF()
+			
+			v_idtipopago	= IIF(ISNULL(transfecta_sql.idtipopago) = .T.,0,transfecta_sql.idtipopago)	
+			
+			v_tipopago		= IIF(ISNULL(transfecta_sql.tipopago) = .T.,"",transfecta_sql.tipopago)	
+		
+			DO CASE
+				CASE ALLTRIM(v_tipoPago) == "CUPONES"
+					v_tipoPago = IIF(ISNULL(transfecta_sql.desccpl) or EMPTY(transfecta_sql.desccpl),"CUPONES",transfecta_sql.desccpl)
+				CASE ALLTRIM(v_tipoPago) == "CHEQUE"
+					v_tipoPago =IIF(ISNULL(transfecta_sql.desccpl) or EMPTY(transfecta_sql.desccpl),"CHEQUE",transfecta_sql.desccpl)
+				OTHERWISE
+					
 
-*!*				ENDCASE
-*!*			*	v_importe		= IIF(ISNULL(cajamovip_sql.imported)=.T.,0,cajamovip_sql.importe)
-*!*					
-*!*				SELECT cajamovip_sql
-*!*				SKIP 1
-*!*			
-*!*			ENDDO 
-*!*			
-*!*			
-*!*					
-*!*			SELECT * FROM cajamovip_sql INTO TABLE cajamovip
-*!*					
-*!*			SELECT cajamovip
-*!*			GO TOP 
-*!*		
-*!*			IF NOT EOF()
-*!*		
-*!*				replace ALL desccpl WITH tipopago FOR ISNULL(desccpl) = .T.
-*!*				
-*!*						
-*!*				SELECT cajamovip 
-*!*				GO TOP 
-*!*				v_idcomproba = cajamovip.idcomproba
-*!*				
-*!*				DO FORM reporteform WITH "cajamovip","cajamovipcr",v_idcomproba
-*!*				
-*!*			ELSE
-*!*				MESSAGEBOX("Error al cargar la Transferencia para imprimir",0+48+0,"Error al cargar la Transferencia")
-*!*				RETURN 	
-*!*			ENDIF 
-*!*					
+			ENDCASE
+		*	v_importe		= IIF(ISNULL(cajamovip_sql.imported)=.T.,0,cajamovip_sql.importe)
+				
+			SELECT transfecta_sql
+			SKIP 1
+		
+		ENDDO 
+		
+		
+				
+		SELECT * FROM transfecta_sql INTO TABLE transfecta
+				
+		SELECT transfecta
+		GO TOP 
+	
+		IF NOT EOF()
+	
+			replace ALL desccpl WITH tipopago FOR ISNULL(desccpl) = .T.
+			
+					
+			SELECT transfecta
+			GO TOP 
+			v_idcomproba = transfecta.idcomproba
+			
+			DO FORM reporteform WITH "transfecta","transfectacr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar la Transferencia para imprimir",0+48+0,"Error al cargar la Transferencia")
+			RETURN 	
+		ENDIF 
+				
 
-*!*		ELSE
-*!*			MESSAGEBOX("NO se pudo recuperar la Transferencia el ID <= 0",0+16,"Error al imprimir")
-*!*			RETURN 
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar la Transferencia el ID <= 0",0+16,"Error al imprimir")
+		RETURN 
 
-*!*		ENDIF 
+	ENDIF 
 
 ENDFUNC 
 
