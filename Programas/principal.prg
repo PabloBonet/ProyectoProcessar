@@ -26,7 +26,7 @@ ON KEY LABEL CTRL+F4 DO SALIRMENU
 ON KEY LABEL ESC DO SETEO_ESC 
 ON KEY LABEL CTRL+F11 MESSAGEBOX(_screen.ActiveForm.name)
 
-SET PROCEDURE TO UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg , ftp_class.prg
+SET PROCEDURE TO UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg , ftp_class.prg, libconceptos.prg 
 SET CLASSLIB TO  toolbarsys.vcx
 SET CLASSLIB TO crystalreports.vcx additive
 SET CLASSLIB TO util.vcx ADDITIVE 
@@ -44,7 +44,7 @@ WAIT windows "Verificando Conexion con Base de Datos... Aguarde..." NOWAIT
 =LEECONFIG()
 
 *** SETEO  Y DEFINICION DE VARIABLES PUBLICAS Y DE INICIO
-PUBLIC _SYSSERVIDOR , _SYSMENUSYSTEM, _SYSMODULO , _SYSUSUARIO , _SYSVERSION , _SYSIP, _SYSHOST, _SYSLISTAPRECIO, _SYSBGPROCE, _SYSVERSION
+PUBLIC _SYSSERVIDOR , _SYSMENUSYSTEM, _SYSMODULO , _SYSUSUARIO,_SYSVERCAJASREC , _SYSVERSION , _SYSIP, _SYSHOST, _SYSLISTAPRECIO, _SYSBGPROCE, _SYSVERSION
 PUBLIC _SYSMASTER_SERVER ,_SYSMASTER_USER, _SYSMASTER_PASS ,_SYSMASTER_USER , _SYSMYSQL_PORT , _SYSMASTER_SCHEMA, _SYSMASTER_DESC 
 
 PUBLIC SQLMATRIZ(20)
@@ -136,6 +136,17 @@ _SYSMASTER_DESC		= _SYSDESCRIP
 
 _screen.BackColor 	= &_SYSCOLORFONDO
 _screen.Caption 	= _SYSTITULO +" V." + _SYSVERSION
+
+*!*	_screen.addobject("oImg", "image")
+*!*	_screen.oImg.picture = 'processar.png' &&FOTO FONDO
+*!*	_screen.oImg.visible = .T.
+*!*	_screen.oImg.stretch = 0 && ESTIRA
+*!*	_screen.oImg.width = sysmetric(1) && ANCHO
+*!*	_screen.oImg.height = sysmetric(2)-40 && ALTO
+
+
+
+
 
 _SYSIP = IPADDRESS(1)
 _SYSHOST= IPADDRESS(2)
