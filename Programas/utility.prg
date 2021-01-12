@@ -8387,7 +8387,6 @@ PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movim
 *!*		
 *!*		ENDIF 
 
-MESSAGEBOX("A1")
 	tipoPagoObj 	= CREATEOBJECT('tipospagosclass')
 
 
@@ -8409,7 +8408,6 @@ MESSAGEBOX("A1")
 	MESSAGEBOX(v_condicion)
 	vconeccionMo = abreycierracon(0,_SYSSCHEMA)
 	
-MESSAGEBOX("A2")
 	DO CASE
 		CASE p_idtipopago == 0 && Todos los tipos de pagos
 			sqlmatriz(1)=" select u.* "
@@ -8439,7 +8437,6 @@ MESSAGEBOX("A2")
 	
 
 
-MESSAGEBOX(sqlmatriz(1)+sqlmatriz(2)+sqlmatriz(3)+sqlmatriz(4)+sqlmatriz(5))
 
 	verror=sqlrun(vconeccionMo ,p_tablaRet)
 	IF verror=.f.  
@@ -8447,7 +8444,6 @@ MESSAGEBOX(sqlmatriz(1)+sqlmatriz(2)+sqlmatriz(3)+sqlmatriz(4)+sqlmatriz(5))
 	=abreycierracon(vconeccionMo ,"")	
 	    RETURN .F.  
 	ENDIF
-	MESSAGEBOX("A3")
 	
 	=abreycierracon(vconeccionMo ,"")	
 	RETURN .T.
@@ -9518,6 +9514,41 @@ ENDIF
 	RETURN .T.
 
 ENDFUNC 
+
+
+
+*-----------------------------------------------------------------------------------
+* Obtiene el Saldo de Crédito disponible para la entidad pasada como parametro
+*-----------------------------------------------------------------------------------
+
+
+FUNCTION CreditoLimiteE
+PARAMETERS  para_entidad
+
+	vconeccionCR = abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)=" SELECT cc.entidad, (sum(ifnull(cr.importe,0)) + cc.saldo) as credito "
+	sqlmatriz(2)=" FROM ctactesaldo cc left join entidadescr cr on cc.entidad = cr.entidad  " 
+	sqlmatriz(4)=" WHERE  cc.entidad = "+ALLTRIM(STR(para_entidad))
+  
+	verror=sqlrun(vconeccionCR ,"credito_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Crédito del Cliente... ",0+48+0,"Error")
+	    RETURN 0  
+	ENDIF
+	=abreycierracon(vconeccionCR ,"")	
+
+	SELECT credito_sql
+	GO TOP 
+	IF EOF()
+		RETURN 0
+	ENDIF
+	vcredito = credito_sql.credito
+	USE IN credito_sql
+	
+	RETURN vcredito
+ENDFUNC 
+*------------------------------------------------------------------------------------
 
 
 
