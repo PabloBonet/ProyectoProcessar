@@ -7373,7 +7373,7 @@ FUNCTION obtenerCorreos
 	
 	vconeccionM	= abreycierracon(0,_SYSSCHEMA)
 	
-	sqlmatriz(1)=" select apellido,nombre, email from entidad where entidad = "+ALLTRIM(STR(v_identidad))
+	sqlmatriz(1)=" select apellido,nombre, email from entidades where entidad = "+ALLTRIM(STR(v_identidad))
 
 
 	verror=sqlrun(vconeccionM,"entidades_sql_uti")
