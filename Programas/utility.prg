@@ -1418,11 +1418,12 @@ ENDFUNC
 * PARAMETROS: P_IDCOMPROBANTE, ID DEL COMPROBANTE A AUTORIZAR
 * RETORNO: Retorna True si no hubo errores al intentar autorizar el comprobante (NO significa que se haya APROBADO), retorna False en caso que haya ocurrido un error en la autorización
 FUNCTION autorizarCompFE
-PARAMETERS p_idcomprobante, p_nomsg
+PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 
-	v_idcomprobante= p_idcomprobante
+	v_idcomprobante= p_idregistro
 	v_autorizar = .F.
 	v_objconfigurado = .F.
+	v_idcomproba	= p_idcomproba
 
 
 	*** COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO **
@@ -1440,7 +1441,7 @@ PARAMETERS p_idcomprobante, p_nomsg
 		    v_autorizar = .F.
 		    RETURN 
 		ELSE
-			v_idcomproba = 0
+			*v_idcomproba = 0
 			v_pventa	= 0
 			
 			
@@ -1480,7 +1481,7 @@ PARAMETERS p_idcomprobante, p_nomsg
 		ENDIF 
 		
 		
-		v_objconfigurado = objModuloAFIP.Configurado
+		v_objconfigurado = objModuloAFIP.Configurado 
 		
 		IF v_objConfigurado = .F.
 		
@@ -1591,13 +1592,14 @@ PARAMETERS p_idcomprobante, p_nomsg
 				p_tipoope     = 'I'
 				p_condicion   = ''
 				v_titulo      = " EL ALTA "
-				ALTER table respuestaComp alter COLUMN idcomproba I
+				*ALTER table respuestaComp alter COLUMN idcomproba I
+				
 				*thisform.calcularmaxh
 				v_idfe = maxnumeroidx("idfe","I","facturasfe",1)
 				v_idfactura = respuestaComp.idfactura
 				v_fecha		= ALLTRIM(STR(respuestaComp.fecha))
 				v_resultado	= respuestaComp.resultado
-				v_idcomproba= respuestaComp.idcomproba
+				*v_idcomproba= respuestaComp.idcomproba
 				v_pventa	= respuestaComp.pventa
 				
 				IF ALLTRIM(v_resultado) == "A"
@@ -1678,9 +1680,7 @@ PARAMETERS p_idcomprobante, p_nomsg
 					ENDIF	
 					
 					registrarEstado("facturas","idfactura",v_idfactura,'I',"AUTORIZADO")
-					
-		
-					
+						
 					** Actualizo el maximo numero de comprobante en compactiv
 					IF v_idcomproba > 0 AND v_pventa > 0
 						p_tipoope     = 'U'
@@ -1832,10 +1832,18 @@ PARAMETERS p_idFactura, p_esElectronica
 		SELECT * FROM impuestos_sql INTO TABLE .\ImpTRIB WHERE ALLTRIM(tipoIMP) = "TRIBUTO"
 		
 		SELECT factu
-		
+		GO TOP 
 		IF NOT EOF()
 		
+			
+			
+
+
+
 			ALTER table factu ADD COLUMN codBarra	 C(42)
+		*	ALTER table factu ADD COLUMN codQR		 general
+			ALTER table factu ADD COLUMN codQR C(100)
+			
 		
 			v_idcomproba = factu.idcomproba
 			v_tipoCompAfip	= ALLTRIM(factu.tipcomAFIP)
@@ -1847,6 +1855,9 @@ PARAMETERS p_idFactura, p_esElectronica
 			v_cuitEmpresa	= _SYSCUIT
 			
 			IF  ALLTRIM(v_electronica) == "S"
+
+			*** Genero Código de Barras ***
+
 				v_cuitempresa	= ALLTRIM(v_CuitEmpresa)
 				
 				v_puntoVta		= ALLTRIM(factu.puntov)
@@ -1859,6 +1870,80 @@ PARAMETERS p_idFactura, p_esElectronica
 				
 				SELECT factu
 				replace ALL codBarra WITH v_codBarraD
+				
+				
+				
+			*** Genero Código QR ***
+			
+				PRIVATE poFbc
+				poFbc = CREATEOBJECT("FoxBarcodeQR")
+				SELECT factu
+				GO TOP 
+						
+					
+				v_version = 1					
+				v_moneda = "PES"
+				v_cotizacion = 1
+				v_tipoDoc	= 80
+	
+				v_cuitEmpSG	 	= ALLTRIM(STRTRAN(v_CuitEmpresa,'-',''))
+				** Armo la cadena JSON  **
+				versionFCompro = ALLTRIM(STR(v_version))
+
+                fechaCompro = ALLTRIM(factu.fecha)
+                cuitE 		= ALLTRIM(v_cuitEmpSG)
+	
+                ptovta_fe   = ALLTRIM(v_puntoVta)
+                idtipocbte_fe = ALLTRIM(factu.tipcomAFIP)
+	
+				numerostr  = ALLTRIM(STR(factu.numero))
+                imp_totstr = ALLTRIM(STR(ROUND(factu.total,2),13,2))
+	
+	            monedastr = ALLTRIM(v_moneda)
+                cotizacionstr = ALLTRIM(STR(v_cotizacion,13,2))
+	
+                tipoDocstr = ALLTRIM(STR(v_tipoDoc))
+                cuitC = ALLTRIM(STRTRAN(factu.cuit,'-',''))
+	
+				cae_fe = ALLTRIM(v_cespcae)
+										
+					v_json1 = " { 'ver':" + versionFCompro+ ",'fecha':'" + fechaCompro +"','cuit':" + cuitE+ ",'ptoVta':" + ptovta_fe + ",'tipoCmp':" + idtipocbte_fe
+					v_json2 = ",'nroCmp':" + numerostr  + ",'importe':" + imp_totstr + ",'moneda':'" + monedastr + "','ctz':" + cotizacionstr + ",'tipoDocRec':" + tipoDocstr 
+					v_json3 = ",'nroDocRec':" + cuitC + ",'tipoCodAut':'E'" + ",'codAut':" + cae_fe + "}"
+														
+				v_json	= ALLTRIM(ALLTRIM(v_json1)+ ALLTRIM(v_json2)+ ALLTRIM(v_json3))
+				
+			
+			
+				** Encripto la cadena JSON **
+				v_datosCodificados  = "" 
+				
+				v_datosCodificados  = ALLTRIM(strconv(v_json,13))
+
+				
+				** Armo la cadena a codificar en el código QR **
+				v_codigo = "https://www.afip.gob.ar/fe/qr/" + "?p=" + ALLTRIM(v_datosCodificados)
+								
+				** Genero la imagen con el código QR **
+		
+				v_idRegistroStr = ALLTRIM(STRTRAN(STR((factu.idfactura),10,0),' ','0'))
+				v_ubicacionImgen = _SYSESTACION+"\imagenQR_"+ v_idRegistroStr 
+				
+				v_codQRImg= poFbc.FullQRCodeImage(ALLTRIM(v_codigo),v_ubicacionImgen,250)
+				
+				v_ubicacionImgen = v_ubicacionImgen+".bmp"
+				SELECT factu 
+				GO TOP 
+				replace ALL codqr WITH v_ubicacionImgen
+				
+				
+				SELECT factu 
+				GO TOP 
+				
+			*	APPEND GENERAL factu.codqr FROM (v_codQRImg)				
+				*replace  codqr WITH v_codQRImg				
+						
+				
 								
 			ELSE
 			
