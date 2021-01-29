@@ -1490,13 +1490,12 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 			v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(_SYSCUIT,'-',''))
 			v_ticketAcceso			= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"TA"+v_cuitSinGuiones),"\","\\")
 			v_log					= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"LOG"+v_cuitSinGuiones+".txt"),"\","\\")
-			
-						
+									
 *			v_objconfigurado	= objModuloAFIP.CargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
 			v_objconfigurado	= objModuloAFIP.CargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, v_ubicacionCertificado, v_ticketAcceso, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, v_log)
 
 			IF v_objconfigurado = .T.
-				
+			
 				v_objerror = objModuloAFIP.Error
 				
 				IF v_objerror = .T.
@@ -1877,6 +1876,14 @@ PARAMETERS p_idFactura, p_esElectronica
 			
 				PRIVATE poFbc
 				poFbc = CREATEOBJECT("FoxBarcodeQR")
+				
+				
+				  poFbc.nBackColor = RGB(255,255,255) && White
+				  poFbc.nBarColor = RGB(0,0,0) && Black
+				  poFbc.nCorrectionLevel = 0 && Medium 15%
+  
+  
+  
 				SELECT factu
 				GO TOP 
 						
