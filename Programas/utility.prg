@@ -9643,8 +9643,272 @@ ENDFUNC
 *------------------------------------------------------------------------------------
 
 
+*-----------------------------------------------------------------------------------
+* Incerta y Elimina Articulos en los Grupos asociados a las Lineas de los Artículos. Parametro : '+' o '-'
+*-----------------------------------------------------------------------------------
+
+FUNCTION GruposArtLinea
+PARAMETERS pl_articulo, pl_linea, pl_opera, pl_conexion
+	IF _SYSTIPOGRLIA = 0 THEN && No se definieron Grupos para las Lineas
+		RETURN 
+	ENDIF 
+
+	IF pl_opera ="+" THEN 	
+		* Veifica que exista el grupo para la Linea del articulo, si no existe lo crea ***	
+		** busca el Grupo de la Linea pasada como Parámetro
+		sqlmatriz(1)=" select idgrupo from grupos where  idtipogrupo = "+ALLTRIM(STR(_SYSTIPOGRLIA))+"  and " 
+		sqlmatriz(2)=" TRIM(LOWER(nombre)) = '"+LOWER(ALLTRIM(pl_linea))+"'"
+		verror=sqlrun(pl_conexion ,"grupo_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Grupo de la Linea... ",0+48+0,"Error")
+		    RETURN 0  
+		ENDIF
+		SELECT grupo_sql
+		GO TOP 
+			
+		** Si no Existe el Grupo para la Linea Lo Genero 
+		**********************************************************************************************		
+		IF EOF() THEN 	&& Creación del Grupo de Articulos para la Linea ya que no existe
+
+			v_idmax = maxnumeroidx('idgrupo', 'I', 'grupos',1)
+			v_idgrupoarti = v_idmax
+
+			DIMENSION lamatriz(5,2)
+
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+
+			lamatriz(1,1) = 'idgrupo'
+			lamatriz(1,2) = ALLTRIM(STR(v_idgrupoarti))
+			lamatriz(2,1) = 'idtipogrupo'
+			lamatriz(2,2) = ALLTRIM(STR(_SYSTIPOGRLIA))
+			lamatriz(3,1) = 'nombre'
+			lamatriz(3,2) = "'"+UPPER(SUBSTR(ALLTRIM(pl_linea),1,1))+LOWER(SUBSTR(ALLTRIM(pl_linea),2))+"'"
+			lamatriz(4,1) = 'fecha'
+			lamatriz(4,2) = "'"+ALLTRIM(DTOS(DATE()))+"'"
+			lamatriz(5,1) = 'describir'
+			lamatriz(5,2) = "'"+ALLTRIM("Grupo de Linea: "+UPPER(SUBSTR(ALLTRIM(pl_linea),1,1))+LOWER(SUBSTR(ALLTRIM(pl_linea),2)))+"'"
+			
+			p_tabla     = 'grupos'
+			p_matriz    = 'lamatriz'
+			p_conexion  = pl_conexion
+
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(thisform.tb_idgrupo.value)+" - "+;
+			                ALLTRIM(thisform.tb_grupo.value),0+48+0,"Error")
+			     RETURN 
+			ENDIF 		
+		
+		ELSE 
+			v_idgrupoarti = grupo_sql.idgrupo
+		ENDIF 
+		SELECT grupo_sql
+		USE IN grupo_sql 
+	*********************************************************************************************		
+	ENDIF 
+
+	** busca el Artículo para saber si pertenece o no al grupo de la Linea pasada como parametro
+	sqlmatriz(1)=" select o.idgrupobj, o.idgrupo, o.idmiembro, o.fecha, g.idtipogrupo, g.nombre, g.describir "
+	sqlmatriz(2)=" from grupoobjeto o left join grupos g on g.idgrupo = o.idgrupo "
+	sqlmatriz(3)=" where g.idtipogrupo = "+ALLTRIM(STR(_SYSTIPOGRLIA))+" and trim(o.idmiembro) = '"+ALLTRIM(pl_articulo)+"' and " 
+	sqlmatriz(4)=" TRIM(LOWER(g.nombre)) = '"+LOWER(ALLTRIM(pl_linea))+"'"
+	verror=sqlrun(pl_conexion ,"artigrupo_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Artículos en el Grupo... ",0+48+0,"Error")
+	    RETURN 0  
+	ENDIF
+	SELECT artigrupo_sql
+	GO TOP 
+
+	IF pl_opera = "+" AND EOF() THEN && Agregar articulo a un grupo de Línea
+
+		DIMENSION lamatriz(4,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		p_tabla     = 'grupoobjeto'
+		p_matriz    = 'lamatriz'
+		p_conexion  = pl_conexion
+			
+		v_idgrupo = v_idgrupoarti 
+		v_idmiembro= ALLTRIM(pl_articulo)
 
 
+		v_idmax = maxnumeroidx('idgrupobj', 'I', 'grupoobjeto',1)
+		lamatriz(1,1) = 'idgrupobj'
+		lamatriz(1,2) = ALLTRIM(STR(v_idmax))
+		lamatriz(2,1) = 'idgrupo'
+		lamatriz(2,2) = ALLTRIM(STR(v_idgrupo))
+		lamatriz(3,1) = 'idmiembro'
+		lamatriz(3,2) = "'"+ALLTRIM(v_idmiembro)+"'"
+		lamatriz(4,1) = 'fecha'
+		lamatriz(4,2) = "'"+ALLTRIM(DTOS(DATE()))+"'"
+		
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(thisform.tb_idgrupo.value)+" - "+;
+		                ALLTRIM(thisform.tb_grupo.value),0+48+0,"Error")
+		     RETURN 
+		ENDIF 
+
+		toolbargrupos.cmd_actualizar.backcolor = RGB(255,0,0)
+
+	ENDIF 
+	
+	
+	IF pl_opera = '-' THEN && Quitar Artículo a un Grupo de Linea
+		IF !EOF() THEN 
+			v_idgrupobj = artigrupo_sql.idgrupobj
+			sqlmatriz(1)=" delete from grupoobjeto where idgrupobj = "+ALLTRIM(STR(v_idgrupobj))
+			verror=sqlrun(pl_conexion ,"delgrupo_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de articulo del grupo ... ",0+48+0,"Error")
+			    RETURN   
+			ENDIF
+
+			toolbargrupos.cmd_actualizar.backcolor = RGB(255,0,0)
+			
+		ENDIF 
+	ENDIF 
+	USE IN artigrupo_sql 
+
+
+RETURN 
+
+
+
+
+*-----------------------------------------------------------------------------------
+* Incerta y Elimina Articulos en los Grupos asociados a las Lineas de los Materiales. Parametro : '+' o '-'
+*-----------------------------------------------------------------------------------
+
+FUNCTION GruposMatLinea
+PARAMETERS pl_material, pl_linea, pl_opera, pl_conexion
+	IF _SYSTIPOGRLIM = 0 THEN && No se definieron Grupos para las Lineas
+		RETURN 
+	ENDIF 
+
+*!*		pl_material = ALLTRIM(STR(pl_materiali))
+	
+	IF pl_opera ="+" THEN 	
+		* Veifica que exista el grupo para la Linea del articulo, si no existe lo crea ***	
+		** busca el Grupo de la Linea pasada como Parámetro
+		sqlmatriz(1)=" select idgrupo from grupos where  idtipogrupo = "+ALLTRIM(STR(_SYSTIPOGRLIM))+"  and " 
+		sqlmatriz(2)=" TRIM(LOWER(nombre)) = '"+LOWER(ALLTRIM(pl_linea))+"'"
+		verror=sqlrun(pl_conexion ,"grupo_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Grupo de la Linea... ",0+48+0,"Error")
+		    RETURN 0  
+		ENDIF
+		SELECT grupo_sql
+		GO TOP 
+		** Si no Existe el Grupo para la Linea Lo Genero 
+		**********************************************************************************************		
+		IF EOF() THEN 	&& Creación del Grupo de Materiales para la Linea ya que no existe
+
+			v_idmax = maxnumeroidx('idgrupo', 'I', 'grupos',1)
+			v_idgrupomate = v_idmax
+
+			DIMENSION lamatriz(5,2)
+
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+
+			lamatriz(1,1) = 'idgrupo'
+			lamatriz(1,2) = ALLTRIM(STR(v_idgrupomate))
+			lamatriz(2,1) = 'idtipogrupo'
+			lamatriz(2,2) = ALLTRIM(STR(_SYSTIPOGRLIM))
+			lamatriz(3,1) = 'nombre'
+			lamatriz(3,2) = "'"+UPPER(SUBSTR(ALLTRIM(pl_linea),1,1))+LOWER(SUBSTR(ALLTRIM(pl_linea),2))+"'"
+			lamatriz(4,1) = 'fecha'
+			lamatriz(4,2) = "'"+ALLTRIM(DTOS(DATE()))+"'"
+			lamatriz(5,1) = 'describir'
+			lamatriz(5,2) = "'"+ALLTRIM("Grupo de Linea: "+UPPER(SUBSTR(ALLTRIM(pl_linea),1,1))+LOWER(SUBSTR(ALLTRIM(pl_linea),2)))+"'"
+			
+			p_tabla     = 'grupos'
+			p_matriz    = 'lamatriz'
+			p_conexion  = pl_conexion
+
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(thisform.tb_idgrupo.value)+" - "+;
+			                ALLTRIM(thisform.tb_grupo.value),0+48+0,"Error")
+			     RETURN 
+			ENDIF 		
+		
+		ELSE 
+			v_idgrupomate = grupo_sql.idgrupo
+		ENDIF 
+		SELECT grupo_sql
+		USE IN grupo_sql 
+	*********************************************************************************************		
+	ENDIF 
+
+	** busca el Artículo para saber si pertenece o no al grupo de la Linea pasada como parametro
+	sqlmatriz(1)=" select o.idgrupobj, o.idgrupo, o.idmiembro, o.fecha, g.idtipogrupo, g.nombre, g.describir "
+	sqlmatriz(2)=" from grupoobjeto o left join grupos g on g.idgrupo = o.idgrupo "
+	sqlmatriz(3)=" where g.idtipogrupo = "+ALLTRIM(STR(_SYSTIPOGRLIM))+" and trim(o.idmiembro) = '"+ALLTRIM(pl_material)+"' and " 
+	sqlmatriz(4)=" TRIM(LOWER(g.nombre)) = '"+LOWER(ALLTRIM(pl_linea))+"'"
+	verror=sqlrun(pl_conexion ,"mategrupo_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Materiales en el Grupo... ",0+48+0,"Error")
+	    RETURN 0  
+	ENDIF
+	SELECT mategrupo_sql
+	GO TOP 
+
+	IF pl_opera = "+" AND EOF() THEN && Agregar articulo a un grupo de Línea
+
+		DIMENSION lamatriz(4,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		p_tabla     = 'grupoobjeto'
+		p_matriz    = 'lamatriz'
+		p_conexion  = pl_conexion
+			
+		v_idgrupo = v_idgrupomate 
+		v_idmiembro= ALLTRIM(pl_material)
+
+
+		v_idmax = maxnumeroidx('idgrupobj', 'I', 'grupoobjeto',1)
+		lamatriz(1,1) = 'idgrupobj'
+		lamatriz(1,2) = ALLTRIM(STR(v_idmax))
+		lamatriz(2,1) = 'idgrupo'
+		lamatriz(2,2) = ALLTRIM(STR(v_idgrupo))
+		lamatriz(3,1) = 'idmiembro'
+		lamatriz(3,2) = "'"+ALLTRIM(v_idmiembro)+"'"
+		lamatriz(4,1) = 'fecha'
+		lamatriz(4,2) = "'"+ALLTRIM(DTOS(DATE()))+"'"
+		
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+		     RETURN 
+		ENDIF 
+		
+		toolbargrupos.cmd_actualizar.backcolor = RGB(255,0,0)
+
+	ENDIF 
+	
+	
+	IF pl_opera = '-' THEN && Quitar Material a un Grupo de Linea
+		IF !EOF() THEN 
+			v_idgrupobj = mategrupo_sql.idgrupobj
+			sqlmatriz(1)=" delete from grupoobjeto where idgrupobj = "+ALLTRIM(STR(v_idgrupobj))
+			verror=sqlrun(pl_conexion ,"delgrupo_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de Material del grupo ... ",0+48+0,"Error")
+			    RETURN   
+			ENDIF
+
+			toolbargrupos.cmd_actualizar.backcolor = RGB(255,0,0)
+
+		ENDIF 
+	ENDIF 
+	USE IN mategrupo_sql 
+
+
+RETURN 
 
 
 
