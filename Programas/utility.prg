@@ -9913,5 +9913,116 @@ RETURN
 
 
 
+FUNCTION CambiaTipoDato
+
+	vconeccionF = abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)="SHOW TABLES FROM "+_SYSSCHEMA 
+	verror=sqlrun(vconeccionF,"tablas_cmb_sql")
+	IF verror=.f.
+		MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+		RETURN 
+	ENDIF 
+
+	eje=" SELECT Tables_in_"+_SYSSCHEMA+" as tablanom from tablas_cmb_sql INTO TABLE .\tablas_cmb"
+	&eje 
+
+	USE IN tablas_cmb_sql
+
+	sqlmatriz(1)="SELECT * FROM information_schema.tables where TRIM(table_schema) = '"+_SYSSCHEMA+"'" 
+	verror=sqlrun(vconeccionF,"tablascmb0_tipo")
+	IF verror=.f.
+		MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+		RETURN 
+	ENDIF 
+
+	
+	eje=" SELECT t.tablanom, ty.table_type as tipo , ty.auto_increment as autoincre from tablas_cmb t left join tablascmb0_tipo ty on alltrim(t.tablanom) == alltrim(ty.table_name) INTO TABLE .\tablascmb_tipo"
+	&eje 
+
+	SELECT tablascmb_tipo
+	INDEX on ALLTRIM(tablanom) TAG tablanom 
+
+
+
+	SELECT tablas_cmb 
+	GO TOP 
+	eje = "v_pritabla = ALLTRIM(tablas_cmb.tablanom)"
+	&eje 
+		
+	DO WHILE !EOF()
+	*!*		eje = "v_tabla = ALLTRIM(tablas.Tables_in_"+_SYSSCHEMA+")"
+		eje = "v_tabla = ALLTRIM(tablas_cmb.tablanom)"
+		&eje 
+
+		sqlmatriz(1)="SELECT *, CONVERT(COLUMN_TYPE,CHAR(30)) AS TYPO FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '"+ALLTRIM(_SYSSCHEMA)+"' AND TABLE_NAME = '"+v_tabla+"'"
+		verror=sqlrun(vconeccionF,"columnas0cmb_sql")
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener los Tipos de Comprobantes",0+16,"Advertencia")
+			RETURN 
+		ENDIF 
+		SELECT column_name as field, typo as type, is_nullable as null, column_key as key, extra, column_default as default from columnas0cmb_sql INTO CURSOR columnascmb_sql 
+		USE IN columnas0cmb_sql
+		
+		SELECT columnascmb_sql
+		
+		
+		eje="SELECT  *, v_tabla+SPACE(30) as tablanom, .f. as sel, 10 as orden FROM columnascmb_sql INTO TABLE .\columnascmb"+v_tabla
+		&eje 	
+		
+		IF v_tabla = v_pritabla THEN 
+			SELECT *  FROM columnascmb&v_tabla INTO TABLE .\columnascmb
+			ALTER TABLE columnascmb alter tablanom c(30)
+			ALTER TABLE columnascmb alter field c(30)
+			ALTER TABLE columnascmb alter type c(30)
+			ALTER table columnascmb ADD COLUMN tipotabla c(20)
+
+		ELSE
+			SELECT columnascmb
+			eje = " APPEND FROM .\columnascmb"+v_tabla
+			&eje 
+		ENDIF  
+		SELECT columnascmb&v_tabla
+		USE 
+		
+		SELECT tablas_cmb
+		SKIP 
+	ENDDO 
+
+
+	SELECT tablas_cmb
+	SELECT columnascmb 
+	INDEX on ALLTRIM(tablanom) TAG tablanom
+
+*!*		SELECT tablascmb
+*!*		SET RELATION TO ALLTRIM(tablanom) INTO columnascmb 
+
+	SELECT columnascmb
+	GO TOP 
+	SET RELATION TO ALLTRIM(tablanom) INTO tablascmb_tipo
+	replace ALL tipotabla WITH tablascmb_tipo.tipo 
+	
+	SELECT columnascmb
+	GO TOP 
+	DO WHILE !EOF()
+	
+		IF LOWER(ALLTRIM(columnascmb.type)) == 'float(13,4)' AND ALLTRIM(columnascmb.tipotabla)=='BASE TABLE' THEN 
+			sqlmatriz(1)="alter table "+ALLTRIM(columnascmb.tablanom)+" modify column "+ALLTRIM(columnascmb.field)+" float(13,2)"
+			verror=sqlrun(vconeccionF,"modicolumna")
+			IF verror=.f.
+				MESSAGEBOX("No se puede modificar los campos flotantes de la base de datos ",0+16,"Advertencia")
+				RETURN 
+			ENDIF 
+		ENDIF 
+
+		sele columnascmb
+		SKIP 
+	ENDDO  
+	* me desconecto	
+	=abreycierracon(vconeccionF,"")
+	
+ENDFUNC 
+
+
 
 
