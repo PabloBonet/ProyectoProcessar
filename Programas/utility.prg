@@ -1600,12 +1600,22 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 				v_resultado	= respuestaComp.resultado
 				*v_idcomproba= respuestaComp.idcomproba
 				v_pventa	= respuestaComp.pventa
+
+				IF TYPE('v_pventa') = 'L' THEN 
+					v_pventa = IIF(v_pventa=.f.,0,1)
+				ENDIF 
+				IF TYPE('v_idfactura') = 'L' THEN 
+					v_idfactura = IIF(v_idfactura=.f.,0,1)
+				ENDIF 
 				
 				IF ALLTRIM(v_resultado) == "A"
 					v_caecesp	= ALLTRIM(STR(respuestaComp.cespcae,14,0))
 
 					v_caecespven= ALLTRIM(STR(respuestaComp.caecespven))
 					v_numerofe	= respuestaComp.numero
+					IF TYPE('v_numerofe') = 'L' THEN 
+						v_numerofe = IIF(v_numerofe=.f.,0,1)
+					ENDIF 
 					v_autorizar = .T.
 				ELSE
 					v_caecesp	= ""
@@ -1681,13 +1691,14 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 					registrarEstado("facturas","idfactura",v_idfactura,'I',"AUTORIZADO")
 						
 					** Actualizo el maximo numero de comprobante en compactiv
-					IF v_idcomproba > 0 AND v_pventa > 0
+					
+					IF v_idcomproba > 0 AND v_pventa > 0 THEN 
 						p_tipoope     = 'U'
 						p_condicion   = " idcomproba = "+ ALLTRIM(STR(v_idcomproba)) +" and pventa = "+ALLTRIM(STR(v_pventa))+" and "+ALLTRIM(STR(v_numerofe))+" > maxnumero "
 					
 						v_titulo      = " LA MODIFICACIÓN "
 						
-							DIMENSION lamatriz(1,2)
+						DIMENSION lamatriz(1,2)
 					
 						lamatriz(1,1)='maxnumero'
 						lamatriz(1,2)=ALLTRIM(STR(v_numerofe))
