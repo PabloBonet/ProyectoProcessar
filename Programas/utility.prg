@@ -8279,53 +8279,135 @@ PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_va
 	
 ENDFUNC 
 
+*!*	*****
+*!*	*Funcion que cambia la fecha del comprobante pasado como parámetro a la fecha actual
+*!*	*
+*!*	*Parametros:ID del comprobante, tabla
+*!*	*Retorna True o False en caso de que se haya registrado correctamente o no 
+*!*	*****
+
+*!*	FUNCTION  actualizarFechaComp
+*!*	PARAMETERS p_idregistro, p_tabla
+
+
+*!*		v_retorno = .F.
+*!*		IF p_idregistro > 0
+*!*			
+*!*			v_fechaActual = DTOS(DATE())
+*!*			*** Modifico la cabecera del reclamo ***
+*!*			DIMENSION lamatriz(1,2)
+*!*			
+*!*			
+*!*			lamatriz(1,1)='fecha'
+*!*			lamatriz(1,2)="'"+ALLTRIM(v_fechaActual)+"'"
+*!*			
+*!*			vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+*!*			
+*!*			p_tipoope   = 'U'
+*!*			p_condicion = "idfactura = "+ALLTRIM(STR(p_idregistro))
+*!*			v_titulo    = " EL MODIFICACION "
+*!*			p_tabla     = ALLTRIM(v_tabla)
+*!*			p_matriz    = 'lamatriz'
+*!*			p_conexion  = vconeccionA
+*!*			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error en ",0+48+0,"Error")
+
+*!*			   v_retorno = .F.
+*!*			  ELSE
+*!*			  v_retorno = .T.
+*!*			ENDIF  
+*!*				* me desconecto	
+*!*			=abreycierracon(vconeccionA,"")
+*!*		ELSE
+*!*			v_retorno = .F.
+*!*		ENDIF 
+*!*			RETURN v_retorno
+
+*!*	ENDFUNC 
+
+
 *****
-*Funcion que cambia la fecha del comprobante pasado como parámetro a la fecha actual
+*Funcion que cambia la fecha del comprobante y el CUIT
 *
 *Parametros:ID del comprobante, tabla
 *Retorna True o False en caso de que se haya registrado correctamente o no 
 *****
 
-FUNCTION  actualizarFechaComp
+FUNCTION  actualizarComp
 PARAMETERS p_idregistro, p_tabla
 
 
 	v_retorno = .F.
 	IF p_idregistro > 0
-		
-		v_fechaActual = DTOS(DATE())
-		*** Modifico la cabecera del reclamo ***
-		DIMENSION lamatriz(1,2)
-		
-		
-		lamatriz(1,1)='fecha'
-		lamatriz(1,2)="'"+ALLTRIM(v_fechaActual)+"'"
-		
-		vconeccionA=abreycierracon(0,_SYSSCHEMA)	
-		
-		p_tipoope   = 'U'
-		p_condicion = "idfactura = "+ALLTRIM(STR(p_idregistro))
-		v_titulo    = " EL MODIFICACION "
-		p_tabla     = ALLTRIM(v_tabla)
-		p_matriz    = 'lamatriz'
-		p_conexion  = vconeccionA
-		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-		    MESSAGEBOX("Ha Ocurrido un Error en ",0+48+0,"Error")
+	
+	
+	
+	
+		**** Busca datos comprobante ***
 
-		   v_retorno = .F.
-		  ELSE
-		  v_retorno = .T.
-		ENDIF  
-			* me desconecto	
-		=abreycierracon(vconeccionA,"")
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+			
+
+			sqlmatriz(1)=" Select f.*,e.cuit as cuitEnt "
+			sqlmatriz(2)=" from  "+ALLTRIM(p_tabla) +" f left join entidades e on f.entidad = e.entidad "
+			sqlmatriz(3)=" where f.idfactura = "+ALLTRIM(STR(p_idregistro))
+
+			verror=sqlrun(vconeccionF,"facturaConsulta")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los datos de la factura ",0+48+0,"Error")
+				RETURN .F.
+			ELSE
+			
+			
+				SELECT facturaConsulta
+				GO TOP 
+				
+				IF NOT EOF()
+				
+					v_cuitEntidad = facturaConsulta.cuitEnt				
+					v_fechaActual = DTOS(DATE())
+					*** Modifico la cabecera del reclamo ***
+					DIMENSION lamatriz(2,2)
+					
+					
+					lamatriz(1,1)='fecha'
+					lamatriz(1,2)="'"+ALLTRIM(v_fechaActual)+"'"
+					lamatriz(2,1)='CUIT'
+					lamatriz(2,2)="'"+ALLTRIM(v_cuit)+"'"
+					
+					
+					vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+					
+					p_tipoope   = 'U'
+					p_condicion = "idfactura = "+ALLTRIM(STR(p_idregistro))
+					v_titulo    = " EL MODIFICACION "
+					p_tabla     = ALLTRIM(v_tabla)
+					p_matriz    = 'lamatriz'
+					p_conexion  = vconeccionA
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en ",0+48+0,"Error")
+
+					   v_retorno = .F.
+					  ELSE
+					  v_retorno = .T.
+					ENDIF  
+						* me desconecto	
+					=abreycierracon(vconeccionA,"")
+				ELSE 
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los datos de la factura ",0+48+0,"Error")
+					RETURN .F.
+				ENDIF 
+
+				
+			ENDIF 
+	
+		
 	ELSE
 		v_retorno = .F.
 	ENDIF 
 		RETURN v_retorno
 
 ENDFUNC 
-
-
 
 *** Retorna el tipo de movimiento registrado según el comprobante, el tipo de pago, la cuenta y la caja
 ** Parametros:
