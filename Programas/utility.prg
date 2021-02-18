@@ -8364,7 +8364,7 @@ PARAMETERS p_idregistro, p_tabla
 				
 				IF NOT EOF()
 				
-					v_cuitEntidad = facturaConsulta.cuitEnt				
+					v_cuitEntidad = ALLTRIM(STRTRAN(facturaConsulta.cuitEnt,'-',''))		
 					v_fechaActual = DTOS(DATE())
 					*** Modifico la cabecera del reclamo ***
 					DIMENSION lamatriz(2,2)
@@ -8373,7 +8373,7 @@ PARAMETERS p_idregistro, p_tabla
 					lamatriz(1,1)='fecha'
 					lamatriz(1,2)="'"+ALLTRIM(v_fechaActual)+"'"
 					lamatriz(2,1)='CUIT'
-					lamatriz(2,2)="'"+ALLTRIM(v_cuit)+"'"
+					lamatriz(2,2)="'"+ALLTRIM(v_cuitEntidad)+"'"
 					
 					
 					vconeccionA=abreycierracon(0,_SYSSCHEMA)	
