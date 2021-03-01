@@ -10117,5 +10117,119 @@ FUNCTION CambiaTipoDato
 ENDFUNC 
 
 
+* ----------------------------------------------------------------------------------------
+*- Genera Registro en Tabla Etiquetas para los registros Pasados como parametros
+*- Parametros : 
+*-				TABLA    : Tabla que contiene el registro para el cual se generara la etiqueta
+*-              ID       : Valor del Indice para la generación de la Etiqueta
+*-              CANTIDAD : Cantidad de Etiquetas a Generar
+*- Retorna el indice de las etiquetas generadas : Primer Etiqueta y Ultima Etiqueta 
+*- formato : DDDDDDDDDD;DDDDDDDDDD
+*-----------------------------------------------------------------------------------------
+FUNCTION GeneraEtiquetas
+PARAMETERS pge_tabla, pge_id, pge_detalle, pge_cantidad
 
+
+	v_nomIndice	 = obtenerCampoIndice(ALLTRIM(pge_tabla))
+	
+	v_TipoIndice = TYPE("pge_id")
+	IF v_TipoIndice ='C' THEN 
+		pge_idc = "'"+ALLTRIM(pge_id)+"'"
+	ELSE
+		pge_idc = ALLTRIM(STR(pge_id))
+	ENDIF 
+
+	vconeccionF = abreycierracon(0,_SYSSCHEMA)
+
+*-- Chequeo si existe el registro para el cual estoy generando las etiquetas
+	sqlmatriz(1)=" select * from  "+ALLTRIM(pge_tabla)+" where "+ALLTRIM(v_nomIndice)+" = "+pge_idc
+	verror=sqlrun(vconeccionF,"ExisteReg")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Registro en la tabla a etiquetar ",0+48+0,"Error")
+		=abreycierracon(vconeccionF,"")	
+		RETURN ""
+	ENDIF 
+	SELECT ExisteReg
+	GO TOP 
+	IF EOF() THEN 
+	    MESSAGEBOX("No Existe el Registro para el Cual se Quieren Generar Etiquetas ",0+48+0,"Error")
+		=abreycierracon(vconeccionF,"")	
+		USE IN ExisteReg
+		RETURN ""
+	ENDIF 
+	USE IN ExisteReg
+*--------------------------------------------------------------------------
+
+
+	indice = 1	
+	vararticulo   = IIF(v_TipoIndice ="C","'"+ALLTRIM(pge_id)+"'","''")
+	varidregistro = IIF(v_TipoIndice ="C","0",ALLTRIM(STR(pge_id)))
+	
+	vetiquetad = 0
+	vetiquetah = 0		
+
+	vardetalle= "'"+ALLTRIM(pge_detalle)+"'"
+	
+	DO WHILE indice <= pge_cantidad
+				
+		v_etiqueta = 0		
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+					
+		DIMENSION lamatriz3(8,2)
+					
+		lamatriz3(1,1)='etiqueta'
+		lamatriz3(1,2)=ALLTRIM(STR(v_etiqueta))
+		lamatriz3(2,1)='fechaalta'
+		lamatriz3(2,2)="'"+dtos(DATE())+"'"
+		lamatriz3(3,1)='codigo'
+		lamatriz3(3,2)="''"
+		lamatriz3(4,1)='articulo'
+		lamatriz3(4,2)=vararticulo   
+		lamatriz3(5,1)='tabla'
+		lamatriz3(5,2)="'"+ALLTRIM(pge_tabla)+"'"
+		lamatriz3(6,1)='campo'
+		lamatriz3(6,2)="'"+ALLTRIM(v_nomIndice)+"'"
+		lamatriz3(7,1)='idregistro'
+		lamatriz3(7,2)=varidregistro 
+		lamatriz3(8,1)='detalle'
+		lamatriz3(8,2)=vardetalle 
+					
+
+		p_tabla     = 'etiquetas'
+		p_matriz    = 'lamatriz3'
+		p_conexion  = vconeccionF
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_etiqueta )),0+48+0,"Error")
+		    RETURN ""
+		ELSE
+			
+			sqlmatriz(1)=" select last_insert_id() as maxid "
+			verror=sqlrun(vconeccionF,"ultimoId")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+				=abreycierracon(vconeccionF,"")	
+			ENDIF 
+			SELECT ultimoId
+			GO TOP 
+			v_etiqueta = VAL(ultimoId.maxid)
+			USE IN ultimoId
+			
+			IF vetiquetad = 0 THEN 
+				vetiquetad = v_etiqueta
+			ENDIF 
+			vetiquetah = v_etiqueta
+			
+					
+		ENDIF 
+
+		indice = indice+1
+					
+	ENDDO 
+	=abreycierracon(vconeccionF,"")	
+
+	RETURN ALLTRIM(STR(vetiquetad))+";"+ALLTRIM(STR(vetiquetah))
+
+ENDFUNC 
 
