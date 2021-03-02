@@ -10561,3 +10561,56 @@ PARAMETERS pge_tabla, pge_id, pge_detalle, pge_cantidad
 
 ENDFUNC 
 
+
+
+*---VERIFICA AL INTEGRIDAD REFERENCIA DE DATOS-----------------------
+*- Busqueda de un valor y un campo dado en una tabla en 
+*- Las Tablas Restantes del Esquema
+*- Devuelve vacio si el valor ingresado no existe en las otras tablas
+*- Si existe devuelve la primer tabla en la que se encuentra
+*- PARAMETER : tabla: nombre tabla origen de datos
+*-			   campo: nombre del campo 
+*-             valor: valor del campo a buscar,
+*-              modo: modo de busqueda, 0 busca todas las ocurrencias, 1 busca la primer ocurrencia
+*--------------------------------------------------------------------
+FUNCTION FindInTables
+PARAMETERS fi_tabla, fi_campo, fi_valor, fi_modo
+	
+	ptablareto = ""
+
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)= " SELECT TABLE_NAME as tablash FROM information_schema.columns where TRIM(TABLE_SCHEMA) = '"+_SYSSCHEMA+"' and TRIM(TABLE_NAME) <> '"+ALLTRIM(fi_tabla)+"' AND TRIM(COLUMN_NAME)= '"+ALLTRIM(fi_campo)+"'" 
+	sqlmatriz(2)= " and TRIM(TABLE_NAME) not in ( SELECT TRIM(TABLE_NAME) FROM information_schema.tables WHERE TRIM(TABLE_TYPE)='VIEW') "
+	verror=sqlrun(vconeccionF,"tablas_hijas")
+	IF verror=.f.
+		MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+		RETURN 
+	ENDIF 
+	
+	SELECT tablas_hijas
+	GO TOP 
+	DO WHILE !EOF()	
+		sqlmatriz(1)="SELECT "+fi_campo+" FROM "+ALLTRIM(tablas_hijas.tablash)+" where "+fi_campo+"= "+IIF(TYPE("fi_valor")="C","'"+ALLTRIM(fi_valor)+"'",ALLTRIM(STR(fi_valor)))
+		verror=sqlrun(vconeccionF,"existe")
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+			RETURN 
+		ENDIF 
+		SELECT existe
+		GO TOP 
+		IF !EOF() THEN 
+			ptablareto = ptablareto + ';'+ALLTRIM(tablas_hijas.tablash)
+		ENDIF  
+		USE IN existe 
+		SELECT tablas_hijas
+		IF fi_modo > 0 THEN 
+			GO BOTTOM 			
+		ENDIF 
+		SKIP 
+	ENDDO 
+	USE IN tablas_hijas
+	vconeccionF=abreycierracon(vconeccionF,"")
+	
+	RETURN ptablareto 
+ENDFUNC 
