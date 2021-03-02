@@ -4858,7 +4858,7 @@ IF v_idregistro	> 0
 					lamatriz2(9,1)='total'
 					lamatriz2(9,2)="0"
 					lamatriz2(10,1)='deposito'
-					lamatriz2(10,2)= ALLTRIM(STR(v_deposito))
+					lamatriz2(10,2)= ALLTRIM(STR(articulosDatos.deposito))
 					lamatriz2(11,1)='fecha'
 					lamatriz2(11,2)="'"+ALLTRIM(v_fecha)+"'"
 					
@@ -5173,7 +5173,7 @@ IF v_idregistro	> 0
 					lamatriz2(9,1)='total'
 					lamatriz2(9,2)="0"
 					lamatriz2(10,1)='deposito'
-					lamatriz2(10,2)= ALLTRIM(STR(v_deposito))
+					lamatriz2(10,2)= ALLTRIM(STR(articulosDatos.deposito))
 					lamatriz2(11,1)='fecha'
 					lamatriz2(11,2)="'"+ALLTRIM(v_fecha)+"'"
 					
@@ -5254,6 +5254,334 @@ IF v_idregistro	> 0
 				ENDIF
 
 				SELECT articulosDatos
+				SKIP 1
+			ENDDO	
+			
+		ELSE
+			RETURN .F.
+		ENDIF 
+	ELSE
+	
+		RETURN .F.
+		
+	ENDIF 
+	
+
+ELSE
+	RETURN .F.
+
+ENDIF 
+
+	RETURN .T.
+ENDFUNC 
+
+
+
+
+
+
+
+**** FUNCIÓN PARA GENERAR AJUSTES de MATERIALES DE UN COMPROBANTE de PROVEEDOR
+** PARAMETROS: 	P_idtipomov: ID de la tabla tipomstock (Indica el tipo de ajuste a realizar)
+***				P_idcomproba: ID de la tabla comprobante (comprobante relacionado al ajuste)
+***				P_nomreCampo: Nombre del campo Indice de la tabla asociada al comprobante
+***				P_Idregistro: ID de la tabla asociada al comprobante
+***				P_TablaDatos: Tabla con los articulos a los que se le hará el ajuste, tiene el siguiente formato: [articulo C(50),cantidad Y,deposito I]
+**RETORNO:		.T. o .F. Dependiendo si se realizó el ajuste correctamente o no respectivamente
+
+FUNCTION AjusteMatComprobanteProv
+PARAMETERS p_idtipomov, p_idcomproba,p_nombreCampo,p_idregistro,p_tablaDatos
+
+v_idtipomov		= p_idtipomov
+v_idcomproba	= p_idcomproba
+v_nombreCampo	= p_nombreCampo
+v_idregistro	= p_idregistro
+v_tablaDatos	= p_tablaDatos
+
+
+SELECT &v_tablaDatos
+GO TOP 
+
+
+IF v_idregistro	> 0
+
+	**** Busco el comprobante asociado ***
+	vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+		
+
+	*** Busco los comprobantes y sus respectivos puntos de venta 
+	sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla "
+	sqlmatriz(2)="  from comprobantes c "
+	*sqlmatriz(1)=" Select c.* from comprobantes c "
+	verror=sqlrun(vconeccionA,"Comprobantes_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de comprobantes ",0+48+0,"Error")
+	    =abreycierracon(vconeccionA,"")
+	    RETURN .F.
+	ENDIF
+
+
+	SELECT * FROM comprobantes_sql WHERE idcomproba = v_idcomproba INTO TABLE compSelecc
+	
+	SELECT compSelecc
+	GO TOP 
+	
+	v_tabla	= compSelecc.tabla
+	v_nombreComp	= compSelecc.nomcomp
+	
+	*** Busco el comprobante asociado
+	sqlmatriz(1)=" select * from "+ALLTRIM(v_tabla)+" c  "
+	sqlmatriz(2)=" where c."+ALLTRIM(v_nombreCampo)+" = "+ALLTRIM(STR(v_idregistro))
+	
+	verror=sqlrun(vconeccionA,"Comprobante_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del comprobante asociado ",0+48+0,"Error")
+	     =abreycierracon(vconeccionA,"")
+	    RETURN .F.
+	ENDIF
+	
+	
+	SELECT Comprobante_sql
+	GO TOP 
+	
+
+
+	*** Busco el comprobante de ajuste para el punto de venta asociado al comprobante
+*	v_pventaC	= comprobante_sql.pventa
+	
+	
+	SELECT * FROM comprobantes_Sql WHERE tabla = 'otmovistockp' INTO TABLE compAjusteAso
+	
+	SELECT compAjusteAso 
+	GO TOP 
+	v_idcomprobaAs= compAjusteAso.idcomproba
+
+
+	v_idmovip 	= maxnumeroidx("idmovip","I","otmovistockp",1)
+	
+	*v_numero 	= maxnumerocom(v_idcomprobaAs, 0,1)
+	
+	v_fecha		= DTOS(DATE())
+	
+	SELECT comprobante_sql
+	GO TOP 
+	v_entidad	= Comprobante_sql.entidad
+	v_nombre	= Comprobante_sql.nombre
+*	v_puntov	= comprobante_sql.puntov
+	v_puntovA 	= STRTRAN(STR((Comprobante_sql.actividad),4,0)," ","0")
+	v_numComp	= comprobante_sql.numero
+	v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
+
+	DIMENSION lamatriz1(12,2)
+
+		
+	lamatriz1(1,1)='idmovip'
+	lamatriz1(1,2)= ALLTRIM(STR(v_idmovip))
+	lamatriz1(2,1)='fecha'
+	lamatriz1(2,2)="'"+ALLTRIM(v_fecha)+"'"
+	lamatriz1(3,1)='fechacarga'
+	lamatriz1(3,2)="'"+ALLTRIM(v_fecha)+"'"
+	lamatriz1(4,1)='entidad'
+	lamatriz1(4,2)=ALLTRIM(STR(v_entidad))
+	lamatriz1(5,1)='nombre'
+	lamatriz1(5,2)="'"+ALLTRIM(v_nombre)+"'"
+	lamatriz1(6,1)='responsa'
+	lamatriz1(6,2)="'"+ALLTRIM(_SYSUSUARIO)+"'"
+	lamatriz1(7,1)='observa1'
+	lamatriz1(7,2)="'"+ALLTRIM(v_observa1)+"'"
+	lamatriz1(8,1)='observa2'
+	lamatriz1(8,2)="''"
+	lamatriz1(9,1)='observa3'
+	lamatriz1(9,2)="''"
+	lamatriz1(10,1)='observa4'
+	lamatriz1(10,2)="''"
+	lamatriz1(11,1)='procli'
+	lamatriz1(11,2)= "0"
+	lamatriz1(12,1)='idtipomov'
+	lamatriz1(12,2)=ALLTRIM(STR(v_idtipomov))
+
+
+	p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+	
+p_tabla     = 'otmovistockp'
+	p_matriz    = 'lamatriz1'
+	p_conexion  = vconeccionA
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajuste)),0+48+0,"Error")
+	    =abreycierracon(vconeccionA,"")
+		    RETURN .F.
+	ENDIF  
+
+
+
+
+	*** INSERTO DETALLE ***			
+
+
+	*** ELIMINO HIJOS PARA NO TENER PROBLEMAS DE ACTUALIZACION ***
+	sqlmatriz(1)="DELETE FROM otmovistockh WHERE idmovip = " + ALLTRIM(STR(v_idmovip))
+	verror=sqlrun(vconeccionF,"control1")
+
+
+
+	sqlmatriz(1)=" Select * from ottiposmovi where idtipomov = "+ALLTRIM(STR(v_idtipomov))
+	verror=sqlrun(vconeccionA,"tipomstock_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de tipo de movimiento de stock ",0+48+0,"Error")
+		   
+	ENDIF
+
+	v_descmovStock	= tipomstock_sql.descmov
+*	v_generaEtiqueta = tipomstock_sql.generaeti
+		
+	
+	SELECT &v_tablaDatos
+	GO TOP 
+
+	IF NOT EOF()
+		
+		*** Busco el comprobante asociado
+		sqlmatriz(1)=" select * from otmateriales "
+			
+		verror=sqlrun(vconeccionA,"materiales_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de materiales ",0+48+0,"Error")
+		     =abreycierracon(vconeccionA,"")
+		    RETURN .F.
+		ENDIF
+
+
+		SELECT materiales_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			SELECT t.*,a.detalle FROM &v_tablaDatos t LEFT JOIN materiales_sql a ON t.idmate = a.idmate INTO TABLE materialesDatos
+
+			SELECT materialesDatos
+			GO TOP 
+
+			DO WHILE NOT EOF()
+				IF !EMPTY(materialesDatos.codigomat) AND materialesDatos.cantidad > 0 THEN 
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					
+					DIMENSION lamatriz2(14,2)
+					
+					*thisform.calcularmaxh
+					v_idmovih = maxnumeroidx("idajusteh","I","otmovistockh",1)
+					
+					lamatriz2(1,1)='idmovih'
+					lamatriz2(1,2)=ALLTRIM(STR(v_idmovih))
+					lamatriz2(2,1)='idmovip'
+					lamatriz2(2,2)=ALLTRIM(STR(v_idmovip))
+					lamatriz2(3,1)='fecha'
+					lamatriz2(3,2)="'"+ALLTRIM(v_fecha)+"'"
+					lamatriz2(4,1)='idmate'
+					lamatriz2(4,2)=ALLTRIM(STR(matearialesDatos.idmate))
+					lamatriz2(5,1)='codigomat'
+					lamatriz2(5,2)="'"+alltrim(matearialesDatos.codigomat)+"'"
+					lamatriz2(6,1)='descrip'
+					lamatriz2(6,2)="'"+alltrim(matearialesDatos.descrip)+"'"
+					lamatriz2(7,1)='idtipomov'
+					lamatriz2(7,2)=alltrim(STR(v_idtipomov))
+					lamatriz2(8,1)='descmov'
+					lamatriz2(8,2)="'"+alltrim(v_descmovStock.descmov)+"'"
+					lamatriz2(9,1)='cantidad'
+					lamatriz2(9,2)=alltrim(STR(matearialesDatos.cantidad,10,2))
+					lamatriz2(10,1)='impuni'
+					lamatriz2(10,2)=ALLTRIM(STR(matearialesDatos.impuni,10,2))
+					lamatriz2(11,1)='imptotal'
+					lamatriz2(11,2)=ALLTRIM(STR(matearialesDatos.imptotal,10,2))
+					lamatriz2(12,1)='cantm2'
+					lamatriz2(12,2)=alltrim(STR(matearialesDatos.cantidad,10,2))
+					lamatriz2(13,1)='iddepo'
+					lamatriz2(13,2)= ALLTRIM(STR(materialesDatos.deposito))
+					lamatriz2(14,1)='unidad'
+					lamatriz2(14,2)="'"+alltrim(matearialesDatos.unidad)+"'"
+
+					p_tabla     = 'otmovistockh'
+					
+					
+					p_matriz    = 'lamatriz2'
+					p_conexion  = vconeccionA
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajusteh )),0+48+0,"Error")
+					ELSE
+					
+*!*							*** Creo y asocio la ETIQUETA si el movimiento requiere de etiquetas
+*!*							IF v_generaEtiqueta = 'S'
+*!*								** CREO Etiqueta ***
+*!*									v_cantEti		= VAL(STR(articulosDatos.cantidad,10,2))
+*!*									indice = 1
+*!*				*!*					FOR i = 1 TO 20 STEP 1
+*!*								DO WHILE indice <= v_cantEti
+*!*								
+*!*									v_etiqueta = maxnumeroidx("etiqueta","I","etiquetas",1)
+*!*									
+*!*									p_tipoope     = 'I'
+*!*									p_condicion   = ''
+*!*									v_titulo      = " EL ALTA "
+*!*									
+*!*									DIMENSION lamatriz3(4,2)
+*!*									
+*!*									lamatriz3(1,1)='etiqueta'
+*!*									lamatriz3(1,2)=ALLTRIM(STR(v_etiqueta))
+*!*									lamatriz3(2,1)='fechaalta'
+*!*									lamatriz3(2,2)="'"+DTOS(DATE())+"'"
+*!*									lamatriz3(3,1)='codigo'
+*!*									lamatriz3(3,2)="''"
+*!*									lamatriz3(4,1)='articulo'
+*!*									lamatriz3(4,2)="'"+ALLTRIM(articulosDatos.articulo)+"'"
+*!*									
+
+*!*									p_tabla     = 'etiquetas'
+*!*									p_matriz    = 'lamatriz3'
+*!*									p_conexion  = vconeccionA
+*!*									IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*									    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_etiqueta )),0+48+0,"Error")
+*!*									ELSE
+*!*									
+*!*										*** Creo Asociación Etiqueta - AjusteStockH
+*!*											v_idajustestocke = maxnumeroidx("idajustestocke","I","ajustestocke",1)
+*!*										
+*!*										p_tipoope     = 'I'
+*!*										p_condicion   = ''
+*!*										v_titulo      = " EL ALTA "
+*!*										
+*!*										DIMENSION lamatriz4(3,2)
+*!*										
+*!*										lamatriz4(1,1)='idajustestocke'
+*!*										lamatriz4(1,2)=ALLTRIM(STR(v_idajustestocke ))
+*!*										lamatriz4(2,1)='idajusteh'
+*!*										lamatriz4(2,2)=ALLTRIM(STR(v_idajusteh))
+*!*										lamatriz4(3,1)='etiqueta'
+*!*										lamatriz4(3,2)=ALLTRIM(STR(v_etiqueta))
+*!*										
+
+*!*										p_tabla     = 'ajustestocke'
+*!*										p_matriz    = 'lamatriz4'
+*!*										p_conexion  = vconeccionF
+*!*										IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*										    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajustestocke)),0+48+0,"Error")
+*!*										ELSE
+*!*										
+*!*										ENDIF 
+*!*									ENDIF 
+*!*									
+*!*									indice = indice+1
+*!*									
+*!*									ENDDO 
+*!*												
+*!*							ENDIF 
+*!*							
+					ENDIF						
+					
+				ENDIF
+
+				SELECT materialesDatos
 				SKIP 1
 			ENDDO	
 			
