@@ -10614,3 +10614,99 @@ PARAMETERS fi_tabla, fi_campo, fi_valor, fi_modo
 	
 	RETURN ptablareto 
 ENDFUNC 
+
+
+*** Elimina todas las dependencias del registro pasado como parámetro. ****
+** Parametros:
+***			p_tabla: Tabla asociada al registro, desde esta tabla se buscan las tablas relacionadas
+***			p_campo: Campo de las tablas a eliminar
+***			p_valor: Valor del registro a eliminar
+** Retorno: Retorna True en caso que se hayan eliminado todas las dependencias del registro, False en otro caso
+*******
+FUNCTION eliminarRegistros
+PARAMETERS p_tabla,p_campo,p_valor
+
+
+		v_listaTablas = ""
+			v_listaTablas = FindInTables(p_tabla, p_campo, p_valor, 0)
+		
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+			
+			ALINES(arregloTablas,v_listaTablas,.F.,';')
+			
+			MESSAGEBOX(v_listaTablas)
+			v_tam = ALEN(arregloTablas)
+			
+			IF EMPTY(ALLTRIM(v_tam)) = .F.
+				
+				* INICIAR TRANSACCION
+				SQLFlagErrorTrans=0
+				IF SqlIniciartrans(vconeccionF)=.f.
+					MESSAGEBOX("NO se pudo iniciar la Transaccion ",0+48+0,"Error")
+					SQLFlagErrorTrans=1
+				ELSE 
+			
+					** Elimino los registros asociados a la tabla pasada como parámetro **
+					FOR i = 1 TO v_tam
+						v_tablaEliminar = ""
+						v_tablaEliminar = arregloTablas[i]
+						
+						IF EMPTY(ALLTRIM(v_tablaEliminar)) = .F.
+							
+							sqlmatriz(1)=" delete from "+ALLTRIM(v_tablaEliminar)
+							sqlmatriz(2)=" where "+ALLTRIM(p_campo)+"="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),"'"+ALLTRIM(p_valor)+"'"))
+						MESSAGEBOX(sqlmatriz(1))
+					MESSAGEBOX(sqlmatriz(2))
+							verror=sqlrun(vconeccionF,"eliminaTabla_sql")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
+							    SQLFlagErrorTrans=1
+							    EXIT 
+							ENDIF
+							
+						ENDIF 
+						
+					ENDFOR 
+			
+			
+					** Elimino el registro de la tabla pasada como parámetro**
+					sqlmatriz(1)=" delete from "+ALLTRIM(p_tabla)
+					sqlmatriz(2)=" where "+ALLTRIM(p_campo)+"="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),"'"+ALLTRIM(p_valor)+"'"))
+					MESSAGEBOX(sqlmatriz(1))
+					MESSAGEBOX(sqlmatriz(2))
+					verror=sqlrun(vconeccionF,"eliminaTabla_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
+					    SQLFlagErrorTrans=1
+					    
+					ENDIF
+			
+					* FINALIZAR TRANSACCION
+					IF sqlCerrarTrans(vconeccionF,SQLFlagErrorTrans)=.f.
+						MESSAGEBOX("Ha Ocurrido un error al cerrar la Transacción ",0+48+0,"ERROR en Transacción")
+						SQLFlagErrorTrans=1
+					ENDIF 
+
+			
+				ENDIF 
+
+					* Guardo el valor de SQLFlagErrorTrans
+					I_SQLFlagErrorTrans  = SQLFlagErrorTrans		
+					MESSAGEBOX(I_SQLFlagErrorTrans  )					
+					IF I_SQLFlagErrorTrans=1 
+						MESSAGEBOX("Han Ocurrido Errores. La del registro en la Base de Datos NO FUE Realizada",0+16+0,"ERROR en Transacción")
+						RETURN .F.
+					ELSE
+						MESSAGEBOX("Se ha eliminado el registro correctamente",0+64+0,"Registro eliminado")
+						RETURN .T.
+					ENDIF 
+				ENDIF 
+			
+			
+				RETURN .F.
+						
+			ENDIF 
+			
+			RETURN .F.
+				
+ENDFUNC 
