@@ -5239,14 +5239,13 @@ IF v_idregistro	> 0
 									p_conexion  = vconeccionF
 									IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 									    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajustestocke)),0+48+0,"Error")
-									ELSE
-									
+																		
 									ENDIF 
 								ENDIF 
 								
 								indice = indice+1
 								
-								ENDDO 
+							ENDDO 
 											
 						ENDIF 
 					ENDIF						
@@ -5255,7 +5254,9 @@ IF v_idregistro	> 0
 
 				SELECT articulosDatos
 				SKIP 1
-			ENDDO	
+				
+			ENDDO
+				
 			
 		ELSE
 			RETURN .F.
@@ -5457,13 +5458,14 @@ p_tabla     = 'otmovistockp'
 		GO TOP 
 		
 		IF NOT EOF()
-			SELECT t.*,a.detalle FROM &v_tablaDatos t LEFT JOIN materiales_sql a ON t.idmate = a.idmate INTO TABLE materialesDatos
+*			SELECT t.*,a.detalle FROM &v_tablaDatos t LEFT JOIN materiales_sql a ON t.idmate = a.idmate INTO TABLE materialesDatos
+			SELECT a.*,t.articulo,t.cantidad,t.deposito FROM &v_tablaDatos t LEFT JOIN materiales_sql a ON ALLTRIM(t.articulo) == ALLTRIM(a.codigomat) INTO TABLE materialesDatos
 
 			SELECT materialesDatos
 			GO TOP 
 
 			DO WHILE NOT EOF()
-				IF !EMPTY(materialesDatos.codigomat) AND materialesDatos.cantidad > 0 THEN 
+				IF !EMPTY(ALLTRIM(materialesDatos.codigomat)) AND materialesDatos.cantidad > 0 THEN 
 					p_tipoope     = 'I'
 					p_condicion   = ''
 					v_titulo      = " EL ALTA "
@@ -5471,7 +5473,7 @@ p_tabla     = 'otmovistockp'
 					DIMENSION lamatriz2(14,2)
 					
 					*thisform.calcularmaxh
-					v_idmovih = maxnumeroidx("idajusteh","I","otmovistockh",1)
+					v_idmovih = maxnumeroidx("idmovih","I","otmovistockh",1)
 					
 					lamatriz2(1,1)='idmovih'
 					lamatriz2(1,2)=ALLTRIM(STR(v_idmovih))
@@ -5480,27 +5482,27 @@ p_tabla     = 'otmovistockp'
 					lamatriz2(3,1)='fecha'
 					lamatriz2(3,2)="'"+ALLTRIM(v_fecha)+"'"
 					lamatriz2(4,1)='idmate'
-					lamatriz2(4,2)=ALLTRIM(STR(matearialesDatos.idmate))
+					lamatriz2(4,2)=ALLTRIM(STR(materialesDatos.idmate))
 					lamatriz2(5,1)='codigomat'
-					lamatriz2(5,2)="'"+alltrim(matearialesDatos.codigomat)+"'"
+					lamatriz2(5,2)="'"+alltrim(materialesDatos.codigomat)+"'"
 					lamatriz2(6,1)='descrip'
-					lamatriz2(6,2)="'"+alltrim(matearialesDatos.descrip)+"'"
+					lamatriz2(6,2)="'"+alltrim(materialesDatos.detalle)+"'"
 					lamatriz2(7,1)='idtipomov'
 					lamatriz2(7,2)=alltrim(STR(v_idtipomov))
 					lamatriz2(8,1)='descmov'
-					lamatriz2(8,2)="'"+alltrim(v_descmovStock.descmov)+"'"
+					lamatriz2(8,2)="'"+alltrim(v_descmovStock)+"'"
 					lamatriz2(9,1)='cantidad'
-					lamatriz2(9,2)=alltrim(STR(matearialesDatos.cantidad,10,2))
+					lamatriz2(9,2)=alltrim(STR(materialesDatos.cantidad,10,2))
 					lamatriz2(10,1)='impuni'
-					lamatriz2(10,2)=ALLTRIM(STR(matearialesDatos.impuni,10,2))
+					lamatriz2(10,2)="0"
 					lamatriz2(11,1)='imptotal'
-					lamatriz2(11,2)=ALLTRIM(STR(matearialesDatos.imptotal,10,2))
+					lamatriz2(11,2)="0"
 					lamatriz2(12,1)='cantm2'
-					lamatriz2(12,2)=alltrim(STR(matearialesDatos.cantidad,10,2))
+					lamatriz2(12,2)=alltrim(STR(materialesDatos.cantidad,10,2))
 					lamatriz2(13,1)='iddepo'
 					lamatriz2(13,2)= ALLTRIM(STR(materialesDatos.deposito))
 					lamatriz2(14,1)='unidad'
-					lamatriz2(14,2)="'"+alltrim(matearialesDatos.unidad)+"'"
+					lamatriz2(14,2)="'"+alltrim(materialesDatos.unidad)+"'"
 
 					p_tabla     = 'otmovistockh'
 					
@@ -10780,7 +10782,7 @@ PARAMETERS p_tabla,p_campo,p_valor
 
 					* Guardo el valor de SQLFlagErrorTrans
 					I_SQLFlagErrorTrans  = SQLFlagErrorTrans		
-					MESSAGEBOX(I_SQLFlagErrorTrans  )					
+								
 					IF I_SQLFlagErrorTrans=1 
 						MESSAGEBOX("Han Ocurrido Errores. La del registro en la Base de Datos NO FUE Realizada",0+16+0,"ERROR en Transacción")
 						RETURN .F.
