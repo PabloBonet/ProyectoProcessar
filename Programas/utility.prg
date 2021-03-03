@@ -10563,6 +10563,100 @@ ENDFUNC
 
 
 
+*-----------------------------------------
+*- Impresión de Etiquetas, recibe como parametro una tabla
+*- con el listado de etiquetas a Imprimir y el modo de etiqueta seleccionado
+*- BC: Codigo de Barras, QR : Codigo QR
+*--------------------------------------------
+FUNCTION PrintEtiquetas
+PARAMETERS par_etiqueimp, par_BCQR
+
+	eje = " USE "+par_etiqueimp+" in 0 "
+	&eje 
+	SELECT &par_etiqueimp
+	GO TOP 
+	vimp_etiquetas = ""
+	DO WHILE !EOF()
+		
+		vimp_etiquetas = ALLTRIM(vimp_etiquetas)+","+ALLTRIM(STR(&par_etiqueimp..etiqueta))
+		SELECT &par_etiqueimp
+		SKIP 
+	ENDDO 
+	vimp_etiquetas= SUBSTR(vimp_etiquetas,2)
+
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)= " SELECT * from etiquetas where etiqueta in ( "+vimp_etiquetas+" ) " 
+	sqlmatriz(2)= " order by tabla, detalle, etiqueta "
+	verror=sqlrun(vconeccionF,"etiquetasimp_sql")
+	IF verror=.f.
+		MESSAGEBOX("No se puede obtener las Etiquetas... ",0+16,"Advertencia")
+		=abreycierracon(vconeccionF,"")
+		RETURN 
+	ENDIF 
+	
+	narchivo = "petiquetas"+ALLTRIM(LOWER(par_BCQR))
+	SELECT *, SPACE(50) as cb1, SPACE(50) as cb2, SPACE(100) qr1, SPACE(100) as qr2 FROM etiquetasimp_sql INTO TABLE .\&narchivo
+	USE IN etiquetasimp_sql 
+	
+	=abreycierracon(vconeccionF,"")
+
+	SELECT &narchivo
+	IF par_BCQR = 'QR' THEN 
+		PRIVATE poFbc
+		poFbc = CREATEOBJECT("FoxBarcodeQR")
+	    poFbc.nBackColor = RGB(255,255,255) && White
+		poFbc.nBarColor = RGB(0,0,0) && Black
+		poFbc.nCorrectionLevel = 0 && Medium 15%
+	ENDIF 
+	
+	DO WHILE !EOF()
+		
+********************************************************************************************
+				
+		*** Genero Código QR ***
+		** Armo la del Codigo de Barras **
+		v_etiquetaqr 	= "*"+ALLTRIM(STR(&narchivo..etiqueta))+"*"
+		v_codigoqr		= "*/"+IIF(&narchivo..idregistro <> 0,ALLTRIM(STR(&narchivo..idregistro)),IIF(EMPTY(ALLTRIM(&narchivo..articulo))=.t.,"/"+ALLTRIM(&narchivo..codigo),ALLTRIM(&narchivo..articulo)))+"*"
+		replace cb1 WITH v_etiquetaqr, cb2 WITH v_codigoqr 
+
+		IF par_BCQR = 'QR' THEN 	&& Armo la cadena a codificar en el código QR **
+
+
+			** Genero la imagen con el código QR **
+			* QR etiqueta
+			v_idRegistroStr = ALLTRIM(STRTRAN(STR((&narchivo..etiqueta),10,0),' ','0'))
+			v_ubicacionImgen = _SYSESTACION+"\etiquetaQR_"+ v_idRegistroStr 
+			v_codQRImg= poFbc.FullQRCodeImage(ALLTRIM(v_etiquetaqr),v_ubicacionImgen,250)				
+			v_ubicacionImgenE = v_ubicacionImgen+".bmp"
+			**
+			* Codigo QR
+			v_ubicacionImgen = _SYSESTACION+"\codigoQR_"+ v_idRegistroStr 
+			v_codQRImg= poFbc.FullQRCodeImage(ALLTRIM(v_codigoqr),v_ubicacionImgen,250)				
+			v_ubicacionImgenC = v_ubicacionImgen+".bmp"
+
+
+			replace qr1 WITH v_ubicacionImgenE, qr2 WITH v_ubicacionImgenC
+			
+		ENDIF 				
+	
+**********************************************************************************************
+		SELECT &narchivo
+		SKIP 
+	ENDDO 
+		
+	RELEASE poFbc
+
+	SELECT &narchivo 
+	GO TOP 
+	DO FORM reporteform WITH narchivo,narchivo+"cr","printetiquetas"+par_BCQR
+
+RETURN 
+ENDFUNC 
+
+
+
+
 *---VERIFICA AL INTEGRIDAD REFERENCIA DE DATOS-----------------------
 *- Busqueda de un valor y un campo dado en una tabla en 
 *- Las Tablas Restantes del Esquema
@@ -10626,18 +10720,16 @@ ENDFUNC
 FUNCTION eliminarRegistros
 PARAMETERS p_tabla,p_campo,p_valor
 
-
 		v_listaTablas = ""
-			v_listaTablas = FindInTables(p_tabla, p_campo, p_valor, 0)
+		v_listaTablas = FindInTables(p_tabla, p_campo, p_valor, 0)
 		
-			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 			
-			ALINES(arregloTablas,v_listaTablas,.F.,';')
+		ALINES(arregloTablas,v_listaTablas,.F.,';')
 			
-			MESSAGEBOX(v_listaTablas)
-			v_tam = ALEN(arregloTablas)
+		v_tam = ALEN(arregloTablas)
 			
-			IF EMPTY(ALLTRIM(v_tam)) = .F.
+		IF v_tam > 0 THEN 
 				
 				* INICIAR TRANSACCION
 				SQLFlagErrorTrans=0
@@ -10647,16 +10739,14 @@ PARAMETERS p_tabla,p_campo,p_valor
 				ELSE 
 			
 					** Elimino los registros asociados a la tabla pasada como parámetro **
-					FOR i = 1 TO v_tam
+					FOR ie = 1 TO v_tam
 						v_tablaEliminar = ""
-						v_tablaEliminar = arregloTablas[i]
+						v_tablaEliminar = arregloTablas[ie]
 						
 						IF EMPTY(ALLTRIM(v_tablaEliminar)) = .F.
 							
 							sqlmatriz(1)=" delete from "+ALLTRIM(v_tablaEliminar)
 							sqlmatriz(2)=" where "+ALLTRIM(p_campo)+"="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),"'"+ALLTRIM(p_valor)+"'"))
-						MESSAGEBOX(sqlmatriz(1))
-					MESSAGEBOX(sqlmatriz(2))
 							verror=sqlrun(vconeccionF,"eliminaTabla_sql")
 							IF verror=.f.  
 							    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
@@ -10672,8 +10762,6 @@ PARAMETERS p_tabla,p_campo,p_valor
 					** Elimino el registro de la tabla pasada como parámetro**
 					sqlmatriz(1)=" delete from "+ALLTRIM(p_tabla)
 					sqlmatriz(2)=" where "+ALLTRIM(p_campo)+"="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),"'"+ALLTRIM(p_valor)+"'"))
-					MESSAGEBOX(sqlmatriz(1))
-					MESSAGEBOX(sqlmatriz(2))
 					verror=sqlrun(vconeccionF,"eliminaTabla_sql")
 					IF verror=.f.  
 					    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
@@ -10702,11 +10790,7 @@ PARAMETERS p_tabla,p_campo,p_valor
 					ENDIF 
 				ENDIF 
 			
-			
 				RETURN .F.
 						
-			ENDIF 
 			
-			RETURN .F.
-				
 ENDFUNC 
