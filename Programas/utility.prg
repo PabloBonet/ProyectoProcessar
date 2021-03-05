@@ -10566,13 +10566,31 @@ ENDFUNC
 
 
 *-----------------------------------------
-*- Impresión de Etiquetas, recibe como parametro una tabla
+*- Impresión de Etiquetas, recibe como parametro una tabla o un rango de Etiquetas 
 *- con el listado de etiquetas a Imprimir y el modo de etiqueta seleccionado
 *- BC: Codigo de Barras, QR : Codigo QR
 *--------------------------------------------
 FUNCTION PrintEtiquetas
-PARAMETERS par_etiqueimp, par_BCQR
+PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+	IF EMPTY(ALLTRIM(par_etiqueimp)) THEN 
+		sqlmatriz(1)="select etiqueta from etiquetas where etiqueta >= "+ALLTRIM(STR(par_etiquetaINI))+" and etiqueta <= "+ALLTRIM(STR(par_etiquetaFIN))
+		verror=sqlrun(vconeccionF,"impeti_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la seleccion de Etiquetas " ,0+48+0,"Seleccion de Etiquetas ")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 
+		ENDIF 
+		SELECT impeti_sql
+		SELECT * FROM impeti_sql INTO TABLE .\printetique 
+		USE IN impeti_sql 
+		SELECT printetique
+		USE IN printetique			
+		par_etiqueimp = "printetique"
+	ENDIF 
+	
 	eje = " USE "+par_etiqueimp+" in 0 "
 	&eje 
 	SELECT &par_etiqueimp
@@ -10584,9 +10602,9 @@ PARAMETERS par_etiqueimp, par_BCQR
 		SELECT &par_etiqueimp
 		SKIP 
 	ENDDO 
+	USE IN &par_etiqueimp 
 	vimp_etiquetas= SUBSTR(vimp_etiquetas,2)
 
-	vconeccionF=abreycierracon(0,_SYSSCHEMA)
 
 	sqlmatriz(1)= " SELECT * from etiquetas where etiqueta in ( "+vimp_etiquetas+" ) " 
 	sqlmatriz(2)= " order by tabla, detalle, etiqueta "
@@ -10652,7 +10670,8 @@ PARAMETERS par_etiqueimp, par_BCQR
 	SELECT &narchivo 
 	GO TOP 
 	DO FORM reporteform WITH narchivo,narchivo+"cr","printetiquetas"+par_BCQR
-
+	USE IN &narchivo	
+	
 RETURN 
 ENDFUNC 
 
