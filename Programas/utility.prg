@@ -10824,7 +10824,7 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 		*** Genero Código QR ***
 		** Armo la del Codigo de Barras **
 		v_etiquetaqr 	= "*"+ALLTRIM(STR(&narchivo..etiqueta))+"*"
-		v_codigoqr		= "*/"+IIF(&narchivo..idregistro <> 0,ALLTRIM(STR(&narchivo..idregistro)),IIF(EMPTY(ALLTRIM(&narchivo..articulo))=.t.,"/"+ALLTRIM(&narchivo..codigo),ALLTRIM(&narchivo..articulo)))+"*"
+		v_codigoqr		= "*/"+IIF(&narchivo..idregistro <> 0,"//"+ALLTRIM(STR(&narchivo..idregistro)),IIF(EMPTY(ALLTRIM(&narchivo..articulo))=.t.,"/"+ALLTRIM(&narchivo..codigo),ALLTRIM(&narchivo..articulo)))+"*"
 		replace cb1 WITH v_etiquetaqr, cb2 WITH v_codigoqr 
 
 		IF par_BCQR = 'QR' THEN 	&& Armo la cadena a codificar en el código QR **
@@ -11003,3 +11003,44 @@ PARAMETERS p_tabla,p_campo,p_valor
 						
 			
 ENDFUNC 
+
+
+
+*- devuelve el codigo del material o bien el idmate, dependiendo 
+*- de la conversion que se le pida especificada en Modo
+*- pca_modo = 'ID' OR 'CO'
+*- ID = devuelve IDMATE buscando con CODIGOMAT
+*- CO = devuelve CODIGOMAT buscando con IDMATE 
+
+FUNCTION CambiaIDCodigomat
+PARAMETERS pca_codigo,pca_modo, pca_conex 
+cretorno = ""
+IF !empty(pca_codigo) THEN
+	
+	pca_codigo = STRTRAN(STRTRAN(pca_codigo,'/',''),'*')
+	
+	sqlmatriz(1)=" SELECT * FROM otmateriales "
+	IF UPPER(pca_modo) = 'CO' THEN 
+		sqlmatriz(2)=" WHERE idmate = "+ALLTRIM(STR(VAL(pca_codigo)))
+	ELSE
+		sqlmatriz(2)=" WHERE codigomat = '"+ALLTRIM(pca_codigo)+"' or TRIM(codbarra) = '"+ALLTRIM(pca_codigo)+"'"
+	ENDIF 
+	verror=sqlrun(vconeccion,"otmatecam")
+	IF verror=.f.
+			* me desconecto
+		=abreycierracon(vconeccion,"")
+		RETURN 
+	ENDIF 
+	SELECT otmatecam
+	GO TOP
+	IF !EOF() 
+		IF UPPER(pca_modo) = 'CO' THEN 
+			cretorno = otmatecam.codigomat		
+		ELSE
+			cretorno = ALLTRIM(STR(otmatecam.idmate))
+		ENDIF 
+	ENDIF 
+	USE IN otmatecam
+ENDIF 
+RETURN cretorno
+ENDFUNC
