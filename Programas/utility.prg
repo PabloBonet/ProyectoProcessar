@@ -4701,7 +4701,7 @@ IF v_idregistro	> 0
 	*** Busco el comprobante asociado
 	sqlmatriz(1)=" select * from "+ALLTRIM(v_tabla)+" c left join compactiv cp on c.idcomproba = cp.idcomproba and c.pventa = cp.pventa "
 	sqlmatriz(2)=" where c."+ALLTRIM(v_nombreCampo)+" = "+ALLTRIM(STR(v_idregistro))
-	
+
 	verror=sqlrun(vconeccionA,"Comprobante_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del comprobante asociado ",0+48+0,"Error")
@@ -4737,7 +4737,7 @@ IF v_idregistro	> 0
 	SELECT comprobante_sql
 	GO TOP 
 	v_entidad	= Comprobante_sql.entidad
-	v_nombre	= Comprobante_sql.nombre
+	v_nombre	= Comprobante_sql.nombre+" "+Comprobante_sql.apellido
 	v_puntov	= comprobante_sql.puntov
 	v_numComp	= comprobante_sql.numero
 	v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
@@ -4800,7 +4800,7 @@ IF v_idregistro	> 0
 	ENDIF
 
 	v_descmovStock	= tipomstock_sql.descmov
-	v_generaEtiqueta = tipomstock_sql.generaeti
+*	v_generaEtiqueta = tipomstock_sql.generaeti
 		
 	
 	SELECT &v_tablaDatos
@@ -4870,125 +4870,7 @@ IF v_idregistro	> 0
 					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajusteh )),0+48+0,"Error")
 					ELSE
 					
-						*** Creo y asocio la ETIQUETA si el movimiento requiere de etiquetas
-						IF v_generaEtiqueta = 'S'
-							** CREO Etiqueta ***
-								v_cantEti		= VAL(STR(articulosDatos.cantidad,10,2))
-								indice = 1
-			*!*					FOR i = 1 TO 20 STEP 1
-			
-						
-							DO WHILE indice <= v_cantEti
-							
-							*	v_etiqueta = maxnumeroidx("etiqueta","I","etiquetas",1)
-								
-								p_tipoope     = 'I'
-								p_condicion   = ''
-								v_titulo      = " EL ALTA "
-								
-								
-								
-								
-								DIMENSION lamatriz3(8,2)
-								v_etiqueta = 0
-								
-								p_tipoope     = 'I'
-								p_condicion   = ''
-								v_titulo      = " EL ALTA "
-								
-								
-								lamatriz3(1,1)='etiqueta'
-								lamatriz3(1,2)=ALLTRIM(STR(v_etiqueta))
-								lamatriz3(2,1)='fechaalta'
-								lamatriz3(2,2)="'"+DTOS(DATE())+"'"
-								lamatriz3(3,1)='codigo'
-								lamatriz3(3,2)="''"
-								lamatriz3(4,1)='articulo'
-								lamatriz3(4,2)="'"+ALLTRIM(articulosDatos.articulo)+"'"
-								lamatriz3(5,1)='tabla'
-								lamatriz3(5,2)="'articulos'"
-								lamatriz3(6,1)='campo'
-								lamatriz3(6,2)="'articulo'"
-								lamatriz3(7,1)='idregistro'
-								lamatriz3(7,2)="0"
-								lamatriz3(8,1)='detalle'
-								lamatriz3(8,2)="'"+ALLTRIM(articulosDatos.articulo)+"-"+alltrim(articulosDatos.detalle)+"'"
-							
-								
-*!*									
-*!*									DIMENSION lamatriz3(4,2)
-*!*									
-*!*									lamatriz3(1,1)='etiqueta'
-*!*									lamatriz3(1,2)=ALLTRIM(STR(v_etiqueta))
-*!*									lamatriz3(2,1)='fechaalta'
-*!*									lamatriz3(2,2)="'"+DTOS(DATE())+"'"
-*!*									lamatriz3(3,1)='codigo'
-*!*									lamatriz3(3,2)="''"
-*!*									lamatriz3(4,1)='articulo'
-*!*									lamatriz3(4,2)="'"+ALLTRIM(articulosDatos.articulo)+"'"
-								
-
-								p_tabla     = 'etiquetas'
-								p_matriz    = 'lamatriz3'
-								p_conexion  = vconeccionA
-								IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-								    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_etiqueta )),0+48+0,"Error")
-								ELSE
-								
-								
-								
-									sqlmatriz(1)=" select last_insert_id() as maxid "
-									verror=sqlrun(vconeccionF,"ultimoId")
-									IF verror=.f.  
-									    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
-										=abreycierracon(vconeccionF,"")	
-									   
-									ENDIF 
-									SELECT ultimoId
-									GO TOP 
-									v_etiqueta = VAL(ultimoId.maxid)
-									USE IN ultimoId
-								
-									IF v_primerEti = 0
-										v_primerEti = v_etiqueta
-									ENDIF 
-									v_ultimaEti = v_etiqueta
-															
-								
-								
-									*** Creo Asociación Etiqueta - AjusteStockH
-										v_idajustestocke = maxnumeroidx("idajustestocke","I","ajustestocke",1)
-									
-									p_tipoope     = 'I'
-									p_condicion   = ''
-									v_titulo      = " EL ALTA "
-									
-									DIMENSION lamatriz4(3,2)
-									
-									lamatriz4(1,1)='idajustestocke'
-									lamatriz4(1,2)=ALLTRIM(STR(v_idajustestocke ))
-									lamatriz4(2,1)='idajusteh'
-									lamatriz4(2,2)=ALLTRIM(STR(v_idajusteh))
-									lamatriz4(3,1)='etiqueta'
-									lamatriz4(3,2)=ALLTRIM(STR(v_etiqueta))
-									
-
-									p_tabla     = 'ajustestocke'
-									p_matriz    = 'lamatriz4'
-									p_conexion  = vconeccionF
-									IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-									    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajustestocke)),0+48+0,"Error")
-									ELSE
-									
-									ENDIF 
-								ENDIF 
-								
-								indice = indice+1
-								
-								ENDDO 
-							
-												
-						ENDIF 
+					
 					ENDIF						
 					
 				ENDIF
@@ -4997,18 +4879,7 @@ IF v_idregistro	> 0
 				SKIP 1
 			ENDDO	
 			
-			IF v_generaEtiqueta
-			** IMPRIMIR ETIQUETA **
-				v_sino = MESSAGEBOX("¿Desea Imprimir las etiquetas de Artículos generadas?",4+32+0,"Imprimir etiqueta")
-				
-				IF v_sino = 6 then
-																					
-					printetiquetas("",v_primerEti,v_ultimaEti,_SYSBCQR)
-				
-				ENDIF 
-			
-			ENDIF 
-			
+					
 		ELSE
 			RETURN .F.
 		ENDIF 
