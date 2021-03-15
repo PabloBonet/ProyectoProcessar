@@ -4670,18 +4670,12 @@ v_tablaDatos	= p_tablaDatos
 SELECT &v_tablaDatos
 GO TOP 
 
-
-
-IF v_idregistro	> 0
-
 	**** Busco el comprobante asociado ***
 	vconeccionA=abreycierracon(0,_SYSSCHEMA)	
-		
 
 	*** Busco los comprobantes y sus respectivos puntos de venta 
 	sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla, t.pventa, "
 	sqlmatriz(2)=" t.puntov from comprobantes c left join compactiv t on c.idcomproba = t.idcomproba "
-	*sqlmatriz(1)=" Select c.* from comprobantes c "
 	verror=sqlrun(vconeccionA,"Comprobantes_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de comprobantes ",0+48+0,"Error")
@@ -4689,6 +4683,7 @@ IF v_idregistro	> 0
 	    RETURN .F.
 	ENDIF
 
+IF v_idregistro	> 0
 
 	SELECT * FROM comprobantes_sql WHERE idcomproba = v_idcomproba INTO TABLE compSelecc
 	
@@ -4710,29 +4705,8 @@ IF v_idregistro	> 0
 	ENDIF
 	
 	
-	SELECT Comprobante_sql
-	GO TOP 
-	
-
-
-	*** Busco el comprobante de ajuste para el punto de venta asociado al comprobante
-	v_pventaC	= comprobante_sql.pventa
-	
-	
-	SELECT * FROM comprobantes_Sql WHERE tabla = 'ajustestockp' AND pventa	= v_pventaC INTO TABLE compAjusteAso
-	
-	SELECT compAjusteAso 
-	GO TOP 
-	v_pventaA	= compAjusteAso.pventa
-	v_idcomprobaA= compAjusteAso.idcomproba
-
-
-	v_idajuste 	= maxnumeroidx("idajuste","I","ajustestockp",1)
-	
-	v_puntoVA	= compAjusteAso.puntov
-	v_numero 	= maxnumerocom(v_idcomprobaA, v_pventaA,1)
-	
-	v_fecha		= DTOS(DATE())
+*!*		SELECT Comprobante_sql
+*!*		GO TOP 
 	
 	SELECT comprobante_sql
 	GO TOP 
@@ -4741,6 +4715,64 @@ IF v_idregistro	> 0
 	v_puntov	= comprobante_sql.puntov
 	v_numComp	= comprobante_sql.numero
 	v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
+
+
+	*** Busco el comprobante de ajuste para el punto de venta asociado al comprobante
+	v_pventaC	= comprobante_sql.pventa
+
+ELSE 	
+	v_pventaC	= INT(VAL(SUBSTR(_SYSCIERRESTA,3,2)))
+
+	v_entidad	= INT(VAL(SUBSTR(_SYSCIERRESTA,9)))
+	
+	*** Busco la Entidad o Nombre de Empresa asociado
+	sqlmatriz(1)=" select * from entidades "
+	sqlmatriz(2)=" where entidad = "+ALLTRIM(STR(v_entidad))
+
+	verror=sqlrun(vconeccionA,"entidad_sel")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  Entidad para Ajuste ",0+48+0,"Error")
+	     =abreycierracon(vconeccionA,"")
+	    RETURN .F.
+	ENDIF
+	SELECT entidad_sel
+	GO TOP 
+	IF !EOF() THEN 
+		v_nombre	= ALLTRIM(entidad_sel.apellido) +" "+ ALLTRIM(entidad_sel.nombre) +" "+ ALLTRIM(entidad_sel.compania)
+	ELSE 
+		v_nombre	= "CIERRE DE STOCK Y PUESTA A 0 "		
+	ENDIF 
+	USE IN entidad_sel
+	
+	v_puntov	= 0
+	v_numComp	= 0
+	v_observa1	= "Cierre de Stock al "+SUBSTR(&v_tablaDatos..fecha,7,2)+"/"+SUBSTR(&v_tablaDatos..fecha,5,2)+"/"+SUBSTR(&v_tablaDatos..fecha,1,4)
+
+ENDIF 
+
+	SELECT * FROM comprobantes_Sql WHERE tabla = 'ajustestockp' AND pventa	= v_pventaC INTO TABLE compAjusteAso
+	
+	SELECT compAjusteAso 
+	GO TOP 
+	v_pventaA	 = compAjusteAso.pventa
+	v_idcomprobaA= compAjusteAso.idcomproba
+
+
+	v_idajuste 	 = maxnumeroidx("idajuste","I","ajustestockp",1)
+	
+	v_puntoVA	 = compAjusteAso.puntov
+	v_numero 	 = maxnumerocom(v_idcomprobaA, v_pventaA,1)
+	
+	v_fecha		 = &v_tablaDatos..fecha
+
+	
+*!*		SELECT comprobante_sql
+*!*		GO TOP 
+*!*		v_entidad	= Comprobante_sql.entidad
+*!*		v_nombre	= Comprobante_sql.nombre+" "+Comprobante_sql.apellido
+*!*		v_puntov	= comprobante_sql.puntov
+*!*		v_numComp	= comprobante_sql.numero
+*!*		v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
 
 	DIMENSION lamatriz1(14,2)
 
@@ -4775,8 +4807,8 @@ IF v_idregistro	> 0
 
 
 	p_tipoope     = 'I'
-		p_condicion   = ''
-		v_titulo      = " EL ALTA "
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
 	p_tabla     = 'ajustestockp'
 	p_matriz    = 'lamatriz1'
 	p_conexion  = vconeccionA
@@ -4824,8 +4856,8 @@ IF v_idregistro	> 0
 		
 		IF NOT EOF()
 			SELECT t.*,a.detalle FROM &v_tablaDatos t LEFT JOIN articulos_sql a ON t.articulo = a.articulo INTO TABLE articulosDatos
-	v_primerEti = 0
-							v_ultimaEti = 0
+			v_primerEti = 0
+			v_ultimaEti = 0
 			SELECT articulosDatos
 			GO TOP 
 
@@ -4881,20 +4913,21 @@ IF v_idregistro	> 0
 			
 					
 		ELSE
+	    	=abreycierracon(vconeccionA,"")
 			RETURN .F.
 		ENDIF 
 	ELSE
-	
+    	=abreycierracon(vconeccionA,"")	
 		RETURN .F.
 		
 	ENDIF 
 	
 
-ELSE
-	RETURN .F.
+*!*	ELSE
+*!*		RETURN .F.
 
-ENDIF 
-
+*!*	ENDIF 
+   	=abreycierracon(vconeccionA,"")
 	RETURN .T.
 ENDFUNC 
 
@@ -4917,6 +4950,7 @@ v_idcomproba	= p_idcomproba
 v_nombreCampo	= p_nombreCampo
 v_idregistro	= p_idregistro
 v_tablaDatos	= p_tablaDatos
+
 
 
 SELECT &v_tablaDatos
@@ -5296,7 +5330,6 @@ SELECT &v_tablaDatos
 GO TOP 
 
 
-IF v_idregistro	> 0
 
 	**** Busco el comprobante asociado ***
 	vconeccionA=abreycierracon(0,_SYSSCHEMA)	
@@ -5313,6 +5346,8 @@ IF v_idregistro	> 0
 	    RETURN .F.
 	ENDIF
 
+
+IF v_idregistro	> 0
 
 	SELECT * FROM comprobantes_sql WHERE idcomproba = v_idcomproba INTO TABLE compSelecc
 	
@@ -5333,16 +5368,49 @@ IF v_idregistro	> 0
 	    RETURN .F.
 	ENDIF
 	
-	
-	SELECT Comprobante_sql
+
+	SELECT comprobante_sql
 	GO TOP 
+	v_entidad	= Comprobante_sql.entidad
+	v_nombre	= Comprobante_sql.nombre
+	v_puntovA 	= STRTRAN(STR((Comprobante_sql.actividad),4,0)," ","0")
+	v_numComp	= comprobante_sql.numero
+	v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
 	
 
 
 	*** Busco el comprobante de ajuste para el punto de venta asociado al comprobante
 *	v_pventaC	= comprobante_sql.pventa
 	
+ELSE 
+
+	v_entidad	= INT(VAL(SUBSTR(_SYSCIERRESTM,9)))
 	
+	*** Busco la Entidad o Nombre de Empresa asociado
+	sqlmatriz(1)=" select * from entidades "
+	sqlmatriz(2)=" where entidad = "+ALLTRIM(STR(v_entidad))
+
+	verror=sqlrun(vconeccionA,"entidad_sel")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  Entidad para Ajuste ",0+48+0,"Error")
+	     =abreycierracon(vconeccionA,"")
+	    RETURN .F.
+	ENDIF
+	SELECT entidad_sel
+	GO TOP 
+	IF !EOF() THEN 
+		v_nombre	= ALLTRIM(entidad_sel.apellido) +" "+ ALLTRIM(entidad_sel.nombre) +" "+ ALLTRIM(entidad_sel.compania)
+	ELSE 
+		v_nombre	= "CIERRE DE STOCK Y PUESTA A 0 "		
+	ENDIF 
+	USE IN entidad_sel
+	
+	v_puntovA	= 0
+	v_numComp	= 0
+	v_observa1	= "Cierre de Stock al "+SUBSTR(&v_tablaDatos..fecha,7,2)+"/"+SUBSTR(&v_tablaDatos..fecha,5,2)+"/"+SUBSTR(&v_tablaDatos..fecha,1,4)
+
+ENDIF 	
+
 	SELECT * FROM comprobantes_Sql WHERE tabla = 'otmovistockp' INTO TABLE compAjusteAso
 	
 	SELECT compAjusteAso 
@@ -5354,16 +5422,16 @@ IF v_idregistro	> 0
 	
 	*v_numero 	= maxnumerocom(v_idcomprobaAs, 0,1)
 	
-	v_fecha		= DTOS(DATE())
+	v_fecha		= &v_tablaDatos..fecha
 	
-	SELECT comprobante_sql
-	GO TOP 
-	v_entidad	= Comprobante_sql.entidad
-	v_nombre	= Comprobante_sql.nombre
-*	v_puntov	= comprobante_sql.puntov
-	v_puntovA 	= STRTRAN(STR((Comprobante_sql.actividad),4,0)," ","0")
-	v_numComp	= comprobante_sql.numero
-	v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
+*!*		SELECT comprobante_sql
+*!*		GO TOP 
+*!*		v_entidad	= Comprobante_sql.entidad
+*!*		v_nombre	= Comprobante_sql.nombre
+*!*	*	v_puntov	= comprobante_sql.puntov
+*!*		v_puntovA 	= STRTRAN(STR((Comprobante_sql.actividad),4,0)," ","0")
+*!*		v_numComp	= comprobante_sql.numero
+*!*		v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
 
 	DIMENSION lamatriz1(12,2)
 
@@ -5398,7 +5466,7 @@ IF v_idregistro	> 0
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
 	
-p_tabla     = 'otmovistockp'
+	p_tabla     = 'otmovistockp'
 	p_matriz    = 'lamatriz1'
 	p_conexion  = vconeccionA
 	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
@@ -5415,7 +5483,7 @@ p_tabla     = 'otmovistockp'
 
 	*** ELIMINO HIJOS PARA NO TENER PROBLEMAS DE ACTUALIZACION ***
 	sqlmatriz(1)="DELETE FROM otmovistockh WHERE idmovip = " + ALLTRIM(STR(v_idmovip))
-	verror=sqlrun(vconeccionF,"control1")
+	verror=sqlrun(vconeccionA,"control1")
 
 
 
@@ -5570,10 +5638,10 @@ p_tabla     = 'otmovistockp'
 								
 								
 										sqlmatriz(1)=" select last_insert_id() as maxid "
-									verror=sqlrun(vconeccionF,"ultimoId")
+									verror=sqlrun(vconeccionA,"ultimoId")
 									IF verror=.f.  
 									    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
-										=abreycierracon(vconeccionF,"")	
+										=abreycierracon(vconeccionA,"")	
 									   
 									ENDIF 
 									SELECT ultimoId
@@ -5610,7 +5678,7 @@ p_tabla     = 'otmovistockp'
 
 									p_tabla     = 'otmovistocke'
 									p_matriz    = 'lamatriz4'
-									p_conexion  = vconeccionF
+									p_conexion  = vconeccionA
 									IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 									    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajustestocke)),0+48+0,"Error")
 																		
@@ -5653,12 +5721,12 @@ p_tabla     = 'otmovistockp'
 	ENDIF 
 	
 
-ELSE
+*!*	ELSE
 
-=abreycierracon(vconeccionA,"")
-	RETURN .F.
+*!*	=abreycierracon(vconeccionA,"")
+*!*		RETURN .F.
 
-ENDIF 
+*!*	ENDIF 
 =abreycierracon(vconeccionA,"")
 	RETURN .T.
 ENDFUNC 
