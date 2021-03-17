@@ -10964,10 +10964,10 @@ IF !empty(pca_codigo) THEN
 	ELSE
 		sqlmatriz(2)=" WHERE codigomat = '"+ALLTRIM(pca_codigo)+"' or TRIM(codbarra) = '"+ALLTRIM(pca_codigo)+"'"
 	ENDIF 
-	verror=sqlrun(vconeccion,"otmatecam")
+	verror=sqlrun(pca_conex,"otmatecam")
 	IF verror=.f.
 			* me desconecto
-		=abreycierracon(vconeccion,"")
+		=abreycierracon(pca_conex,"")
 		RETURN 
 	ENDIF 
 	SELECT otmatecam
@@ -10981,5 +10981,79 @@ IF !empty(pca_codigo) THEN
 	ENDIF 
 	USE IN otmatecam
 ENDIF 
+RETURN cretorno
+ENDFUNC
+
+
+*- Devuelve el Nombre de Una Tabla conteniendo las Etiquetas 
+*- que contiene un lote de Lectura Batch de Etiquetas
+*- pl_tablaeti: nombre de la tabla para seleccion de etiquetas
+*- devuelve el nombre de la tabla con los datos de la consulta o vacio si no selecciona nada
+FUNCTION BuscaLoteEti
+PARAMETERS pl_tablaeti
+	cretorno = ""
+	DO FORM lecturaetiquetas TO v_loteeti
+	IF v_loteeti > 0 THEN 
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		*Busco El Lote de Lectura Seleccionado 
+		sqlmatriz(1)=" SELECT * FROM lecturaetique where idletique = "+STR(v_loteeti)
+		verror=sqlrun(vconeccionF,"lecturasel_sql")
+		IF verror=.f.
+				* me desconecto
+			=abreycierracon(vconeccionF,"")
+			RETURN 
+		ENDIF 
+		SELECT lecturasel_sql
+		GO TOP 
+		IF !EOF() THEN 
+*******************************************************************************	
+
+			IF !EMPTY(lecturasel_sql.lecturae) THEN 
+
+				vcanetique=ALINES(Arrayetiquetas,lecturasel_sql.lecturae)
+				vcvalidas = 0
+				vnonulas = 0
+				varetiquetas = ""
+				FOR i = 1 TO vcanetique 
+				
+					IF atc('/',arrayetiquetas(i)) = 0 AND !EMPTY(ALLTRIM(arrayetiquetas(i))) THEN 
+
+						varetiquetas = varetiquetas+','+ALLTRIM(STR(VAL(STRTRAN(arrayetiquetas(i),'*',''))))
+
+					ENDIF 
+					IF !EMPTY(ALLTRIM(arrayetiquetas(i))) THEN 
+						vnonulas = vnonulas + 1
+					ENDIF 
+					
+				ENDFOR 
+				lenvaretique = LEN(varetiquetas)
+				varetiquetas = IIF(SUBSTR(varetiquetas,1,1)=',',SUBSTR(varetiquetas,2),varetiquetas)
+				varetiquetas = IIF(SUBSTR(varetiquetas,(lenvaretique-1),1)=',',SUBSTR(varetiquetas,1,lenvaretique-1),varetiquetas)
+				
+				sqlmatriz(1)="SELECT * from etiquetas where tabla ='"+ALLTRIM(pl_tablaeti)+"' and etiqueta in ( "+varetiquetas+" ) "
+				verror=sqlrun(vconeccionF,"etiquetasleidas_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Lecturas de Etiquetas ...",0+48+0,"Error")
+				ENDIF 
+
+				
+				eje = "SELECT *, "+STR(v_loteeti)+" as idletique from etiquetasleidas_sql INTO TABLE .\seleccetiquetas "
+				&eje 
+				
+				USE IN etiquetasleidas_sql 
+				SELECT seleccetiquetas
+				USE IN seleccetiquetas
+				cretorno = "seleccetiquetas"
+				
+			ENDIF 
+
+		ELSE 
+		
+		ENDIF 
+
+		=abreycierracon(vconeccionF,"")	
+
+	ENDIF 
+
 RETURN cretorno
 ENDFUNC
