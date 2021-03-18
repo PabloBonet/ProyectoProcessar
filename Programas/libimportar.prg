@@ -1509,6 +1509,7 @@ FUNCTION CargaEntidades
 		p_archivo = alltrim(p_archivo)
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 
+
 		if file(".\entidadescar.dbf") THEN
 			if used("entidadescar") then
 				sele entidadescar
@@ -1533,6 +1534,19 @@ FUNCTION CargaEntidades
  		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
 		&eje
 
+		COUNT TO v_registros 
+		IF v_registros > 0 THEN 
+			*Elimino las Entidades que tenga el sistema
+			*La carga debe hacerce con la tabla vacia
+			sqlmatriz(1)=" delete from entidades "
+			verror=sqlrun(vconeccionF,"entidad")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Entidades... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF		
+		ENDIF 
+		
+		SELECT entidadescar
 		DIMENSION lamatriz(19,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
@@ -1584,7 +1598,7 @@ FUNCTION CargaEntidades
 			p_matriz    = 'lamatriz'
 			p_conexion  = vconeccionF
 			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Cablemodems ",0+48+0,"Error")
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Entidades ",0+48+0,"Error")
 			ENDIF 
 			
 			SELECT entidadescar
@@ -1599,7 +1613,7 @@ FUNCTION CargaEntidades
 */**************************************************************
 */ && 2- Visualiza Datos de Claro
 	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
-		=fconsutablas(p_idimportap,'entidades',.T.)
+	*	=fconsutablas(p_idimportap)
 	ENDIF && 2- Visualiza Datos de CPP -
 */**************************************************************
 	lreto = p_func
@@ -1610,8 +1624,162 @@ ENDFUNC
 *******************************************************
 
 */------------------------------------------------------------------------------------------------------------
-*/ FINAL  Carga de Entidades
+*/ FINAL  Carga de Sub-Entidades
 */------------------------------------------------------------------------------------------------------------
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ Carga de Sub-Entidades - Cuentas
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaSubEntidades
+	PARAMETERS p_idimportap, p_archivo, p_func
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Entidades -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+		if file(".\entidadeshcar.dbf") THEN
+			if used("entidadeshcar") then
+				sele entidadeshcar
+				use
+			endif
+			DELETE FILE .\entidadeshcar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\entidadeshcar FREE (entidad I,servicios I, cuenta I,  apellido C(100), nombre c(100), cargo C(100), compania C(100), cuit C(13), direccion C(100), ;
+					localidad C(10), iva I, fechaalta C(8), telefono C(50), cp C(50), fax C(50), ;
+					email C(254), dni I, tipodoc C(3),  ;
+					fechanac C(8), ruta1 I, folio1 I, ruta2 I, folio2 I, identidadh I, idafiptipd I )			
+					
+		SELECT entidadeshcar 
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+		replace ALL identidadh WITH RECNO()
+
+		COUNT TO v_registros 
+		IF v_registros > 0 THEN 
+			*Elimino las subcuentas que tenga el sistema
+			*La carga debe hacerce con la tabla vacia
+			sqlmatriz(1)=" delete from entidadesh "
+			verror=sqlrun(vconeccionF,"entidadh")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Sub-Cuentas... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+		ENDIF 		
+		SELECT entidadeshcar
+
+		DIMENSION lamatriz(25,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		GO TOP 
+		DO WHILE !EOF()
+			lamatriz(1,1) = 'entidad'
+			lamatriz(1,2) = ALLTRIM(STR(entidadeshcar.entidad))
+			lamatriz(2,1) = 'servicio'
+			lamatriz(2,2) = ALLTRIM(STR(entidadeshcar.servicios))
+			lamatriz(3,1) = 'Cuenta'
+			lamatriz(3,2) = ALLTRIM(STR(entidadeshcar.cuenta))
+			lamatriz(4,1) = 'apellido'
+			lamatriz(4,2) = "'"+ALLTRIM(entidadeshcar.apellido)+"'"
+			lamatriz(5,1) = 'nombre'
+			lamatriz(5,2) = "'"+ALLTRIM(entidadeshcar.nombre)+"'"
+			lamatriz(6,1) = 'cargo'
+			lamatriz(6,2) = "'"+ALLTRIM(entidadeshcar.cargo)+"'"
+			lamatriz(7,1) = 'compania'
+			lamatriz(7,2) = "'"+ALLTRIM(entidadeshcar.compania)+"'"
+			lamatriz(8,1) = 'cuit'
+			lamatriz(8,2) = "'"+ALLTRIM(entidadeshcar.cuit)+"'"
+			lamatriz(9,1) = 'direccion'
+			lamatriz(9,2) = "'"+ALLTRIM(entidadeshcar.direccion)+"'"
+			lamatriz(10,1) = 'localidad'
+			lamatriz(10,2) = "'"+ALLTRIM(entidadeshcar.localidad)+"'"
+			lamatriz(11,1) = 'fechaalta'
+			lamatriz(11,2) = "'"+ALLTRIM(entidadeshcar.fechaalta)+"'"
+			lamatriz(12,1) = 'telefono'
+			lamatriz(12,2) = "'"+ALLTRIM(entidadeshcar.telefono)+"'"
+			lamatriz(13,1) = 'cp'
+			lamatriz(13,2) = "'"+ALLTRIM(entidadeshcar.cp)+"'"
+			lamatriz(14,1) = 'fax'
+			lamatriz(14,2) = "'"+ALLTRIM(entidadeshcar.fax)+"'"
+			lamatriz(15,1) = 'email'
+			lamatriz(15,2) = "'"+ALLTRIM(entidadeshcar.email)+"'"
+			lamatriz(16,1) = 'dni'
+			lamatriz(16,2) = ALLTRIM(STR(entidadeshcar.dni))
+			lamatriz(17,1) = 'tipodoc'
+			lamatriz(17,2) = "'"+ALLTRIM(entidadeshcar.tipodoc)+"'"
+			lamatriz(18,1) = 'iva'
+			lamatriz(18,2) = ALLTRIM(STR(entidadeshcar.iva))
+			lamatriz(19,1) = 'fechanac'
+			lamatriz(19,2) = "'"+ALLTRIM(entidadeshcar.fechanac)+"'"
+			lamatriz(20,1) = 'ruta1'
+			lamatriz(20,2) = ALLTRIM(STR(entidadeshcar.ruta1))
+			lamatriz(21,1) = 'folio1'
+			lamatriz(21,2) = ALLTRIM(STR(entidadeshcar.folio1))
+			lamatriz(22,1) = 'ruta2'
+			lamatriz(22,2) = ALLTRIM(STR(entidadeshcar.ruta2))
+			lamatriz(23,1) = 'folio2'
+			lamatriz(23,2) = ALLTRIM(STR(entidadeshcar.folio2))
+			lamatriz(24,1) = 'identidadh'
+			lamatriz(24,2) = ALLTRIM(STR(entidadeshcar.identidadh))
+			lamatriz(25,1) = 'idafiptipod'
+			lamatriz(25,2) = ALLTRIM(STR(entidadeshcar.idafiptipd))
+			
+
+			p_tabla     = 'entidadesh'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Sub-Cuentas ",0+48+0,"Error")
+			ENDIF 
+			
+			SELECT entidadeshcar
+			SKIP 					
+		ENDDO 
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT entidadeshcar
+	USE IN entidadeshcar
+	ENDIF 	&& 1- Carga de Archivo de Sub-Entidades -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos de Claro
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+*		=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de Entidadesh -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+*/ FINAL  Sub-Entidades - Cuentas
+*/------------------------------------------------------------------------------------------------------------
+
 
 
 
@@ -1658,6 +1826,19 @@ FUNCTION CargaLineas
  		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
 		&eje
 
+		COUNT TO v_registros 
+		IF v_registros > 0 THEN 
+			MESSAGEBOX(v_registros)
+			*Elimino las subcuentas que tenga el sistema
+			*La carga debe hacerce con la tabla vacia
+			sqlmatriz(1)=" delete * from lineas "
+			verror=sqlrun(vconeccionF,"lineas")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Lineas... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+		ENDIF 		
+		
 		DIMENSION lamatriz(7,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
@@ -1990,3 +2171,152 @@ ENDFUNC
 
 
 *******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ Carga de Localidades
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaLocalidades
+	PARAMETERS p_idimportap, p_archivo, p_func
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Localidades y Provincias -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+		if file(".\localidadescar.dbf") THEN
+			if used("localidadescar") then
+				sele localidadescar
+				use
+			endif
+			DELETE FILE .\localidadescar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\localidadescar FREE ( localidad c(10), nombre C(200), cp c(50), provincia C(10), nprovincia C(60) )			
+					
+		SELECT localidadescar
+*		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+
+		COUNT TO v_registros 
+		IF v_registros > 0 THEN 
+			*Elimino las Entidades que tenga el sistema
+			*La carga debe hacerce con la tabla vacia
+			sqlmatriz(1)=" delete from localidades "
+			verror=sqlrun(vconeccionF,"local")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de localidades... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF	
+			sqlmatriz(1)=" delete from provincias "
+			verror=sqlrun(vconeccionF,"provi")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de provincias... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF		
+			
+		ENDIF 
+		
+		SELECT localidadescar
+		
+		
+		DIMENSION lamatriz(4,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		GO TOP 
+		DO WHILE !EOF()
+			lamatriz(1,1) = 'localidad'
+			lamatriz(1,2) = "'"+ALLTRIM(localidadescar.localidad)+"'"
+			lamatriz(2,1) = 'nombre'
+			lamatriz(2,2) = "'"+ALLTRIM(localidadescar.nombre)+"'"
+			lamatriz(3,1) = 'cp'
+			lamatriz(3,2) = "'"+ALLTRIM(localidadescar.cp)+"'"
+			lamatriz(4,1) = 'provincia'
+			lamatriz(4,2) = "'"+ALLTRIM(localidadescar.provincia)+"'"
+
+			p_tabla     = 'localidades'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Localidades ",0+48+0,"Error")
+			ENDIF 
+			
+			SELECT localidadescar
+			SKIP 					
+		ENDDO 
+
+		SET ENGINEBEHAVIOR 70
+		SELECT provincia, nprovincia FROM localidadescar INTO CURSOR provinciascar GROUP BY provincia
+		SET ENGINEBEHAVIOR 90 
+		SELECT provinciascar
+		
+		DIMENSION lamatriz(3,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		GO TOP 
+		DO WHILE !EOF()
+			lamatriz(1,1) = 'provincia'
+			lamatriz(1,2) = "'"+ALLTRIM(provinciascar.provincia)+"'"
+			lamatriz(2,1) = 'nombre'
+			lamatriz(2,2) = "'"+ALLTRIM(provinciascar.nprovincia)+"'"
+			lamatriz(3,1) = 'pais'
+			lamatriz(3,2) = "'01'"
+
+			p_tabla     = 'provincias'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Provincias ",0+48+0,"Error")
+			ENDIF 
+			
+			SELECT provinciascar
+			SKIP 					
+		ENDDO 
+				
+		
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT localidadescar
+	USE IN localidadescar
+	SELECT provinciascar
+	USE IN provinciascar
+	ENDIF 	&& 1- Carga de Archivo de Localidades -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos de Claro
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+*/ FINAL  Carga de CargaLocalidades
+*/------------------------------------------------------------------------------------------------------------
