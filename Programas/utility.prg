@@ -10173,7 +10173,7 @@ PARAMETERS  para_entidad, para_monto
 
 	vconeccionCR = abreycierracon(0,_SYSSCHEMA)
 
-	sqlmatriz(1)=" SELECT * FROM processarmkfc.tipocompro where detalle like 'RECIBO%' LIMIT 1 "
+	sqlmatriz(1)=" SELECT * FROM tipocompro where detalle like 'RECIBO%' LIMIT 1 "
 	verror=sqlrun(vconeccionCR ,"signocredito_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Crédito del Cliente... ",0+48+0,"Error")
