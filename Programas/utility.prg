@@ -4714,7 +4714,7 @@ IF v_idregistro	> 0
 	v_nombre	= Comprobante_sql.nombre+" "+Comprobante_sql.apellido
 	v_puntov	= comprobante_sql.puntov
 	v_numComp	= comprobante_sql.numero
-	v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
+*!*		v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
 
 
 	*** Busco el comprobante de ajuste para el punto de venta asociado al comprobante
@@ -4754,13 +4754,18 @@ ENDIF
 	
 	SELECT compAjusteAso 
 	GO TOP 
+
 	v_pventaA	 = compAjusteAso.pventa
 	v_idcomprobaA= compAjusteAso.idcomproba
+	v_puntoVA	 = compAjusteAso.puntov
+
+	IF v_idregistro > 0 THEN 
+		v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
+	ENDIF 
 
 
 	v_idajuste 	 = maxnumeroidx("idajuste","I","ajustestockp",1)
 	
-	v_puntoVA	 = compAjusteAso.puntov
 	v_numero 	 = maxnumerocom(v_idcomprobaA, v_pventaA,1)
 	
 	v_fecha		 = &v_tablaDatos..fecha
