@@ -10169,11 +10169,22 @@ ENDFUNC
 
 
 FUNCTION CreditoLimiteE
-PARAMETERS  para_entidad
+PARAMETERS  para_entidad, para_monto
 
 	vconeccionCR = abreycierracon(0,_SYSSCHEMA)
 
-	sqlmatriz(1)=" SELECT cc.entidad, (sum(ifnull(cr.importe,0)) + cc.saldo) as credito "
+	sqlmatriz(1)=" SELECT * FROM processarmkfc.tipocompro where detalle like 'RECIBO%' LIMIT 1 "
+	verror=sqlrun(vconeccionCR ,"signocredito_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Crédito del Cliente... ",0+48+0,"Error")
+	    RETURN 0  
+	ENDIF
+	SELECT signocredito_sql
+	v_signosaldo = signocredito_sql.opera
+	USE IN signocredito_sql 
+
+
+	sqlmatriz(1)=" SELECT cc.entidad, (sum(ifnull("+ALLTRIM(STR(v_signosaldo))+"*cr.importe,0)) + cc.saldo) as credito "
 	sqlmatriz(2)=" FROM ctactesaldo cc left join entidadescr cr on cc.entidad = cr.entidad  " 
 	sqlmatriz(4)=" WHERE  cc.entidad = "+ALLTRIM(STR(para_entidad))
   
@@ -10189,7 +10200,7 @@ PARAMETERS  para_entidad
 	IF EOF()
 		RETURN 0
 	ENDIF
-	vcredito = credito_sql.credito
+	vcredito = (credito_sql.credito + para_monto) * v_signosaldo
 	USE IN credito_sql
 	
 	RETURN vcredito
