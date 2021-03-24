@@ -3764,7 +3764,10 @@ p_aliasreto  = ""
 	SELECT * FROM grupotmp0 INTO TABLE .\&para_aliasd
 
 	USE IN grupotmp0
-	USE IN grupotmp1
+	IF USED("grupotmp1") THEN 
+		USE IN grupotmp1
+	ENDIF 
+*!*		USE IN grupotmp1
 	USE IN gruposall_sql 
 	p_aliasreto  = para_aliasd
 	RETURN p_aliasreto  

@@ -1963,6 +1963,15 @@ FUNCTION CargaArticulos
 			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulosimp ",0+48+0,"Eliminación de Registros")
 			    RETURN -9
 			ENDIF 
+	
+			*** Obtengo todas las condiciones Fiscales para Cargar los impuestos ***
+			sqlmatriz(1)="select * from condfiscal "
+			verror=sqlrun(vconeccion,"Cfiscal")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Obtencion de las Condiciones Fiscales ",0+48+0,"Eliminación de Registros")
+			    RETURN -9
+			ENDIF 
+					
 					
 			*** Borro listaprecioh (lista 1) ***
 			sqlmatriz(1)="delete from listaprecioh where idlista = 1 "
@@ -2011,7 +2020,7 @@ FUNCTION CargaArticulos
 		v_fechaAct = ALLTRIM(DTOS(DATE()))
 
 		DIMENSION lamatriz(17,2)
-		DIMENSION lamatriz2(3,2)
+		DIMENSION lamatriz2(4,2)
 		DIMENSION lamatriz3(6,2)
 		DIMENSION lamatriz4(4,2)
 		
@@ -2037,7 +2046,7 @@ FUNCTION CargaArticulos
 			lamatriz(5,1) = 'codbarra'
 			lamatriz(5,2) = "'"+ALLTRIM(articuloscar.codbarra)+"'"
 			lamatriz(6,1) = 'costo'
-			lamatriz(6,2) = ALLTRIM(STR(articuloscar.costo,13,4))
+			lamatriz(6,2) = ALLTRIM(STR(articuloscar.costo,13,2))
 			lamatriz(7,1) = 'linea'
 			lamatriz(7,2) = "'"+ALLTRIM(articuloscar.linea)+"'"
 			lamatriz(8,1) = 'ctrlstock'
@@ -2049,15 +2058,15 @@ FUNCTION CargaArticulos
 			lamatriz(11,1) = 'stockmin'
 			lamatriz(11,2) = ALLTRIM(STR(articuloscar.stockmin))
 			lamatriz(12,1) = 'desc1'
-			lamatriz(12,2) = ALLTRIM(STR(articuloscar.desc1,13,4))
+			lamatriz(12,2) = ALLTRIM(STR(articuloscar.desc1,13,2))
 			lamatriz(13,1) = 'desc2'
-			lamatriz(13,2) = ALLTRIM(STR(articuloscar.desc2,13,4))
+			lamatriz(13,2) = ALLTRIM(STR(articuloscar.desc2,13,2))
 			lamatriz(14,1) = 'desc3'
-			lamatriz(14,2) = ALLTRIM(STR(articuloscar.desc3,13,4))
+			lamatriz(14,2) = ALLTRIM(STR(articuloscar.desc3,13,2))
 			lamatriz(15,1) = 'desc4'
-			lamatriz(15,2) = ALLTRIM(STR(articuloscar.desc4,13,4))
+			lamatriz(15,2) = ALLTRIM(STR(articuloscar.desc4,13,2))
 			lamatriz(16,1) = 'desc5'
-			lamatriz(16,2) = ALLTRIM(STR(articuloscar.desc5,13,4))
+			lamatriz(16,2) = ALLTRIM(STR(articuloscar.desc5,13,2))
 			lamatriz(17,1) = 'moneda'
 			lamatriz(17,2) = ALLTRIM(STR(articuloscar.moneda))
 					
@@ -2069,29 +2078,39 @@ FUNCTION CargaArticulos
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos ",0+48+0,"Error")
 			ELSE
 				 *** Guardo el historial del costo del articulo ***
-				   guardaHistCostoArt(articuloscar.articulo, articuloscar.cost)
+*				   guardaHistCostoArt(articuloscar.articulo, articuloscar.costo)
 				 
-			*** Cargo el el impuesto del articulo en tabla articulosimp ***
-				p_tipoope     = 'I'
-				p_condicion   = ''
-				v_titulo      = " EL ALTA "
+				 
+				 SELECT Cfiscal
+				 GO TOP 
+				 DO while !EOF()
+				*** Cargo el el impuesto del articulo en tabla articulosimp ***
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					
+					v_idartimp = v_idartimp + 1
+					lamatriz2(1,1)='idartimp'
+					lamatriz2(1,2)= ALLTRIM(STR(v_idartimp))
+					lamatriz2(2,1)='articulo'
+					lamatriz2(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+					lamatriz2(3,1)='impuesto'
+					lamatriz2(3,2)=ALLTRIM(STR(articuloscar.impuesto))
+					lamatriz2(4,1)='iva'
+					lamatriz2(4,2)=ALLTRIM(STR(cfiscal.iva))
+		
+		
+					p_tabla     = 'articulosimp'
+					p_matriz    = 'lamatriz2'
+					p_conexion  = vconeccionF
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Impuestos ",0+48+0,"Error")
+					
+					ENDIF 
 				
-				v_idartimp = v_idartimp + 1
-				lamatriz2(1,1)='idartimp'
-				lamatriz2(1,2)= ALLTRIM(STR(v_idartimp))
-				lamatriz2(2,1)='articulo'
-				lamatriz2(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
-				lamatriz2(3,1)='impuesto'
-				lamatriz2(3,2)=ALLTRIM(STR(articuloscar.impuesto))
-	
-	
-				p_tabla     = 'articulosimp'
-				p_matriz    = 'lamatriz2'
-				p_conexion  = vconeccionF
-				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Impuestos ",0+48+0,"Error")
-				
-				ENDIF 
+					SELECT cfiscal
+					SKIP 
+				ENDDO 
 				
 			*** Cargo el margen del articulo en tabla listaprecioh ***
 					p_tipoope     = 'I'
@@ -2125,28 +2144,31 @@ FUNCTION CargaArticulos
 					
 					
 				*** Cargo el proveedor asociado al articulo y el codigo del proveedor en tabla articulosimp***
+				IF articuloscar.proveedor > 0 THEN
+				 
 					p_tipoope     = 'I'
-				p_condicion   = ''
-				v_titulo      = " EL ALTA "
-				
-				v_idartpro = v_idartpro + 1
-				lamatriz4(1,1)='idartpro'
-				lamatriz4(1,2)= ALLTRIM(STR(v_idartpro))
-				lamatriz4(2,1)='articulo'
-				lamatriz4(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
-				lamatriz4(3,1)='entidad'
-				lamatriz4(3,2)=ALLTRIM(STR(articuloscar.proveedor))
-				lamatriz4(4,1)='codigop'
-				lamatriz4(4,2)="'"+ALLTRIM(articuloscar.codigop)+"'"	
-	
-				p_tabla     = 'articulospro'
-				p_matriz    = 'lamatriz4'
-				p_conexion  = vconeccionF
-				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Proveedor ",0+48+0,"Error")
-				
-				ENDIF 
-				
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					
+					v_idartpro = v_idartpro + 1
+					lamatriz4(1,1)='idartpro'
+					lamatriz4(1,2)= ALLTRIM(STR(v_idartpro))
+					lamatriz4(2,1)='articulo'
+					lamatriz4(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+					lamatriz4(3,1)='entidad'
+					lamatriz4(3,2)=ALLTRIM(STR(articuloscar.proveedor))
+					lamatriz4(4,1)='codigop'
+					lamatriz4(4,2)="'"+ALLTRIM(articuloscar.codigop)+"'"	
+		
+					p_tabla     = 'articulospro'
+					p_matriz    = 'lamatriz4'
+					p_conexion  = vconeccionF
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Proveedor ",0+48+0,"Error")
+					
+					ENDIF 
+					
+				ENDIF 				
 	
 			ENDIF 
 			
