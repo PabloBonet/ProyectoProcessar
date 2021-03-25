@@ -1668,7 +1668,7 @@ FUNCTION CargaSubEntidades
 		CREATE TABLE .\entidadeshcar FREE (entidad I,servicios I, cuenta I,  apellido C(100), nombre c(100), cargo C(100), compania C(100), cuit C(13), direccion C(100), ;
 					localidad C(10), iva I, fechaalta C(8), telefono C(50), cp C(50), fax C(50), ;
 					email C(254), dni I, tipodoc C(3),  ;
-					fechanac C(8), ruta1 I, folio1 I, ruta2 I, folio2 I, identidadh I, idafiptipd I )			
+					fechanac C(8), ruta1 I, folio1 I, ruta2 I, folio2 I, identidadh I, idafiptipd I, bocaservi c(50) )			
 					
 		SELECT entidadeshcar 
  		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
@@ -1685,10 +1685,20 @@ FUNCTION CargaSubEntidades
 			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Sub-Cuentas... ",0+48+0,"Error")
 			    RETURN 
 			ENDIF
+	
+			sqlmatriz(1)=" delete from bocaservicios "
+			verror=sqlrun(vconeccionF,"bocaser")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Bocas de Servicios... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+			
 		ENDIF 		
 		SELECT entidadeshcar
 
 		DIMENSION lamatriz(25,2)
+		DIMENSION lamatriz2(12,2)
+		
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
@@ -1752,6 +1762,44 @@ FUNCTION CargaSubEntidades
 			p_conexion  = vconeccionF
 			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Sub-Cuentas ",0+48+0,"Error")
+			ENDIF 
+			
+			**BOCAS DE SERVICIOS
+			IF !(ALLTRIM(entidadeshcar.bocaservi) = '0') AND !EMPTY(ALLTRIM(entidadeshcar.bocaservi)) THEN 
+			
+				lamatriz2(1,1) = 'idbocaser'
+				lamatriz2(1,2) = "0"
+				lamatriz2(2,1) = 'identidadh'
+				lamatriz2(2,2) = ALLTRIM(STR(entidadeshcar.identidadh))
+				lamatriz2(3,1) = 'bocanumero'
+				lamatriz2(3,2) = "'"+ALLTRIM(entidadeshcar.bocaservi)+"'"
+				lamatriz2(4,1) = 'ruta1'
+				lamatriz2(4,2) = ALLTRIM(STR(entidadeshcar.ruta1))
+				lamatriz2(5,1) = 'folio1'
+				lamatriz2(5,2) = ALLTRIM(STR(entidadeshcar.folio1))
+				lamatriz2(6,1) = 'ruta2'
+				lamatriz2(6,2) = ALLTRIM(STR(entidadeshcar.ruta2))
+				lamatriz2(7,1) = 'folio2'
+				lamatriz2(7,2) = ALLTRIM(STR(entidadeshcar.folio2))
+				lamatriz2(8,1) = 'facturar'
+				lamatriz2(8,2) = "'S'"
+				lamatriz2(9,1) = 'habilitado'
+				lamatriz2(9,2) = "'S'"
+				lamatriz2(10,1) = 'direccion'
+				lamatriz2(10,2) = "'"+ALLTRIM(entidadeshcar.direccion)+"'"
+				lamatriz2(11,1) = 'ubicacion'
+				lamatriz2(11,2) = "''"
+				lamatriz2(12,1) = 'idtiposer'
+				lamatriz2(12,2) = "1"
+				
+
+				p_tabla     = 'bocaservicios'
+				p_matriz    = 'lamatriz2'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en importación de Bocas de Servicios ",0+48+0,"Error")
+				ENDIF 
+				
 			ENDIF 
 			
 			SELECT entidadeshcar
