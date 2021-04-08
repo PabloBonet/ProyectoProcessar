@@ -2654,7 +2654,7 @@ ENDIF
 
 			v_tipoOp= 0
 
-			v_neto = a_monto * v_opera
+			v_neto = 0.00
 			v_descuento = 0.00
 			v_recargo = 0
 			v_operaExenta = ""
@@ -2674,7 +2674,8 @@ ENDIF
 			v_idperiodo = 0			
 			v_impuestos = 0
 						
-			v_total = v_neto - v_Descuento +v_impuestos
+			*v_total = v_neto - v_Descuento +v_impuestos
+			v_total = 0.00
 		
 			
 			v_observa1 = "Comprobante de ajuste asociado a: "+ALLTRIM(a_numComp)
@@ -2819,6 +2820,81 @@ ENDIF
 			    RETURN 
 			ENDIF 
 		
+		
+			**** Agrego las cuotas de la factura
+			IF a_cuota > 0 
+				DIMENSION lamatriz10(6,2)
+				** Cuota 0 (anticipo en Cero)
+				v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
+
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					p_tabla     = 'facturascta'
+					p_matriz    = 'lamatriz10'
+					p_conexion  = vconeccionF
+
+
+
+					lamatriz10(1,1)='idcuotafc'
+					lamatriz10(1,2)=ALLTRIM(STR(v_idcuotafc))
+					lamatriz10(2,1)='idfactura'
+					lamatriz10(2,2)=ALLTRIM(STR(v_idfactura))
+					lamatriz10(3,1)='cuota'
+					lamatriz10(3,2)= "0"
+					lamatriz10(4,1)='cancuotas'
+					lamatriz10(4,2)=ALLTRIM(STR(a_cuota))
+					lamatriz10(5,1)='importe'
+					lamatriz10(5,2)="0.00"
+					lamatriz10(6,1)='fechavenc'
+					lamatriz10(6,2)="'"+ALLTRIM(a_vtocta)+"'"
+												
+					
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+					
+				v_montoCta = ROUND(a_monto / a_cuota,2)
+				
+				
+				FOR ctai = 1 TO a_cuota
+				
+					v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
+
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					p_tabla     = 'facturascta'
+					p_matriz    = 'lamatriz10'
+					p_conexion  = vconeccionF
+					
+
+
+					lamatriz10(1,1)='idcuotafc'
+					lamatriz10(1,2)=ALLTRIM(STR(v_idcuotafc))
+					lamatriz10(2,1)='idfactura'
+					lamatriz10(2,2)=ALLTRIM(STR(v_idfactura))
+					lamatriz10(3,1)='cuota'
+					lamatriz10(3,2)= ALLTRIM(STR(ctai))
+					lamatriz10(4,1)='cancuotas'
+					lamatriz10(4,2)=ALLTRIM(STR(a_cuota))
+					lamatriz10(5,1)='importe'
+					lamatriz10(5,2)=ALLTRIM(STR(v_montoCta,13,4))
+					lamatriz10(6,1)='fechavenc'
+					lamatriz10(6,2)="'"+ALLTRIM(a_vtocta)+"'"
+												
+					
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la grabación de la cta",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+				
+				
+				
+				ENDFOR 
+					
+			ENDIF 
 		
 			registrarEstado("facturas","idfactura",v_idfactura,'I',"AUTORIZADO")
 		
@@ -3096,6 +3172,7 @@ PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
 		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idfactura)),0+48+0,"Error")
 		    RETURN .F.
 		ENDIF			
+		
 		
 		RETURN .T.
 
