@@ -2485,6 +2485,9 @@ FUNCTION CargaCtaCteClientes
 		 RETURN 0
 	ENDIF 
 
+	SET ENGINEBEHAVIOR 70
+	SELECT entidad,servicio,cuenta,fecha,numerocomp,SUM(monto) as monto,cuota,vtocta FROM ctasctesentcar GROUP BY entidad,numerocomp INTO TABLE ctasctesentcarA
+	SET ENGINEBEHAVIOR 90
 v_pventaIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,1,2)))
 v_idcompIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,3,2)))
 v_pventaEgr = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,5,2)))
@@ -2534,21 +2537,21 @@ ENDIF
 
 
 
-		SELECT ctasctesentcar
+		SELECT ctasctesentcarA
 				
 		GO TOP 
 		DO WHILE !EOF()
 		
 		
 		
-			a_entidad = ctasctesentcar.entidad
-			a_servicio= ctasctesentcar.servicio
-			a_cuenta  = ctasctesentcar.cuenta
-			a_fecha	  = ctasctesentcar.fecha
-			a_numComp = ctasctesentcar.numeroComp
-			a_monto	  = ctasctesentcar.monto
-			a_cuota   = IIF(ISNULL(ctasctesentcar.cuota)=.T.,0,ctasctesentcar.cuota)
-			a_vtocta  = IIF(ISNULL(ctasctesentcar.vtocta)=.T.,'',ctasctesentcar.vtocta)
+			a_entidad = ctasctesentcarA.entidad
+			a_servicio= ctasctesentcarA.servicio
+			a_cuenta  = ctasctesentcarA.cuenta
+			a_fecha	  = ctasctesentcarA.fecha
+			a_numComp = ctasctesentcarA.numeroComp
+			a_monto	  = ctasctesentcarA.monto
+			a_cuota   = IIF(ISNULL(ctasctesentcarA.cuota)=.T.,0,ctasctesentcarA.cuota)
+			a_vtocta  = IIF(ISNULL(ctasctesentcarA.vtocta)=.T.,'',ctasctesentcarA.vtocta)
 			
 			
 			
@@ -2820,9 +2823,32 @@ ENDIF
 			    RETURN 
 			ENDIF 
 		
+			
 		
+			
+		
+			
+		
+			SELECT * FROM ctasctesentcar WHERE cuota > 0 and entidad = a_entidad AND ALLTRIM(numerocomp) == ALLTRIM(a_numComp) ORDER BY cuota INTO TABLE ctasctesentcard
 			**** Agrego las cuotas de la factura
-			IF a_cuota > 0 
+			
+			SELECT ctasctesentcard
+			GO TOP 
+
+			v_cantReg = RECCOUNT()
+
+			IF v_cantReg > 0
+			
+				
+				SELECT ctasctesentcard
+				GO BOTTOM 
+				
+				v_cantCtas = ctasctesentcard.cuota
+				
+				SELECT ctasctesentcard
+				GO TOP 
+			
+				
 				DIMENSION lamatriz10(6,2)
 				** Cuota 0 (anticipo en Cero)
 				v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
@@ -2854,12 +2880,12 @@ ENDIF
 					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
 					    RETURN 
 					ENDIF 
-					
-				v_montoCta = ROUND(a_monto / a_cuota,2)
+			
+			SELECT ctasctesentcard
+			GO top	
+				DO WHILE NOT EOF()
 				
-				
-				FOR ctai = 1 TO a_cuota
-				
+					v_montocta = ctasctesentcard.monto
 					v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
 
 					p_tipoope     = 'I'
@@ -2876,11 +2902,11 @@ ENDIF
 					lamatriz10(2,1)='idfactura'
 					lamatriz10(2,2)=ALLTRIM(STR(v_idfactura))
 					lamatriz10(3,1)='cuota'
-					lamatriz10(3,2)= ALLTRIM(STR(ctai))
+					lamatriz10(3,2)= ALLTRIM(STR(a_cuota))
 					lamatriz10(4,1)='cancuotas'
-					lamatriz10(4,2)=ALLTRIM(STR(a_cuota))
+					lamatriz10(4,2)=ALLTRIM(STR(v_cantCtas))
 					lamatriz10(5,1)='importe'
-					lamatriz10(5,2)=ALLTRIM(STR(v_montoCta,13,4))
+					lamatriz10(5,2)=ALLTRIM(STR(v_montocta,13,4))
 					lamatriz10(6,1)='fechavenc'
 					lamatriz10(6,2)="'"+ALLTRIM(a_vtocta)+"'"
 												
@@ -2890,23 +2916,106 @@ ENDIF
 					    RETURN 
 					ENDIF 
 				
-				
-				
-				ENDFOR 
-					
+					SELECT ctasctesentcard
+					SKIP 1
+
+				ENDDO
 			ENDIF 
+			
+			
+*!*				
+*!*				IF a_cuota > 0 
+*!*					DIMENSION lamatriz10(6,2)
+*!*					** Cuota 0 (anticipo en Cero)
+*!*					v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
+
+*!*						p_tipoope     = 'I'
+*!*						p_condicion   = ''
+*!*						v_titulo      = " EL ALTA "
+*!*						p_tabla     = 'facturascta'
+*!*						p_matriz    = 'lamatriz10'
+*!*						p_conexion  = vconeccionF
+
+
+
+*!*						lamatriz10(1,1)='idcuotafc'
+*!*						lamatriz10(1,2)=ALLTRIM(STR(v_idcuotafc))
+*!*						lamatriz10(2,1)='idfactura'
+*!*						lamatriz10(2,2)=ALLTRIM(STR(v_idfactura))
+*!*						lamatriz10(3,1)='cuota'
+*!*						lamatriz10(3,2)= "0"
+*!*						lamatriz10(4,1)='cancuotas'
+*!*						lamatriz10(4,2)=ALLTRIM(STR(a_cuota))
+*!*						lamatriz10(5,1)='importe'
+*!*						lamatriz10(5,2)="0.00"
+*!*						lamatriz10(6,1)='fechavenc'
+*!*						lamatriz10(6,2)="'"+ALLTRIM(a_vtocta)+"'"
+*!*													
+*!*						
+*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+*!*						    RETURN 
+*!*						ENDIF 
+*!*						
+*!*					v_montoCta = ROUND(a_monto / a_cuota,2)
+*!*					
+*!*					
+*!*					FOR ctai = 1 TO a_cuota
+*!*					
+*!*						v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
+
+*!*						p_tipoope     = 'I'
+*!*						p_condicion   = ''
+*!*						v_titulo      = " EL ALTA "
+*!*						p_tabla     = 'facturascta'
+*!*						p_matriz    = 'lamatriz10'
+*!*						p_conexion  = vconeccionF
+*!*						
+
+
+*!*						lamatriz10(1,1)='idcuotafc'
+*!*						lamatriz10(1,2)=ALLTRIM(STR(v_idcuotafc))
+*!*						lamatriz10(2,1)='idfactura'
+*!*						lamatriz10(2,2)=ALLTRIM(STR(v_idfactura))
+*!*						lamatriz10(3,1)='cuota'
+*!*						lamatriz10(3,2)= ALLTRIM(STR(ctai))
+*!*						lamatriz10(4,1)='cancuotas'
+*!*						lamatriz10(4,2)=ALLTRIM(STR(a_cuota))
+*!*						lamatriz10(5,1)='importe'
+*!*						lamatriz10(5,2)=ALLTRIM(STR(v_montoCta,13,4))
+*!*						lamatriz10(6,1)='fechavenc'
+*!*						lamatriz10(6,2)="'"+ALLTRIM(a_vtocta)+"'"
+*!*													
+*!*						
+*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*						    MESSAGEBOX("Ha Ocurrido un Error en la grabación de la cta",0+48+0,"Error")
+*!*						    RETURN 
+*!*						ENDIF 
+*!*					
+*!*					
+*!*					
+*!*					ENDFOR 
+*!*						
+*!*				ENDIF
+*!*			 
 		
 			registrarEstado("facturas","idfactura",v_idfactura,'I',"AUTORIZADO")
 		
 		
 			
-			SELECT ctasctesentcar
+			SELECT ctasctesentcarA
 			SKIP 					
 		ENDDO 
+			
+		
+			
 				
 		
 */*/*/*/*/*/
 	=abreycierracon(vconeccionF,"")	
+	SELECT ctasctesentcarA
+	USE IN ctasctesentcarA
+	
 	SELECT ctasctesentcar
 	USE IN ctasctesentcar
 
