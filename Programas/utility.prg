@@ -5859,6 +5859,8 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		
 		SELECT tablacampo
 		GO top
+
+		
 		DO WHILE !EOF()
 			SELECT AstoValorA
 			INSERT INTO AstoValorA VALUES (AstoValorA_sql.idastomode, AstoValorA_sql.idastocuen, AstoValorA_sql.idcpoconta, AstoValorA_sql.dh, ;
@@ -5894,8 +5896,11 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	ALTER table AstoCuentaA ADD codigo c(22)
 	ALTER table AstoCuentaA ADD nombrecta c(100)
 	ZAP 
+	INDEX on ALLTRIM(codigocta) TAG codigocta 
+	SET ORDER TO codigocta 
 	SELECT AstoCuentaA_sql 
 	GO TOP 
+
 	DO WHILE !EOF() 
 		
 		sqlmatriz(1)=" Select "+ALLTRIM(AstoCuentaA_sql.campo)+" as valor from "+ALLTRIM(AstoCuentaA_sql.tabla)
@@ -5974,11 +5979,17 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 					var_idpland = idpland_sql.idpland 
 					var_codigo	= idpland_sql.codigo
 					var_nombrecta=idpland_sql.nombrecta
-					INSERT INTO AstoCuentaA VALUES (AstoCuentaA_sql.idastomode, AstoCuentaA_sql.idastocuen, AstoCuentaA_sql.idcpoconta, AstoCuentaA_sql.dh, ;
+
+					SELECT AstoCuentaA
+					IF !SEEK(AstoCuentaA_sql.codigocta) THEN &&** AGREGADO PARA VERIFICAR QUE YA NO HAYA INGRESADO LA CUENTA **
+					
+						INSERT INTO AstoCuentaA VALUES (AstoCuentaA_sql.idastomode, AstoCuentaA_sql.idastocuen, AstoCuentaA_sql.idcpoconta, AstoCuentaA_sql.dh, ;
 										   AstoCuentaA_sql.detalle, AstoCuentaA_sql.tabla, AstoCuentaA_sql.campo, AstoCuentaA_sql.tipo, ;
 										   AstoCuentaA_sql.detacpo, AstoCuentaA_sql.valor1, AstoCuentaA_sql.compara, AstoCuentaA_sql.valor2, ;
 										   AstoCuentaA_sql.codigocta, AstoCuentaA_sql.tablag, AstoCuentaA_sql.campog, AstoCuentaA_sql.tipog, ;
 										   AstoCuentaA_sql.idcpocontg,var_valorinc,var_idpland,var_codigo,var_nombrecta)
+					ENDIF 
+
 				ENDIF 
 				SELECT idpland_sql
 				USE IN idpland_sql 
@@ -5995,7 +6006,9 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	 =abreycierracon(vconeccionATO,"")
 	 
 	 SELECT AstoCuentaA
+	 SET ORDER TO 
 	 GO TOP 
+	 
 
 	 ************* Union de las dos partes que componen el Asiento, ************************************
 	 ************* Se Unen el Valor o Importe a Imputar con la Cuenta que recibe la Imputación *********
@@ -9879,7 +9892,7 @@ PARAMETERS pan_idcomproba, pan_idregistro
 				ENDDO 
 				
 	
-				** Elimino los registros de Cobro que corresponden al Redibo Anulado o Pago Anulado ***	
+				** Elimino los registros de Cobro que corresponden al Recibo Anulado o Pago Anulado ***	
 				***************************************************************************************
 				* si el origen es detallecobros es un recibo por lo que hay que elimirar el registro asociado
 				* al recibo pasado como parametro para anular
