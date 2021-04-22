@@ -7725,7 +7725,20 @@ ENDFUNC
 
 
 FUNCTION frandom
-	RETURN ALLTRIM(STRTRAN(SUBSTR(STR((RAND()*_SYSRAND)),2),'','0'))
+PARAMETERS p_digitos
+
+IF TYPE('p_digitos') <> 'N'
+
+	RETURN ALLTRIM(STRTRAN(SUBSTR(STR((RAND(-1)*_SYSRAND)),2),'','0'))
+ELSE
+
+	v_expo = p_digitos -1 
+	
+	v_rand = 10^v_expo
+	
+	RETURN ALLTRIM(STRTRAN(SUBSTR(STR((RAND(-1)*v_rand)),2),'','0'))
+ENDIF 
+	
 ENDFUNC 
 
 
@@ -11089,3 +11102,70 @@ PARAMETERS pl_tablaeti
 
 RETURN cretorno
 ENDFUNC
+
+*********************************************************************************************
+**Función para pedir autorización para realizar la función pasada como parámetro
+** Busca en la base de datos si corresponde pedir autorización según el usuario y la función.
+** Genera un pedido de autorización que deberá autorizar un usuario habilitado para ello
+**
+** Parametros: p_funcion: nombre clave de la función que se desea autorizar
+**
+** Retorno: Retorna True en caso de que el usuario esté autorizado. False en otro caso
+*********************************************************************************************
+
+
+FUNCTION pedirAutorizacion
+PARAMETERS p_funcion
+
+	
+	v_autorizado = .F.
+	
+	IF EMPTY(alltrim(p_funcion))= .T.
+		
+		MESSAGEBOX("El parametro ingresado en la función pedir autorización es incorrecto",0+16+256,"Error al autorizar usuario")
+		
+		RETURN .F.
+	
+	ENDIF 
+	
+		
+	 	** Me conecto a la Base de datos
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+				
+		*Busco en la tabla de autorización de funciones según la clave
+		
+		sqlmatriz(1)=" SELECT * FROM autorizafn "
+		sqlmatriz(2)=" where nivel = '"+ALLTRIM(_SYSNIVELUSU)+"' and clave = '"+ALLTRIM(p_funcion)+"'"
+		verror=sqlrun(vconeccionF,"autorizafn_sql")
+		
+		IF verror=.f.
+			MESSAGEBOX("Error en la consulta del usuario al pedir la autorización",0+16+256,"Error al autorizar usuario")
+				* me desconecto
+			=abreycierracon(vconeccionF,"")
+			RETURN .F.
+		ENDIF 
+		
+		SELECT autorizafn_sql
+		GO TOP 
+		
+		v_cantReg = RECCOUNT()
+		
+		IF v_cantReg > 0
+			
+			v_autoriza = autorizafn_sql.autoriza
+			
+			IF ALLTRIM(v_autoriza) = 'S'
+				v_autorizado = .T.
+			ELSE
+				
+				DO FORM pedirautorizacion TO v_autorizado
+								
+			ENDIF 
+		ELSE
+			v_autorizado = .T.
+		
+		ENDIF 
+
+	RETURN v_autorizado
+
+ENDFUNC 
