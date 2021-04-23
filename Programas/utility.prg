@@ -5834,20 +5834,32 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 
 
 	SELECT AstoValorA_sql
+
+	SELECT v.idastomode, v.idastocuen, v.idcpoconta, v.dh, v.detalle, v.tabla, v.campo, v.opera, v.idastoval, ;
+		c.tabla as tablaf, c.campo as campof, c.tipo, c.valor1, c.compara, c.valor2, c.codigocta, c.tablag, c.tipog, c.idcpocontg ;
+		FROM AstoValorA_sql v LEFT JOIN AstoCuentaA_SQL c ON c.idastocuen = v.idastocuen INTO TABLE AstoValorAC_sql 
+		
+
 	SELECT AstoCuentaA_sql
+
 
 **********************************************
 ***	Armado del valor  de las cuentas a imputar 
 
-	SELECT * FROM AstoValorA_sql INTO TABLE .\AstoValorA
-	ALTER table AstoValorA ADD importe y
+*	SELECT * FROM AstoValorA_sql INTO TABLE .\AstoValorA
+	SELECT * FROM AstoValorAC_sql INTO TABLE .\AstoValorAC
+*	ALTER table AstoValorA ADD importe y
+	ALTER table AstoValorAC ADD importe y
 	ZAP 
-	SELECT AstoValorA_sql 
+	SELECT AstoValorAC_sql 
 	GO TOP 
+
 	
 	DO WHILE !EOF() 
 		
-		sqlmatriz(1)=" Select "+ALLTRIM(AstoValorA_sql.campo)+" as importe from "+ALLTRIM(AstoValorA_sql.tabla)
+*		sqlmatriz(1)=" Select *, "+ALLTRIM(AstoValorA_sql.campo)+" as importe from "+ALLTRIM(AstoValorA_sql.tabla)
+*		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
+		sqlmatriz(1)=" Select *,"+ALLTRIM(AstoValorAC_sql.campof)+" as valorcf, "+ALLTRIM(AstoValorAC_sql.campo)+" as importe from "+ALLTRIM(AstoValorAC_sql.tabla)
 		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
 			
 		verror=sqlrun(vconeccionATO,"tablacampo")
@@ -5857,24 +5869,85 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		    RETURN var_retorno
 		ENDIF
 		
-		SELECT tablacampo
-		GO top
 
+		SELECT tablacampo 
+		GO top
 		
 		DO WHILE !EOF()
-			SELECT AstoValorA
-			INSERT INTO AstoValorA VALUES (AstoValorA_sql.idastomode, AstoValorA_sql.idastocuen, AstoValorA_sql.idcpoconta, AstoValorA_sql.dh, ;
-										   AstoValorA_sql.detalle, AstoValorA_sql.tabla, AstoValorA_sql.campo, AstoValorA_sql.opera, ;
-										   AstoValorA_sql.idastoval, tablacampo.importe)
+			SELECT AstoValorAC
+
+		**decidir si incerto o no			
+		*********************************			
+			var_valor = IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),tablacampo.valorcf,ALLTRIM(tablacampo.valorf))  
+			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoValorAC_sql.valor1))','ALLTRIM(AstoValorAC_sql.valor1)')
+			&eje 
+					
+			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoValorAC_sql.valor2))','ALLTRIM(AstoValorAC_sql.valor2)')
+			&eje 
+
+			v_incerta = .f.
+			DO CASE 
+				CASE UPPER(AstoValorAC_sql.compara)="TODOS"
+					v_incerta = .t.
+				CASE UPPER(AstoValorAC_sql.compara)="ENTRE"
+					IF var_valor >= var_valor1 AND var_valor <= var_valor2 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoValorAC_sql.compara)="IGUAL"
+					IF var_valor = var_valor1 THEN 
+						v_incerta = .t. 
+					ENDIF 
+				CASE UPPER(AstoValorAC_sql.compara)="MAYOR"
+					IF var_valor > var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoValorAC_sql.compara)="MAYOR O IGUAL"
+					IF var_valor >= var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoValorAC_sql.compara)="MENOR"
+					IF var_valor < var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoValorAC_sql.compara)="MENOR O IGUAL"
+					IF var_valor <= var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoValorAC_sql.compara)="DISTINTO"
+					IF var_valor <> var_valor1 THEN 
+						v_incerta = .t.
+					ENDIF 
+				CASE UPPER(AstoValorAC_sql.compara)="GRUPO"
+					var_valorgru = IIF(TYPE("var_valor")='C',var_valor,ALLTRIM(STR(var_valor)))
+					IF GrupoCuentaContable (var_valorgru,AstoValorAC_sql.tablag,AstoValorAC_sql.campog,AstoValorAC_sql.tipog,AstoValorAC_sql.valor1, vconeccionATO) THEN 
+						v_incerta = .t.
+					ENDIF 
+
+			ENDCASE 
+			
+			IF v_incerta = .t. THEN 
+				SELECT AstoValorAC
+				
+		
+				INSERT INTO AstoValorAC VALUES (AstoValorAC_sql.idastomode, AstoValorAC_sql.idastocuen, AstoValorAC_sql.idcpoconta, AstoValorAC_sql.dh, AstoValorAC_sql.detalle, ;
+							AstoValorAC_sql.tabla, AstoValorAC_sql.campo, AstoValorAC_sql.opera, AstoValorAC_sql.idastoval, AstoValorAC_sql.tablaf, AstoValorAC_sql.campof, ;
+							AstoValorAC_sql.tipo, AstoValorAC_sql.valor1, AstoValorAC_sql.compara, AstoValorAC_sql.valor2, AstoValorAC_sql.codigocta, AstoValorAC_sql.tablag, ;
+							AstoValorAC_sql.tipog, AstoValorAC_sql.idcpocontg, tablacampo.importe)
+
+*				INSERT INTO AstoValorA VALUES (AstoValorAC_sql.idastomode, AstoValorAC_sql.idastocuen, AstoValorAC_sql.idcpoconta, AstoValorAC_sql.dh, ;
+*											   AstoValorAC_sql.detalle, AstoValorAC_sql.tabla, AstoValorAC_sql.campo, AstoValorAC_sql.opera, ;
+*											   AstoValorAC_sql.idastoval, tablacampo.importe)
+			ENDIF 
+
 			SELECT tablacampo 
 			SKIP 
 		ENDDO 
 				
-		SELECT AstoValorA_sql
+		SELECT AstoValorAC_sql
 		SKIP 
 	ENDDO 
 
-	SELECT AstoValorA
+	SELECT AstoValorAC
 	REPLACE ALL importe WITH importe * opera 
 	
 *****************************************************************
@@ -5882,7 +5955,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	SET ENGINEBEHAVIOR 70 
 	 
 	SELECT idastomode, idastocuen, idcpoconta, dh, detalle, SUM(importe) as importe ;
-		FROM AstoValorA INTO TABLE AstoValorB ORDER BY idastocuen GROUP BY idastocuen
+		FROM AstoValorAC INTO TABLE AstoValorB ORDER BY idastocuen GROUP BY idastocuen
 	
 	SET ENGINEBEHAVIOR 90 
 	
@@ -6007,7 +6080,10 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	 
 	 SELECT AstoCuentaA
 	 SET ORDER TO 
+
+
 	 GO TOP 
+
 	 
 
 	 ************* Union de las dos partes que componen el Asiento, ************************************
@@ -6028,9 +6104,9 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	 COPY TO &vpar_tablaret DELIMITED WITH ""
 	
 	 USE IN AstoCuentaA_sql
-	 USE IN AstoValorA_sql
+	 USE IN AstoValorAC_sql
 	 USE IN AstoCuentaA
-	 USE IN AstoValorA
+	 USE IN AstoValorAC
 	 USE IN AstoValorB
 	 USE IN AstoFinalA
 	 USE IN tablacuenta
@@ -7722,7 +7798,10 @@ ENDFUNC
 
 
 
-
+** FUNCION DE CALCULO DE NUMEROS ALEATORIOS
+* puede recibir como parametros la cantidad de numeros aleatorios
+* si no recibe cantidad devuelve de acuerdo a la variable _SYSRAND
+*
 
 FUNCTION frandom
 PARAMETERS p_digitos
@@ -7740,7 +7819,6 @@ ELSE
 ENDIF 
 	
 ENDFUNC 
-
 
 *** -----------------------------------------
 * Retorna el ultimo estado para un reclamo dado, segun el sector
@@ -9139,6 +9217,7 @@ FUNCTION ContabilizaMov
 	PARAMETERS pcont_tabla, pcont_id, pcont_conex
 	
 	ret_idasiento = 0
+	
 	IF TYPE('_SYSCONTABLE') <> 'N' THEN 
 		ret_idasiento = -2
 		RETURN ret_idasiento 
@@ -9162,7 +9241,7 @@ FUNCTION ContabilizaMov
 	ENDIF 
 
 	* Verifico Si el comprobante pasado para contabilizar tiene habilitada la contabilización
-	sqlmatriz(1)= " select * from comprobantes where tabla = '"+ALLTRIM(pcont_tabla)+"'"
+	sqlmatriz(1)= " select * from comprobantes where TRIM(tabla) = '"+ALLTRIM(pcont_tabla)+"'"
 	verror=sqlrun(vcone_conta ,"escompro_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Comprobantes ",0+48+0,"Error")
@@ -9175,12 +9254,14 @@ FUNCTION ContabilizaMov
 		sqlmatriz(1)= " select t.idcomproba, c.astoconta from "+ALLTRIM(pcont_tabla)+" t "
 		sqlmatriz(2)= " left join comprobantes c on c.idcomproba = t.idcomproba "
 		sqlmatriz(3)= " where "+ALLTRIM(vnombreidx)+" = "+alltrim(STR(pcont_id))
+		
 		verror=sqlrun(vcone_conta ,"asentar_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda movimientos de tablas ",0+48+0,"Error")
 		    RETURN ""  
 		ENDIF	
 		SELECT asentar_sql
+		
 		IF asentar_sql.astoconta = 'N' THEN 
 			ret_idasiento = -2
 		ENDIF 
@@ -11102,6 +11183,7 @@ PARAMETERS pl_tablaeti
 
 RETURN cretorno
 ENDFUNC
+
 
 *********************************************************************************************
 **Función para pedir autorización para realizar la función pasada como parámetro
