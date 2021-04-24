@@ -7811,7 +7811,7 @@ IF TYPE('p_digitos') <> 'N'
 	RETURN ALLTRIM(STRTRAN(SUBSTR(STR((RAND(-1)*_SYSRAND)),2),'','0'))
 ELSE
 
-	v_expo = p_digitos -1 
+	v_expo = p_digitos 
 	
 	v_rand = 10^v_expo
 	
@@ -11185,7 +11185,7 @@ RETURN cretorno
 ENDFUNC
 
 
-*********************************************************************************************
+*--------------------------------------------------------------------------------------------
 **Función para pedir autorización para realizar la función pasada como parámetro
 ** Busca en la base de datos si corresponde pedir autorización según el usuario y la función.
 ** Genera un pedido de autorización que deberá autorizar un usuario habilitado para ello
@@ -11193,13 +11193,21 @@ ENDFUNC
 ** Parametros: p_funcion: nombre clave de la función que se desea autorizar
 **
 ** Retorno: Retorna True en caso de que el usuario esté autorizado. False en otro caso
-*********************************************************************************************
+*--------------------------------------------------------------------------------------------
 
 
 FUNCTION pedirAutorizacion
 PARAMETERS p_funcion
 
+	IF ALLTRIM(_SYSPEDIRAUT) == 'N'
+		RETURN .T.
+	ENDIF 
 	
+	IF ALLTRIM(_SYSNIVELUSU) == 'Superusuario'
+	
+		RETURN .T.
+	
+	ENDIF 
 	v_autorizado = .F.
 	
 	IF EMPTY(alltrim(p_funcion))= .T.
@@ -11251,3 +11259,60 @@ PARAMETERS p_funcion
 	RETURN v_autorizado
 
 ENDFUNC 
+
+
+
+
+
+
+*-----------------------------------------------------------------------------------
+** Obtiene todos los pedidos de autorización 
+** Parámetros:  p_nombreTabla: nombre de la tabla donde se van a cargar los pedidos
+**				p_estado: estado de los pedidos a listar (Puede ser 'A', 'P' o 'N')
+** Retorno: True si se cargó correctamente, False en caso contrario
+*-----------------------------------------------------------------------------------
+
+
+FUNCTION obtienePedidosAutorizacion
+PARAMETERS  p_nombreTabla,p_estado 
+
+	IF EMPTY(ALLTRIM(p_nombreTabla)) = .T.
+		MESSAGEBOX("El nombre de la tabla pasada como parámetro es inválida",0+16+256,"Error al obtener pedidos de autorización")
+		RETURN .F.	
+	ENDIF 
+		
+		
+	** Me conecto a la base de datos
+	vconeccionM = abreycierracon(0,_SYSSCHEMA)
+		
+	sqlmatriz(1)=" SELECT * "
+	sqlmatriz(2)=" FROM autorizaopera  " 
+	IF EMPTY(ALLTRIM(p_estado)) = .F.
+		sqlmatriz(3)=" WHERE estado = '"+ALLTRIM(p_estado)+"'"
+	ENDIF 
+	
+
+  
+	verror=sqlrun(vconeccionM ,"autorizaopera_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los pedidos de autorización... ",0+48+0,"Error")
+	    RETURN .F.
+	ENDIF
+	=abreycierracon(vconeccionM ,"")	
+
+	SELECT autorizaopera_sql
+	GO TOP 
+	
+	IF EOF()
+		RETURN .F.
+	ELSE
+	
+		v_sentencia = "SELECT * FROM autorizaopera_sql INTO TABLE "+alltrim(p_nombreTabla)
+		&v_sentencia
+	ENDIF
+
+	RETURN .T.
+	
+	
+ENDFUNC 
+
