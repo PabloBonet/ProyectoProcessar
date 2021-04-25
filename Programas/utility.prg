@@ -5836,12 +5836,11 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	SELECT AstoValorA_sql
 
 	SELECT v.idastomode, v.idastocuen, v.idcpoconta, v.dh, v.detalle, v.tabla, v.campo, v.opera, v.idastoval, ;
-		c.tabla as tablaf, c.campo as campof, c.tipo, c.valor1, c.compara, c.valor2, c.codigocta, c.tablag, c.tipog, c.idcpocontg ;
+		c.tabla as tablaf, c.campo as campof, c.tipo, c.valor1, c.compara, c.valor2, c.codigocta, c.tablag, c.campog, c.tipog, c.idcpocontg ;
 		FROM AstoValorA_sql v LEFT JOIN AstoCuentaA_SQL c ON c.idastocuen = v.idastocuen INTO TABLE AstoValorAC_sql 
 		
 
-	SELECT AstoCuentaA_sql
-
+	SELECT AstoValorAC_sql 
 
 **********************************************
 ***	Armado del valor  de las cuentas a imputar 
@@ -5856,10 +5855,11 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 
 	
 	DO WHILE !EOF() 
-		
+	
+
 *		sqlmatriz(1)=" Select *, "+ALLTRIM(AstoValorA_sql.campo)+" as importe from "+ALLTRIM(AstoValorA_sql.tabla)
 *		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
-		sqlmatriz(1)=" Select *,"+ALLTRIM(AstoValorAC_sql.campof)+" as valorcf, "+ALLTRIM(AstoValorAC_sql.campo)+" as importe from "+ALLTRIM(AstoValorAC_sql.tabla)
+		sqlmatriz(1)=" Select "+ALLTRIM(AstoValorAC_sql.campof)+" as valorcf, "+ALLTRIM(AstoValorAC_sql.campo)+" as importe from "+ALLTRIM(AstoValorAC_sql.tabla)
 		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
 			
 		verror=sqlrun(vconeccionATO,"tablacampo")
@@ -5869,7 +5869,6 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		    RETURN var_retorno
 		ENDIF
 		
-
 		SELECT tablacampo 
 		GO top
 		
@@ -5878,7 +5877,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 
 		**decidir si incerto o no			
 		*********************************			
-			var_valor = IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),tablacampo.valorcf,ALLTRIM(tablacampo.valorf))  
+			var_valor = IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),tablacampo.valorcf,ALLTRIM(tablacampo.valorcf))  
 			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoValorAC_sql.valor1))','ALLTRIM(AstoValorAC_sql.valor1)')
 			&eje 
 					
@@ -5927,12 +5926,11 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 			
 			IF v_incerta = .t. THEN 
 				SELECT AstoValorAC
-				
 		
 				INSERT INTO AstoValorAC VALUES (AstoValorAC_sql.idastomode, AstoValorAC_sql.idastocuen, AstoValorAC_sql.idcpoconta, AstoValorAC_sql.dh, AstoValorAC_sql.detalle, ;
 							AstoValorAC_sql.tabla, AstoValorAC_sql.campo, AstoValorAC_sql.opera, AstoValorAC_sql.idastoval, AstoValorAC_sql.tablaf, AstoValorAC_sql.campof, ;
 							AstoValorAC_sql.tipo, AstoValorAC_sql.valor1, AstoValorAC_sql.compara, AstoValorAC_sql.valor2, AstoValorAC_sql.codigocta, AstoValorAC_sql.tablag, ;
-							AstoValorAC_sql.tipog, AstoValorAC_sql.idcpocontg, tablacampo.importe)
+							AstoValorAC_sql.tipog, AstoValorAC_sql.tipog, AstoValorAC_sql.idcpocontg, tablacampo.importe)
 
 *				INSERT INTO AstoValorA VALUES (AstoValorAC_sql.idastomode, AstoValorAC_sql.idastocuen, AstoValorAC_sql.idcpoconta, AstoValorAC_sql.dh, ;
 *											   AstoValorAC_sql.detalle, AstoValorAC_sql.tabla, AstoValorAC_sql.campo, AstoValorAC_sql.opera, ;
@@ -11203,7 +11201,7 @@ PARAMETERS p_funcion
 		RETURN .T.
 	ENDIF 
 	
-	IF ALLTRIM(_SYSNIVELUSU) == 'Superusuario'
+	IF UPPER(ALLTRIM(_SYSNIVELUSU)) == 'SUPERVISOR'
 	
 		RETURN .T.
 	
@@ -11225,7 +11223,7 @@ PARAMETERS p_funcion
 		*Busco en la tabla de autorización de funciones según la clave
 		
 		sqlmatriz(1)=" SELECT * FROM autorizafn "
-		sqlmatriz(2)=" where nivel = '"+ALLTRIM(_SYSNIVELUSU)+"' and clave = '"+ALLTRIM(p_funcion)+"'"
+		sqlmatriz(2)=" where upper(nivel) = '"+UPPER(ALLTRIM(_SYSNIVELUSU))+"' and UPPER(clave) = '"+UPPER(ALLTRIM(p_funcion))+"'"
 		verror=sqlrun(vconeccionF,"autorizafn_sql")
 		
 		IF verror=.f.
@@ -11304,6 +11302,8 @@ PARAMETERS  p_nombreTabla,p_estado
 	GO TOP 
 	
 	IF EOF()
+		v_sentencia = "SELECT * FROM autorizaopera_sql INTO TABLE "+alltrim(p_nombreTabla)
+		&v_sentencia
 		RETURN .F.
 	ELSE
 	
