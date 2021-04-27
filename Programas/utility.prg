@@ -11195,7 +11195,7 @@ ENDFUNC
 
 
 FUNCTION pedirAutorizacion
-PARAMETERS p_funcion
+PARAMETERS p_funcion, p_detalleauto
 
 	IF ALLTRIM(_SYSPEDIRAUT) == 'N'
 		RETURN .T.
@@ -11246,7 +11246,7 @@ PARAMETERS p_funcion
 				v_autorizado = .T.
 			ELSE
 				
-				DO FORM pedirautorizacion TO v_autorizado
+				DO FORM pedirautorizacion WITH p_detalleauto TO v_autorizado
 								
 			ENDIF 
 		ELSE
