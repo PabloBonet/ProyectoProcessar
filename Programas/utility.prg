@@ -11197,15 +11197,15 @@ ENDFUNC
 FUNCTION pedirAutorizacion
 PARAMETERS p_funcion, p_detalleauto
 
+	
 	IF ALLTRIM(_SYSPEDIRAUT) == 'N'
 		RETURN .T.
 	ENDIF 
 	
 	IF UPPER(ALLTRIM(_SYSNIVELUSU)) == 'SUPERVISOR'
-	
 		RETURN .T.
-	
 	ENDIF 
+	
 	v_autorizado = .F.
 	
 	IF EMPTY(alltrim(p_funcion))= .T.
@@ -11219,11 +11219,72 @@ PARAMETERS p_funcion, p_detalleauto
 		
 	 	** Me conecto a la Base de datos
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+		*Controlo que la Clave se encuentre en autorizaclaves, si no está la agrego
+
+		p_funcion = ALLTRIM(p_funcion)
+		p_funcion = SUBSTR(p_funcion,ATC(' ',p_funcion,1)+1,ATC(' ',p_funcion,2)-ATC(' ',p_funcion,1))
+
+		sqlmatriz(1)=" SELECT * FROM autorizaclaves "
+		sqlmatriz(2)=" where UPPER(TRIM(clave)) = '"+UPPER(ALLTRIM(p_funcion))+"'"
+		verror=sqlrun(vconeccionF,"autorizaclaves_sql")
+		
+		IF verror=.f.
+			MESSAGEBOX("Error en la consulta al verificar las claves",0+16+256,"Error al autorizar usuario")
+				* me desconecto
+			=abreycierracon(vconeccionF,"")
+			RETURN .F.
+		ENDIF 
+		SELECT autorizaclaves_sql
+		GO TOP 
+		IF EOF() THEN  && Si no esta la Clave la Agrega
+			sqlmatriz(1)=" insert into autorizaclaves ( idautocla, clave, detalle ) values (0, '"+ALLTRIM(p_funcion)+"','"+ALLTRIM(p_detalleauto)+"')"
+			verror=sqlrun(vconeccionF,"autoclaves_sql")
+			
+			IF verror=.f.
+				MESSAGEBOX("Error en la insercion de las claves",0+16+256,"Error al insertar claves")
+				=abreycierracon(vconeccionF,"")
+				RETURN .F.
+			ENDIF 		
+			
+		ENDIF 
+		USE IN autorizaclaves_sql 		
+
+* Controla que este la relacion del Nivel de Usuarios con las Claves, Si no Está Agrega la Relacion Negando Autorización
+*
+		sqlmatriz(1)=" SELECT * FROM autorizafn "
+		sqlmatriz(2)=" where upper(TRIM(nivel)) = '"+UPPER(ALLTRIM(_SYSNIVELUSU))+"' and UPPER(TRIM(clave)) = '"+UPPER(ALLTRIM(p_funcion))+"'"
+		verror=sqlrun(vconeccionF,"autofn_sql")
+		IF verror=.f.
+			MESSAGEBOX("Error en la consulta del usuario al pedir la autorización",0+16+256,"Error al autorizar usuario")
+				* me desconecto
+			=abreycierracon(vconeccionF,"")
+			RETURN .F.
+		ENDIF 
+		SELECT autofn_sql
+		GO TOP 
+
+		IF EOF() THEN  && Si no esta la relacion con la clave y el Nivel de Usuario la agrega Negada
+			
+			sqlmatriz(1)=" insert into autorizafn ( idautofn, clave, nivel, autoriza, detalle ) values (0, '"+ALLTRIM(p_funcion)+"','"+ALLTRIM(_SYSNIVELUSU)+"','N','"+ALLTRIM(p_detalleauto)+"')"
+			verror=sqlrun(vconeccionF,"auto_sql")
+			IF verror=.f.
+				MESSAGEBOX("Error en la insercion de las claves",0+16+256,"Error al insertar autorizaciones de claves")
+				=abreycierracon(vconeccionF,"")
+				RETURN .F.
+			ENDIF 			
+
 				
+		ENDIF 
+		USE IN autofn_sql 		
+
+**************************************************************************************************************************
+
+		*
 		*Busco en la tabla de autorización de funciones según la clave
 		
 		sqlmatriz(1)=" SELECT * FROM autorizafn "
-		sqlmatriz(2)=" where upper(nivel) = '"+UPPER(ALLTRIM(_SYSNIVELUSU))+"' and UPPER(clave) = '"+UPPER(ALLTRIM(p_funcion))+"'"
+		sqlmatriz(2)=" where upper(TRIM(nivel)) = '"+UPPER(ALLTRIM(_SYSNIVELUSU))+"' and UPPER(TRIM(clave)) = '"+UPPER(ALLTRIM(p_funcion))+"'"
 		verror=sqlrun(vconeccionF,"autorizafn_sql")
 		
 		IF verror=.f.
