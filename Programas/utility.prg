@@ -11307,7 +11307,7 @@ PARAMETERS p_funcion, p_detalleauto
 				v_autorizado = .T.
 			ELSE
 				
-				DO FORM pedirautorizacion WITH p_detalleauto TO v_autorizado
+				DO FORM pedirautorizacion WITH p_funcion, p_detalleauto TO v_autorizado
 								
 			ENDIF 
 		ELSE
@@ -11344,14 +11344,21 @@ PARAMETERS  p_nombreTabla,p_estado
 	** Me conecto a la base de datos
 	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 		
-	sqlmatriz(1)=" SELECT * "
-	sqlmatriz(2)=" FROM autorizaopera  " 
-	IF EMPTY(ALLTRIM(p_estado)) = .F.
-		sqlmatriz(3)=" WHERE estado = '"+ALLTRIM(p_estado)+"'"
-	ENDIF 
-	
-
-  
+	IF UPPER(ALLTRIM(_SYSNIVELUSU))='SUPERVISOR' THEN 
+		sqlmatriz(1)=" SELECT * "
+		sqlmatriz(2)=" FROM autorizaopera  " 
+		IF EMPTY(ALLTRIM(p_estado)) = .F.
+			sqlmatriz(3)=" WHERE estado = '"+ALLTRIM(p_estado)+"'"
+		ENDIF 
+	ELSE
+		sqlmatriz(1)=" SELECT a.*, b.autoriza FROM processarmkot.autorizaopera a left join processarmkot.autorizafn b on TRIM(b.clave) = TRIM(a.clave) "
+		sqlmatriz(2)=" where UPPER(TRIM(b.nivel)) = '"+ALLTRIM(_SYSNIVELUSU)+"' and b.autoriza = 'S' "
+		IF EMPTY(ALLTRIM(p_estado)) = .F.
+			sqlmatriz(3)=" and a.estado = '"+ALLTRIM(p_estado)+"'"
+		ENDIF 	
+  	ENDIF 
+  	
+ 	
 	verror=sqlrun(vconeccionM ,"autorizaopera_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los pedidos de autorización... ",0+48+0,"Error")
