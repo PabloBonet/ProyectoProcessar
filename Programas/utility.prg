@@ -1414,6 +1414,7 @@ ENDFUNC
 
 
 
+
 * FUNCIÓN PARA AUTORIZAR COMPROBANTES
 * PARAMETROS: P_IDCOMPROBANTE, ID DEL COMPROBANTE A AUTORIZAR
 * RETORNO: Retorna True si no hubo errores al intentar autorizar el comprobante (NO significa que se haya APROBADO), retorna False en caso que haya ocurrido un error en la autorización
@@ -1766,7 +1767,7 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 
 	RETURN v_autorizar
 
-ENDFUNC 
+ENDFUNC  
 
 * FUNCIÓN PARA IMPRIMIR UNA FACTURA (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
 * PARAMETROS: P_IDFACTURA, P_ESELECTRONICA
@@ -8431,6 +8432,7 @@ RETURN ""
 * Utiliza la función CURSORTOXML, el formato del nombre xml es: 'factura_<idFactura>', donde <idFactura> es el ID en la tabla facturas
 ** Recibe como parámetro el IDFactura
 
+
 FUNCTION armarComprobanteXML
 PARAMETERS p_idFactura
 
@@ -8487,14 +8489,81 @@ PARAMETERS p_idFactura
 			ALTER table tablafactura ADD COLUMN resultado C(1)
 			ALTER table tablafactura ADD COLUMN observa C(254)
 			ALTER table tablafactura ADD COLUMN errores C(254)
+			ALTER table tablafactura ADD COLUMN opcionales C(254)
 
-			
-
+			tipoCompObj 	= CREATEOBJECT('tiposcomproclass')
+			v_tipoFA_MiPyme = tipoCompObj.getIdTipoCompro("FACTURA A MiPyMEs")
+			v_tipoNCA_MiPyme = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO A MiPyMEs")
+			v_tipoNDA_MiPyme = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO A MiPyMEs")
+			v_tipoFB_MiPyme = tipoCompObj.getIdTipoCompro("FACTURA B MiPyMEs")
+			v_tipoNCB_MiPyme = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO B MiPyMEs")
+			v_tipoNDB_MiPyme = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO B MiPyMEs")			
+			v_tipoFC_MiPyme = tipoCompObj.getIdTipoCompro("FACTURA C MiPyMEs")
+			v_tipoNCC_MiPyme = tipoCompObj.getIdTipoCompro("NOTA DE CREDITO C MiPyMEs")
+			v_tipoNDC_MiPyme = tipoCompObj.getIdTipoCompro("NOTA DE DEBITO C MiPyMEs")
 			
 			SELECT tablaFactura
 			GO TOP 
+			
+			v_idtipocomp = tablaFactura.idtipocomp
+			****
+			** AGREGO OPCIONALES PARA LOS COMPROBANTES MiPyME
+			****
+			
+			************
+			** OPCIONES: 
+			************
+			
+			** CBU Para autorización de Comprobantes MiPyMEs **
+				v_opcionCBU	= IIF(ALLTRIM(_SYSCBUMIPYME)='0','',ALLTRIM("2101,"+_SYSCBUMIPYME))
+			
+			** ALIAS Para autorizacion de Comprobantes MiPyMES
+				v_opcionALIAS =  IIF(ALLTRIM(_SYSALIASMIPYME)='0','',ALLTRIM("2102,"+_SYSALIASMIPYME))
+				
+			** Informar si se transmite de modo: 
+			** Agente de Depósito Colectivo (ADC) o 
+			** Sistema de Circulación Abierta de la Cámara de Compensación Electrónica de la República Argentina (SCA - COELSA)
+				v_modoADCoSCA =  "27,SCA"
+			
+			** Informar si NC / ND es de anulación
+				v_opcionNCNDANULA = "22,N"
+			
+			v_opcionales = ""
+			DO CASE
+			** Facturas 
+			CASE v_idtipocomp = v_tipoFA_MiPyme 
+				v_opcionales = v_opcionCBU+";"+v_opcionALIAS+";"+v_modoADCoSCA			
+			CASE v_idtipocomp = v_tipoFB_MiPyme 
+				v_opcionales = v_opcionCBU+";"+v_opcionALIAS+";"+v_modoADCoSCA			
+			CASE v_idtipocomp = v_tipoFC_MiPyme 
+				v_opcionales = v_opcionCBU+";"+v_opcionALIAS+";"+v_modoADCoSCA							
 
-			replace ALL opexento WITH 0, idmoneda WITH "PES", cotmoneda WITH 1, concepto WITH _SYSCONCEPTOAFIP
+
+			** Notas de Crédito 
+			
+			CASE v_idtipocomp = v_tipoNCA_MiPyme 
+				v_opcionales = v_opcionNCNDANULA 
+			CASE v_idtipocomp = v_tipoNCB_MiPyme 
+				v_opcionales = v_opcionNCNDANULA 
+			CASE v_idtipocomp = v_tipoNCC_MiPyme 
+				v_opcionales = v_opcionNCNDANULA 
+			** Notas de Débito
+			
+			CASE v_idtipocomp = v_tipoNDA_MiPyme 
+				v_opcionales = v_opcionNCNDANULA 
+			CASE v_idtipocomp = v_tipoNDB_MiPyme 
+				v_opcionales = v_opcionNCNDANULA 
+			CASE v_idtipocomp = v_tipoNDC_MiPyme 
+				v_opcionales = v_opcionNCNDANULA 
+			OTHERWISE
+				v_opcionales = ""
+			ENDCASE
+			
+						
+			SELECT tablaFactura
+			GO TOP 
+
+			replace ALL opexento WITH 0, idmoneda WITH "PES", cotmoneda WITH 1, concepto WITH _SYSCONCEPTOAFIP,opcionales WITH ALLTRIM(v_opcionales)
 			
 			SELECT tablaFactura
 			GO TOP 
@@ -8523,7 +8592,7 @@ PARAMETERS p_idFactura
 			v_idcomproba = tablaFactura.idcomproba
 			
 
-			tipoCompObj 	= CREATEOBJECT('tiposcomproclass')
+		
 			
 			v_ubicacionXMLAso	= ""
 
@@ -8549,27 +8618,27 @@ PARAMETERS p_idFactura
 				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO C")
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)							
 
-				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO A MiPyMEs")
+				CASE v_idtipocomp == v_tipoNCA_MiPyme 
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
 				
-				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO A MiPyMEs")
+				CASE v_idtipocomp == v_tipoNDA_MiPyme 
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
 					
 				** COMPROBANTES 'B' **	
 
 
 				
-				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO B MiPyMEs")
+				CASE v_idtipocomp == v_tipoNCB_MiPyme 
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)						
-				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO B MiPyMEs")
+				CASE v_idtipocomp == v_tipoNDB_MiPyme 
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)							
 				** COMPROBANTES 'C' **	
 
 
 				
-				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO C MiPyMEs")
+				CASE v_idtipocomp == v_tipoNCC_MiPyme 
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)					
-				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE DEBITO C MiPyMEs")
+				CASE v_idtipocomp == v_tipoNDC_MiPyme 
 					v_ubicacionXMLAso	= armarCompAsociadosFacXML(v_idfactura,v_idcomproba)
 				
 										
@@ -8585,8 +8654,6 @@ PARAMETERS p_idFactura
 			RETURN v_ubicacionXML 
 			
 ENDFUNC 
-
-
 
 
 *** Función que los comprobantes asociados en un archivo XML**
