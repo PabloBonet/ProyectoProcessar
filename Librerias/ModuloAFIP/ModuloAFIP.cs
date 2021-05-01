@@ -389,7 +389,7 @@ namespace ModuloAFIP
                             _error = true;
                             _errores.Add("El ID del registro pasado como parámetro no coincide con el ID registro del archivo XML");
                             return null;
-                            break;
+                           
                     }
 
 
@@ -505,7 +505,8 @@ namespace ModuloAFIP
                         }
                     }
                    
-
+                    string listaOpcioneales = compXML.SelectSingleNode("//opcionales").InnerText;
+                    comprobante.cargarOpcionales(listaOpcioneales);
 
                     retorno = comprobante;
                 }

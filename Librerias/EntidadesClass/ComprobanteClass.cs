@@ -41,6 +41,7 @@ namespace EntidadesClass
         private List<string> _erroresAFIP;
         private List<string> _eventosAFIP;
         private List<string> _observacionesAFIP;
+        private List<OpcionalComprobanteClass> _listaOpciones;
 
 
 
@@ -332,6 +333,15 @@ namespace EntidadesClass
         }
 
         /// <summary>
+        /// Retorna y asigna la lista de Opcionales
+        /// </summary>
+        public List<OpcionalComprobanteClass> ListaOpcionales
+        {
+            get { return _listaOpciones; }
+            set { _listaOpciones = value; }
+        }
+
+        /// <summary>
         /// Propiedad que retorna la lista de observaciones AFIP
         /// </summary>
         public string ObservacionesAFIP
@@ -347,15 +357,19 @@ namespace EntidadesClass
 
                 return retorno;
             }
+        
+
+
         }
 
-        #endregion
 
-        #region Constructor
-        /// <summary>
-        /// Constructor por defecto de la clase ComprobanteClass
-        /// </summary>
-        public ComprobanteClass()
+    #endregion
+
+    #region Constructor
+    /// <summary>
+    /// Constructor por defecto de la clase ComprobanteClass
+    /// </summary>
+    public ComprobanteClass()
         {
 
             _ptoVta = 0;
@@ -385,6 +399,7 @@ namespace EntidadesClass
             _erroresAFIP = new List<string>();
             _eventosAFIP = new List<string>();
             _observacionesAFIP = new List<string>();
+            _listaOpciones = new List<OpcionalComprobanteClass>();
         }
 
         #endregion
@@ -456,6 +471,29 @@ namespace EntidadesClass
             ListaTributos.Add(tributo);
         }
 
+
+
+        /// <summary>
+        /// Agrega el Opcional a la lista de opcionales
+        /// </summary>
+        /// <param name="opcional">Opcion a agregar al comprobante</param>
+        public void addOpcional(OpcionalComprobanteClass opcional)
+        {
+            ListaOpcionales.Add(opcional);
+        }
+
+        /// <summary>
+        /// Carga las opciones pasadas como parámetros al comprobante. Convirtiendola a una entidad del objeto OpcionalComrpobanteClass
+        /// </summary>
+        /// <param name="listaOpcionales">Lista de opcionales con el siguiente formato: [id,valor;id,valor] </param>
+       
+        public void cargarOpcionales(string listaOpcionales)
+        {
+            List<OpcionalComprobanteClass> opciones = OpcionalComprobanteClass.ObtenerOpcionalesDesdestring(listaOpcionales);
+
+             _listaOpciones.AddRange(opciones);
+               
+         }
 
         /// <summary>
         /// Agrega el tributo a la lista, si ya se encuentra un tributo con el mismo ID suma el importe y la base imponible

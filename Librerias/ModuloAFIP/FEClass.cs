@@ -703,7 +703,7 @@ namespace ModuloAFIP
 
                     throw e;
                 }
-
+                
                 detReq.DocNro = v_docNro; //Nro documento
                 detReq.DocTipo = 80; //CUIT: documento tipo 80
 
@@ -717,6 +717,7 @@ namespace ModuloAFIP
 
                 detReq.ImpNeto = comprobante.ImporteNeto;
                 detReq.ImpNeto = Math.Round(detReq.ImpNeto, 2);
+               
 
                 double compImpIvaTot = comprobante.ImporteIva; // importe total del iva
                 compImpIvaTot = Math.Round(compImpIvaTot, 2);
@@ -847,6 +848,37 @@ namespace ModuloAFIP
               
                 }
 
+                // Agrego los items de los Opcionales
+
+                if (comprobante.ListaOpcionales.Count > 0)
+                {
+                    List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.Opcional> listaOpcionales = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.Opcional>();
+                    ClienteLoginCms_CS.ar.gov.afip.wswhomo.Opcional op = null;
+                    foreach (OpcionalComprobanteClass c in comprobante.ListaOpcionales)
+                    {
+                        op = new ClienteLoginCms_CS.ar.gov.afip.wswhomo.Opcional();
+
+                        op.Id = c.IDOpcional;
+                        op.Valor = c.Valor;
+
+                        if ((op.Id.Trim()).Length > 0 && (op.Valor.Trim()).Length > 0)
+                        {
+                            listaOpcionales.Add(op);
+                        }
+
+
+                    }
+
+                    ClienteLoginCms_CS.ar.gov.afip.wswhomo.Opcional[] arrayOpcional = listaOpcionales.ToArray();
+
+                    detReq.Opcionales = arrayOpcional;
+
+                }
+
+
+
+
+
                 List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest> listaDetalle = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest>();
 
                 listaDetalle.Add(detReq);
@@ -951,7 +983,7 @@ namespace ModuloAFIP
 
                 double compImpIvaTot = comprobante.ImporteIva; // importe total del iva
                 compImpIvaTot = Math.Round(compImpIvaTot, 2);
-
+                
                 detReq.ImpOpEx = 0;
                 detReq.ImpTotConc = 0;
                 if (compImpIvaTot == 0)
@@ -1080,6 +1112,32 @@ namespace ModuloAFIP
 
                 }
 
+                // Agrego los items de los Opcionales
+
+                if (comprobante.ListaOpcionales.Count > 0)
+                {
+                    List<ClienteLoginCms_CS.ar.gov.afip.servicios1.Opcional> listaOpcionales = new List<ClienteLoginCms_CS.ar.gov.afip.servicios1.Opcional>();
+                    ClienteLoginCms_CS.ar.gov.afip.servicios1.Opcional op= null;
+                    foreach (OpcionalComprobanteClass c in comprobante.ListaOpcionales)
+                    {
+                        op = new ClienteLoginCms_CS.ar.gov.afip.servicios1.Opcional();
+
+                        op.Id = c.IDOpcional;
+                        op.Valor = c.Valor;
+                        
+                        if ((op.Id.Trim()).Length > 0 && (op.Valor.Trim()).Length > 0)
+                        {
+                            listaOpcionales.Add(op);
+                        }
+
+
+                    }
+
+                    ClienteLoginCms_CS.ar.gov.afip.servicios1.Opcional[] arrayOpcional = listaOpcionales.ToArray();
+
+                    detReq.Opcionales = arrayOpcional;
+
+                }
 
                 List<ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAEDetRequest> listaDetalle = new List<ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAEDetRequest>();
 
