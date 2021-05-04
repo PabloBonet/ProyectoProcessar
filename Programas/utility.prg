@@ -8490,6 +8490,7 @@ PARAMETERS p_idFactura
 			ALTER table tablafactura ADD COLUMN observa C(254)
 			ALTER table tablafactura ADD COLUMN errores C(254)
 			ALTER table tablafactura ADD COLUMN opcionales C(254)
+			ALTER table tablafactura ADD COLUMN fchvtopago C(8)
 
 			tipoCompObj 	= CREATEOBJECT('tiposcomproclass')
 			v_tipoFA_MiPyme = tipoCompObj.getIdTipoCompro("FACTURA A MiPyMEs")
@@ -8506,6 +8507,7 @@ PARAMETERS p_idFactura
 			GO TOP 
 			
 			v_idtipocomp = tablaFactura.idtipocomp
+			v_fecha30dias = ""
 			****
 			** AGREGO OPCIONALES PARA LOS COMPROBANTES MiPyME
 			****
@@ -8532,11 +8534,14 @@ PARAMETERS p_idFactura
 			DO CASE
 			** Facturas 
 			CASE v_idtipocomp = v_tipoFA_MiPyme 
-				v_opcionales = v_opcionCBU+";"+v_opcionALIAS+";"+v_modoADCoSCA			
+				v_opcionales = v_opcionCBU+";"+v_opcionALIAS+";"+v_modoADCoSCA	
+				v_fecha30dias = dtos((cftofc(tablaFactura.fecha))+30)		
 			CASE v_idtipocomp = v_tipoFB_MiPyme 
 				v_opcionales = v_opcionCBU+";"+v_opcionALIAS+";"+v_modoADCoSCA			
+				v_fecha30dias = dtos((cftofc(tablaFactura.fecha))+30)
 			CASE v_idtipocomp = v_tipoFC_MiPyme 
 				v_opcionales = v_opcionCBU+";"+v_opcionALIAS+";"+v_modoADCoSCA							
+				v_fecha30dias = dtos((cftofc(tablaFactura.fecha))+30)
 
 
 			** Notas de Crédito 
@@ -8563,7 +8568,7 @@ PARAMETERS p_idFactura
 			SELECT tablaFactura
 			GO TOP 
 
-			replace ALL opexento WITH 0, idmoneda WITH "PES", cotmoneda WITH 1, concepto WITH _SYSCONCEPTOAFIP,opcionales WITH ALLTRIM(v_opcionales)
+			replace ALL opexento WITH 0, idmoneda WITH "PES", cotmoneda WITH 1, concepto WITH _SYSCONCEPTOAFIP,opcionales WITH ALLTRIM(v_opcionales),fchvtopago WITH v_fecha30dias 
 			
 			SELECT tablaFactura
 			GO TOP 
