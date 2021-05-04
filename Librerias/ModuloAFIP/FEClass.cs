@@ -709,7 +709,7 @@ namespace ModuloAFIP
 
                 detReq.CbteDesde = numUltComp + 1; //Numero de ultimo comprobante + 1
                 detReq.CbteHasta = numUltComp + 1; //Numero de ultimo comprobante + 1
-
+                
                 detReq.CbteFch = comprobante.FechaComprobante;
 
                 detReq.ImpTotal = comprobante.ImporteTotal;
@@ -739,7 +739,8 @@ namespace ModuloAFIP
 
                 detReq.FchServDesde = "";
                 detReq.FchServHasta = "";
-                detReq.FchVtoPago = "";
+                //detReq.FchVtoPago = "";
+                detReq.FchVtoPago = comprobante.FechaVtoPago;
 
                 detReq.MonId = comprobante.IDMoneda;
                
@@ -832,6 +833,9 @@ namespace ModuloAFIP
                         compAso.Nro = c.NroComprobante;
                         compAso.PtoVta = c.PtoVta;
                         compAso.Tipo = c.TipoComprobante;
+                        compAso.Cuit = c.CuitEmisor;
+                        compAso.CbteFch = c.FechaComprobante;
+
                         
 
                         if (compAso.Nro > 0 && compAso.PtoVta > 0 && compAso.Tipo > 0)
@@ -849,9 +853,11 @@ namespace ModuloAFIP
                 }
 
                 // Agrego los items de los Opcionales
-
+              
+                
                 if (comprobante.ListaOpcionales.Count > 0)
                 {
+                    
                     List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.Opcional> listaOpcionales = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.Opcional>();
                     ClienteLoginCms_CS.ar.gov.afip.wswhomo.Opcional op = null;
                     foreach (OpcionalComprobanteClass c in comprobante.ListaOpcionales)
@@ -861,11 +867,13 @@ namespace ModuloAFIP
                         op.Id = c.IDOpcional;
                         op.Valor = c.Valor;
 
+
                         if ((op.Id.Trim()).Length > 0 && (op.Valor.Trim()).Length > 0)
                         {
+                           
                             listaOpcionales.Add(op);
                         }
-
+                       
 
                     }
 
@@ -1000,7 +1008,8 @@ namespace ModuloAFIP
 
                 detReq.FchServDesde = "";
                 detReq.FchServHasta = "";
-                detReq.FchVtoPago = "";
+                // detReq.FchVtoPago = "";
+                detReq.FchVtoPago = comprobante.FechaVtoPago;
 
                 detReq.MonId = comprobante.IDMoneda;
               
@@ -1096,6 +1105,8 @@ namespace ModuloAFIP
                         compAso.Nro = c.NroComprobante;
                         compAso.PtoVta = c.PtoVta;
                         compAso.Tipo = c.TipoComprobante;
+                        compAso.Cuit = c.CuitEmisor;
+                        compAso.CbteFch = c.FechaComprobante;
 
 
                         if (compAso.Nro > 0 && compAso.PtoVta > 0 && compAso.Tipo > 0)

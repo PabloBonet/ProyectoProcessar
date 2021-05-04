@@ -416,7 +416,8 @@ namespace ModuloAFIP
                     comprobante.DocTipoCliente = Int32.Parse(compXML.SelectSingleNode("//tipodoc").InnerText);
                     comprobante.NroDocCliente = compXML.SelectSingleNode("//nrodoccli").InnerText;
                     comprobante.ImporteNeto = Double.Parse((compXML.SelectSingleNode("//netocomp").InnerText).Replace('.', ','));
-                 
+                    comprobante.FechaVtoPago = compXML.SelectSingleNode("//fchvtopago").InnerText;
+
                     List<AlicuotaIvaClass> listaIva = new List<AlicuotaIvaClass>();
                     List<TributoComprobanteClass> listaTributo = new List<TributoComprobanteClass>();
 
@@ -506,6 +507,7 @@ namespace ModuloAFIP
                     }
                    
                     string listaOpcioneales = compXML.SelectSingleNode("//opcionales").InnerText;
+                 
                     comprobante.cargarOpcionales(listaOpcioneales);
 
                     retorno = comprobante;

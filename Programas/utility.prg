@@ -8548,18 +8548,24 @@ PARAMETERS p_idFactura
 			
 			CASE v_idtipocomp = v_tipoNCA_MiPyme 
 				v_opcionales = v_opcionNCNDANULA 
+*				v_fecha30dias = dtos((cftofc(tablaFactura.fecha))+30)		
 			CASE v_idtipocomp = v_tipoNCB_MiPyme 
 				v_opcionales = v_opcionNCNDANULA 
+*				v_fecha30dias = dtos((cftofc(tablaFactura.fecha))+30)		
 			CASE v_idtipocomp = v_tipoNCC_MiPyme 
 				v_opcionales = v_opcionNCNDANULA 
+*				v_fecha30dias = dtos((cftofc(tablaFactura.fecha))+30)		
 			** Notas de Débito
 			
 			CASE v_idtipocomp = v_tipoNDA_MiPyme 
 				v_opcionales = v_opcionNCNDANULA 
+*				v_fecha30dias = dtos((cftofc(tablaFactura.fecha))+30)		
 			CASE v_idtipocomp = v_tipoNDB_MiPyme 
 				v_opcionales = v_opcionNCNDANULA 
+*				v_fecha30dias = dtos((cftofc(tablaFactura.fecha))+30)		
 			CASE v_idtipocomp = v_tipoNDC_MiPyme 
 				v_opcionales = v_opcionNCNDANULA 
+*				v_fecha30dias = dtos((cftofc(tablaFactura.fecha))+30)		
 			OTHERWISE
 				v_opcionales = ""
 			ENDCASE

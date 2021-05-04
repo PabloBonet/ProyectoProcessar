@@ -15,7 +15,7 @@ namespace EntidadesClass
         private long _nroComprobante;
         private string _cuitEmisor;
         private string _fechaComprobante;
-
+        private string _cuit;
 
         /// <summary>
         /// Retorna y asigna el Id del comprobante
@@ -54,6 +54,14 @@ namespace EntidadesClass
             get { return _cuitEmisor; }
             set { _cuitEmisor = value; }
         }
+        /// <summary>
+        /// Retorna y asigna el Número del cuit del cliente del comprobante asociado
+        /// </summary>
+        public string Cuit
+        {
+            get { return _cuit; }
+            set { _cuit = value; }
+        }
 
 
         /// <summary>
@@ -87,6 +95,7 @@ namespace EntidadesClass
             _nroComprobante = 0;
             _cuitEmisor = "";
             _fechaComprobante = "";
+            _cuit = "";
     }
         #endregion
 

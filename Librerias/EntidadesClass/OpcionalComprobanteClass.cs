@@ -86,19 +86,33 @@ namespace EntidadesClass
             List<OpcionalComprobanteClass> listaRetorno = new List<OpcionalComprobanteClass>();
 
             try
-            {
+            {                              
                 string[] arregloOpcionales = listaOpcionales.Split(';');
 
-                foreach (string opcion in arregloOpcionales)
+                int cantElementos = arregloOpcionales.Length;
+
+                for (int i = 0; i < cantElementos; i++ )
                 {
-                    string[] idValor = opcion.Split(',');
+                    string opcional = arregloOpcionales[i];
 
-                    string id = idValor[0];
-                    string valor = idValor[1];
+                    if(opcional.Length > 0)
+                    {
+                      
+                        string[] idValor = opcional.Split(',');
 
-                    OpcionalComprobanteClass op = new OpcionalComprobanteClass(id, valor);
-                    listaRetorno.Add(op);
+                        if (idValor.Length > 0)
+                        {
+                            string id = idValor[0];
+                            string valor = idValor[1];
+                          
+                            OpcionalComprobanteClass op = new OpcionalComprobanteClass(id, valor);
+                            listaRetorno.Add(op);
+                        }
+
+                    }
+
                 }
+
             }
             catch(Exception e)
             { 

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
+
 namespace EntidadesClass
 {
 
@@ -37,6 +38,7 @@ namespace EntidadesClass
         private int _concepto;
         private string _cae;
         private string _fechaVtoCae;
+        private string _fechaVtoPago;
         private List<CompAsociadoClass> _listaCompAsociados;
         private List<string> _erroresAFIP;
         private List<string> _eventosAFIP;
@@ -264,6 +266,15 @@ namespace EntidadesClass
             set { _fechaVtoCae = value; }
         }
 
+        /// <summary>
+        /// Retorna y asigna la Fecha de Vto. de Pago
+        /// </summary>
+        public string FechaVtoPago
+        {
+            get { return _fechaVtoPago; }
+            set { _fechaVtoPago  = value; }
+        }
+
 
         /// <summary>
         /// Retorna la lista de comprobantes asociados 
@@ -395,6 +406,7 @@ namespace EntidadesClass
             _concepto = 0;
             _cae = "";
             _fechaVtoCae = "";
+            _fechaVtoPago = "";
             _listaCompAsociados = new List<CompAsociadoClass>();
             _erroresAFIP = new List<string>();
             _eventosAFIP = new List<string>();
@@ -489,9 +501,11 @@ namespace EntidadesClass
        
         public void cargarOpcionales(string listaOpcionales)
         {
-            List<OpcionalComprobanteClass> opciones = OpcionalComprobanteClass.ObtenerOpcionalesDesdestring(listaOpcionales);
+            
 
-             _listaOpciones.AddRange(opciones);
+            List<OpcionalComprobanteClass> opciones = OpcionalComprobanteClass.ObtenerOpcionalesDesdestring(listaOpcionales);
+     
+            _listaOpciones.AddRange(opciones);
                
          }
 
@@ -673,7 +687,7 @@ namespace EntidadesClass
                         compAsociado.NroComprobante = Int32.Parse(compXML.SelectSingleNode("//numero").InnerText);
                         compAsociado.TipoComprobante = Int32.Parse(compXML.SelectSingleNode("//codafip").InnerText);
                         compAsociado.FechaComprobante = compXML.SelectSingleNode("//fecha").InnerText;
-                        // compAsociado.CuitEmisor = compXML.SelectSingleNode("//cuitemisor").InnerText;
+                        compAsociado.Cuit = compXML.SelectSingleNode("//cuit").InnerText;
                         compAsociado.CuitEmisor = cuitEmisor;
 
 
