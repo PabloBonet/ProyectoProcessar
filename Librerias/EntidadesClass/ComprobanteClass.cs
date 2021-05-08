@@ -682,12 +682,12 @@ namespace EntidadesClass
                         XmlNode nodo = listaNodosXml.Item(i);
 
 
-                        compAsociado.IDComprobante = Int32.Parse(compXML.SelectSingleNode("//idfactura").InnerText);
-                        compAsociado.PtoVta = Int32.Parse(compXML.SelectSingleNode("//puntov").InnerText);
-                        compAsociado.NroComprobante = Int32.Parse(compXML.SelectSingleNode("//numero").InnerText);
-                        compAsociado.TipoComprobante = Int32.Parse(compXML.SelectSingleNode("//codafip").InnerText);
-                        compAsociado.FechaComprobante = compXML.SelectSingleNode("//fecha").InnerText;
-                        compAsociado.Cuit = compXML.SelectSingleNode("//cuit").InnerText;
+                        compAsociado.IDComprobante = Int32.Parse(nodo.SelectSingleNode("idfactura").InnerText);
+                        compAsociado.PtoVta = Int32.Parse(nodo.SelectSingleNode("puntov").InnerText);
+                        compAsociado.NroComprobante = Int32.Parse(nodo.SelectSingleNode("numero").InnerText);
+                        compAsociado.TipoComprobante = Int32.Parse(nodo.SelectSingleNode("codafip").InnerText);
+                        compAsociado.FechaComprobante = nodo.SelectSingleNode("fecha").InnerText;
+                        compAsociado.Cuit = nodo.SelectSingleNode("cuit").InnerText;
                         compAsociado.CuitEmisor = cuitEmisor;
 
 
