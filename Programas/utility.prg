@@ -2714,7 +2714,6 @@ PARAMETERS p_idComp, p_idReg, p_idCajaR
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 			vcerrarcon = .t.
 		ENDIF 
-		
 		v_usuario		= _SYSUSUARIO
 		v_idcomproba	= p_idComp
 		v_idregicomp	=  p_idReg
@@ -5238,8 +5237,8 @@ IF v_idregistro	> 0
 															
 															
 									*** Creo Asociación Etiqueta - AjusteStockH
-										v_idajustestocke = maxnumeroidx("idajustestocke","I","ajustestocke",1)
-									
+									*	v_idajustestocke = maxnumeroidx("idajustestocke","I","ajustestocke",1)
+										v_idajustestocke = 0
 									p_tipoope     = 'I'
 									p_condicion   = ''
 									v_titulo      = " EL ALTA "
@@ -8746,7 +8745,7 @@ PARAMETERS p_idregistro,p_idcomproba
 			
 			SELECT tablaAsoFac
 			GO TOP 
-
+			
 		
 			
 *!*				cursoraxml("facimp")
