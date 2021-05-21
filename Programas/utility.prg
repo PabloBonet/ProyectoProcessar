@@ -11428,7 +11428,7 @@ PARAMETERS  p_nombreTabla,p_estado
 			sqlmatriz(3)=" WHERE estado = '"+ALLTRIM(p_estado)+"'"
 		ENDIF 
 	ELSE
-		sqlmatriz(1)=" SELECT a.*, b.autoriza FROM processarmkot.autorizaopera a left join processarmkot.autorizafn b on TRIM(b.clave) = TRIM(a.clave) "
+		sqlmatriz(1)=" SELECT a.*, b.autoriza FROM autorizaopera a left join autorizafn b on TRIM(b.clave) = TRIM(a.clave) "
 		sqlmatriz(2)=" where UPPER(TRIM(b.nivel)) = '"+ALLTRIM(_SYSNIVELUSU)+"' and b.autoriza = 'S' "
 		IF EMPTY(ALLTRIM(p_estado)) = .F.
 			sqlmatriz(3)=" and a.estado = '"+ALLTRIM(p_estado)+"'"
@@ -11458,6 +11458,111 @@ PARAMETERS  p_nombreTabla,p_estado
 
 	RETURN .T.
 	
+	
+ENDFUNC 
+
+
+
+*-----------------------------------------------------------------------------------
+** Obtiene todas las cotizaciones y precios segun listas y cuotas para un artículo determinado 
+** Parámetros:  p_articulos  - Lista de Articulos a mostrar
+*-----------------------------------------------------------------------------------
+
+
+FUNCTION PreciosArticulo
+PARAMETERS  pv_articulos
+
+	pv_articulos = STRTRAN(STRTRAN(STRTRAN(pv_articulos,"´","'"),"(","'"),")","'")
+	* controlo si ya se genero la lista de precios actual, sino la genero
+	pvtmp = frandom()
+	vprecioarti = 'precioarti'+pvtmp 
+	vprecioartia = vprecioarti+'a'
+	vprecioartib = vprecioarti+'b'
+	vprecioartic = vprecioarti+'c'
+	vprecioartid = vprecioarti+'d'
+
+	IF EMPTY(_SYSLISTAPRECIO)  THEN 
+		* Obtengo los Articulos de Cada Lista Seleccionada 
+		=GetListasPrecios(vprecioarti)
+		SELECT &vprecioartia
+		USE 
+		SELECT &vprecioartib
+		USE 
+	ENDIF 
+
+	*** obtengo los precios del articulo pasado como parametro en las distintas listas de precios
+	IF !USED('syslistaprea') THEN 
+		USE syslistaprea IN 0
+	ENDIF 
+	IF !USED('syslistapreb') THEN 
+		USE syslistapreb IN 0 
+	ENDIF 
+
+	SET ENGINEBEHAVIOR 70
+
+	
+	IF EMPTY(pv_articulos) THEN 
+		v_condicion = ""
+	ELSE
+		v_condicion = " and trim(articulo) in ( "+pv_articulos+" ) "
+	ENDIF 
+	
+	
+*	SELECT * FROM syslistaprea INTO TABLE &vprecioartic WHERE ALLTRIM(articulo) in ( &pv_articulos ) ORDER BY articulo GROUP BY articulo 
+	SELECT * FROM syslistaprea INTO TABLE &vprecioartic WHERE 1 = 1 &v_condicion ORDER BY articulo GROUP BY articulo 
+
+	SELECT * FROM syslistaprea INTO TABLE &vprecioartia WHERE 1 = 1 AND idlista > 0 &v_condicion ORDER BY idlista 
+	
+	SELECT a.idlistah, a.articulo, a.detalle as detalleart, a.pventa as pventaa, a.impuestos as impuestosa, a.pventatot as pventatota,a.detallep as detalista,  b.*, razon as pventa, razon as impuestos, razon as pventatot, ;
+			razon as entrega, razon as impcuota ;
+		FROM syslistapreb b LEFT JOIN syslistaprea a ON  a.idlista = b.idlista INTO TABLE &vprecioartib WHERE b.idlista in ( SELECT idlista FROM &vprecioartia ) ;
+		AND b.habilitado = 'S' AND ALLTRIM(a.articulo) in ( SELECT ALLTRIM(articulo) FROM &vprecioartia ) ORDER BY  b.idlista , b.cuotas
+
+	SET ENGINEBEHAVIOR 90
+
+
+	SELECT &vprecioartia 
+	ALTER table &vprecioartib alter COLUMN idlistah i 
+	SELECT &vprecioartib 
+	ALTER table &vprecioartib alter COLUMN idlistah i 
+	INDEX on idlistah TAG idlistah
+	replace ALL pventa WITH ( pventaa * (1+razon/100) ) , impuestos WITH ( impuestosa * (1+razon/100) ), ;
+			 pventatot WITH ( pventatota * (1+razon/100)), entrega WITH 0, impcuota WITH (( pventatota * (1+razon/100))/ cuotas )
+	
+	INDEX on STR(idlista)+STR(cuotas)+STR(idfinancia)+articulo TAG indice1 
+		
+			 
+	** Me conecto a la base de datos
+	vconeccionD = abreycierracon(0,_SYSSCHEMA)
+		
+*	sqlmatriz(1)=" SELECT * FROM depostock where TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
+	sqlmatriz(1)=" SELECT * FROM depostock where 1 = 1 "+v_condicion  &&TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
+	verror=sqlrun(vconeccionD ,"depostock_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Stock por Depósitos... ",0+48+0,"Error")
+	    RETURN .F.
+	ENDIF
+	=abreycierracon(vconeccionD ,"")	
+
+	SELECT * FROM depostock_sql INTO TABLE &vprecioartid  ORDER BY articulo , deposito
+	SELECT &vprecioartid
+	INDEX on articulo TAG articulo 
+	
+	USE IN depostock_sql			 
+
+	USE IN &vprecioartia
+	USE IN &vprecioartib 
+	USE IN &vprecioartic 
+	USE IN &vprecioartid 
+
+*		SELECT &vprecioartia 
+*		INDEX on idlistah TAG idlista 
+*!*		
+*!*		SELECT &vprecioartib 
+*!*		SET RELATION TO idlista INTO &vprecioartia
+*!*		SET RELATION TO 
+	
+	RETURN vprecioarti	
 	
 ENDFUNC 
 
