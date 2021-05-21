@@ -1926,13 +1926,13 @@ PARAMETERS p_idFactura, p_esElectronica
 	
 				cae_fe = ALLTRIM(v_cespcae)
 										
-					v_json1 = " { 'ver':" + versionFCompro+ ",'fecha':'" + fechaCompro +"','cuit':" + cuitE+ ",'ptoVta':" + ptovta_fe + ",'tipoCmp':" + idtipocbte_fe
-					v_json2 = ",'nroCmp':" + numerostr  + ",'importe':" + imp_totstr + ",'moneda':'" + monedastr + "','ctz':" + cotizacionstr + ",'tipoDocRec':" + tipoDocstr 
-					v_json3 = ",'nroDocRec':" + cuitC + ",'tipoCodAut':'E'" + ",'codAut':" + cae_fe + "}"
+					v_json1 = ' { "ver":' + versionFCompro+ ',"fecha":"' + fechaCompro +'","cuit":' + cuitE+ ',"ptoVta":' + ptovta_fe + ',"tipoCmp":' + idtipocbte_fe
+					v_json2 = ',"nroCmp":' + numerostr  + ',"importe":' + imp_totstr + ',"moneda":"' + monedastr + '","ctz":' + cotizacionstr + ',"tipoDocRec":' + tipoDocstr 
+					v_json3 = ',"nroDocRec":' + cuitC + ',"tipoCodAut":"E"' + ',"codAut":' + cae_fe + ' }'
 														
 				v_json	= ALLTRIM(ALLTRIM(v_json1)+ ALLTRIM(v_json2)+ ALLTRIM(v_json3))
 				
-			
+			MESSAGEBOX(v_json)
 			
 				** Encripto la cadena JSON **
 				v_datosCodificados  = "" 
