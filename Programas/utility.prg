@@ -10755,8 +10755,8 @@ FUNCTION CambiaTipoDato
 	GO TOP 
 	DO WHILE !EOF()
 	
-		IF LOWER(ALLTRIM(columnascmb.type)) == 'float(13,4)' AND ALLTRIM(columnascmb.tipotabla)=='BASE TABLE' THEN 
-			sqlmatriz(1)="alter table "+ALLTRIM(columnascmb.tablanom)+" modify column "+ALLTRIM(columnascmb.field)+" float(13,2)"
+		IF (LOWER(ALLTRIM(columnascmb.type)) == 'float(13,4)' OR LOWER(ALLTRIM(columnascmb.type)) == 'float(13,2)' ) AND ALLTRIM(columnascmb.tipotabla)=='BASE TABLE'  THEN 
+			sqlmatriz(1)="alter table "+ALLTRIM(columnascmb.tablanom)+" modify column "+ALLTRIM(columnascmb.field)+" double(13,2)"
 			verror=sqlrun(vconeccionF,"modicolumna")
 			IF verror=.f.
 				MESSAGEBOX("No se puede modificar los campos flotantes de la base de datos ",0+16,"Advertencia")
@@ -11535,7 +11535,7 @@ PARAMETERS  pv_articulos
 	vconeccionD = abreycierracon(0,_SYSSCHEMA)
 		
 *	sqlmatriz(1)=" SELECT * FROM depostock where TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
-	sqlmatriz(1)=" SELECT * FROM depostock where 1 = 1 "+v_condicion  &&TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
+	sqlmatriz(1)=" SELECT s.*, d.detalle as nombredep FROM depostock s left join depositos d on s.deposito = d.deposito where 1 = 1 "+v_condicion  &&TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
 	verror=sqlrun(vconeccionD ,"depostock_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Stock por Depósitos... ",0+48+0,"Error")
@@ -11545,7 +11545,7 @@ PARAMETERS  pv_articulos
 
 	SELECT * FROM depostock_sql INTO TABLE &vprecioartid  ORDER BY articulo , deposito
 	SELECT &vprecioartid
-	INDEX on articulo TAG articulo 
+	INDEX on ALLTRIM(articulo) TAG articulo 
 	
 	USE IN depostock_sql			 
 
