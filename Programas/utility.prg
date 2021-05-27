@@ -2654,6 +2654,66 @@ ENDFUNC
 
 
 
+* FUNCIÓN PARA IMPRIMIR UN COmprobante de cumplimentacion (COMPROBANTES DE LA TABLA cumplimentap)
+* PARAMETROS: P_IDCUMP
+FUNCTION imprimirCumplimentacion
+PARAMETERS p_idcump
+
+
+	v_idcump = p_idcump
+
+
+	IF v_idcump > 0
+		
+
+	
+		*** Busco los datos de la cumplimentación y el detalle
+		
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+
+			sqlmatriz(1)=	" Select p.idcump,p.idcomproba,pv.puntov, p.numero, p.pventa, p.fecha, p.observa1, p.observa2, p.observa3, p.observa4, p.responsab, "
+			sqlmatriz(2)= 	" h.articulo, h.detalle, h.cantidad, h.cantidaduf,h.idcumph, h.idot ,c.tipo,c.comprobante as nomcomp, a.unidad, ifnull(f.unidadf,a.unidad) as unidadf, f.base "
+			sqlmatriz(3)=   " from cumplimentap p " 
+			sqlmatriz(4)= 	" left join cumplimentah h on h.idcump = p.idcump "
+			sqlmatriz(5)=	" left join comprobantes c on c.idcomproba = p.idcomproba "
+			sqlmatriz(6)=   " left join puntosventa pv on p.pventa = pv.pventa "
+			sqlmatriz(7)=   " left join articulos a on a.articulo=h.articulo "
+			sqlmatriz(8)=	" left join articulosf f on a.articulo = f.articulo "
+			sqlmatriz(9)=	" where p.idcump = "+ ALLTRIM(STR(v_idcump))
+			 
+					
+			verror=sqlrun(vconeccionF,"cump_imp_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la Cumplimentación",0+48+0,"Error")
+			ENDIF
+		
+	
+		SELECT * FROM cump_imp_sql INTO TABLE cump_impr
+		
+			
+		SELECT cump_impr
+		
+		IF NOT EOF()
+			SELECT cump_impr
+			v_idcomproba = cump_impr.idcomproba
+			
+			DO FORM reporteform WITH "cump_impr","cumpcr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar la Cumplimentación para imprimir",0+48+0,"Error al cargar la Cumplimentación")
+			RETURN 	
+		ENDIF 
+		
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar la Cumplimentación ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
 
 
 
