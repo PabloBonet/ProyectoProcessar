@@ -8277,8 +8277,16 @@ IF EMPTY(_SYSLISTAPRECIO)  THEN
 	_SYSLISTAPRECIO = 'syslistapre'
 	vtmp_recalcular = .t.
 ELSE 
-
-	USE syslistaprea IN 0 
+	
+	IF USED("syslistaprea") THEN 
+	ELSE
+		USE syslistaprea IN 0 
+	ENDIF 
+	IF USED("syslistapreb") THEN 
+	ELSE
+		USE syslistapreb IN 0 
+	ENDIF 
+	
 	vconeccionL = abreycierracon(0,_SYSSCHEMA)
 	sqlmatriz(1)="select MAX(actualiza) as maxactual from listapreciop  "
 	verror=sqlrun(vconeccionL,'maximosql')
@@ -8293,14 +8301,16 @@ ELSE
 	ENDIF 
 	SELECT syslistaprea 
 	USE 
+	SELECT syslistapreb 
+	USE 
 	SELECT maximosql
 	USE 
 	
 ENDIF 
 
 
-
 IF vtmp_recalcular = .t. THEN 
+
 	vconeccionF = abreycierracon(0,_SYSSCHEMA)
 	fvarticulos_sql 	= 'articulos_sql'+vtmp 
 	fvlistapreciop_sql 	= 'listapreciop_sql'+vtmp 
@@ -8359,7 +8369,6 @@ IF vtmp_recalcular = .t. THEN
 		LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
 		LEFT JOIN &fvarticulosimp_sql i  ON l.articulo = i.articulo ;
 		INTO TABLE &fvlistasart 
-
 
 	SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
 		a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.detalinea, a.ctrlstock, a.ocultar, ;
@@ -8450,6 +8459,7 @@ IF vtmp_recalcular = .t. THEN
 	USE
 ENDIF 
 
+
 	USE syslistaprea IN 0
 	USE syslistapreb IN 0
 
@@ -8472,7 +8482,7 @@ ENDIF
 	USE IN syslistapreb
 
 
-RETURN v_nombreretorno 
+	RETURN v_nombreretorno 
 
 ENDFUNC 
 
@@ -11623,5 +11633,54 @@ PARAMETERS  pv_articulos
 	
 	RETURN vprecioarti	
 	
+ENDFUNC 
+
+
+
+*-----------------------------------------------------------------------------------
+** Elimina El Asiento Contable pasado como parametro
+** Retorna 0 si lo pudo eliminar, sino retorna el numero del asiento
+*-----------------------------------------------------------------------------------
+FUNCTION EliminaAsientoC
+PARAMETERS pe_idasiento
+
+
+	IF pe_idasiento = 0 THEN 
+		RETURN 
+	ENDIF 
+*!*		IF MESSAGEBOX("Confirma la Eliminación del Asiento"+CHR(13)+" Número: "+ alltrim(thisform.tb_numero.value)+CHR(13)+" Fecha: "+DTOC(thisform.tb_fecha.value)+CHR(13)+" Detalle: "+ALLTRIM(thisform.tb_observa1.value),4+32+256,"Eliminación de Asientos Contables") = 7 THEN 
+*!*			RETURN 
+*!*		ENDIF 
+	vconeccionp=abreycierracon(0,_SYSSCHEMA)	
+	
+	sqlmatriz(1)="select ejercicio FROM asientos WHERE idasiento = " + ALLTRIM(STR(pe_idasiento))
+	verror=sqlrun(vconeccionp,"asiento0")
+
+	IF asiento0.ejercicio <> _sysejercicio THEN 
+		MESSAGEBOX("No se puede eliminar el Asiento, No pertenece al Ejercicio Activo ",0+16,"Eliminación de Asientos")
+		=abreycierracon(vconeccionp,"")
+		USE IN asiento0
+		RETURN pe_idasiento 
+	ENDIF 
+	USE IN asiento0
+	
+	* Elimino Asiento * 
+	sqlmatriz(1)="DELETE FROM asientos WHERE idasiento = " + ALLTRIM(STR(pe_idasiento))
+	verror=sqlrun(vconeccionp,"asiento1")
+
+	* Elimino Asociacion con Comprobantes 
+	sqlmatriz(1)="DELETE FROM asientoscompro WHERE idasiento = " + ALLTRIM(STR(pe_idasiento))
+	verror=sqlrun(vconeccionp,"asiento1")
+
+	* Elimino Asociacion con Asientos Agrupados si la Hubiere 
+	sqlmatriz(1)="DELETE FROM asientosg WHERE idasiento = " + ALLTRIM(STR(pe_idasiento))
+	verror=sqlrun(vconeccionp,"asiento1")
+
+	=abreycierracon(vconeccionp,"")
+	
+	pe_idasiento = 0	
+	
+	RETURN pe_idasiento 
+
 ENDFUNC 
 
