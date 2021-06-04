@@ -2365,14 +2365,15 @@ PARAMETERS p_idcajamovip
 					
 
 		sqlmatriz(1)= " Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip,h.idcajamovh, h.idtipopago,h.importe as importetp, tp.detalle as tipopago, "
-		sqlmatriz(2)= " com.comprobante as nomcomp, cpl.descrip as desccpl, cd.detalle as cajaDes, co.detalle as cajaOri from cajamovip r left join cajarecauda cd on r.idcajarecd = cd.idcajareca left join cajarecauda co on r.idcajareco = co.idcajareca "
-		sqlmatriz(3)=" left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom "
-		sqlmatriz(4)=" left join cajamovih h on r.idcajamovp = h.idcajamovp left join tipopagos tp on h.idtipopago = tp.idtipopago "
-	 	sqlmatriz(5)= " left join (SELECT c.*,concat('CHEQUE Nro: ',ch.serie,' ',ch.numero,concat(' FV: ',substr(ch.fechavence,7,2),'/',substr(ch.fechavence,5,2),'/',substr(ch.fechavence,1,4)),' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
-		sqlmatriz(6)= " from cobropagolink c left join cheques ch on c.idregistro = ch.idcheque left join bancos b on ch.idbanco = b.idbanco where c.tabla = 'cheques' and c.tablacp = 'cajamovih' union "
-		sqlmatriz(7)= " SELECT c.*,concat('CUPÓN Nro: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip  from cobropagolink c left join cupones cu on c.idregistro = cu.idcupon "
-		sqlmatriz(8)= " where c.tabla = 'cupones' and c.tablacp = 'cajamovih') as cpl on h.idcajamovh = cpl.registrocp "
-		sqlmatriz(9)=" where r.idcajamovp = "+ALLTRIM(STR(p_idcajamovip))
+		sqlmatriz(2)= " com.comprobante as nomcomp, TRIM(SUBSTR(concat(cpl.descrip,SPACE(200)),1,200)) as desccpl, cd.detalle as cajaDes, co.detalle as cajaOri "
+		sqlmatriz(3)= " from cajamovip r left join cajarecauda cd on r.idcajarecd = cd.idcajareca left join cajarecauda co on r.idcajareco = co.idcajareca "
+		sqlmatriz(4)=" left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom "
+		sqlmatriz(5)=" left join cajamovih h on r.idcajamovp = h.idcajamovp left join tipopagos tp on h.idtipopago = tp.idtipopago "
+	 	sqlmatriz(6)= " left join (SELECT c.*,concat('CHEQUE Nro: ',ch.serie,' ',ch.numero,concat(' FV: ',substr(ch.fechavence,7,2),'/',substr(ch.fechavence,5,2),'/',substr(ch.fechavence,1,4)),' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
+		sqlmatriz(7)= " from cobropagolink c left join cheques ch on c.idregistro = ch.idcheque left join bancos b on ch.idbanco = b.idbanco where c.tabla = 'cheques' and c.tablacp = 'cajamovih' union "
+		sqlmatriz(8)= " SELECT c.*,concat('CUPÓN Nro: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip  from cobropagolink c left join cupones cu on c.idregistro = cu.idcupon "
+		sqlmatriz(9)= " where c.tabla = 'cupones' and c.tablacp = 'cajamovih') as cpl on h.idcajamovh = cpl.registrocp "
+		sqlmatriz(10)=" where r.idcajamovp = "+ALLTRIM(STR(p_idcajamovip))
 			verror=sqlrun(vconeccionF,"cajamovip_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la Transferencia de Caja",0+48+0,"Error")
