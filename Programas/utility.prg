@@ -9828,7 +9828,7 @@ FUNCTION AnularRP
 PARAMETERS pan_idcomproba, pan_idregistro
 
 	estadosRP	= CREATEOBJECT('estadosclass')
-	v_estadoRPAnulado = estadosObj.getIdestado("ANULADO")
+	v_estadoRPAnulado = estadosRP.getIdestado("ANULADO")
 	RELEASE estadosRP
 	
 	vconeccionAn = abreycierracon(0,_SYSSCHEMA)
