@@ -1854,8 +1854,24 @@ PARAMETERS p_idFactura, p_esElectronica
 			ALTER table factu ADD COLUMN codBarra	 C(42)
 		*	ALTER table factu ADD COLUMN codQR		 general
 			ALTER table factu ADD COLUMN codQR C(100)
+
+	** AGREGO OBSERVACIONES FIJAS EN EL COMPROBANTE SEGÚN CONDICIONES EN LA TABLA observacond *
+	
+			ALTER table factu ADD COLUMN obsfijo C(250)
 			
-		
+			
+			
+			v_observaFijo = FiltroObserva("facturas", v_idfactura, vconeccionF)
+			
+			SELECT factu 
+			GO TOP 
+			replace ALL obsfijo WITH v_observaFijo 
+			
+			
+			SELECT factu 
+			GO TOP 
+			
+					
 			v_idcomproba = factu.idcomproba
 			v_tipoCompAfip	= ALLTRIM(factu.tipcomAFIP)
 			
@@ -11685,3 +11701,139 @@ PARAMETERS pe_idasiento
 
 ENDFUNC 
 
+*//////////////////////////////////////
+*/ Determina el Filtro de Observación a aplicar en funcion
+*/ del filtrado que aplica al comprobante recibido como parametros
+*//////////////////////////////////////
+
+FUNCTION FiltroObserva
+PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
+	
+	pf_campoid = getIdTabla(pf_tabla) && Obtengo el nombre del campo indice de la tabla
+	
+	pf_cierraconex = .f.
+	IF pf_vconeccion = 0 THEN 
+		pf_vconeccion=abreycierracon(0,_SYSSCHEMA)	
+		pf_cierraconex = .t.
+	ENDIF 
+
+	ret_Observa = ''
+	var_pf_idregi = IIF((UPPER(type("pf_idregi"))='I' or UPPER(type("pf_idregi"))='N'),ALLTRIM(STR(pf_idregi)),"'"+ALLTRIM(pf_idregi)+"'")	
+	
+	sqlmatriz(1)=" Select * from "+ALLTRIM(pf_tabla)+" where "+pf_campoid+" = "+var_pf_idregi
+	verror=sqlrun(pf_vconeccion,"registrof_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Registro en la Tabla: "+var_pf_idregi+";"+pf_tabla+";"+pf_campoid,0+48+0,"Error")
+	    RETURN ret_observa 
+	ENDIF
+	
+	SELECT registrof_sql
+	
+	IF EOF() THEN 
+		USE IN registrof_sql 
+		RETURN ret_observa 
+	ELSE	
+		*///////////////////
+		*/Aca calculo la coincidencia con los filtros definidos para la tabla pasada*//
+		*/ y el registro encontrado */**************
+		*///////////////////
+		
+		sqlmatriz(1)=" Select d.*, f.tabla as tablaf, f.observa " 
+		sqlmatriz(2)="   from observacond d left join observacomp f on f.idobscomp = d.idobscomp "	
+		sqlmatriz(3)="   where f.tabla = '"+ALLTRIM(pf_tabla)+"' order by f.idobscomp "
+		verror=sqlrun(pf_vconeccion,"filtros_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Registro en la Tabla: "+var_pf_idregi+";"+pf_tabla+";"+pf_campoid,0+48+0,"Error")
+		    RETURN ret_observa 
+		ENDIF
+		SELECT *, 0 as cumple FROM filtros_sql INTO TABLE filtros
+		SELECT filtros_sql
+		USE IN filtros_sql
+		SELECT registrof_sql
+		SELECT filtros 		
+		GO TOP 
+		
+		DO WHILE !EOF()
+			v_cumple = 0
+			IF ALLTRIM(filtros.tabla) = ALLTRIM(pf_tabla) THEN 
+					eje = " var_valor = registrof_sql."+ALLTRIM(filtros.campo)
+					&eje
+					eje = " var_valord= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valord))','ALLTRIM(filtros.valord)')
+					&eje 
+					eje = " var_valorh= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valorh))','ALLTRIM(filtros.valorh)')
+					&eje 
+
+				DO CASE 
+					CASE UPPER(filtros.compara)="TODOS"
+						v_cumple = 1
+					CASE UPPER(filtros.compara)="ENTRE"
+						IF  var_valor >= var_valord AND var_valor <= var_valorh THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="IGUAL"
+						IF var_valor = var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="MAYOR"
+						IF var_valor > var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="MAYOR O IGUAL"
+						IF var_valor >= var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="MENOR"
+						IF var_valor < var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="MENOR O IGUAL"
+						IF var_valor <= var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+					CASE UPPER(filtros.compara)="DISTINTO"
+						IF var_valor <> var_valord THEN 
+							v_cumple = 1 
+						ENDIF 
+*!*						CASE UPPER(AstoCuentaA_sql.compara)="GRUPO"
+*!*							IF GrupoCuentaContable (var_valor,AstoCuentaA_sql.tablag,AstoCuentaA_sql.campog,AstoCuentaA_sql.tipog,AstoCuentaA_sql.valor1, vconeccionATO) THEN 
+*!*								v_incerta = .t.
+*!*							ENDIF 
+
+				ENDCASE 
+				
+				SELECT filtros
+				replace cumple WITH v_cumple
+			
+			ENDIF 
+		
+			SELECT filtros
+			SKIP 
+
+		ENDDO 
+	ENDIF 
+	
+
+	SET ENGINEBEHAVIOR 70
+	SELECT idobscomp, tabla, observa, SUM(1) as cantidadf, SUM(cumple) as cumplidos, pf_idregi as idreg, pf_campoid as campoid ;
+			FROM  filtros INTO TABLE filtrosele ORDER BY idobscomp GROUP BY idobscomp
+	SET ENGINEBEHAVIOR 90
+	GO TOP 
+	
+	SELECT filtrosele
+	LOCATE FOR cantidadf = cumplidos AND cumplidos > 0 
+	IF FOUND() THEN 
+*		ret_observa = STRTRAN(STR(filtrosele.idobscomp,4),' ','0')+STRTRAN(STR(filtrosele.idastomode,4),' ','0')
+		ret_observa = ALLTRIM(filtrosele.observa)
+	ENDIF   
+	SELECT filtros
+	USE IN filtros
+	SELECT filtrosele
+	USE IN filtrosele
+
+	IF pf_cierraconex THEN 
+		**** El Modelo de Asiento Seleccionado ***
+		=abreycierracon(pf_vconeccion,"")	
+	ENDIF 
+	
+RETURN ret_observa 
+ENDFUNC 
