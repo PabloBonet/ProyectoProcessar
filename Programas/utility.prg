@@ -9215,10 +9215,13 @@ ENDFUNC
 **	P_idacajareca: ID de la caja recaudadora (Si es 0 se puede tomar como que es para cualquier caja) 
 **	P_idcuenta: ID de la cuenta (Si es 0 se puede tomar como que es para cualquier caja)
 **  P_idcomproba: ID del tipo de comprobante 
+**  P_tablacp: Nombre de la Tabla de Detalle asociada al comprobante que origina el pago ('DETALLECOBRO','DETALLEPAGO'...)
+**  P_campocp: Nombre del campo indice de la tabla Asociada al cobro
+**  P_idregistrocp: Numero de registro indice correspondiente al campo pasado como p_campocp
 **	Retorno: Retorna True si se guardó correctamente, False en otro caso
 ***
 FUNCTION guardarMoviTPago
-PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro
+PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro, p_tablacp, p_campocp, p_idregistrocp
 			
 	v_retorno = .F.	
 	
@@ -9236,8 +9239,12 @@ PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta
 	v_fecha			= DTOS(DATE())
 	v_hora			= TIME()
 	
+	vp_tablacp 		= IIF(TYPE('p_tablacp')='C',p_tablacp,"")
+	vp_campocp 		= IIF(TYPE('p_campocp')='C',p_campocp,"")
+	vp_idregistrocp = IIF(TYPE('p_idregistrocp')='N',p_idregistrocp,0)
 	
-	DIMENSION lamatriz3(10,2)
+	
+	DIMENSION lamatriz3(13,2)
 	
 		
 	lamatriz3(1,1)='idmovitp'
@@ -9260,6 +9267,12 @@ PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta
 	lamatriz3(9,2)="'"+ALLTRIM(v_hora)+"'"
 	lamatriz3(10,1)='movimiento'
 	lamatriz3(10,2)="'"+ALLTRIM(v_movimiento)+"'"
+	lamatriz3(11,1)='tablacp'
+	lamatriz3(11,2)="'"+ALLTRIM(vp_tablacp)+"'"
+	lamatriz3(12,1)='campocp'
+	lamatriz3(12,2)="'"+ALLTRIM(vp_campocp)+"'"
+	lamatriz3(13,1)='idregicp'
+	lamatriz3(13,2)=ALLTRIM(STR(vp_idregistrocp))
 	
 	vconeccionMo = abreycierracon(0,_SYSSCHEMA)
 	
@@ -9681,78 +9694,78 @@ ENDFUNC
 
 
 
-*** Guardo un registro en la tabla de movitpago
-** PARAMETROS: 
-**	P_idtipopago: ID del tipo de pago que se quiere registrar
-**	P_tabla: Nombre de la tabla asociada al tipo de pago ('CHEQUE', 'CUPON'...) 
-**	P_campo: Nombre del campo indice de la tabla
-**	P_idregistro: Numero de registro de la tabla correspondiente al campo pasado como parámetro
-**	P_idacajareca: ID de la caja recaudadora (Si es 0 se puede tomar como que es para cualquier caja) 
-**	P_idcuenta: ID de la cuenta (Si es 0 se puede tomar como que es para cualquier caja)
-**  P_idcomproba: ID del tipo de comprobante 
-**	Retorno: Retorna True si se guardó correctamente, False en otro caso
-***
-FUNCTION guardarMoviTPago
-PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro
-			
-	v_retorno = .F.	
-	
-	v_movimiento	=  movimientoTPago(P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta)
+*!*	*** Guardo un registro en la tabla de movitpago
+*!*	** PARAMETROS: 
+*!*	**	P_idtipopago: ID del tipo de pago que se quiere registrar
+*!*	**	P_tabla: Nombre de la tabla asociada al tipo de pago ('CHEQUE', 'CUPON'...) 
+*!*	**	P_campo: Nombre del campo indice de la tabla
+*!*	**	P_idregistro: Numero de registro de la tabla correspondiente al campo pasado como parámetro
+*!*	**	P_idacajareca: ID de la caja recaudadora (Si es 0 se puede tomar como que es para cualquier caja) 
+*!*	**	P_idcuenta: ID de la cuenta (Si es 0 se puede tomar como que es para cualquier caja)
+*!*	**  P_idcomproba: ID del tipo de comprobante 
+*!*	**	Retorno: Retorna True si se guardó correctamente, False en otro caso
+*!*	***
+*!*	FUNCTION guardarMoviTPago
+*!*	PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro
+*!*				
+*!*		v_retorno = .F.	
+*!*		
+*!*		v_movimiento	=  movimientoTPago(P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta)
 
-	IF EMPTY(ALLTRIM(v_movimiento)) == .T. && No retorno ningún movimiento, no se va a registrar el movimiento
-		v_retorno = .F.
-		RETURN v_retorno
-	
-	ENDIF 
+*!*		IF EMPTY(ALLTRIM(v_movimiento)) == .T. && No retorno ningún movimiento, no se va a registrar el movimiento
+*!*			v_retorno = .F.
+*!*			RETURN v_retorno
+*!*		
+*!*		ENDIF 
 
 
-	v_fecha			= DTOS(DATE())
-	v_hora			= TIME()
-	
-	
-	DIMENSION lamatriz3(10,2)
-	
-		
-	lamatriz3(1,1)='idmovitp'
-	lamatriz3(1,2)= "0"
-	lamatriz3(2,1)='idtipopago'
-	lamatriz3(2,2)= ALLTRIM(STR(p_idtipopago))
-	lamatriz3(3,1)='tabla'
-	lamatriz3(3,2)= "'"+ALLTRIM(P_tabla)+"'"
-	lamatriz3(4,1)='campo'
-	lamatriz3(4,2)= "'"+ALLTRIM(P_campo)+"'"
-	lamatriz3(5,1)='idregistro'
-	lamatriz3(5,2)= ALLTRIM(STR(P_idregistro))
-	lamatriz3(6,1)='idcajareca'
-	lamatriz3(6,2)= ALLTRIM(STR(P_idcajareca))
-	lamatriz3(7,1)='idcuenta'
-	lamatriz3(7,2)=ALLTRIM(STR(P_idcuenta))
-	lamatriz3(8,1)='fecha'
-	lamatriz3(8,2)="'"+ALLTRIM(v_fecha)+"'"
-	lamatriz3(9,1)='hora'
-	lamatriz3(9,2)="'"+ALLTRIM(v_hora)+"'"
-	lamatriz3(10,1)='movimiento'
-	lamatriz3(10,2)="'"+ALLTRIM(v_movimiento)+"'"
-	
-	vconeccionMo = abreycierracon(0,_SYSSCHEMA)
-	
-	p_tipoope     = 'I'
-	p_condicion   = ''
-	v_titulo      = " EL ALTA "
-	p_tabla     = 'movitpago'
-	p_matriz    = 'lamatriz3'
-	p_conexion  = vconeccionMo
-	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
-	
-		=abreycierracon(vconeccionMo ,"")	
+*!*		v_fecha			= DTOS(DATE())
+*!*		v_hora			= TIME()
+*!*		
+*!*		
+*!*		DIMENSION lamatriz3(10,2)
+*!*		
+*!*			
+*!*		lamatriz3(1,1)='idmovitp'
+*!*		lamatriz3(1,2)= "0"
+*!*		lamatriz3(2,1)='idtipopago'
+*!*		lamatriz3(2,2)= ALLTRIM(STR(p_idtipopago))
+*!*		lamatriz3(3,1)='tabla'
+*!*		lamatriz3(3,2)= "'"+ALLTRIM(P_tabla)+"'"
+*!*		lamatriz3(4,1)='campo'
+*!*		lamatriz3(4,2)= "'"+ALLTRIM(P_campo)+"'"
+*!*		lamatriz3(5,1)='idregistro'
+*!*		lamatriz3(5,2)= ALLTRIM(STR(P_idregistro))
+*!*		lamatriz3(6,1)='idcajareca'
+*!*		lamatriz3(6,2)= ALLTRIM(STR(P_idcajareca))
+*!*		lamatriz3(7,1)='idcuenta'
+*!*		lamatriz3(7,2)=ALLTRIM(STR(P_idcuenta))
+*!*		lamatriz3(8,1)='fecha'
+*!*		lamatriz3(8,2)="'"+ALLTRIM(v_fecha)+"'"
+*!*		lamatriz3(9,1)='hora'
+*!*		lamatriz3(9,2)="'"+ALLTRIM(v_hora)+"'"
+*!*		lamatriz3(10,1)='movimiento'
+*!*		lamatriz3(10,2)="'"+ALLTRIM(v_movimiento)+"'"
+*!*		
+*!*		vconeccionMo = abreycierracon(0,_SYSSCHEMA)
+*!*		
+*!*		p_tipoope     = 'I'
+*!*		p_condicion   = ''
+*!*		v_titulo      = " EL ALTA "
+*!*		p_tabla     = 'movitpago'
+*!*		p_matriz    = 'lamatriz3'
+*!*		p_conexion  = vconeccionMo
+*!*		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+*!*		
+*!*			=abreycierracon(vconeccionMo ,"")	
 
-	    RETURN .F.
-	ENDIF	
-	=abreycierracon(vconeccionMo ,"")	
-	RETURN .T.
+*!*		    RETURN .F.
+*!*		ENDIF	
+*!*		=abreycierracon(vconeccionMo ,"")	
+*!*		RETURN .T.
 
-ENDFUNC 
+*!*	ENDFUNC 
 
 *** Funcion de busqueda de los ultimos movimientos de Tipos de pago según los parametros pasados como parámetros
 **  Si el parámetro recibido es CERO, lo ignora en la condición trayendo todos los registros para ese parámetro
@@ -10136,7 +10149,10 @@ PARAMETERS pan_idcomproba, pan_idregistro
 						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")		    
 						ENDIF 
 						
-						v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistro, v_idcajarecaRP , id_cajabco, v_tipocomprorp)
+						MESSAGEBOX(v_tablacp)
+						MESSAGEBOX(v_campocp)
+						MESSAGEBOX(v_iddetacp)
+						v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistro, v_idcajarecaRP , id_cajabco, v_tipocomprorp, v_tablacp, v_campocp, v_iddetacp)
 						IF v_ret = .F.
 							MESSAGEBOX("Ha Ocurrido un Error al intentar registrar el Movimiento para el Tipo de pago",0+48+0,"Error")
 						ENDIF 					
@@ -11837,3 +11853,78 @@ PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 	
 RETURN ret_observa 
 ENDFUNC 
+
+
+
+
+FUNCTION EliminarMoviTPago
+PARAMETERS pan_idcomproba, pan_idregistro
+	
+	vconeccionEl = abreycierracon(0,_SYSSCHEMA)
+	
+	* Busco el comprobante a Eliminar los Movimientos de Tipos de Pagos de detalles de cobros del comprobante anulado 
+	sqlmatriz(1)=" select * from detallecobros  "
+	sqlmatriz(3)=" where idcomproba = "+ALLTRIM(STR(pan_idcomproba))+" and idregistro = "+ALLTRIM(STR(pan_idregistro))  
+	verror=sqlrun(vconeccionEl ,"detallecobros_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Detalle de Cobros ",0+48+0,"Error")
+		=abreycierracon(vconeccionEl ,"")	
+	    RETURN .F.  
+	ENDIF	 
+
+	SELECT detallecobros_sql
+	GO TOP
+	DO WHILE !EOF() 
+		
+		* Elimino los Movimientos en MOVITPAGOS para el comprobante Anulado en detalle de Cobros
+		sqlmatriz(1)=" delete from movitpago "
+		sqlmatriz(3)=" where tablacp = 'detallecobros' and idregicp = "+ALLTRIM(STR(detallecobros_sql.iddetacobro))  
+		verror=sqlrun(vconeccionEl ,"movi_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Movimientos de Tipos de Pago de detallecobros ",0+48+0,"Error")
+			=abreycierracon(vconeccionEl ,"")	
+		    RETURN .F.  
+		ENDIF	 
+		
+		SELECT detallecobros_sql
+		SKIP 
+	ENDDO 
+	
+
+
+	* Busco el comprobante a Eliminar los Movimientos de Tipos de Pagos de detalles de cobros del comprobante anulado 
+	sqlmatriz(1)=" select * from detallepagos  "
+	sqlmatriz(3)=" where idcomproba = "+ALLTRIM(STR(pan_idcomproba))+" and idregistro = "+ALLTRIM(STR(pan_idregistro))  
+	verror=sqlrun(vconeccionEl ,"detallepagos_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Detalle de Pagos ",0+48+0,"Error")
+		=abreycierracon(vconeccionEl ,"")	
+	    RETURN .F.  
+	ENDIF	 
+
+	SELECT detallepagos_sql
+	GO TOP
+	DO WHILE !EOF() 
+		
+		* Elimino los Movimientos en MOVITPAGOS para el comprobante Anulado en detalle de Cobros
+		sqlmatriz(1)=" delete from movitpago "
+		sqlmatriz(3)=" where tablacp = 'detallepagos' and idregicp = "+ALLTRIM(STR(detallepagos_sql.iddetapago))  
+		verror=sqlrun(vconeccionEl ,"movi_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Movimientos de Tipos de Pago de detallepagos ",0+48+0,"Error")
+			=abreycierracon(vconeccionEl ,"")	
+		    RETURN .F.  
+		ENDIF	 
+		
+		SELECT detallepagos_sql
+		SKIP 
+	ENDDO 	
+	
+	=abreycierracon(vconeccionEl ,"")	
+	USE IN detallecobros_sql
+	USE IN detallepagos_sql
+	
+RETURN 
+	
+	
+
