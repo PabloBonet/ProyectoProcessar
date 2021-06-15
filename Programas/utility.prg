@@ -1860,8 +1860,8 @@ PARAMETERS p_idFactura, p_esElectronica
 			ALTER table factu ADD COLUMN obsfijo C(250)
 			
 			
-			
-			v_observaFijo = FiltroObserva("facturas", v_idfactura, vconeccionF)
+			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.T.)
+
 			
 			SELECT factu 
 			GO TOP 
@@ -11810,10 +11810,6 @@ PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 						IF var_valor <> var_valord THEN 
 							v_cumple = 1 
 						ENDIF 
-*!*						CASE UPPER(AstoCuentaA_sql.compara)="GRUPO"
-*!*							IF GrupoCuentaContable (var_valor,AstoCuentaA_sql.tablag,AstoCuentaA_sql.campog,AstoCuentaA_sql.tipog,AstoCuentaA_sql.valor1, vconeccionATO) THEN 
-*!*								v_incerta = .t.
-*!*							ENDIF 
 
 				ENDCASE 
 				
@@ -11838,7 +11834,7 @@ PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 	SELECT filtrosele
 	LOCATE FOR cantidadf = cumplidos AND cumplidos > 0 
 	IF FOUND() THEN 
-*		ret_observa = STRTRAN(STR(filtrosele.idobscomp,4),' ','0')+STRTRAN(STR(filtrosele.idastomode,4),' ','0')
+
 		ret_observa = ALLTRIM(filtrosele.observa)
 	ENDIF   
 	SELECT filtros
@@ -11847,7 +11843,7 @@ PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 	USE IN filtrosele
 
 	IF pf_cierraconex THEN 
-		**** El Modelo de Asiento Seleccionado ***
+
 		=abreycierracon(pf_vconeccion,"")	
 	ENDIF 
 	
@@ -11926,5 +11922,78 @@ PARAMETERS pan_idcomproba, pan_idregistro
 	
 RETURN 
 	
+	*//////////////////////////////////////
+*/ Obtiene la observación correspondiente según los filtros para la tabla, campo e id
+*/ Y registra opcionalmente en la tabla observareg
+* Parametros:
+* p_tabla; p_campo; p_idregistro: tabla, campo y registro de la cual se va a obtener la observación 
+* p_coneccion: conección a utilizar
+* p_registrar: registra o no la observación obtenida en la tabla observareg (Parametro que puede ser True o False)
+*//////////////////////////////////////
+
+FUNCTION obtenerObservaComp
+PARAMETERS p_tabla,p_campo,p_idregistro,p_coneccion,p_registrar
+
+	v_idregistrostr =IIF((UPPER(type("p_idregistro"))='I' or UPPER(type("p_idregistro"))='N'),ALLTRIM(STR(p_idregistro)),"'"+ALLTRIM(p_idregistro)+"'")	
+	IF EMPTY(ALLTRIM(p_tabla)) = .T. OR EMPTY(ALLTRIM(p_campo)) = .T. OR EMPTY(ALLTRIM(v_idregistrostr))= .T. OR EMPTY(ALLTRIM(p_tabla)) = .T. 
+	
+		RETURN ""
+	
+	ELSE
+	
+	
+		v_observaFijo = FiltroObserva(p_tabla, v_idregistrostr,p_coneccion)		
+	
+		IF p_registrar = .T.
+		
+					
+			DIMENSION lamatriz1(5,2)
+					
+			v_idobsreg = 0
+			
+			v_campo = p_campo
+			v_tabla	= p_tabla
+					
+			
+			lamatriz1(1,1)='idobsreg'
+			lamatriz1(1,2)= ALLTRIM(STR(v_idobsreg))
+			lamatriz1(2,1)='idregistro'
+			lamatriz1(2,2)= ALLTRIM(v_idregistrostr)
+			lamatriz1(3,1)='campo'
+			lamatriz1(3,2)= "'"+ALLTRIM(v_campo)+"'"
+			lamatriz1(4,1)='tabla'
+			lamatriz1(4,2)= "'"+ALLTRIM(v_tabla)+"'"
+			lamatriz1(5,1)='observa'
+			lamatriz1(5,2)= "'"+ALLTRIM(v_observaFijo)+"'"
+
+
+				
+			i_tipoope     = 'I'
+			i_condicion   = ''
+			i_titulo      = " EL ALTA "
+			i_tabla     = 'observareg'
+			i_matriz    = 'lamatriz1'
+			i_conexion  = p_coneccion
+			IF SentenciaSQL(i_tabla,i_matriz,i_tipoope,i_condicion,i_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+			    RETURN ""
+			ENDIF	
+			
+			RELEASE lamatriz1	
+		
+		
+		ENDIF 	
+		
+		
+	ENDIF 
+
+
+	RETURN v_observaFijo 
+
 	
 
+
+ENDFUNC 
+
+
+		
