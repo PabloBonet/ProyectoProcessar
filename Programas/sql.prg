@@ -11,29 +11,6 @@ conectar = 0
 IF !(ALLTRIM(conex) == "") then
 	ccDataBaseSQL = conex
 
-	**********************************************************************
-	*SI MIDRVMYSQL NO ESTA DEFINIDO ME CONECTO A LA BASE DE VISUAL FOXPRO
-	*ALE 09/07/2012
-	**********************************************************************
-*!*		LOCAL lcPlataforma &&=1 Visualfoxpro =2 Mysql
-
-*!*		IF TYPE("_SYSDRVMYSQL") = "U" THEN 
-*!*			*VARIABLE NO DEFINIDA
-*!*			lcPlataforma = 1	  
-*!*		ELSE
-*!*			IF EMPTY(MIDRVMYSQL) THEN 
-*!*				*FOXPRO
-*!*				lcPlataforma = 1
-*!*			ELSE
-*!*				*MYSQL
-*!*				lcPlataforma = 2
-*!*			ENDIF 
-*!*		ENDIF 
-
-		*Bases de datos en Mysql
-		**AQUI AGREGUE LA LOGICA PARA QUE EN EL CASO DE QUE SEA UNA CONEXION A MYSQL SOLO ABRA UNA VEZ LA CONEXION *********** DESDE AQUI ****
-		** EXTRAIGO EL NOMBRE DE LA BASE DEL STRING PASADO COMO CONEXION CON FECHA 25/08/2007
-		*ale- anule esto porque no me podia conectar a distintas bases de datos
 		vc_mysl= ""
 		
 		vc_mysl = LOWER(ALLTRIM(ccDataBaseSQL))
@@ -55,8 +32,6 @@ IF !(ALLTRIM(conex) == "") then
 	
 	IF conectar < 0 then
 		=MESSAGEBOX("Error en apertura de la conexion con la base datos... ( "+ALLTRIM(conex)+" )",16,"Error Fatal")
-*		=cierraapp()
-*		CLOSE ALL
 		ON ERROR errores= .f.
 		QUIT 
 	ENDIF
@@ -203,7 +178,7 @@ PARAMETERS pbase
 		";Server="+lcServer+;
 		";Database="+lcDatabase+;
 		";Uid="+lcUser+;
-		";Pwd="+lcPassWord		
+		";Pwd="+lcPassWord
 		lnHandle=SQLSTRINGCONNECT(lcStringConn)
 				
 	ENDIF 
@@ -259,10 +234,18 @@ ENDFUNC
 **********************************************************************************
 FUNCTION SentenciaSQL
 PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
+
+	*quito caracter ' de los valores de la matriz
+	elementos = ALEN(&p_matriz,1)
+	FOR fila = 1 TO elementos STEP 1
+		valormatriz = IIF(substr(ALLTRIM(&p_matriz(fila,2)),1,1)=="'","'"+STRTRAN(substr(ALLTRIM(&p_matriz(fila,2)),2,LEN(ALLTRIM(&p_matriz(fila,2)))-2),"'","´")+"'",ALLTRIM(&p_matriz(fila,2)))	
+		&p_matriz(fila,2) = valormatriz
+	ENDFOR 
+
 	ErrorSQL = .F.
 	DO CASE 
-		CASE p_tipoope = 'I' && INSERT
-			limpiamatriz()
+		CASE p_tipoope = 'I' && INSERT 
+			limpiamatriz() 
 			pos = 1
 			elementos = ALEN(&p_matriz,1)
 			sqlmatriz(pos) = "INSERT INTO "+ALLTRIM(p_tabla)+" ("
@@ -279,6 +262,8 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 				ENDIF 
 		 	ENDFOR 
 		 	sqlmatriz(pos) = sqlmatriz(pos)+ ") values ("
+		 	
+		 	
 			FOR fila = 1 TO ALEN(&p_matriz,1) STEP 1
 			
 				IF LEN(ALLTRIM(sqlmatriz(pos))) + LEN(ALLTRIM(&p_matriz(fila,2))) < 240 THEN 
@@ -294,6 +279,7 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 		 	ENDFOR 
 		 	sqlmatriz(pos) = sqlmatriz(pos)+")"
 		 	
+
 		 	logSistema(p_tabla, p_matriz, p_tipoope,p_conexion)
 		 	
 		 	
