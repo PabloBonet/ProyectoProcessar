@@ -1860,7 +1860,7 @@ PARAMETERS p_idFactura, p_esElectronica
 			ALTER table factu ADD COLUMN obsfijo C(250)
 			
 			
-			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.T.)
+			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.F.)
 
 			
 			SELECT factu 
@@ -11928,7 +11928,7 @@ RETURN
 * Parametros:
 * p_tabla; p_campo; p_idregistro: tabla, campo y registro de la cual se va a obtener la observación 
 * p_coneccion: conección a utilizar
-* p_registrar: registra o no la observación obtenida en la tabla observareg (Parametro que puede ser True o False)
+* p_registrar: Si es Verdadero: registra la observación obtenida en la tabla observareg; si es Falso, la obtiene de la tabla sin registrar
 *//////////////////////////////////////
 
 FUNCTION obtenerObservaComp
@@ -11942,11 +11942,12 @@ PARAMETERS p_tabla,p_campo,p_idregistro,p_coneccion,p_registrar
 	ELSE
 	
 	
-		v_observaFijo = FiltroObserva(p_tabla, v_idregistrostr,p_coneccion)		
-	
-		IF p_registrar = .T.
 		
-					
+	
+		IF p_registrar = .T. && Registra en base de datos y retorna la observacion
+		
+			v_observaFijo = FiltroObserva(p_tabla, v_idregistrostr,p_coneccion)		
+			
 			DIMENSION lamatriz1(5,2)
 					
 			v_idobsreg = 0
@@ -11980,7 +11981,22 @@ PARAMETERS p_tabla,p_campo,p_idregistro,p_coneccion,p_registrar
 			ENDIF	
 			
 			RELEASE lamatriz1	
-		
+		ELSE
+			sqlmatriz(1)=" select observa from observareg  "
+			sqlmatriz(2)=" where idregistro = "+ALLTRIM(STR(p_idregistro))+" and campo = '"+ALLTRIM(p_campo)+"' and tabla = '"+ALLTRIM(p_tabla)+"'"
+			verror=sqlrun(p_coneccion,"observareg_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del registro de observación ",0+48+0,"Error")
+			    RETURN "" 
+			ENDIF	
+			SELECT observareg_sql
+			GO TOP 
+			
+			IF NOT EOF()
+				v_observaFijo = observareg_sql.observa
+			ELSE
+				v_observaFijo = ""
+			ENDIF 
 		
 		ENDIF 	
 		
