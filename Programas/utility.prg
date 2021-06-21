@@ -12007,9 +12007,70 @@ PARAMETERS p_tabla,p_campo,p_idregistro,p_coneccion,p_registrar
 	RETURN v_observaFijo 
 
 	
-
-
 ENDFUNC 
 
+
+*//////////////////////////////////////
+*/ Guarda el Seteo de la Clave de Acceso para aquellos usuarios que quieren salvar el passwd de acceso
+* Parametros:
+*  psv_accion	: A=ACTUALIZA O R=RECUPERA  CARACTER
+*  psv_usuario	: Nombre de Usuario 		CARACTER
+*  psv_passw	: Password o Clave			CARACTER
+*  psv_esquema	: Esquema al que se conecta CARACTER
+*  psv_save		: .t.= Salva Acceso, .f.= No Salva el Acceso LOGICO
+*  psv_llave	: LLave para encriptacion CARACTER
+*//////////////////////////////////////
+
+FUNCTION SavePasswd
+	PARAMETERS psv_accion, psv_usuario, psv_passw, psv_esquema, psv_save, psv_llave
+	vsv_retorno = ""
+	
+	IF !FILE(_SYSSERVIDOR+'savepwd.dbf') THEN 
+		EJE = " CREATE TABLE "+_SYSSERVIDOR+"savepwd.dbf ( usuario c(100), clave c(100), esquema c(100) ) "
+		&EJE
+		USE IN savepwd
+	ENDIF 
+	EJE = " USE "+_SYSSERVIDOR+"savepwd.dbf in 0 exclusive "
+	&EJE
+		
+	
+	IF psv_accion = "A" THEN  && Actualizar la tabla
+		
+		DELETE FROM savepwd WHERE ALLTRIM(savepwd.usuario)==encripta(ALLTRIM(psv_usuario),psv_llave,.f.) AND ALLTRIM(savepwd.esquema)==encripta(ALLTRIM(psv_esquema),psv_llave,.f.)
+		PACK 
+		IF psv_save = .t. THEN && Salva la la clave de usuario pasado como parametro
+			vsv_usuario	= encripta(ALLTRIM(psv_usuario),psv_llave,.f.)
+			vsv_passw	= encripta(ALLTRIM(psv_passw),psv_llave,.f.)
+			vsv_esquema = encripta(ALLTRIM(psv_esquema),psv_llave,.f.)
+			INSERT INTO savepwd VALUES (vsv_usuario, vsv_passw, vsv_esquema)	
+		ENDIF 
+	
+	ELSE 	&& Recupera la Clave
+		
+		SELECT savepwd
+		GO TOP 
+		
+		IF !EMPTY(psv_esquema) THEN 		
+			LOCATE FOR ALLTRIM(savepwd.usuario)==encripta(ALLTRIM(psv_usuario),psv_llave,.f.) AND ALLTRIM(savepwd.esquema)==encripta(ALLTRIM(psv_esquema),psv_llave,.f.)
+			IF FOUND() THEN  && encontro usuario y esquema pasado "##-##.1."
+				vsv_retorno = Desencripta(ALLTRIM(savepwd.clave),psv_llave)+"##-##.1."+Desencripta(ALLTRIM(savepwd.esquema),psv_llave)
+			ELSE	&& no encontro ni usuario ni esquema pasado "##-##.2."
+				vsv_retorno = "##-##.2."  
+			ENDIF 
+					
+		ELSE
+			LOCATE FOR ALLTRIM(savepwd.usuario)==encripta(ALLTRIM(psv_usuario),psv_llave,.f.) 
+			IF FOUND() THEN && Encontro usuario pero recibio esquema vacio
+				vsv_retorno = Desencripta(ALLTRIM(savepwd.clave),psv_llave)+"##-##.3."+Desencripta(ALLTRIM(savepwd.esquema),psv_llave)
+			ENDIF 		
+			
+		ENDIF 
+	
+	ENDIF 	
+	
+	
+	USE IN savepwd 
+	
+RETURN vsv_retorno
 
 		
