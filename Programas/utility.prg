@@ -12026,7 +12026,7 @@ FUNCTION SavePasswd
 	vsv_retorno = ""
 	
 	IF !FILE(_SYSSERVIDOR+'savepwd.dbf') THEN 
-		EJE = " CREATE TABLE "+_SYSSERVIDOR+"savepwd.dbf ( usuario c(100), clave c(100), esquema c(100) ) "
+		EJE = " CREATE TABLE "+_SYSSERVIDOR+"savepwd.dbf ( usuario c(100), clave c(100), esquema c(100), ultimo c(1) ) "
 		&EJE
 		USE IN savepwd
 	ENDIF 
@@ -12036,18 +12036,20 @@ FUNCTION SavePasswd
 	
 	IF psv_accion = "A" THEN  && Actualizar la tabla
 		
+		replace ultimo WITH "1" FOR ALLTRIM(savepwd.usuario)==encripta(ALLTRIM(psv_usuario),psv_llave,.f.) 	
 		DELETE FROM savepwd WHERE ALLTRIM(savepwd.usuario)==encripta(ALLTRIM(psv_usuario),psv_llave,.f.) AND ALLTRIM(savepwd.esquema)==encripta(ALLTRIM(psv_esquema),psv_llave,.f.)
 		PACK 
 		IF psv_save = .t. THEN && Salva la la clave de usuario pasado como parametro
 			vsv_usuario	= encripta(ALLTRIM(psv_usuario),psv_llave,.f.)
 			vsv_passw	= encripta(ALLTRIM(psv_passw),psv_llave,.f.)
 			vsv_esquema = encripta(ALLTRIM(psv_esquema),psv_llave,.f.)
-			INSERT INTO savepwd VALUES (vsv_usuario, vsv_passw, vsv_esquema)	
+			INSERT INTO savepwd VALUES ( vsv_usuario, vsv_passw, vsv_esquema, "0")	
 		ENDIF 
 	
 	ELSE 	&& Recupera la Clave
 		
 		SELECT savepwd
+		INDEX on ultimo TAG ultimo 
 		GO TOP 
 		
 		IF !EMPTY(psv_esquema) THEN 		
