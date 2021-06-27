@@ -815,101 +815,132 @@ FUNCTION CargaClaro
 
 		LOCAL lcPath, lcCelda, lnCelda
 		lcPath = p_archivo
-		LOCAL lnCol, lnFil, lcMiHoja, lnHojas
+		
+		** verifico la extension del archivo y en funcion de eso decido como importarlo
+		v_extension= UPPER(SUBSTR(lcPath,LEN(lcPath)-2))
+		
+		IF v_extension = "DBF" THEN  && Tabla de dbf con consumos 
+	
+			CREATE TABLE .\claro00 FREE (telefono c(15), usuario C(50), plan c(5), abono n(13,2), pabono n(13,2), tabono n(13,2), impserv n(13,2), ;
+						pserv n(13,2), tserv n(13,2), cargos n(13,2), pcargos n(13,2), tcargos n(13,2), ;
+						minaire n(13,2), minaireex n(13,2), impaire n(13,2), paire n(13,2), taire n(13,2), ;
+						minldn n(13,2), impldn n(13,2), pldn n(13,2), tldn n(13,2), ;
+						minldi n(13,2), impldi n(13,2), pldi n(13,2), tldi n(13,2), ;
+						minldim n(13,2), impldim n(13,2), pldim n(13,2), tldim n(13,2), ;
+						datau n(13,2), ;
+						dataimp n(13,2), pdata n(13,2), tdata n(13,2), ;
+						impeq n(13,2), peq n(13,2), teq n(13,2), ;
+						varios n(13,2), pvarios n(13,2), tvarios n(13,2), tclaro n(13,2), ;
+						total n(13,2), nroreg i, periodo i, anio i, zona i, idregistro i)	
+			SELECT claro00		
+			APPEND FROM &lcPath 
+			
+			SELECT claro 
+			APPEND FROM .\claro00
+			USE IN claro00				
+	
+		
+		ELSE  && archivo excel con los consumos
+			LOCAL lnCol, lnFil, lcMiHoja, lnHojas
 
-		m.excel = createobject("excel.application")
-		m.excel.application.visible = .F.
-		m.excel.application.windowstate = -4137
-		m.excel.workbooks.open(lcPath)
+			m.excel = createobject("excel.application")
+			m.excel.application.visible = .F.
+			m.excel.application.windowstate = -4137
+			m.excel.workbooks.open(lcPath)
 
-		*OBTENGO LA CANTIDAD DE HOJAS DE LIBRO
-		lnHojas = 0
-		FOR EACH oMyVar IN m.excel.sheets
-			lnHojas = lnHojas + 1
-		ENDFOR 
+			*OBTENGO LA CANTIDAD DE HOJAS DE LIBRO
+			lnHojas = 0
+			FOR EACH oMyVar IN m.excel.sheets
+				lnHojas = lnHojas + 1
+			ENDFOR 
 
-		SELECT claro 
-		ZAP 
+			SELECT claro 
+			ZAP 
 
-		LOCAL lcCelda, lnLi, lnCo, lnAux, lcAux, lcMacro, lnId
-		*lnLi = linea, lnCo = columna
-		*RECORRO TODAS LAS HOJAS DEL LIBRO
-		lnId = 0
+			LOCAL lcCelda, lnLi, lnCo, lnAux, lcAux, lcMacro, lnId
+			*lnLi = linea, lnCo = columna
+			*RECORRO TODAS LAS HOJAS DEL LIBRO
+			lnId = 0
 
-		FOR i=1 TO lnHojas  
-			m.excel.sheets(i).select 	
-			IF !m.excel.range("A2").value = "Número de Línea" THEN 
-				*los datos que tienen esta hoja no me interesan 
-				LOOP 
-			ENDIF 
-			*-- Cantidad de columnas hoja actual
-			lnCol = m.excel.ActiveSheet.UsedRange.COLUMNS.COUNT
-			*-- Cantidad de filas hoja actual 
-			lnFil = m.excel.ActiveSheet.UsedRange.ROWS.COUNT 
+			FOR i=1 TO lnHojas  
+				m.excel.sheets(i).select 	
+				IF !m.excel.range("A2").value = "Número de Línea" THEN 
+					*los datos que tienen esta hoja no me interesan 
+					LOOP 
+				ENDIF 
+				*-- Cantidad de columnas hoja actual
+				lnCol = m.excel.ActiveSheet.UsedRange.COLUMNS.COUNT
+				*-- Cantidad de filas hoja actual 
+				lnFil = m.excel.ActiveSheet.UsedRange.ROWS.COUNT 
 
-			*obtengo los datos 
-			*arranco en la celda A4, recorror todas las columnas de la fila
-			*luego avanzo de fila A(5) hasta llegar al final (lnFil)
-			*lnFil = 4
-			FOR lnLi=4 TO lnFil
-				SELECT claro 
-				APPEND BLANK 
-				lnId = lnId + 1
-				replace idregistro WITH lnId
-				FOR lnCo = 1 TO lnCol 	
-					*recorro todas las columnas de la fila 		
-					lcAux = m.excel.ActiveSheet.cells(lnLi,lnCo).value	  		
-					
-					lnCol = lnCo
-					tcValor = lcAux
-					IF !ISNULL(tcValor) THEN 
-						LOCAL lnAux
-						SELECT claro 
-						DO CASE 
-							CASE lnCol = 1
-								REPLACE telefono WITH tcValor
-							CASE lnCol = 2		
-								REPLACE usuario WITH tcValor
-							CASE lnCol = 3		
-								REPLACE plan WITH tcValor
-							CASE lnCol = 4	
-								REPLACE abono WITH tcValor
-							CASE lnCol = 5
-								REPLACE impserv WITH tcValor
-							CASE lnCol = 6
-								REPLACE cargos WITH tcValor
-							CASE lnCol = 7
-								REPLACE minaire WITH tcValor
-							CASE lnCol = 8
-								REPLACE minaireex WITH tcValor
-							CASE lnCol = 9 &&PESOS ESTAB EN LLAMADAS
-								REPLACE impaire WITH tcValor
-							CASE lnCol = 10 
-								REPLACE minldn WITH tcValor
-							CASE lnCol = 11 &&PESOS MINUTOS
-								REPLACE impldn WITH tcValor				
-							CASE lnCol = 12
-								REPLACE minldi WITH tcValor
-							CASE lnCol = 13 &&PESOS ESTABL EN LLAMDAS LDI
-								REPLACE impldi WITH tcValor
-							CASE lnCol = 14	
-								REPLACE minldim WITH tcValor	
-							CASE lnCol = 15 
-								REPLACE impldim WITH tcValor			
-							CASE lnCol = 16
-								REPLACE datau WITH tcValor
-							CASE lnCol = 17
-								REPLACE dataimp WITH tcValor
-							CASE lnCol = 18
-								REPLACE varios WITH tcValor
-							CASE lnCol = 19
-								REPLACE tclaro WITH tcValor
-								REPLACE total WITH tcValor
-						ENDCASE 
-					ENDIF 
-				ENDFOR 
-			ENDFOR 	
-		ENDFOR 
+				*obtengo los datos 
+				*arranco en la celda A4, recorror todas las columnas de la fila
+				*luego avanzo de fila A(5) hasta llegar al final (lnFil)
+				*lnFil = 4
+				FOR lnLi=4 TO lnFil
+					SELECT claro 
+					APPEND BLANK 
+					lnId = lnId + 1
+					replace idregistro WITH lnId
+					FOR lnCo = 1 TO lnCol 	
+						*recorro todas las columnas de la fila 		
+						lcAux = m.excel.ActiveSheet.cells(lnLi,lnCo).value	  		
+						
+						lnCol = lnCo
+						tcValor = lcAux
+						IF !ISNULL(tcValor) THEN 
+							LOCAL lnAux
+							SELECT claro 
+							DO CASE 
+								CASE lnCol = 1
+									REPLACE telefono WITH tcValor
+								CASE lnCol = 2		
+									REPLACE usuario WITH tcValor
+								CASE lnCol = 3		
+									REPLACE plan WITH tcValor
+								CASE lnCol = 4	
+									REPLACE abono WITH tcValor
+								CASE lnCol = 5
+									REPLACE impserv WITH tcValor
+								CASE lnCol = 6
+									REPLACE cargos WITH tcValor
+								CASE lnCol = 7
+									REPLACE minaire WITH tcValor
+								CASE lnCol = 8
+									REPLACE minaireex WITH tcValor
+								CASE lnCol = 9 &&PESOS ESTAB EN LLAMADAS
+									REPLACE impaire WITH tcValor
+								CASE lnCol = 10 
+									REPLACE minldn WITH tcValor
+								CASE lnCol = 11 &&PESOS MINUTOS
+									REPLACE impldn WITH tcValor				
+								CASE lnCol = 12
+									REPLACE minldi WITH tcValor
+								CASE lnCol = 13 &&PESOS ESTABL EN LLAMDAS LDI
+									REPLACE impldi WITH tcValor
+								CASE lnCol = 14	
+									REPLACE minldim WITH tcValor	
+								CASE lnCol = 15 
+									REPLACE impldim WITH tcValor			
+								CASE lnCol = 16
+									REPLACE datau WITH tcValor
+								CASE lnCol = 17
+									REPLACE dataimp WITH tcValor
+								CASE lnCol = 18
+									REPLACE varios WITH tcValor
+								CASE lnCol = 19
+									REPLACE tclaro WITH tcValor
+									REPLACE total WITH tcValor
+							ENDCASE 
+						ENDIF 
+					ENDFOR 
+				ENDFOR 	
+			ENDFOR 
+		
+			m.excel.Workbooks.CLOSE
+			m.excel.QUIT  
+
+		ENDIF 
 
 		LOCAL lnNro
 		SELECT claro 
@@ -935,9 +966,13 @@ FUNCTION CargaClaro
 
 		LOCAL lnAux 
 		SELECT claro 
-		UPDATE claro set pabono = vppabono, pserv = vppserv, pcargos = vppcargos, paire = vppaire, ;
-						pldn = vppldn, pldi = vppldi, pldim = vppldim, pdata = vppdata, peq = vppeq, pvarios = vppvarios
 		
+	 	IF !(vppabono = 0) THEN 
+
+			UPDATE claro set pabono = vppabono, pserv = vppserv, pcargos = vppcargos, paire = vppaire, ;
+							pldn = vppldn, pldi = vppldi, pldim = vppldim, pdata = vppdata, peq = vppeq, pvarios = vppvarios
+		ENDIF 
+
 		GO TOP 
 		SCAN FOR !EOF()
 
@@ -976,8 +1011,8 @@ FUNCTION CargaClaro
 
 		ENDSCAN 
 
-		m.excel.Workbooks.CLOSE
-		m.excel.QUIT  
+*!*			m.excel.Workbooks.CLOSE
+*!*			m.excel.QUIT  
 
 *!*			IF (VAL(SUBSTR(CPPTMP.MEDIDAS,1,2)) = 1) THEN
 *!*				GO 2
@@ -1006,8 +1041,9 @@ FUNCTION CargaClaro
 		GO TOP 
 		
 		DO WHILE !EOF()
-			lamatriz(1,1) = 'bocanumero'
-			lamatriz(1,2) = "'"+substr(alltrim(claro.telefono),1,(LEN(alltrim(claro.telefono))-1))+"'"
+			lamatriz(1,1) = 'bocanumero'		
+*			lamatriz(1,2) = "'"+substr(alltrim(claro.telefono),1,(LEN(alltrim(claro.telefono))-1))+"'"
+			lamatriz(1,2) = "'"+alltrim(STRTRAN(claro.telefono,"-",""))+"'"
 			lamatriz(2,1) = 'usuario'
 			lamatriz(2,2) = "'"+alltrim(claro.usuario)+"'"
 			lamatriz(3,1) = 'plan'

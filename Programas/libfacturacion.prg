@@ -28,6 +28,13 @@ PARAMETERS par_idperiodo
 
 	** Elimino las facturas temporarias del lote antes de generar nuevamente
 	** 
+
+	sqlmatriz(1)="delete from facturasbsertmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(par_idperiodo)+" )"
+	verror=sqlrun(vconeFacturar,"elim_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Conceptos para Facturar ",0+48+0,"Error")
+	ENDIF 
+
 	sqlmatriz(1)="delete from  facturasimptmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(par_idperiodo)+" )"
 	verror=sqlrun(vconeFacturar,"elim_sql"+vartmp)
 	IF verror=.f.  
@@ -287,6 +294,7 @@ PARAMETERS par_idperiodo
 	SET RELATION TO idconcepto INTO &vconceptoser ADDITIVE 
 	replace ALL ejecucion WITH &vconceptoser..ejecucion 
 
+
 	** EJECUTA CALCULANDO CONCEPTOS POR NIVELES
 	FOR ieje = 0 TO 3 
 	
@@ -294,6 +302,7 @@ PARAMETERS par_idperiodo
 		GO TOP 
 		v_fechaemite = &vfactulotes_sql..fechaemite
 		SCAN FOR ( &ventidadesdf..idconcepto > 0 ) AND !EOF() AND (&ventidadesdf..ejecucion = ieje) 
+			
 			IF  ( &vconceptoser..facturar = 'S' ) THEN 
 				imp_cantidad = 1				
 				imp_unitario = 0					
@@ -358,6 +367,7 @@ PARAMETERS par_idperiodo
 			ELSE 
 				replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
 			ENDIF 
+		
 		ENDSCAN 
 		
 	ENDFOR 
@@ -464,7 +474,14 @@ PARAMETERS par_idperiodo
 	replace ALL  idfactura WITH &vfacturastmp..idfactura
 	SET RELATION TO 
 	
-
+	** Agrego las bocas de servicios seleccionadas de acuerdo a las facturas generadas
+	vbocaserviciosftmp = 'bocaserviciosf'+vartmp 
+	sqlmatriz(1)=" Select e.idperiodoe, b.* from bocaservicios b left join factulotese e on e.identidadh = b.identidadh "
+	sqlmatriz(2)=" where b.facturar = 'S'  and e.idperiodo = "+STR(par_idperiodo)
+	SELECT b.* , f.idfactura FROM &vbocaserviciosf_sql b LEFT JOIN &vfacturastmp f ON f.identidadh = b.identidadh INTO TABLE &vbocaserviciosftmp WHERE !ISNULL(f.idfactura)  && ORDER BY h.identidadh GROUP BY h.identidadh
+    
+    *****************************
+    
 	*************************************************************************
 	*************************************************************************
 	*/ Actualizacion de Numeros de Facturas */
@@ -491,7 +508,7 @@ PARAMETERS par_idperiodo
 	ENDDO 	
 	SET ENGINEBEHAVIOR 70
 	
-	= CargarFacturas ( vfacturastmp, vdetafactutmp, vfacturasimptmp, vconeFacturar)
+	= CargarFacturas ( vfacturastmp, vdetafactutmp, vfacturasimptmp, vbocaserviciosftmp,  vconeFacturar)
 	
 	=abreycierracon(vconeFacturar,"")
 	
@@ -513,6 +530,7 @@ PARAMETERS par_idperiodo
 	USE IN &vfacturasimptmp 
 	USE IN &vdetafactutmp 
 	USE IN &vfacturastmp 
+	USE IN &vbocaserviciosftmp 
 
 	WAIT CLEAR 
 	
@@ -523,11 +541,11 @@ ENDFUNC
 
 
 **/ Incerta las Facturas Generadas en la Base de Datos en 
-** la tabla facturastmp, detafactutmp, facturasimptmp
+** la tabla facturastmp, detafactutmp, facturasimptmp, facturasbsertmp
 ** Recibe como Parametro las Tablas de facturas, detalle, facturasimp
 **
 FUNCTION CargarFacturas 
-PARAMETERS pfacturas, pdetafactu, pfacturasimp, pcone
+PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 
 	IF pcone = 0 THEN 
 		vconeccionFa = abreycierracon(0,_SYSSCHEMA)	
@@ -761,10 +779,48 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp, pcone
 		SELECT &pfacturasimp
 		SKIP 		
 	ENDDO 		
+
+	SELECT &pbocaservi
+	GO TOP 
+	DIMENSION lamatriz4(10,2)
+	DO WHILE !EOF() 
+	
+		lamatriz4(1,1)='idfacbser'
+		lamatriz4(1,2)= "0"
+		lamatriz4(2,1)= 'idfactura'
+		lamatriz4(2,2)= ALLTRIM(STR(&pbocaservi..idfactura))
+		lamatriz4(3,1)= 'bocanumero'
+		lamatriz4(3,2)= "'"+ALLTRIM(&pbocaservi..bocanumero)+"'"
+		lamatriz4(4,1)= 'ruta1'
+		lamatriz4(4,2)= ALLTRIM(STR(&pbocaservi..ruta1))
+		lamatriz4(5,1)= 'folio1'
+		lamatriz4(5,2)= ALLTRIM(STR(&pbocaservi..folio1))
+		lamatriz4(6,1)= 'ruta2'
+		lamatriz4(6,2)= ALLTRIM(STR(&pbocaservi..ruta2))
+		lamatriz4(7,1)= 'folio2'
+		lamatriz4(7,2)= ALLTRIM(STR(&pbocaservi..folio2))
+		lamatriz4(8,1)= 'ubicacion'
+		lamatriz4(8,2)= "'"+ALLTRIM(&pbocaservi..ubicacion)+"'"
+		lamatriz4(9,1)= 'direccion'
+		lamatriz4(9,2)= "'"+ALLTRIM(&pbocaservi..direccion)+"'"
+		lamatriz4(10,1)= 'idtiposer'
+		lamatriz4(10,2)= ALLTRIM(STR(&pbocaservi..idtiposer))
+						
+		p_tabla     = 'facturasbsertmp'
+		p_matriz    = 'lamatriz4'
+		p_conexion  = vconeccionFa 
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+		ENDIF
+
+		SELECT &pbocaservi
+		SKIP 		
+	ENDDO 		
 	
 	RELEASE lamatriz1
 	RELEASE lamatriz2
 	RELEASE lamatriz3
+	RELEASE lamatriz4
 	
 	RETURN 
 	
@@ -902,6 +958,15 @@ PARAMETERS pcon_idperiodo
 		RETURN vretorno	
 	ENDIF 
 
+	sqlmatriz(1)=" create temporary table bsertmpt as ( select * from facturasbsertmp  where idfactura in "
+	sqlmatriz(2)=" ( select idfactura from facturastmp where idperiodo = "+STR(pcon_idperiodo)+" ) ) "
+	verror=sqlrun(vcone,"bsertmpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Impuestos Boca de Servicios del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
 
 	* Obtengo los Minimos y Maximos de los id de facturas y de Detalles de Facturas 
 	sqlmatriz(1)=" select COUNT(1) as registros, MAX(idfactura) as maxid, MIN(idfactura) as minid from  factutmpt "
@@ -960,6 +1025,14 @@ PARAMETERS pcon_idperiodo
 		RETURN vretorno	
 	ENDIF 
 
+	* Corrijo idfactura en el temporario de Bocas de Servicios de Facturas 
+	sqlmatriz(1)=" update bsertmpt set idfactura = idfactura + ( "+STR(idfactura_ini)+" - "+STR(var_minid)+" ) "
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
 
 	* Corrijo la Numeracion de la Factura en el temporario de Facturas
 	*************************************************************************
@@ -995,7 +1068,7 @@ PARAMETERS pcon_idperiodo
 	
 
 ********************************************************************************
-	** Iserto desde las tablas temporarias en Facturas, detafactu, facturasimp
+	** Iserto desde las tablas temporarias en Facturas, detafactu, facturasimp, facturasbser
 
 	sqlmatriz(1)=" insert into facturas ( idfactura, idcomproba, pventa, numero, tipo, fecha, entidad, servicio, cuenta, apellido, "
 	sqlmatriz(2)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
@@ -1026,7 +1099,7 @@ PARAMETERS pcon_idperiodo
 		RETURN vretorno	
 	ENDIF 
 
-		
+
 	sqlmatriz(1)=" insert into facturasimp ( idfactura, impuesto, detalle, neto, razon, importe, articulo, idconcepto ) "
 	sqlmatriz(2)=" select idfactura, impuesto, detalle, neto, razon, importe, articulo, idconcepto from imputmpt  "
 	verror=sqlrun(vcone,"selfcpt_sql")
@@ -1036,6 +1109,15 @@ PARAMETERS pcon_idperiodo
 		RETURN vretorno	
 	ENDIF 
 
+
+	sqlmatriz(1)=" insert into facturasbser ( idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer ) "
+	sqlmatriz(2)=" select 0 as idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer from bsertmpt  "
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
 
 
 	*/***************************************
@@ -1133,6 +1215,14 @@ PARAMETERS pcon_idperiodo
 	*/**************************************
 	*/ Elimino las facturas de los archivos Temporarios para el lote confirmado despues de terminar 
 	** 
+	sqlmatriz(1)="delete from  facturasbsertmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(pcon_idperiodo)+" )"
+	verror=sqlrun(vcone,"elim_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de FacturasbserTmp ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
 	sqlmatriz(1)="delete from  facturasimptmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(pcon_idperiodo)+" )"
 	verror=sqlrun(vcone,"elim_sql")
 	IF verror=.f.  
