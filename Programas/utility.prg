@@ -11313,18 +11313,56 @@ PARAMETERS pl_tablaeti
 
 			IF !EMPTY(lecturasel_sql.lecturae) THEN 
 
+
+
 				vcanetique=ALINES(Arrayetiquetas,lecturasel_sql.lecturae)
 				vcvalidas = 0
 				vnonulas = 0
 				varetiquetas = ""
-				FOR i = 1 TO vcanetique 
-				
-					IF atc('/',arrayetiquetas(i)) = 0 AND !EMPTY(ALLTRIM(arrayetiquetas(i))) THEN 
+				vararticulos = ""
 
-						varetiquetas = varetiquetas+','+ALLTRIM(STR(VAL(STRTRAN(arrayetiquetas(i),'*',''))))
+				sqlmatriz(1)="create temporary table tmetiquetas select etiqueta from etiquetas limit 0 "
+				verror=sqlrun(vconeccionF,"tmetiquetas_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Lecturas de Etiquetas ...",0+48+0,"Error")
+				ENDIF 
+				sqlmatriz(1)="create temporary table tmarticulos select articulo from articulos limit 0 "
+				verror=sqlrun(vconeccionF,"tmarticulo_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Lecturas de Etiquetas ...",0+48+0,"Error")
+				ENDIF 
+				
+
+				FOR ieti = 1 TO vcanetique 
+				
+					IF atc('/',arrayetiquetas(ieti )) = 0 AND !EMPTY(ALLTRIM(arrayetiquetas(ieti ))) THEN 
+
+						varetiquetas = varetiquetas+','+ALLTRIM(STR(VAL(STRTRAN(arrayetiquetas(ieti ),'*',''))))
+						varetiquetasins = ALLTRIM(STR(VAL(STRTRAN(arrayetiquetas(ieti ),'*',''))))
+						
+						sqlmatriz(1)="insert into tmetiquetas ( etiqueta ) values ( "+varetiquetasins+" )"
+						verror=sqlrun(vconeccionF,"tmetiquetas")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Lecturas de Etiquetas ...",0+48+0,"Error")
+						ENDIF 
 
 					ENDIF 
-					IF !EMPTY(ALLTRIM(arrayetiquetas(i))) THEN 
+					
+					*Codigos de articulos
+					IF !EMPTY(ALLTRIM(arrayetiquetas(ieti ))) AND LEN(ALLTRIM(arrayetiquetas(ieti ))) > 1 AND ( atc('/',arrayetiquetas(ieti )) = 2 OR atc('/',arrayetiquetas(ieti )) = 1 ) THEN 
+						vararticulos = vararticulos+','+ALLTRIM(STRTRAN(STRTRAN(arrayetiquetas(ieti ),'*',''),'/',''))
+
+						vararticulosins = ALLTRIM(STRTRAN(STRTRAN(arrayetiquetas(ieti ),'*',''),'/',''))
+
+						sqlmatriz(1)="insert into tmarticulos values ( '"+vararticulosins+"')"
+						verror=sqlrun(vconeccionF,"tmetiquetas")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Lecturas de Etiquetas ...",0+48+0,"Error")
+						ENDIF 
+
+					ENDIF 
+					
+					IF !EMPTY(ALLTRIM(arrayetiquetas(ieti ))) THEN 
 						vnonulas = vnonulas + 1
 					ENDIF 
 					
@@ -11333,19 +11371,67 @@ PARAMETERS pl_tablaeti
 				varetiquetas = IIF(SUBSTR(varetiquetas,1,1)=',',SUBSTR(varetiquetas,2),varetiquetas)
 				varetiquetas = IIF(SUBSTR(varetiquetas,(lenvaretique-1),1)=',',SUBSTR(varetiquetas,1,lenvaretique-1),varetiquetas)
 				
-				sqlmatriz(1)="SELECT * from etiquetas where tabla ='"+ALLTRIM(pl_tablaeti)+"' and etiqueta in ( "+varetiquetas+" ) "
+*!*					sqlmatriz(1)="SELECT * from etiquetas where tabla ='"+ALLTRIM(pl_tablaeti)+"' and etiqueta in ( "+varetiquetas+" ) "
+				sqlmatriz(1)="SELECT * from etiquetas where tabla ='"+ALLTRIM(pl_tablaeti)+"' and etiqueta in ( select etiqueta from tmetiquetas ) "
 				verror=sqlrun(vconeccionF,"etiquetasleidas_sql")
 				IF verror=.f.  
 				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Lecturas de Etiquetas ...",0+48+0,"Error")
 				ENDIF 
 
 				
-				eje = "SELECT *, "+STR(v_loteeti)+" as idletique from etiquetasleidas_sql INTO TABLE .\seleccetiquetas "
+				eje = "SELECT *, "+STR(v_loteeti)+" as idletique, 1 as canti from etiquetasleidas_sql INTO TABLE .\seleccetiquetas "
 				&eje 
 				
+				ALTER table seleccetiquetas alter COLUMN canti i
+				ALTER table seleccetiquetas alter COLUMN idletique i
+****************************
+				********* Agrego las lecturas de codigos de articulos sin numero de etiquetas ej /2021
+
+				lenvararticu = LEN(vararticulos)
+				vararticulos = IIF(SUBSTR(vararticulos,1,1)=',',SUBSTR(vararticulos,2),vararticulos )
+				vararticulos = IIF(SUBSTR(vararticulos,(lenvararticu-1),1)=',',SUBSTR(vararticulos,1,lenvararticulos-1),vararticulos)
+				IF !EMPTY(vararticulos) THEN 
+				
+*!*						sqlmatriz(1)="SELECT * from articulos where TRIM(articulo) in ( "+vararticulos+" ) "
+					sqlmatriz(1)="SELECT * from articulos where TRIM(articulo) in ( select TRIM(articulo) from tmarticulos ) "
+					verror=sqlrun(vconeccionF,"articulosleidos_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Lecturas de Artículos ...",0+48+0,"Error")
+					ENDIF 
+
+					SELECT articulosleidos_sql 
+					
+					eje = "SELECT 0 as etiqueta, DTOS(DATE()) as fechaalta,articulo, 'articulos' as tabla, 'articulo' as campo, 0 as idregistro, ALLTRIM(articulo)+'-'+ALLTRIM(detalle)  as detalle, " ;
+							+" '' as timestamp, "+STR(v_loteeti)+" as idletique, 0 as canti from articulosleidos_sql INTO TABLE .\articulosleidos "
+					&eje 
+					ALTER table articulosleidos alter COLUMN canti i
+					ALTER table articulosleidos alter COLUMN idletique i
+
+					SELECT articulosleidos
+					FOR i = 1 TO vcanetique 
+						*Codigos de articulos
+						IF !EMPTY(ALLTRIM(arrayetiquetas(i))) AND LEN(ALLTRIM(arrayetiquetas(i))) > 1 AND atc('//',arrayetiquetas(i)) = 0 AND ( atc('/',arrayetiquetas(i)) = 2 OR atc('/',arrayetiquetas(i)) = 1 ) THEN 
+							SELECT articulosleidos
+							UPDATE articulosleidos SET canti = canti + 1 WHERE ALLTRIM(articulo)==ALLTRIM(STRTRAN(STRTRAN(arrayetiquetas(i),'*',''),'/',''))
+						ENDIF 		
+					ENDFOR 
+					
+*!*						
+*!*						SELECT &vviewetiquetas 
+*!*						APPEND FROM articulosleidos 
+			*		COUNT FOR idletique = thisform.tb_idletique.Value AND !DELETED() TO vcvalidas 
+					GO TOP 
+				ENDIF 
+				
+			***********************************************************************************************
+
+****************************
 				USE IN etiquetasleidas_sql 
+				USE IN articulosleidos_sql 
 				SELECT seleccetiquetas
+				APPEND FROM articulosleidos
 				USE IN seleccetiquetas
+				USE IN articulosleidos
 				cretorno = "seleccetiquetas"
 				
 			ENDIF 
