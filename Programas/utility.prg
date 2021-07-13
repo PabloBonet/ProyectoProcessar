@@ -4129,12 +4129,14 @@ ENDFUNC
 *---------------------------------------------------------------
 * Función para obtener el campo indice de una tabla de la bd
 * Parametros: p_Tabla: Nombre de la tabla consultada
+* 			  p_tipo: indica si quiere que retorne el tipo de campo del indice .f. = no retorna, .t.= retorna tipo "C" o "I"
+*				 	  concatenado al nombre de campo serparado por ";"
 * Retorno: Retorna el nombre del campo indice de la tabla consultada
 *---------------------------------------------------------------
 FUNCTION obtenerCampoIndice
-PARAMETERS p_tabla
+PARAMETERS p_tabla, p_tipo
 
-
+	
 	vconeccionF = abreycierracon(0,_SYSSCHEMA)
 
 		v_tabla = p_tabla
@@ -4152,14 +4154,17 @@ PARAMETERS p_tabla
 	=abreycierracon(vconeccionF,"")
 
 
-	SELECT field as campo, key as clave FROM  columnas_sql WHERE key = "PRI" INTO TABLE columnas
+	SELECT field as campo, key as clave, type as tipo FROM  columnas_sql WHERE key = "PRI" INTO TABLE columnas
 	
 	SELECT columnas
 	GO TOP 
 	v_retorno = ""
 	
 	v_retorno = columnas.campo 
-		
+	
+	IF p_tipo = .t. THEN && agregado en caso de que se necesite el nombre del campo indice y el tipo de campo
+		v_retorno = ALLTRIM(v_retorno)+";"+UPPER(SUBSTR(ALLTRIM(columnas.tipo),1,1))
+	ENDIF 	
 	
 	RETURN v_retorno
 
@@ -12161,4 +12166,178 @@ FUNCTION SavePasswd
 	
 RETURN vsv_retorno
 
+
+
+*//////////////////////////////////////
+*/ Retorna un conjunto de valores de registros de una tabla seleccionados al azar
+*/ recibe como parametros la tabla y la cantidad de registros al azar a devolver
+*/ devuelve un archivo tipo texto con los indices seleccionados con extension .rnd
+* Parametros:
+*  rnd_tabla	: Nombre de la Tabla a elegir    CARACTER
+*  rnd_cantidad : Cantidad de registros a elegir INTEGER
+*//////////////////////////////////////
+
+FUNCTION RandomSele
+	PARAMETERS rnd_tabla, rnd_cantidad 
+	rnd_retorno 	= rnd_tabla+".rnd"
+	ret_campotipo 	= obtenerCampoIndice(rnd_tabla,.T.)
+	rnd_campo 		= SUBSTR(ret_campotipo,1,ATC(";",ret_campotipo)-1)
+	rnd_tipo  		= SUBSTR(ret_campotipo,ATC(";",ret_campotipo)+1)
+
+	vconeccionr = abreycierracon(0,_SYSSCHEMA)
+	
+	sqlmatriz(1)=" select "+ALLTRIM(rnd_campo)+"  from "+ALLTRIM(rnd_tabla)
+	sqlmatriz(2)=" where "+ALLTRIM(rnd_campo)+" in ( select valor from randomsele where tabla = '"+ALLTRIM(rnd_tabla)+"' )"
+	verror=sqlrun(vconeccionr ,"registros_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Cantidad de Registros ",0+48+0,"Error")
+		=abreycierracon(vconeccionr ,"")	
+	    RETURN .F.  
+	ENDIF	 
+	SELECT *, .f. as sel FROM registros_sql INTO TABLE registrossel 
+	USE IN registros_sql 
+	SELECT registrossel
+	rnd_cantidadregselec = RECCOUNT()
+	
+	* Obtengo los registros de la tabla que aun no han sido seleccionados 
+	sqlmatriz(1)=" select "+ALLTRIM(rnd_campo)+" from "+ALLTRIM(rnd_tabla)
+	sqlmatriz(2)=" where "+ALLTRIM(rnd_campo)+" not in ( select valor from randomsele where tabla = '"+ALLTRIM(rnd_tabla)+"' )"
+	verror=sqlrun(vconeccionr ,"cantidadpend")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Cantidad de Registros ",0+48+0,"Error")
+		=abreycierracon(vconeccionr ,"")	
+	    RETURN .F.  
+	ENDIF	 
+	
+	
+	SELECT * , .f. as sel FROM cantidadpend INTO TABLE seleregistros 
+	USE IN cantidadpend
+	
+	SELECT seleregistros 
+	rnd_cantidadregpend = RECCOUNT()
+	
+	IF ( rnd_cantidadregselec + rnd_cantidadregpend ) <= (rnd_cantidad + rnd_cantidadregselec ) THEN 
 		
+		sqlmatriz(1)=" delete from randomsele "
+		sqlmatriz(2)=" where tabla = '"+ALLTRIM(rnd_tabla)+"' "
+		verror=sqlrun(vconeccionr ,"delrandom")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error la Eliminacion de Registros ",0+48+0,"Error")
+			=abreycierracon(vconeccionr ,"")	
+		    RETURN .F.  
+		ENDIF	 
+	
+		
+	ENDIF 
+	
+
+* comparo para ver si puede generar la cantidad de registros solicitados o tomo los restantes y genero nuevos
+	IF rnd_cantidadregpend > rnd_cantidad THEN  && si la cantidad pendiente de registros por seleccionar es mayor que la cantidad pedida
+		SELE seleregistros 
+		FOR idx = 1 TO rnd_cantidad
+			v_regsel = INT(RAND()*rnd_cantidadregpend)
+			
+			IF v_regsel = 0 THEN 
+				v_regsel = 1
+			ENDIF 
+			SELE seleregistros 
+			GO v_regsel
+			
+			IF !sel THEN 
+				replace sel WITH .t. 
+			ELSE
+				DO WHILE sel AND !EOF()
+					SKIP
+					IF EOF() THEN 
+						GO TOP 
+					ENDIF  
+				ENDDO 
+				REPLACE sel WITH .t. 
+			ENDIF 
+		ENDFOR 
+	ENDIF 
+	IF rnd_cantidadregpend = rnd_cantidad THEN  && si la cantidad pendiente de registros por seleccionar es igual que la cantidad pedida
+		SELE seleregistros 
+		replace ALL sel WITH .t. 
+	ENDIF 
+	IF rnd_cantidadregpend < rnd_cantidad THEN  && si la cantidad pendiente de registros por seleccionar es menor que la cantidad pedida
+		SELE seleregistros 
+		replace ALL sel WITH .t. 
+		SELE registrossel
+		FOR idx = 1 TO (rnd_cantidad - rnd_cantidadregpend )
+			v_regsel = INT(RAND()*rnd_cantidadregselec)
+			
+			IF v_regsel = 0 THEN 
+				v_regsel = 1
+			ENDIF 
+			SELE registrossel
+			GO v_regsel
+			IF !sel THEN 
+				replace sel WITH .t. 
+			ELSE
+				DO WHILE sel AND !EOF()
+					SKIP
+					IF EOF() THEN 
+						GO TOP 
+					ENDIF  
+				ENDDO 
+			ENDIF 
+		ENDFOR 
+		SELECT * FROM registrossel WHERE sel = .t. INTO TABLE registroselA
+		SELECT seleregistros 
+		APPEND FROM registroselA
+		USE IN registroselA
+	ENDIF 
+	
+	SELECT seleregistros
+	eje = "select "+ALLTRIM(rnd_campo)+" as valor from seleregistros into cursor seleccionfinal where sel = .t."
+	&eje
+	SELECT seleccionfinal
+	COPY TO &rnd_retorno TYPE CSV 
+	GO TOP 
+	DO WHILE !EOF()
+
+		v_valor = IIF(rnd_tipo ='C',"'"+ALLTRIM(seleccionfinal.valor)+"'",ALLTRIM(STR(seleccionfinal.valor)))
+		
+		sqlmatriz(1)=" insert into randomsele ( idrandom, tabla, valor ) "
+		sqlmatriz(2)=" values ( 0, '"+ALLTRIM(rnd_tabla)+"',"+v_valor+" )"
+		
+		verror=sqlrun(vconeccionr ,"insrandom")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en el Agregado de Registro a la tabla Randomsele ",0+48+0,"Error")
+			=abreycierracon(vconeccionr ,"")	
+		    RETURN .F.  
+		ENDIF	 
+		
+		SELECT seleccionfinal 
+		SKIP 
+	ENDDO 
+
+	=abreycierracon(vconeccionr,"")
+
+	USE IN seleccionfinal
+	USE IN seleregistros
+	USE IN registrossel
+	RETURN rnd_retorno
+ENDFUNC 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
