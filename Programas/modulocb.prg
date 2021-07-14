@@ -228,5 +228,66 @@ FUNCTION ImportarComprobantes
 
 ENDFUNC  
 
+*/------------------------------------------------------------------------------------------------------------
+*/ 	Busca un comprobante por el código de barra
+** 	Funcion: buscaCompCB
+* 	Parametros: 
+*		p_codBarra: Código de barras para buscar el comprobante
+*		p_NombreTabla: Nombre de la tabla donde se van a devolver los datos del comprobante buscado
+*	Retorno: Retorna True si se encontró el comprobante, False en otro caso
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION buscarCompCB
+PARAMETERS p_codBarra,P_nombreTabla
+
+	v_encontrado = .F.
+
+	IF EMPTY(ALLTRIM(p_codBarra)) = .F. AND EMPTY(ALLTRIM(p_nombreTabla)) = .T.
+	
+		MESSAGEBOX("Uno de los parámetros es incorrecto", 0+16,"Error al buscar comprobante por código de barra")
+		
+		RETURN .F.
+	
+	ENDIF 
+
+	* Me conecto a la base de datos
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,comprobante as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(2)=" from ultcbcomplote " 
+	sqlmatriz(3)=" where bc ='"+ALLTRIM(p_codBarra)+"'"
+
+	verror=sqlrun(vconeccionD,"comprobante_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		return	.F.
+	ELSE
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		SELECT comprobante_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			SELECT comprobante_sql
+			v_cantBusq = RECCOUNT()
+			
+			IF v_cantBusq > 0
+				SELECT * FROM comprobante_sql INTO TABLE &p_nombreTabla	
+				
+				v_encontrado = .T.
+				
+			ENDIF 
+		
+		ENDIF 
+
+				
+		ENDIF 
 
 
+
+	RETURN v_encontrado
+
+ENDFUNC 
