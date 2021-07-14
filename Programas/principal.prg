@@ -138,11 +138,29 @@ _screen.BackColor 	= &_SYSCOLORFONDO
 _screen.Caption 	= _SYSTITULO +" V." + _SYSVERSION
 
 *!*	_screen.addobject("oImg", "image")
-*!*	_screen.oImg.picture = 'processar.png' &&FOTO FONDO
+*!*	_screen.oImg.picture = 'processarfondo.png' &&FOTO FONDO
 *!*	_screen.oImg.visible = .T.
-*!*	_screen.oImg.stretch = 0 && ESTIRA
+*!*	_screen.oImg.stretch = 1 && ESTIRA
 *!*	_screen.oImg.width = sysmetric(1) && ANCHO
 *!*	_screen.oImg.height = sysmetric(2)-40 && ALTO
+
+
+IF FILE(".\imagenes\processarf.png") THEN  
+	_screen.BackColor = RGB(75,120,118) 
+	_SCREEN.ADDOBJECT("oImagen","Image")
+	WITH _Screen.oImagen
+	  .PICTURE = '.\imagenes\processarf.png'
+	   .STRETCH = 2 && 1=Mantiene las proporciones, 2=Cubre todo
+	  *-- Solo si la imagen tiene transparencia
+	  * .BACKSTYLE = 0 && 0=Transparente, 1=Opaca
+	  .LEFT = _SCREEN.WIDTH - 380
+	  .TOP = _SCREEN.HEIGHT - 250
+	  *--.WIDTH = _SCREEN.WIDTH
+	  *--.HEIGHT = _SCREEN.HEIGHT
+	  .ANCHOR = 12
+	  .VISIBLE = .T.
+	ENDWITH
+ENDIF 
 
 
 
