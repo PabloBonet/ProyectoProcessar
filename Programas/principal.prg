@@ -26,7 +26,7 @@ ON KEY LABEL CTRL+F4 DO SALIRMENU
 ON KEY LABEL ESC DO SETEO_ESC 
 ON KEY LABEL CTRL+F11 MESSAGEBOX(_screen.ActiveForm.name)
 
-SET PROCEDURE TO UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg , ftp_class.prg, libconceptos.prg, foxbarcodeqr.prg
+SET PROCEDURE TO UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg , ftp_class.prg, libconceptos.prg, foxbarcodeqr.prg, modulocb.prg
 SET CLASSLIB TO  toolbarsys.vcx
 SET CLASSLIB TO crystalreports.vcx additive
 SET CLASSLIB TO util.vcx ADDITIVE 
@@ -137,33 +137,30 @@ _SYSMASTER_DESC		= _SYSDESCRIP
 _screen.BackColor 	= &_SYSCOLORFONDO
 _screen.Caption 	= _SYSTITULO +" V." + _SYSVERSION
 
-*!*	_screen.addobject("oImg", "image")
-*!*	_screen.oImg.picture = 'processarfondo.png' &&FOTO FONDO
-*!*	_screen.oImg.visible = .T.
-*!*	_screen.oImg.stretch = 1 && ESTIRA
-*!*	_screen.oImg.width = sysmetric(1) && ANCHO
-*!*	_screen.oImg.height = sysmetric(2)-40 && ALTO
+IF !EMPTY(_SYSIMGFONDO) THEN  
+	v_colorfondo	= SUBSTR(ALLTRIM(_SYSIMGFONDO),1,(ATC(';',_SYSIMGFONDO)-1))
+	v_imagenfondo	= SUBSTR(ALLTRIM(_SYSIMGFONDO),(ATC(';',_SYSIMGFONDO)+1),(ATC(';',_SYSIMGFONDO,2)-(ATC(';',_SYSIMGFONDO))-1))
+	v_imagenwidth	= SUBSTR(ALLTRIM(_SYSIMGFONDO),(ATC(';',_SYSIMGFONDO,2)+1),(ATC(';',_SYSIMGFONDO,3)-(ATC(';',_SYSIMGFONDO,2))-1))
+	v_imagenheight	= SUBSTR(ALLTRIM(_SYSIMGFONDO),(ATC(';',_SYSIMGFONDO,3)+1))
 
-
-IF FILE(".\imagenes\processarf.png") THEN  
-	_screen.BackColor = RGB(75,120,118) 
-	_SCREEN.ADDOBJECT("oImagen","Image")
-	WITH _Screen.oImagen
-	  .PICTURE = '.\imagenes\processarf.png'
-	   .STRETCH = 2 && 1=Mantiene las proporciones, 2=Cubre todo
-	  *-- Solo si la imagen tiene transparencia
-	  * .BACKSTYLE = 0 && 0=Transparente, 1=Opaca
-	  .LEFT = _SCREEN.WIDTH - 380
-	  .TOP = _SCREEN.HEIGHT - 250
-	  *--.WIDTH = _SCREEN.WIDTH
-	  *--.HEIGHT = _SCREEN.HEIGHT
-	  .ANCHOR = 12
-	  .VISIBLE = .T.
-	ENDWITH
+	IF FILE(v_imagenfondo) THEN 	
+		
+		_screen.BackColor = &v_colorfondo 
+		_SCREEN.ADDOBJECT("oImagen","Image")
+		WITH _Screen.oImagen
+		  .PICTURE = v_imagenfondo
+		   .STRETCH = 2 && 1=Mantiene las proporciones, 2=Cubre todo
+		  *-- Solo si la imagen tiene transparencia
+		  * .BACKSTYLE = 0 && 0=Transparente, 1=Opaca
+		  .LEFT = _SCREEN.WIDTH - &v_imagenwidth
+		  .TOP = _SCREEN.HEIGHT - &v_imagenheight
+		  *--.WIDTH = _SCREEN.WIDTH
+		  *--.HEIGHT = _SCREEN.HEIGHT
+		  .ANCHOR = 12
+		  .VISIBLE = .T.
+		ENDWITH
+	ENDIF 
 ENDIF 
-
-
-
 
 
 _SYSIP = IPADDRESS(1)
