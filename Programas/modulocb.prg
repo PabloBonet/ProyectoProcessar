@@ -291,3 +291,46 @@ PARAMETERS p_codBarra,P_nombreTabla
 	RETURN v_encontrado
 
 ENDFUNC 
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/ 	Obtiene el Lote de cobro máximo utilizado
+** 	Funcion: obtenerMaxLoteCobro
+* 	
+*	Retorno: Retorna el Lote máximo, en caso de no haber lotes de cobranza retorna cero. Retorna -1 en caso de error
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION obtenerMaxLoteCobro
+
+	v_loteMaxCobro = 0
+	
+	* Me conecto a la base de datos
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)=" select MAX(lotecobro) as lotemax "
+	sqlmatriz(2)=" from cbcobros " 
+
+	verror=sqlrun(vconeccionD,"cbmaxcobro_sql")
+	IF verror=.f. 
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA lote máximo ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		return	-1
+	ELSE
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		SELECT cbmaxcobro_sql
+		GO TOP 
+		
+		IF NOT EOF()
+		
+			v_loteMaxCobro = IIF(ISNULL(cbmaxcobro_sql.lotemax)=.T.,0,cbmaxcobro_sql.lotemax)
+		
+		ENDIF 
+					
+	ENDIF 
+
+	RETURN v_loteMaxCobro 
+
+ENDFUNC 
