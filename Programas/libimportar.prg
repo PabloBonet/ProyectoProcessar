@@ -1728,6 +1728,13 @@ FUNCTION CargaSubEntidades
 			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Bocas de Servicios... ",0+48+0,"Error")
 			    RETURN 
 			ENDIF
+
+			sqlmatriz(1)=" delete from entidadesd "
+			verror=sqlrun(vconeccionF,"entidadd")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Detalle de Sub-Cuentas... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
 			
 		ENDIF 		
 		SELECT entidadeshcar
