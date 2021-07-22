@@ -3295,8 +3295,8 @@ PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
 			MESSAGEBOX("No se puede generar una lista del Grupo Seleccionado...")
 			RETURN ""
 		ENDIF
-		sqlmatriz(1)=" select concat_ws('  '" 
-		sqlmatriz(3)= " ) as miembros , "+ALLTRIM(grupotipocampo_sql.campo)+" as idmiembro, 'N' as pertenece from "+ALLTRIM(grupotipocampo_sql.tabla)+" "
+		sqlmatriz(1)=" select TRIM(SUBSTR( concat_ws('  '" 
+		sqlmatriz(3)= ", SPACE(200)),1,200 )) as miembros , "+ALLTRIM(grupotipocampo_sql.campo)+" as idmiembro, 'N' as pertenece from "+ALLTRIM(grupotipocampo_sql.tabla)+" "
 		
 		DO WHILE !EOF()
 			sqlmatriz(2)= sqlmatriz(2)+","+ALLTRIM(grupotipocampo_sql.campoc)		
@@ -3980,8 +3980,8 @@ FUNCTION generabusquedag
 	PARAMETERS para_tabla, para_string
 	SELECT &para_tabla
 	ALTER table &para_tabla ADD COLUMN busquedag c(254)
-	GO TOP 
 	replace ALL busquedag WITH &para_string
+	GO TOP 
 RETURN 
 
 *---------------------------------------------------------------------------
@@ -4001,6 +4001,8 @@ FUNCTION filtragrupos
 	ELSE 
 		EJE4=""
 	ENDIF 
+
+	SELECT &pf_tablas
 	
 	IF !EMPTY(ALLTRIM(pf_tbbuscador)) THEN	
 		EJE1 = "ATCF(ALLTRIM('"+ALLTRIM(pf_tbbuscador)+"'), busqueda) > 0 "
@@ -4008,6 +4010,8 @@ FUNCTION filtragrupos
 		EJE1= ""	
 	ENDIF 
 	IF !EMPTY(ALLTRIM(toolbargrupos.seleccion)) AND toolbargrupos.pageayuda.grupos.filtragrupos.value THEN	
+
+
 		EJE2 = "ATCF(ALLTRIM(busquedag), toolbargrupos.seleccion) > 0 "
 	ELSE
 		EJE2= ""	
@@ -4017,6 +4021,7 @@ FUNCTION filtragrupos
 	ELSE
 		EJE3="SET FILTER TO "+EJE1+EJE2
 	ENDIF 
+	
 	IF !EMPTY(EJE1+EJE2) AND !EMPTY(EJE4) THEN 
 		EJE3 = EJE3+" AND "+EJE4
 	ELSE
