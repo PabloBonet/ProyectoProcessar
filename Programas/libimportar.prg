@@ -1563,7 +1563,7 @@ FUNCTION CargaEntidades
 		CREATE TABLE .\entidadescar FREE (entidad I, apellido C(100), nombre c(100), cargo C(100), compania C(100), cuit C(13), direccion C(100), ;
 					localidad C(10), iva I,fechaalta C(8), telefono C(50), cp C(50), fax C(50), ;
 					email C(254), web C(254), dni I, tipodoc C(3),  ;
-					fechanac C(8), idafiptipd I)			
+					fechanac C(8), idafiptipd I, credito n(12,2))			
 					
 		SELECT entidadescar 
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
@@ -1584,6 +1584,7 @@ FUNCTION CargaEntidades
 		
 		SELECT entidadescar
 		DIMENSION lamatriz(19,2)
+		DIMENSION lamatrizcr(5,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
@@ -1637,11 +1638,34 @@ FUNCTION CargaEntidades
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Entidades ",0+48+0,"Error")
 			ENDIF 
 			
+			IF entidadescar.credito > 0 THEN 
+				lamatrizcr(1,1) = 'entidad'
+				lamatrizcr(1,2) = ALLTRIM(STR(entidadescar.entidad))
+				lamatrizcr(2,1) = 'fecha'
+				lamatrizcr(2,2) = "'"+DTOS(DATE())+"'"
+				lamatrizcr(3,1) = 'importe'
+				lamatrizcr(3,2) = ALLTRIM(STR(entidadescar.credito,12,2))
+				lamatrizcr(4,1) = 'autorizo'
+				lamatrizcr(4,2) = "'"+ALLTRIM(_SYSUSUARIO)+"'"
+				lamatrizcr(5,1) = 'identidadcr'
+				lamatrizcr(5,2) = "0"
+
+				p_tabla     = 'entidadescr'
+				p_matriz    = 'lamatrizcr'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Creditos de Entidades ",0+48+0,"Error")
+				ENDIF 
+
+			ENDIF 
+			
 			SELECT entidadescar
 			SKIP 					
 		ENDDO 
 */*/*/*/*/*/
 	=abreycierracon(vconeccionF,"")	
+	RELEASE lamatriz
+	RELEASE lamatrizcr
 	SELECT entidadescar
 	USE IN entidadescar
 	ENDIF 	&& 1- Carga de Archivo de CPP -
