@@ -2589,9 +2589,11 @@ ENDIF
 
 
 	*** Busco las entidades ***
-	sqlmatriz(1)="SELECT * from entidades e left join entidadesh h on e.entidad = h.entidad "
+	sqlmatriz(1)=" SELECT e.*, IFNULL(h.servicio,0) as servicio, IFNULL(h.cuenta,0) as cuenta, "
+	sqlmatriz(2)=" IFNULL(h.ruta1,0) as ruta1, IFNULL(h.folio1,0) as folio1, IFNULL(h.ruta2,0) as ruta2, IFNULL(h.folio2,0) as folio2 "
+	sqlmatriz(3)=" from entidades e left join entidadesh h on e.entidad = h.entidad "
 
-	verror=sqlrun(vconeccionF,"entidades_sql")
+	verror=sqlrun(vconeccionF,"entidades0_sql")
 
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las entidades ",0+48+0,"Error")
@@ -2600,8 +2602,15 @@ ENDIF
 	    RETURN 
 	ENDIF 
 
-
-
+	SELECT * FROM entidades0_sql INTO TABLE entidades_sql
+	ALTER table entidades_sql alter COLUMN servicio i
+	ALTER table entidades_sql alter COLUMN cuenta i
+	ALTER table entidades_sql alter COLUMN ruta1 i
+	ALTER table entidades_sql alter COLUMN folio1 i
+	ALTER table entidades_sql alter COLUMN ruta2 i
+	ALTER table entidades_sql alter COLUMN folio2 i
+	USE IN entidades0_sql 
+	
 
 
 		SELECT ctasctesentcarA
@@ -2663,7 +2672,7 @@ ENDIF
 			DO CASE 
 	
 									
-				CASE a_servicio = 0  OR a_cuenta = 0 AND a_entdad <> 0
+				CASE ( a_servicio = 0  OR a_cuenta = 0 ) AND a_entidad <> 0
 						
 					SELECT entidades_sql
 					GO TOP 
@@ -2709,13 +2718,13 @@ ENDIF
 					v_fax = entidades_sql.fax
 					v_email = entidades_sql.email
 					v_zona = ""
-					v_ruta1 = entidades_sql.ruta1
-					v_folio1 = entidades_sql.folio1
-					v_ruta2 = entidades_sql.ruta2
-					v_folio2 = entidades_sql.folio2
+					v_ruta1 	= entidades_sql.ruta1
+					v_folio1 	= entidades_sql.folio1
+					v_ruta2 	= entidades_sql.ruta2
+					v_folio2 	= entidades_sql.folio2
 			ENDCASE 
 						
-						
+MESSAGEBOX(1)						
 			v_dirEntrega = ""
 			v_transporte = 0
 			v_nombreTransporte = ""
@@ -2758,6 +2767,7 @@ ENDIF
 			v_titulo      = " EL ALTA "
 	
 			DIMENSION lamatriz1(53,2)
+MESSAGEBOX(11)						
 			
 			lamatriz1(1,1)='idfactura'
 			lamatriz1(1,2)= ALLTRIM(STR(v_idfactura))
@@ -2867,6 +2877,7 @@ ENDIF
 			lamatriz1(53,1)='vendedor'
 			lamatriz1(53,2)= ALLTRIM(STR(v_vendedor))
 	
+MESSAGEBOX(12)						
 
 			p_tabla     = 'facturas'
 			p_matriz    = 'lamatriz1'
@@ -3359,7 +3370,7 @@ ENDFUNC
 
 */------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
-*/ Carga de Cuentas corrientes de clientes
+*/ Carga de Cuentas corrientes de Proveedores
 */------------------------------------------------------------------------------------------------------------
 	FUNCTION CargaCtaCteProveedores
 	PARAMETERS p_idimportap, p_archivo, p_func
