@@ -1,0 +1,215 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema trsoftdb
+--
+
+CREATE DATABASE IF NOT EXISTS trsoftdb;
+USE trsoftdb;
+
+--
+-- Temporary table structure for view `maxcbcomplote`
+--
+DROP TABLE IF EXISTS `maxcbcomplote`;
+DROP VIEW IF EXISTS `maxcbcomplote`;
+CREATE TABLE `maxcbcomplote` (
+  `lote` int(10) unsigned,
+  `codigo` varchar(45)
+);
+
+--
+-- Temporary table structure for view `ultcbcomplote`
+--
+DROP TABLE IF EXISTS `ultcbcomplote`;
+DROP VIEW IF EXISTS `ultcbcomplote`;
+CREATE TABLE `ultcbcomplote` (
+  `idcbcompro` int(10) unsigned,
+  `idcbasoci` int(10) unsigned,
+  `narchivo` char(100),
+  `lote` int(10) unsigned,
+  `eperiodo` char(20),
+  `esecuencia` char(10),
+  `comprobante` char(100),
+  `total1` double(13,2),
+  `vence1` char(8),
+  `total2` double(13,2),
+  `vence2` char(8),
+  `total3` double(13,2),
+  `vence3` char(8),
+  `bc` char(254),
+  `timestamp` timestamp,
+  `codigo` varchar(45)
+);
+
+--
+-- Definition of table `cbasociadas`
+--
+
+DROP TABLE IF EXISTS `cbasociadas`;
+CREATE TABLE `cbasociadas` (
+  `idcbasoci` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `empresaid` char(15) NOT NULL,
+  `nombre` char(100) NOT NULL,
+  `cuit` char(13) NOT NULL,
+  `activa` char(1) NOT NULL,
+  `cobra` char(1) NOT NULL,
+  `cobropar` char(1) NOT NULL,
+  `lotemax` int(10) unsigned NOT NULL,
+  `loteact` int(10) unsigned NOT NULL,
+  `narchivoe` char(4) NOT NULL,
+  `narchivor` char(4) NOT NULL,
+  `esecuencia` int(10) unsigned NOT NULL,
+  `ftp` char(100) NOT NULL,
+  `email` char(100) NOT NULL,
+  `elong` char(10) NOT NULL,
+  `eempresaid` char(10) NOT NULL,
+  `eesecuencia` char(10) NOT NULL,
+  `eperiodo` char(10) NOT NULL,
+  `ebc` char(10) NOT NULL,
+  `ebceid` char(10) NOT NULL,
+  `ebcsid` char(10) NOT NULL,
+  `ebcidcomp` char(10) NOT NULL,
+  `ebctotal1` char(10) NOT NULL,
+  `ebcvence1` char(10) NOT NULL,
+  `ebctotal2` char(10) NOT NULL,
+  `ebcvence2` char(10) NOT NULL,
+  `ebctotal3` char(10) NOT NULL,
+  `ebcvence3` char(10) NOT NULL,
+  `r0empresaid` char(10) NOT NULL,
+  `r0puntorec` char(10) NOT NULL,
+  `r0secuencia` char(10) NOT NULL,
+  `r1idcobro` char(10) NOT NULL,
+  `r1fechacobro` char(10) NOT NULL,
+  `r1importe` char(10) NOT NULL,
+  `r1recargo` char(10) NOT NULL,
+  `r1bc` char(10) NOT NULL,
+  `r2cantidad` char(10) NOT NULL,
+  `r2total` char(10) NOT NULL,
+  `subcodid` char(15) NOT NULL,
+  PRIMARY KEY (`idcbasoci`),
+  KEY `Index_2` (`subcodid`),
+  KEY `Index_3` (`empresaid`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `cbasociadas`
+--
+
+/*!40000 ALTER TABLE `cbasociadas` DISABLE KEYS */;
+INSERT INTO `cbasociadas` (`idcbasoci`,`empresaid`,`nombre`,`cuit`,`activa`,`cobra`,`cobropar`,`lotemax`,`loteact`,`narchivoe`,`narchivor`,`esecuencia`,`ftp`,`email`,`elong`,`eempresaid`,`eesecuencia`,`eperiodo`,`ebc`,`ebceid`,`ebcsid`,`ebcidcomp`,`ebctotal1`,`ebcvence1`,`ebctotal2`,`ebcvence2`,`ebctotal3`,`ebcvence3`,`r0empresaid`,`r0puntorec`,`r0secuencia`,`r1idcobro`,`r1fechacobro`,`r1importe`,`r1recargo`,`r1bc`,`r2cantidad`,`r2total`,`subcodid`) VALUES 
+ (1,'0001','Krumbein','30-71204634-8','S','S','S',0,0,'0001','0001',0,'','ventas@amoblark.com.ar','1-95','1-4','5-4','9-14','23-73','23-4','27-4','31-8','39-12','51-7','58-12','70-7','77-12','89-7','2-4','6-4','10-4','2,8','10-7','17-12','29-10','39-70','2-6','8-16','0002');
+/*!40000 ALTER TABLE `cbasociadas` ENABLE KEYS */;
+
+
+--
+-- Definition of table `cbcobros`
+--
+
+DROP TABLE IF EXISTS `cbcobros`;
+CREATE TABLE `cbcobros` (
+  `idcbcobro` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idcbcompro` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `importe` double(13,2) NOT NULL,
+  `recargo` double(13,2) NOT NULL,
+  `lotecobro` int(10) unsigned NOT NULL,
+  `entrega` double(13,2) NOT NULL,
+  `vuelto` double(13,2) NOT NULL,
+  `usuario` char(20) NOT NULL,
+  `host` char(20) NOT NULL,
+  `secuencia` int(10) unsigned NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`idcbcobro`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `cbcobros`
+--
+
+/*!40000 ALTER TABLE `cbcobros` DISABLE KEYS */;
+INSERT INTO `cbcobros` (`idcbcobro`,`idcbcompro`,`fecha`,`importe`,`recargo`,`lotecobro`,`entrega`,`vuelto`,`usuario`,`host`,`secuencia`,`timestamp`) VALUES 
+ (2,2,'20210717',1700.30,200.00,1,1800.00,99.70,'TULIO','PC-PABLO',0,'2021-07-17 12:06:33'),
+ (3,4,'20210728',2100.50,300.00,2,5000.00,399.10,'TULIO','PC-PABLO',0,'2021-07-28 21:50:28'),
+ (4,5,'20210728',2500.40,600.00,2,5000.00,399.10,'TULIO','PC-PABLO',0,'2021-07-28 21:50:28');
+/*!40000 ALTER TABLE `cbcobros` ENABLE KEYS */;
+
+
+--
+-- Definition of table `cbcomprobantes`
+--
+
+DROP TABLE IF EXISTS `cbcomprobantes`;
+CREATE TABLE `cbcomprobantes` (
+  `idcbcompro` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idcbasoci` int(10) unsigned NOT NULL,
+  `narchivo` char(100) NOT NULL,
+  `lote` int(10) unsigned NOT NULL,
+  `eperiodo` char(20) NOT NULL,
+  `esecuencia` char(10) NOT NULL,
+  `comprobante` char(100) NOT NULL,
+  `total1` double(13,2) NOT NULL,
+  `vence1` char(8) NOT NULL,
+  `total2` double(13,2) NOT NULL,
+  `vence2` char(8) NOT NULL,
+  `total3` double(13,2) NOT NULL,
+  `vence3` char(8) NOT NULL,
+  `bc` char(254) NOT NULL,
+  `idcomp` char(15) NOT NULL DEFAULT '0',
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`idcbcompro`),
+  KEY `Index_2` (`idcomp`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `cbcomprobantes`
+--
+
+/*!40000 ALTER TABLE `cbcomprobantes` DISABLE KEYS */;
+INSERT INTO `cbcomprobantes` (`idcbcompro`,`idcbasoci`,`narchivo`,`lote`,`eperiodo`,`esecuencia`,`comprobante`,`total1`,`vence1`,`total2`,`vence2`,`total3`,`vence3`,`bc`,`idcomp`,`timestamp`) VALUES 
+ (1,1,'0001',1,'2021060120210630','1','',1500.30,'20210602',1600.30,'20210615',1700.30,'20210702','0001000200000003000000150030245936800000016003024593810000001700302459398','000000000000003','0000-00-00 00:00:00'),
+ (2,1,'0001',2,'2021060120210630','1','',1500.30,'20210602',1600.30,'20210615',1700.30,'20210702','0001000200000003000000150030245936800000016003024593810000001700302459398','000000000000003','0000-00-00 00:00:00'),
+ (3,1,'0001',3,'2021060120210630','2','',1700.30,'20210602',1800.30,'20210615',1900.30,'20210702','0001000200000004000000170030245936800000018003024593810000001900302459398','000000000000004','2021-07-27 21:39:27'),
+ (4,1,'0001',3,'2021060120210630','2','',1800.50,'20210602',1900.30,'20210615',2000.30,'20210702','0001000200000005000000180050245936800000019003024593810000002000302459398','000000000000005','2021-07-27 21:39:27'),
+ (5,1,'0001',3,'2021060120210630','2','',1900.40,'20210602',2000.30,'20210615',2100.30,'20210702','0001000200000006000000190040245936800000020003024593810000002100302459398','000000000000006','2021-07-27 21:39:27');
+/*!40000 ALTER TABLE `cbcomprobantes` ENABLE KEYS */;
+
+
+--
+-- Definition of view `maxcbcomplote`
+--
+
+DROP TABLE IF EXISTS `maxcbcomplote`;
+DROP VIEW IF EXISTS `maxcbcomplote`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `maxcbcomplote` AS select max(`c`.`lote`) AS `lote`,concat(`a`.`empresaid`,`a`.`subcodid`,`c`.`idcomp`) AS `codigo` from (`cbcomprobantes` `c` left join `cbasociadas` `a` on((`c`.`idcbasoci` = `a`.`idcbasoci`))) group by concat(`a`.`empresaid`,`a`.`subcodid`,`c`.`idcomp`);
+
+--
+-- Definition of view `ultcbcomplote`
+--
+
+DROP TABLE IF EXISTS `ultcbcomplote`;
+DROP VIEW IF EXISTS `ultcbcomplote`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `ultcbcomplote` AS select `c`.`idcbcompro` AS `idcbcompro`,`c`.`idcbasoci` AS `idcbasoci`,`c`.`narchivo` AS `narchivo`,`c`.`lote` AS `lote`,`c`.`eperiodo` AS `eperiodo`,`c`.`esecuencia` AS `esecuencia`,`c`.`comprobante` AS `comprobante`,`c`.`total1` AS `total1`,`c`.`vence1` AS `vence1`,`c`.`total2` AS `total2`,`c`.`vence2` AS `vence2`,`c`.`total3` AS `total3`,`c`.`vence3` AS `vence3`,`c`.`bc` AS `bc`,`c`.`timestamp` AS `timestamp`,`m`.`codigo` AS `codigo` from (`maxcbcomplote` `m` left join (`cbcomprobantes` `c` left join `cbasociadas` `a` on((`c`.`idcbasoci` = `a`.`idcbasoci`))) on(((`m`.`codigo` = concat(`a`.`empresaid`,`a`.`subcodid`,`c`.`idcomp`)) and (`m`.`lote` = `c`.`lote`))));
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

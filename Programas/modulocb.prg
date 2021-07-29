@@ -113,9 +113,9 @@ FUNCTION ImportarComprobantes
 		&v_sentenciaCrea
 	
 		** Recorro el archivo de envio, linea por linea **	
-		DO WHILE !FEOF(v_punteroArcEnv) && Finaliza cuando encuentra una linea vacia
+		DO WHILE NOT FEOF(v_punteroArcEnv) && Finaliza cuando encuentra una linea vacia
 				v_linea = ALLTRIM(FGETS(v_punteroArcEnv))
-			
+		MESSAGEBOX(v_linea)			
 				IF EMPTY(v_linea) = .F.
 					v_tamLinea = LEN(v_linea)
 															
@@ -252,9 +252,85 @@ PARAMETERS p_codBarra,P_nombreTabla
 	* Me conecto a la base de datos
 	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
 
-	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,comprobante as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,comprobante as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
 	sqlmatriz(2)=" from ultcbcomplote " 
 	sqlmatriz(3)=" where bc ='"+ALLTRIM(p_codBarra)+"'"
+
+	verror=sqlrun(vconeccionD,"comprobante_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		return	.F.
+	ELSE
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		SELECT comprobante_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			SELECT comprobante_sql
+			v_cantBusq = RECCOUNT()
+			
+			IF v_cantBusq > 0
+				SELECT * FROM comprobante_sql INTO TABLE &p_nombreTabla	
+				
+				v_encontrado = .T.
+				
+			ENDIF 
+		
+		ENDIF 
+
+				
+		ENDIF 
+
+
+
+	RETURN v_encontrado
+
+ENDFUNC 
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/ 	Busca un comprobante por los codigos de empresa,subcodigo y idcomp
+** 	Funcion: buscaCompESC
+* 	Parametros: 
+*		p_codEnt: Código asignado a la entidad asociada
+*		p_subCodEnt: Subcódigo asignado a la entidad asociada
+*		p_idcomp: ID del comprobante asociado a la entidad
+*		p_NombreTabla: Nombre de la tabla donde se van a devolver los datos del comprobante buscado
+*	Retorno: Retorna True si se encontró el comprobante, False en otro caso
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION buscarCompESC
+PARAMETERS p_codEnt,p_subCodEnt,p_idcomp,P_nombreTabla
+
+	v_encontrado = .F.
+
+	IF p_codEnt <= 0 AND p_subCodEnt <= 0 AND p_idcomp <= 0AND EMPTY(ALLTRIM(p_nombreTabla)) = .T.
+	
+		MESSAGEBOX("Uno de los parámetros es incorrecto", 0+16,"Error al buscar comprobante por código")
+		
+		RETURN .F.
+	
+	ENDIF 
+
+	** Genero el código para buscar en la visa de ultComprobante **
+	
+	v_codigoBusEnt = ALLTRIM(REPLICATE('0',4-LEN(ALLTRIM(str(p_codEnt))))+ALLTRIM(str(p_codEnt)))
+	v_codigoBusSub = ALLTRIM(REPLICATE('0',4-LEN(ALLTRIM(str(p_subCodEnt))))+ALLTRIM(str(p_subCodEnt)))
+	v_codigoBusCom = ALLTRIM(REPLICATE('0',15-LEN(ALLTRIM(str(p_idcomp))))+ALLTRIM(str(p_idcomp)))
+	
+	v_codigoBusqueda = ALLTRIM(v_codigoBusEnt)+ALLTRIM(v_codigoBusSub)+ALLTRIM(v_codigoBusCom)
+
+	* Me conecto a la base de datos
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,comprobante as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(2)=" from ultcbcomplote " 
+	sqlmatriz(3)=" where codigo ='"+ALLTRIM(v_codigoBusqueda)+"'"
 
 	verror=sqlrun(vconeccionD,"comprobante_sql")
 	IF verror=.f.  
