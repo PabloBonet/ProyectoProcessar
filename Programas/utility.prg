@@ -10402,35 +10402,43 @@ ENDPROC
 
 *** Función para guardar el Historico de actualización de costo del artículo ****
 **Parametros: articulo: codigo del articulo a actualizar; costo: costo del articulo actualizado; coneccion: Conección a la Base de Datos
+**            fechahisto: fecha y hora para registrar la grabacion del historico de costos
 ** Retorno: Retorna True si se Guarda correctamente, False en caso contrario
 *******
 
 
 FUNCTION guardaHistCostoArt
-PARAMETERS p_articulo, p_costo, p_conexion
+PARAMETERS p_articulo, p_costo, p_conexion,p_fechahisto
 
 v_conexion = 0
 
 IF TYPE('p_conexion') = 'N'
 	IF p_conexion <= 0
 		v_conexion = abreycierracon(0,_SYSSCHEMA)
-	
+	ELSE 
+		v_conexion = p_conexion 
 	ENDIF 
 ELSE
 	v_conexion = abreycierracon(0,_SYSSCHEMA)
 
 ENDIF 
 
- IF (EMPTY(p_articulo) =.T.) OR p_costo < -1 OR v_conexion <= 0
- 
- 	
+*!*	 IF (EMPTY(p_articulo) =.T.) OR p_costo < -1 OR v_conexion <= 0
+ IF (EMPTY(p_articulo) =.T.) OR v_conexion <= 0 THEN 
+  	
  	MESSAGEBOX("Ha ocurrido un error al intentar registrar el historial de costo del articulo (Parámetros Incorrectos)",0+16+0,"No se pudo guardar el historial de costos")
  	RETURN .F.
  ENDIF 
 
-	v_idartcosto = 0
-	v_fechahora = ALLTRIM(DTOS(DATE())+TIME())
+IF p_costo > 0 THEN 
 
+	v_idartcosto = 0
+	IF TYPE('p_fechahisto')='C' THEN 
+		v_fechahora = ALLTRIM(p_fechahisto)
+	ELSE 
+		v_fechahora = ALLTRIM(DTOS(DATE())+TIME())
+	ENDIF 
+	
 	DIMENSION lamatriz(4,2)
 
 	lamatriz(1,1)='idartcosto'
@@ -10452,7 +10460,17 @@ ENDIF
 	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
 
 	    RETURN .F.
-	ENDIF						
+	ENDIF	
+						
+ENDIF 
+
+IF TYPE('p_conexion') = 'N'
+	IF p_conexion <= 0
+		 = abreycierracon(v_conexion,"")
+	ENDIF 
+ELSE
+	 = abreycierracon(v_conexion,"")
+ENDIF 
 
 	RETURN .T.
 
@@ -12018,7 +12036,7 @@ PARAMETERS pan_idcomproba, pan_idregistro
 	
 RETURN 
 	
-	*//////////////////////////////////////
+*//////////////////////////////////////
 */ Obtiene la observación correspondiente según los filtros para la tabla, campo e id
 */ Y registra opcionalmente en la tabla observareg
 * Parametros:
@@ -12330,6 +12348,50 @@ ENDFUNC
 
 
 
+*//////////////////////////////////////
+*/ Obtiene el costo historico por articulos dada una Fecha
+*/ Devuelve el costo historico a la fecha pasada para todos los articulos
+* Parametros:
+* p_fecha: Fecha para el Calculo del Costo Histórico, si fecha es vacia devuelve el ultimo costo ingresado
+* p_coneccion: conección a utilizar
+* p_tablaret: Nombre de la tabla en la que devolverá el costo historico para todos los artículos
+*//////////////////////////////////////
+
+FUNCTION ArtiCostoHisto
+PARAMETERS p_fechahisto,p_tablahisto, p_coneccion
+
+	IF (UPPER(type("p_coneccion"))='I' or UPPER(type("p_coneccion"))='N')  THEN 
+		IF p_coneccion = 0 THEN 
+			pv_coneccion = abreycierracon(0,_SYSSCHEMA)
+		ELSE 
+			pv_coneccion = p_coneccion
+		ENDIF 
+	ELSE 
+		pv_coneccion = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 
+	
+	sqlmatriz(1)=" select * from articostos where concat( articulo,'-',fecha )  in ( select concat(articulo,'-',max(fecha)) as fecha "
+	sqlmatriz(2)=" from articostos where mid(fecha,1,8) <= '"+ALLTRIM(p_fechahisto)+"'  group by articulo ) order by articulo"
+	verror=sqlrun(pv_coneccion,"costoart_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Costos de Artículos a Fecha ",0+48+0,"Error")
+	    RETURN "" 
+	ENDIF	
+	SELECT * FROM costoart_sql INTO TABLE &p_tablahisto
+	SELECT &p_tablahisto
+	USE 
+
+	IF (UPPER(type("p_coneccion"))='I' or UPPER(type("p_coneccion"))='N')  THEN 
+		IF p_coneccion = 0 THEN 
+			= abreycierracon(pv_coneccion,"")
+		ENDIF 
+	ELSE 
+		= abreycierracon(pv_coneccion,"")
+	ENDIF 
+	
+
+	RETURN p_tablahisto 	
+ENDFUNC 
 
 
 

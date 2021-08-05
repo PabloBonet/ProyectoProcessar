@@ -2589,12 +2589,18 @@ ENDIF
 
 
 	*** Busco las entidades ***
-	sqlmatriz(1)=" SELECT e.*, IFNULL(h.servicio,0) as servicio, IFNULL(h.cuenta,0) as cuenta, "
-	sqlmatriz(2)=" IFNULL(h.ruta1,0) as ruta1, IFNULL(h.folio1,0) as folio1, IFNULL(h.ruta2,0) as ruta2, IFNULL(h.folio2,0) as folio2 "
-	sqlmatriz(3)=" from entidades e left join entidadesh h on e.entidad = h.entidad "
+*!*		sqlmatriz(1)=" SELECT e.*, IFNULL(h.servicio,0) as servicio, IFNULL(h.cuenta,0) as cuenta, "
+*!*		sqlmatriz(2)=" IFNULL(h.ruta1,0) as ruta1, IFNULL(h.folio1,0) as folio1, IFNULL(h.ruta2,0) as ruta2, IFNULL(h.folio2,0) as folio2 "
+*!*		sqlmatriz(3)=" from entidades e left join entidadesh h on e.entidad = h.entidad "
+
+	sqlmatriz(1)= " SELECT e.*, IFNULL(h.servicio,0) as servicio, IFNULL(h.cuenta,0) as cuenta, "
+	sqlmatriz(2)= " IFNULL(h.ruta1,0) as ruta1, IFNULL(h.folio1,0) as folio1, IFNULL(h.ruta2,0) as ruta2, IFNULL(h.folio2,0) as folio2, "
+	sqlmatriz(3)= " IFNULL(h.compania,e.compania) as companiah, IFNULL(h.nombre,e.nombre) as nombreh, IFNULL(h.apellido,e.apellido) as apellidoh, "
+	sqlmatriz(4)= " IFNULL(h.direccion,e.direccion) as direccionh, IFNULL(h.localidad,e.localidad) as localidadh, IFNULL(h.iva,e.iva) as ivah, IFNULL(h.dni,e.dni) as dnih, IFNULL(h.telefono,e.telefono) as telefonoh, "
+	sqlmatriz(5)= " IFNULL(h.cuit,e.cuit) as cuith, IFNULL(h.cp,e.cp) as cph, IFNULL(h.fax,e.fax) as faxh, IFNULL(h.email,e.email) as emailh "
+	sqlmatriz(6)= " from entidades e left join entidadesh h on e.entidad = h.entidad "
 
 	verror=sqlrun(vconeccionF,"entidades0_sql")
-
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las entidades ",0+48+0,"Error")
 	*** me desconecto	
@@ -2602,6 +2608,8 @@ ENDIF
 	    RETURN 
 	ENDIF 
 
+
+******************************************************************************************************
 	SELECT * FROM entidades0_sql INTO TABLE entidades_sql
 	ALTER table entidades_sql alter COLUMN servicio i
 	ALTER table entidades_sql alter COLUMN cuenta i
@@ -2628,9 +2636,6 @@ ENDIF
 			a_monto	  = ctasctesentcarA.monto
 			a_cuota   = IIF(ISNULL(ctasctesentcarA.cuota)=.T.,0,ctasctesentcarA.cuota)
 			a_vtocta  = IIF(ISNULL(ctasctesentcarA.vtocta)=.T.,'',ctasctesentcarA.vtocta)
-			
-			
-			
 			
 			
 			
@@ -2676,15 +2681,15 @@ ENDIF
 						
 					SELECT entidades_sql
 					GO TOP 
-					LOCATE FOR entidad = a_entidad 
+					LOCATE FOR entidad = a_entidad AND servicio = 0 AND entidad = 0 
 					
 					
 					***Factura a ENTIDAD
 					***Toma los datos de la tabla Entidad
 					SELECT entidades_sql
 				
-					v_apellido = ALLTRIM(entidades_sql.compania)+' '+ALLTRIM(entidades_sql.apellido)
-					v_nombre   = IIF(EMPTY(ALLTRIM(entidades_sql.compania)),ALLTRIM(entidades_sql.nombre),'') &&entidad.nombre
+					v_apellido = ALLTRIM(entidades_sql.compania)+' '+ALLTRIM(entidades_sql.apellidoh)
+					v_nombre   = IIF(EMPTY(ALLTRIM(entidades_sql.compania)),ALLTRIM(entidades_sql.nombreh),'') &&entidad.nombre
 					v_direccion = entidades_sql.direccion
 					v_localidad = entidades_sql.localidad
 					v_iva = entidades_sql.iva
@@ -2704,19 +2709,28 @@ ENDIF
 				CASE a_entidad <> 0 AND a_servicio <> 0  AND a_cuenta <> 0 
 					***Factura a una SUBCUENTA de la ENTIDAD
 					***Toma los datos de la tabla CuentaSel
+					SELECT entidades_sql
+					GO TOP 
+					LOCATE FOR entidad = a_entidad AND servicio = a_servicio AND cuenta = a_cuenta 
 					
-					v_apellido = ALLTRIM(entidades_sql.compania)+' '+IIF(EMPTY(ALLTRIM(entidades_sql.compania)),ALLTRIM(entidades_sql.apellido),'')
-					v_nombre =  IIF(EMPTY(ALLTRIM(entidades_sql.compania)),ALLTRIM(entidades_sql.nombre),'')  &&cuentaSel.nombre
-					v_direccion = entidades_sql.direccion
-					v_localidad = entidades_sql.localidad
-					v_iva = entidades_sql.iva
-					v_cuit = entidades_sql.cuit
+					
+					***Factura a ENTIDAD
+					***Toma los datos de la tabla Entidad
+					SELECT entidades_sql
+
+					
+					v_apellido = ALLTRIM(entidades_sql.companiah)+' '+IIF(EMPTY(ALLTRIM(entidades_sql.companiah)),ALLTRIM(entidades_sql.apellidoh),'')
+					v_nombre =  IIF(EMPTY(ALLTRIM(entidades_sql.companiah)),ALLTRIM(entidades_sql.nombreh),'')  &&cuentaSel.nombre
+					v_direccion = entidades_sql.direccionh
+					v_localidad = entidades_sql.localidadh
+					v_iva = entidades_sql.ivah
+					v_cuit = entidades_sql.cuith
 					v_docTipo = '80'
-					v_dni = entidades_sql.dni
-					v_telefono = entidades_sql.telefono
-					v_cp = entidades_sql.cp
-					v_fax = entidades_sql.fax
-					v_email = entidades_sql.email
+					v_dni = entidades_sql.dnih
+					v_telefono = entidades_sql.telefonoh
+					v_cp = entidades_sql.cph
+					v_fax = entidades_sql.faxh
+					v_email = entidades_sql.emailh
 					v_zona = ""
 					v_ruta1 	= entidades_sql.ruta1
 					v_folio1 	= entidades_sql.folio1
@@ -2724,7 +2738,6 @@ ENDIF
 					v_folio2 	= entidades_sql.folio2
 			ENDCASE 
 						
-MESSAGEBOX(1)						
 			v_dirEntrega = ""
 			v_transporte = 0
 			v_nombreTransporte = ""
@@ -2767,7 +2780,6 @@ MESSAGEBOX(1)
 			v_titulo      = " EL ALTA "
 	
 			DIMENSION lamatriz1(53,2)
-MESSAGEBOX(11)						
 			
 			lamatriz1(1,1)='idfactura'
 			lamatriz1(1,2)= ALLTRIM(STR(v_idfactura))
@@ -2877,7 +2889,6 @@ MESSAGEBOX(11)
 			lamatriz1(53,1)='vendedor'
 			lamatriz1(53,2)= ALLTRIM(STR(v_vendedor))
 	
-MESSAGEBOX(12)						
 
 			p_tabla     = 'facturas'
 			p_matriz    = 'lamatriz1'
