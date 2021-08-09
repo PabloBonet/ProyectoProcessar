@@ -4011,3 +4011,224 @@ PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
 		RETURN .T.
 
 ENDFUNC 
+
+
+
+
+
+
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ Carga de Asientos Contables como Minutas
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaAsiContables
+	PARAMETERS p_idimportap, p_archivo, p_func
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Asientos Contables a Importar -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+		if file(".\asientoscar.dbf") THEN
+			if used("asientoscar") then
+				sele asientoscar
+				use
+			endif
+			DELETE FILE .\asientoscar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\asientoscar FREE ( numero I,fecha C(8),codigocta C(20), debe Y, haber y, detalle  C(100))			
+					
+		SELECT asientoscar
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+
+	
+		*** Busco el Plan de Cuentas Activo ***
+
+		sqlmatriz(1)=" SELECT * from plancuentasd  "
+		sqlmatriz(2)=" where idplan = "+ALLTRIM(STR(_SYSIDPLAN))
+		verror=sqlrun(vconeccionF,"plancuentas_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Plan de Cuentas Activo",0+48+0,"Error")
+		*** me desconecto	
+			=abreycierracon(vconeccionF,"")
+		    RETURN 
+		ENDIF 
+					
+		SELECT * FROM plancuentas_sql INTO TABLE planactivo 
+		SELECT planactivo
+		INDEX on ALLTRIM(codigocta) TAG codigocta
+		USE IN plancuentas_sql 
+		
+	
+		SELECT asientoscar
+		ALTER table asientoscar ADD COLUMN codigoctab c(20)
+		ALTER table asientoscar ADD COLUMN nombrecta c(200)
+		ALTER table asientoscar ADD COLUMN idpland i
+		ALTER table asientoscar ADD COLUMN idasiento i
+		ALTER table asientoscar ADD COLUMN detaasto c(50)
+		
+	
+		
+		SET RELATION TO ALLTRIM(codigocta) INTO planactivo
+		
+		GO TOP 
+		replace ALL nombrecta WITH planactivo.nombrecta, idpland WITH planactivo.idpland , codigoctab WITH STRTRAN(separarcadena(STRTRAN(SUBSTR(ALLTRIM(codigocta),3)+'00','.','')),'.00','')
+		*** Numero los asientos a importar 	
+	  * Obtengo el idasiento nuevo y el numero de asiento nuevo por cada vez que el numero de asiento cambia
+		v_idasientoimp = maxnumeroidx("idasiento","I","asientos",0)
+		v_numeroimp	= maxnumeroidx("numero","I","asientos",0)
+	
+		SELECT asientoscar
+		INDEX on ALLTRIM(fecha)+STR(numero) TAG numero
+		SET ENGINEBEHAVIOR 70
+		SELECT numero , SUM(debe-haber) as saldo, ALLTRIM(fecha)+STR(numero) as orden FROM asientoscar   INTO TABLE asientosnro HAVING saldo = 0 ORDER BY orden GROUP BY orden
+		SET ENGINEBEHAVIOR 90
+		
+		
+
+		GO TOP 
+		DO WHILE !EOF()
+			v_idasientoimp = v_idasientoimp + 1
+			v_numeroimp = v_numeroimp + 1
+			SELECT asientoscar 
+			replace idasiento WITH v_idasientoimp , detaasto WITH "A.Nro.: "+ALLTRIM(STR(asientosnro.numero))+" - "+ALLTRIM(detalle) FOR numero = asientosnro.numero 
+			replace numero WITH v_numeroimp FOR numero = asientosnro.numero
+			SELECT asientosnro
+			SKIP 
+		ENDDO 
+
+		SELECT asientoscar		
+
+		
+
+		v_ret = .F.
+*!*		
+		DO FORM cargaasicontables WITH "asientoscar",.f. TO v_ret 
+
+	
+		IF v_ret = .F.
+			RETURN 0
+		ENDIF 
+
+		v_idasientoultimo = maxnumeroidx("idasiento","I","asientos",v_idasientoimp)
+		v_numeroultimo	= maxnumeroidx("numero","I","asientos",v_numeroimp)
+
+
+		
+		SELECT asientoscar		
+		GO TOP 
+		
+		DO WHILE !EOF()
+		
+			a_idasientod 	= "0"
+			a_numero		= asientoscar.numero
+			a_fecha			= asientoscar.fecha
+			a_codigocta		= asientoscar.codigocta
+			a_nombrecta		= asientoscar.nombrecta
+			a_debe 			= asientoscar.debe
+			a_haber	  		= asientoscar.haber
+			a_detalle  		= asientoscar.detalle
+			a_ejercicio		= _SYSEJERCICIO
+			a_idpland		= asientoscar.idpland
+			a_detaasiento	= asientoscar.detaasto
+			a_idasiento 	= asientoscar.idasiento
+			a_idtipoasi		= 1
+			a_idastomode 	= 0
+			a_idfiltro	 	= 0
+			a_idastoe		= 1
+						
+
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+	
+			DIMENSION lamatriz1(16,2)
+			
+			lamatriz1(1,1)='idasientod'
+			lamatriz1(1,2)= a_idasientod
+			lamatriz1(2,1)='numero'
+			lamatriz1(2,2)=ALLTRIM(STR(a_numero))
+			lamatriz1(3,1)='fecha'
+			lamatriz1(3,2)= "'"+ALLTRIM(a_fecha)+"'"
+			lamatriz1(4,1)='codigocta'
+			lamatriz1(4,2)="'"+ALLTRIM(a_codigocta)+"'"
+			lamatriz1(5,1)='nombrecta'
+			lamatriz1(5,2)="'"+ALLTRIM(a_nombrecta)+"'"
+			lamatriz1(6,1)='debe'
+			lamatriz1(6,2)=alltrim(STR(a_debe,12,2))
+			lamatriz1(7,1)='haber'
+			lamatriz1(7,2)=alltrim(STR(a_haber,12,2))
+			lamatriz1(8,1)='detalle'
+			lamatriz1(8,2)= "'"+ALLTRIM(a_detalle)+"'"
+			lamatriz1(9,1)='ejercicio'
+			lamatriz1(9,2)= ALLTRIM(STR(a_ejercicio))
+			lamatriz1(10,1)='idpland'
+			lamatriz1(10,2)= ALLTRIM(STR(a_idpland))
+			lamatriz1(11,1)='detaasiento'
+			lamatriz1(11,2)= "'"+ALLTRIM(a_detaasiento)+"'"
+			lamatriz1(12,1)='idasiento'
+			lamatriz1(12,2)= ALLTRIM(STR(a_idasiento))
+			lamatriz1(13,1)='idtipoasi'
+			lamatriz1(13,2)= ALLTRIM(STR(a_idtipoasi))
+			lamatriz1(14,1)='idastomode'
+			lamatriz1(14,2)= ALLTRIM(STR(a_idastomode))
+			lamatriz1(15,1)='idfiltro'
+			lamatriz1(15,2)= ALLTRIM(STR(a_idfiltro))
+			lamatriz1(16,1)='idastoe'
+			lamatriz1(16,2)= ALLTRIM(STR(a_idastoe))
+	
+			p_tabla     = 'asientos'
+			p_matriz    = 'lamatriz1'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en Importación y Carga de Asientos ",0+48+0,"Error")
+			    RETURN 
+			ENDIF  
+
+			
+			SELECT asientoscar
+			SKIP 					
+		ENDDO 
+		
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT asientoscar
+	USE IN asientoscar
+	
+	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
