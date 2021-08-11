@@ -631,17 +631,19 @@ FUNCTION ExportarCobro
 			* FIN LINEA 0 *
 			***************
 			
+			v_cantidadCobros = 0
+			v_TotalCobros = 0.00
 			
 			****************
 			*** LINEA 1 ****
 			****************
-		
-		
+				
 		
 			SELECT &p_tablaCobros
 			GO TOP 
 			DO WHILE NOT EOF()
 			v_linea1  = "1"
+			
 			** Código Cobro **
 			
 			v_idcbcobro = &p_tablaCobros..idcbcobro
@@ -649,8 +651,7 @@ FUNCTION ExportarCobro
 			v_ridcobro	= ALLTRIM(cbasociada_sql.r1idcobro)
 			ALINES(ARR_ridcobro,v_ridcobro,'-')
 			v_tamrcobro = VAL(ARR_ridcobro(2))
-			
-				
+							
 					
 			IF LEN(ALLTRIM(STR(v_idcbcobro))) <= v_tamrcobro
 				v_ridcobrostr = ALLTRIM(REPLICATE('0',v_tamrcobro-len(ALLTRIM(STR(v_idcbcobro))))+ALLTRIM(STR(v_idcbcobro)))
@@ -662,7 +663,113 @@ FUNCTION ExportarCobro
 				RETURN 0
 			ENDIF
 			
+			
+			** Código Fecha Cobro **
+			
+			v_fechaCob = &p_tablaCobros..fechacob
+						
+			v_RfechaCob = ALLTRIM(cbasociada_sql.r1fechacobro)
+			ALINES(ARR_rfechacob,v_RfechaCob,'-')
+			v_tamrfechacob = VAL(ARR_rfechacob(2))
+			
+							
+			
+			** Convierto la fecha a formato Juliano **
+			
+			**SYS(11,DATE(2021,08,09))
+						
+			v_fechaCobJ = SYS(11,DATE(VAL(ALLTRIM(SUBSTR(v_fechaCob,1,4))),VAL(ALLTRIM(SUBSTR(v_fechaCob,5,2))),VAL(ALLTRIM(SUBSTR(v_fechaCob,7,2)))))
+			
+								
+			IF LEN(ALLTRIM(v_fechaCobJ)) = v_tamrfechacob 
+			*	v_ridcobrostr = ALLTRIM(REPLICATE('0',v_tamrcobro-len(ALLTRIM(STR(v_idcbcobro))))+ALLTRIM(STR(v_idcbcobro)))
+				
+				v_linea1 = v_linea1+ALLTRIM(v_fechaCobJ) && Si está correcto: lo agrego a la linea
+				
+			ELSE
+				MESSAGEBOX("El tamaño del código 'fechaCobro' representado en el campo 'r1fechacobro' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar cobros")
+				RETURN 0
+			ENDIF
+			
+
+
+
+			** Código Importe Cobro **
+			
+			v_importeCob = &p_tablaCobros..importecob
+						
+			v_RimpCob = ALLTRIM(cbasociada_sql.r1importe)
+			ALINES(ARR_rimpcob,v_RimpCob,'-')
+			v_tamrimportecob = VAL(ARR_rimpcob(2))
+			
+							
+			v_importeCobStr = ALLTRIM(STR(v_importeCob * 100))
+								
+			IF LEN(ALLTRIM(v_importeCobStr)) <= v_tamrimportecob 
+				v_rimporteCobstr = ALLTRIM(REPLICATE('0',v_tamrimportecob - len(ALLTRIM(v_importeCobStr)))+ALLTRIM(v_importeCobStr))
+				
+				v_linea1 = v_linea1+ALLTRIM(v_rimporteCobstr) && Si está correcto: lo agrego a la linea
+				
+			ELSE
+				MESSAGEBOX("El tamaño del código 'importe Cobro' representado en el campo 'r1importe' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar cobros")
+				RETURN 0
+			ENDIF
+
+			
+			
+			** Código Recargo Cobro **
+			
+			v_recargoCob = &p_tablaCobros..recargocob
+						
+			v_RrecargoCob = ALLTRIM(cbasociada_sql.r1recargo)
+			ALINES(ARR_rReccob,v_RrecargoCob,'-')
+			v_tamrReccob = VAL(ARR_rReccob(2))
+			
+							
+			v_recCobStr = ALLTRIM(STR(v_recargoCob * 100))
+								
+			IF LEN(ALLTRIM(v_recCobStr)) <= v_tamrReccob 
+				v_rRecCobstr = ALLTRIM(REPLICATE('0',v_tamrReccob - len(ALLTRIM(v_recCobStr)))+ALLTRIM(v_recCobStr))
+				
+				v_linea1 = v_linea1+ALLTRIM(v_rRecCobstr) && Si está correcto: lo agrego a la linea
+				
+			ELSE
+				MESSAGEBOX("El tamaño del código 'Recargo Cobro' representado en el campo 'r1recargo' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar cobros")
+				RETURN 0
+			ENDIF
+			
+			
+			
+			
+			
+			** Código de Barras **
+			
+			v_cbCob = &p_tablaCobros..cb
+						
+			v_Rcb = ALLTRIM(cbasociada_sql.r1bc)
+			ALINES(ARR_rCB,v_Rcb,'-')
+			v_tamrCB = VAL(ARR_rCB(2))
+			
+			
+	
+			IF LEN(ALLTRIM(v_cbCob)) = v_tamrCB 
+			*	v_rRecCobstr = ALLTRIM(REPLICATE('0',v_tamrReccob - len(ALLTRIM(v_recCobStr)))+ALLTRIM(v_recCobStr))
+				
+				v_linea1 = v_linea1+ALLTRIM(v_cbCob) && Si está correcto: lo agrego a la linea
+				
+			ELSE
+				MESSAGEBOX("El tamaño del código 'Código de Barras' representado en el campo 'r1bc' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar cobros")
+				RETURN 0
+			ENDIF
+			
 			FPUTS(v_adminArc,v_linea1) && ¿O fwrite(v_adminArc,v_linea1) ?
+					
+			v_CantidadCobros = v_cantidadCobros + 1
+			v_totalCobros = v_totalCobros + v_importeCob 
+			****************
+			* FIN LINEA 1 **
+			****************
+			
 			
 			SELECT &p_tablaCobros
 			SKIP 1
@@ -670,6 +777,66 @@ FUNCTION ExportarCobro
 		ENDDO
 	
 	
+	
+			****************
+			*** LINEA 2 ****
+			****************
+	
+			v_linea2 = "2"
+			
+			
+			
+			
+			** Código Total Cobros **
+			
+						
+			v_RCantidadCob = ALLTRIM(cbasociada_sql.r2cantidad)
+			ALINES(ARR_RCantidadCob,v_RCantidadCob,'-')
+			v_tamRCantidadCob = VAL(ARR_RCantidadCob(2))
+			
+							
+			v_CantidadCobrosStr = ALLTRIM(STR(v_CantidadCobros))
+								
+			IF LEN(ALLTRIM(v_CantidadCobrosStr)) <= v_tamRCantidadCob 
+				v_RCantidadCobrosStr = ALLTRIM(REPLICATE('0',v_tamRCantidadCob - len(ALLTRIM(v_CantidadCobrosStr)))+ALLTRIM(v_CantidadCobrosStr))
+				
+				v_linea2 = v_linea2+ALLTRIM(v_RCantidadCobrosStr) && Si está correcto: lo agrego a la linea
+				
+			ELSE
+				MESSAGEBOX("El tamaño del código 'Cantidad Cobros' representado en el campo 'r2cantidad' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar cobros")
+				RETURN 0
+			ENDIF
+			
+			
+		
+			** Código Total Cobros **
+			
+						
+			v_RTotalCob = ALLTRIM(cbasociada_sql.r2total)
+			ALINES(ARR_rTotalcob,v_RTotalCob,'-')
+			v_tamrTotalcob = VAL(ARR_rTotalcob(2))
+			
+							
+			v_TotalCobStr = ALLTRIM(STR(v_totalCobros * 100))
+								
+			IF LEN(ALLTRIM(v_TotalCobStr)) <= v_tamrTotalcob 
+				v_rTotalCobstr = ALLTRIM(REPLICATE('0',v_tamrTotalcob - len(ALLTRIM(v_TotalCobStr)))+ALLTRIM(v_TotalCobStr))
+				
+				v_linea2 = v_linea2+ALLTRIM(v_rTotalCobstr ) && Si está correcto: lo agrego a la linea
+				
+			ELSE
+				MESSAGEBOX("El tamaño del código 'Total Cobros' representado en el campo 'r2total' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar cobros")
+				RETURN 0
+			ENDIF
+	
+	
+			FPUTS(v_adminArc,v_linea2)
+	
+			****************
+			* FIN LINEA 2 **
+			****************
+			
+			
 		FCLOSE(v_adminArc)
 			
 		ELSE
