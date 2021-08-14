@@ -115,7 +115,7 @@ FUNCTION ImportarComprobantes
 		** Recorro el archivo de envio, linea por linea **	
 		DO WHILE NOT FEOF(v_punteroArcEnv) && Finaliza cuando encuentra una linea vacia
 				v_linea = ALLTRIM(FGETS(v_punteroArcEnv))
-		MESSAGEBOX(v_linea)			
+			
 				IF EMPTY(v_linea) = .F.
 					v_tamLinea = LEN(v_linea)
 															
@@ -845,7 +845,7 @@ FUNCTION ExportarCobro
 			
 		ENDIF 
 		
-		
+		RETURN 1
 
 ENDFUNC 
 		
