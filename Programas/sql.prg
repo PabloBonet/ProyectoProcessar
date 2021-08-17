@@ -26,6 +26,9 @@ IF !(ALLTRIM(conex) == "") then
 			EJE = "conectar = "+VARCONMYSQL
 			&EJE				
 		ENDIF
+		*seteo las variables de entorno para la conexion
+		=MySQLVarSession(conectar)
+
 	************************************************************************************************************************** HASTA AQUI ***
 	*conectar = conMySQL(ccDataBaseSQL)
 	******************************************************************************************************************************************
@@ -61,6 +64,7 @@ FUNCTION Sqlrun
     PARAMETERS co,pcursor
     LOCAL vrreturn
     local r
+	
 	* Esta rutina pone en minuscula los caracteres de sqlmatriz(i), 
 	* salvo que el caractere se encuentre en una cadena encerrada en ''
 	V_FLAG     = 1 && SI VALE 0 LA CADENA ESTÁ ABIERTA - SI VALE 1 LA CADENA CERRADA
@@ -492,5 +496,54 @@ PARAMETERS p_tablalog, p_matrizlog, p_tipoopelog,p_conexiconlog
 	
 	
 	RETURN ErrorSql
+
+ENDFUNC 
+
+
+**-- FUNCION DE SETEO DE VARIALBES DE SESION EN ENTORNO MYSQL
+** carga en mysql las variables definidas como publicas y que deben
+** enviarse a la base de datos como entorno de sesion de la aplicacion
+FUNCTION MySQLVarSession
+PARAMETERS pv_conexion 
+	v_consulta="select variable FROM varpublicas WHERE variable like '_SQL%' " 
+		
+	r=SQLEXEC(pv_conexion ,V_consulta,"SetVariables")
+	IF r < 0
+	  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+V_consulta,0+64,'SQLRUN')
+	  IF AERROR(laError) > 0
+		    *-- Ocurrio un error
+		    * DISPLAY MEMORY LIKE laError
+	    lcMsg = ""
+	    FOR ln = 1 TO ALEN(laError,2)
+	      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+	    ENDFOR
+	    MESSAGEBOX(lcMsg, 64, "SQLRUN (ERROR)")
+	  ENDIF
+	  *FIN INFORME DE ERROR OCURRIDO	
+		ErrorSql=.t.
+		RETURN 
+	ENDIF 
+
+	SELECT SetVariables
+	GO TOP 
+	DO WHILE !EOF()
+		
+		IF !(TYPE(SetVariables.variable)='U') THEN 
+			IF TYPE(ALLTRIM(SetVariables.variable))='C' THEN 
+				eje =" valorv = '"+SetVariables.variable+")'"
+				&eje
+			ELSE
+				eje = "valorv = ALLTRIM(STR("+ALLTRIM(SetVariables.variable)+"))"
+				&eje		
+			ENDIF 
+			v_consulta = "set @"+ALLTRIM(LOWER(setVariables.variable))+":="+valorv
+			r=SQLEXEC(pv_conexion ,V_consulta,"seteo")
+	
+		ELSE 
+		ENDIF 		
+		SELECT SetVariables
+		SKIP 
+	ENDDO 	
+	USE IN SetVariables 
 
 ENDFUNC 

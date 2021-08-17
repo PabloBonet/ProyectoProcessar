@@ -5860,6 +5860,11 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		vpar_tablaret = par_tablaret
 	ENDIF  	
 
+	** correccion para registros de recibos 
+	IF ALLTRIM(par_tabla) = 'recibos' THEN
+		_SQLIDRECIBO = par_registro
+	ENDIF  	
+
 	v_indicetabla = getIdTabla(par_tabla) && Obtengo el nombre del campo indice de la tabla
 	v_fechaasi = ""
 	var_retorno = ""
@@ -5939,6 +5944,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	SELECT AstoValorAC_sql 
 	GO TOP 
 
+
 	
 	DO WHILE !EOF() 
 	
@@ -5947,6 +5953,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 *		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
 		sqlmatriz(1)=" Select "+ALLTRIM(AstoValorAC_sql.campof)+" as valorcf, "+ALLTRIM(AstoValorAC_sql.campo)+" as importe from "+ALLTRIM(AstoValorAC_sql.tabla)
 		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
+
 			
 		verror=sqlrun(vconeccionATO,"tablacampo")
 		IF verror=.f.  
@@ -5963,13 +5970,12 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 
 		**decidir si incerto o no			
 		*********************************			
-			var_valor = IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),tablacampo.valorcf,ALLTRIM(tablacampo.valorcf))  
-			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoValorAC_sql.valor1))','ALLTRIM(AstoValorAC_sql.valor1)')
+			var_valor = IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),tablacampo.valorcf,ALLTRIM(tablacampo.valorcf))  
+			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoValorAC_sql.valor1))','ALLTRIM(AstoValorAC_sql.valor1)')
 			&eje 
 					
-			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoValorAC_sql.valor2))','ALLTRIM(AstoValorAC_sql.valor2)')
+			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoValorAC_sql.valor2))','ALLTRIM(AstoValorAC_sql.valor2)')
 			&eje 
-
 			v_incerta = .f.
 			DO CASE 
 				CASE UPPER(AstoValorAC_sql.compara)="TODOS"
@@ -6009,7 +6015,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 					ENDIF 
 
 			ENDCASE 
-			
+		
 			IF v_incerta = .t. THEN 
 				SELECT AstoValorAC
 		
@@ -6044,6 +6050,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	SET ENGINEBEHAVIOR 90 
 	
 	SELECT AstoValorB
+
 	
 *************************************************************************
 ** Obtengo el la Cuenta que se deberá imputar ***************************
@@ -6057,6 +6064,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	SET ORDER TO codigocta 
 	SELECT AstoCuentaA_sql 
 	GO TOP 
+
 
 	DO WHILE !EOF() 
 		
@@ -6072,11 +6080,11 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		SELECT tablacuenta
 		GO top
 		DO WHILE !EOF()
-			var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),tablacuenta.valor,ALLTRIM(tablacuenta.valor))  
-			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoCuentaA_sql.valor1))','ALLTRIM(AstoCuentaA_sql.valor1)')
+			var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),tablacuenta.valor,ALLTRIM(tablacuenta.valor))  
+			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoCuentaA_sql.valor1))','ALLTRIM(AstoCuentaA_sql.valor1)')
 			&eje 
 					
-			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoCuentaA_sql.valor2))','ALLTRIM(AstoCuentaA_sql.valor2)')
+			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoCuentaA_sql.valor2))','ALLTRIM(AstoCuentaA_sql.valor2)')
 			&eje 
 
 			v_incerta = .f.
@@ -6210,7 +6218,7 @@ ENDFUNC
 FUNCTION GrupoCuentaContable 
 PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 	vpertenece = .f. 
-	var_pg_valorg = IIF((UPPER(SUBSTR(pg_tipog,1,1))='I' or UPPER(SUBSTR(pg_tipog,1,1))='F'),ALLTRIM(STR(pg_valor,12,2)),"'"+ALLTRIM(pg_valor)+"'")	
+	var_pg_valorg = IIF((UPPER(SUBSTR(pg_tipog,1,1))='I' or UPPER(SUBSTR(pg_tipog,1,1))='D' or UPPER(SUBSTR(pg_tipog,1,1))='F'),ALLTRIM(STR(pg_valor,12,2)),"'"+ALLTRIM(pg_valor)+"'")	
 	
 	sqlmatriz(1)=" Select * from "+ALLTRIM(pg_tablag)+" where "+pg_campog+" = "+var_pg_valorg
 	verror=sqlrun(pg_vconeccion,"registro_sql")
@@ -6321,9 +6329,9 @@ PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 			IF ALLTRIM(filtros.tabla) = ALLTRIM(pf_tabla) THEN 
 					eje = " var_valor = registrof_sql."+ALLTRIM(filtros.campo)
 					&eje
-					eje = " var_valord= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valord))','ALLTRIM(filtros.valord)')
+					eje = " var_valord= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='D' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valord))','ALLTRIM(filtros.valord)')
 					&eje 
-					eje = " var_valorh= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valorh))','ALLTRIM(filtros.valorh)')
+					eje = " var_valorh= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='D' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valorh))','ALLTRIM(filtros.valorh)')
 					&eje 
 
 				DO CASE 
@@ -10159,9 +10167,9 @@ PARAMETERS pan_idcomproba, pan_idregistro
 						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")		    
 						ENDIF 
 						
-						MESSAGEBOX(v_tablacp)
-						MESSAGEBOX(v_campocp)
-						MESSAGEBOX(v_iddetacp)
+*!*							MESSAGEBOX(v_tablacp)
+*!*							MESSAGEBOX(v_campocp)
+*!*							MESSAGEBOX(v_iddetacp)
 						v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistro, v_idcajarecaRP , id_cajabco, v_tipocomprorp, v_tablacp, v_campocp, v_iddetacp)
 						IF v_ret = .F.
 							MESSAGEBOX("Ha Ocurrido un Error al intentar registrar el Movimiento para el Tipo de pago",0+48+0,"Error")
@@ -11888,9 +11896,9 @@ PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 			IF ALLTRIM(filtros.tabla) = ALLTRIM(pf_tabla) THEN 
 					eje = " var_valor = registrof_sql."+ALLTRIM(filtros.campo)
 					&eje
-					eje = " var_valord= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valord))','ALLTRIM(filtros.valord)')
+					eje = " var_valord= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='D' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valord))','ALLTRIM(filtros.valord)')
 					&eje 
-					eje = " var_valorh= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valorh))','ALLTRIM(filtros.valorh)')
+					eje = " var_valorh= "+IIF((UPPER(SUBSTR(filtros.tipo,1,1))='I' or UPPER(SUBSTR(filtros.tipo,1,1))='D' or UPPER(SUBSTR(filtros.tipo,1,1))='F'),'VAL(ALLTRIM(filtros.valorh))','ALLTRIM(filtros.valorh)')
 					&eje 
 
 				DO CASE 
