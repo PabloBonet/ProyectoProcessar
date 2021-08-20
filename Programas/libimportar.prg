@@ -4089,6 +4089,7 @@ FUNCTION CargaAsiContables
 		ALTER table asientoscar ADD COLUMN idpland i
 		ALTER table asientoscar ADD COLUMN idasiento i
 		ALTER table asientoscar ADD COLUMN detaasto c(50)
+		ALTER table asientoscar ADD COLUMN valido c(1)
 		
 	
 		
@@ -4143,74 +4144,77 @@ FUNCTION CargaAsiContables
 		
 		DO WHILE !EOF()
 		
-			a_idasientod 	= "0"
-			a_numero		= asientoscar.numero
-			a_fecha			= asientoscar.fecha
-			a_codigocta		= asientoscar.codigocta
-			a_nombrecta		= asientoscar.nombrecta
-			a_debe 			= asientoscar.debe
-			a_haber	  		= asientoscar.haber
-			a_detalle  		= asientoscar.detalle
-			a_ejercicio		= _SYSEJERCICIO
-			a_idpland		= asientoscar.idpland
-			a_detaasiento	= asientoscar.detaasto
-			a_idasiento 	= asientoscar.idasiento
-			a_idtipoasi		= 1
-			a_idastomode 	= 0
-			a_idfiltro	 	= 0
-			a_idastoe		= 1
-						
+			IF asientoscar.idasiento > 0 THEN 
+				
+				a_idasientod 	= "0"
+				a_numero		= asientoscar.numero
+				a_fecha			= asientoscar.fecha
+				a_codigocta		= asientoscar.codigocta
+				a_nombrecta		= asientoscar.nombrecta
+				a_debe 			= asientoscar.debe
+				a_haber	  		= asientoscar.haber
+				a_detalle  		= asientoscar.detalle
+				a_ejercicio		= _SYSEJERCICIO
+				a_idpland		= asientoscar.idpland
+				a_detaasiento	= asientoscar.detaasto
+				a_idasiento 	= asientoscar.idasiento
+				a_idtipoasi		= 1
+				a_idastomode 	= 0
+				a_idfiltro	 	= 0
+				a_idastoe		= 1
+							
 
-			p_tipoope     = 'I'
-			p_condicion   = ''
-			v_titulo      = " EL ALTA "
-	
-			DIMENSION lamatriz1(16,2)
-			
-			lamatriz1(1,1)='idasientod'
-			lamatriz1(1,2)= a_idasientod
-			lamatriz1(2,1)='numero'
-			lamatriz1(2,2)=ALLTRIM(STR(a_numero))
-			lamatriz1(3,1)='fecha'
-			lamatriz1(3,2)= "'"+ALLTRIM(a_fecha)+"'"
-			lamatriz1(4,1)='codigocta'
-			lamatriz1(4,2)="'"+ALLTRIM(a_codigocta)+"'"
-			lamatriz1(5,1)='nombrecta'
-			lamatriz1(5,2)="'"+ALLTRIM(a_nombrecta)+"'"
-			lamatriz1(6,1)='debe'
-			lamatriz1(6,2)=alltrim(STR(a_debe,12,2))
-			lamatriz1(7,1)='haber'
-			lamatriz1(7,2)=alltrim(STR(a_haber,12,2))
-			lamatriz1(8,1)='detalle'
-			lamatriz1(8,2)= "'"+ALLTRIM(a_detalle)+"'"
-			lamatriz1(9,1)='ejercicio'
-			lamatriz1(9,2)= ALLTRIM(STR(a_ejercicio))
-			lamatriz1(10,1)='idpland'
-			lamatriz1(10,2)= ALLTRIM(STR(a_idpland))
-			lamatriz1(11,1)='detaasiento'
-			lamatriz1(11,2)= "'"+ALLTRIM(a_detaasiento)+"'"
-			lamatriz1(12,1)='idasiento'
-			lamatriz1(12,2)= ALLTRIM(STR(a_idasiento))
-			lamatriz1(13,1)='idtipoasi'
-			lamatriz1(13,2)= ALLTRIM(STR(a_idtipoasi))
-			lamatriz1(14,1)='idastomode'
-			lamatriz1(14,2)= ALLTRIM(STR(a_idastomode))
-			lamatriz1(15,1)='idfiltro'
-			lamatriz1(15,2)= ALLTRIM(STR(a_idfiltro))
-			lamatriz1(16,1)='idastoe'
-			lamatriz1(16,2)= ALLTRIM(STR(a_idastoe))
-	
-			p_tabla     = 'asientos'
-			p_matriz    = 'lamatriz1'
-			p_conexion  = vconeccionF
-			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-			    MESSAGEBOX("Ha Ocurrido un Error en Importación y Carga de Asientos ",0+48+0,"Error")
-			    RETURN 
-			ENDIF  
-
-			
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+		
+				DIMENSION lamatriz1(16,2)
+				
+				lamatriz1(1,1)='idasientod'
+				lamatriz1(1,2)= a_idasientod
+				lamatriz1(2,1)='numero'
+				lamatriz1(2,2)=ALLTRIM(STR(a_numero))
+				lamatriz1(3,1)='fecha'
+				lamatriz1(3,2)= "'"+ALLTRIM(a_fecha)+"'"
+				lamatriz1(4,1)='codigocta'
+				lamatriz1(4,2)="'"+ALLTRIM(a_codigocta)+"'"
+				lamatriz1(5,1)='nombrecta'
+				lamatriz1(5,2)="'"+ALLTRIM(a_nombrecta)+"'"
+				lamatriz1(6,1)='debe'
+				lamatriz1(6,2)=alltrim(STR(a_debe,12,2))
+				lamatriz1(7,1)='haber'
+				lamatriz1(7,2)=alltrim(STR(a_haber,12,2))
+				lamatriz1(8,1)='detalle'
+				lamatriz1(8,2)= "'"+ALLTRIM(a_detalle)+"'"
+				lamatriz1(9,1)='ejercicio'
+				lamatriz1(9,2)= ALLTRIM(STR(a_ejercicio))
+				lamatriz1(10,1)='idpland'
+				lamatriz1(10,2)= ALLTRIM(STR(a_idpland))
+				lamatriz1(11,1)='detaasiento'
+				lamatriz1(11,2)= "'"+ALLTRIM(a_detaasiento)+"'"
+				lamatriz1(12,1)='idasiento'
+				lamatriz1(12,2)= ALLTRIM(STR(a_idasiento))
+				lamatriz1(13,1)='idtipoasi'
+				lamatriz1(13,2)= ALLTRIM(STR(a_idtipoasi))
+				lamatriz1(14,1)='idastomode'
+				lamatriz1(14,2)= ALLTRIM(STR(a_idastomode))
+				lamatriz1(15,1)='idfiltro'
+				lamatriz1(15,2)= ALLTRIM(STR(a_idfiltro))
+				lamatriz1(16,1)='idastoe'
+				lamatriz1(16,2)= ALLTRIM(STR(a_idastoe))
+		
+				p_tabla     = 'asientos'
+				p_matriz    = 'lamatriz1'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en Importación y Carga de Asientos ",0+48+0,"Error")
+				    RETURN 
+				ENDIF  
+			ENDIF 
+				
 			SELECT asientoscar
 			SKIP 					
+			
 		ENDDO 
 		
 */*/*/*/*/*/
