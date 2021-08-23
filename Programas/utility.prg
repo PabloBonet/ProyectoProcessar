@@ -1793,7 +1793,7 @@ PARAMETERS p_idFactura, p_esElectronica
 			sqlmatriz(5)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
 			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor"
 			sqlmatriz(7)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))+ " and fe.resultado = 'A'"
+			sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) &&+  " and fe.resultado = 'A'"
 			
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
@@ -12413,13 +12413,14 @@ ENDFUNC
 * Cuenta: codigo de cuenta del servicio
 * FechaVen: Fecha de Vencimiento para el calculo de la deuda ( o fecha de facturas )
 * PV_IS: operacion de la funcion INSERTA DEUDA O SOLO SELECCIONA DEUDA, 
+* pv_tmp: parametro para tablas temporarias , si no está vacio utiliza tmp tabla temporaria
 * pv_conexion: puntero de la conexion a la base de datos
 * En cualquiera de los casos devuelve la deuda en un archivo de texto .csv
 * Formato de archivo devuelto .csv : idfactura I, idfcdeuda I, importe Double(13,2)
 *//////////////////////////////////////
 
 FUNCTION FCAdeudadas
-PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_insert, p_coneccion
+PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_insert, pv_tmp, p_coneccion
 
 	IF (UPPER(type("p_coneccion"))='I' or UPPER(type("p_coneccion"))='N')  THEN 
 		IF p_coneccion = 0 THEN 
@@ -12430,10 +12431,14 @@ PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_ins
 	ELSE 
 		pv_coneccion = abreycierracon(0,_SYSSCHEMA)
 	ENDIF 
+	pv_tmp = IIF(EMPTY(pv_tmp),"","tmp")
+
+
+
 	*Si recibo un idfactura reemplazo las entidades recibidas por la de la factura 
 	IF pv_idfactura > 0 THEN 
 		* Obtengo el registro de la factura a la cual asociar la deuda
-		sqlmatriz(1)=" select entidad, servicio, cuenta, fecha from facturas where idfactura = "+ALLTRIM(STR(pv_idfactura))
+		sqlmatriz(1)=" select entidad, servicio, cuenta, fecha from facturas"+ALLTRIM(pv_tmp)+" where idfactura = "+ALLTRIM(STR(pv_idfactura))
 		verror=sqlrun(pv_coneccion,"facturad_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la factura ",0+48+0,"Error")
@@ -12451,41 +12456,74 @@ PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_ins
 	
 	v_deudareto = "deuda_fcadeuda.csv"
 
-	* Obtengo la deuda de los comprobantes asociados a la cuenta
-	sqlmatriz(1)=" select s.idfactura, s.saldof, f.fecha, f.fechavenc1, f.fechavenc2, f.fechavenc3  from facturasaldo s left join facturas f on f.idfactura = s.idfactura "
-	sqlmatriz(2)=" where s.saldof > 0 and s.idfactura > 0 and f.entidad="+ALLTRIM(STR(pv_entidad))
-	sqlmatriz(3)=" and f.servicio = "+ALLTRIM(STR(pv_servicio))+" and f.cuenta="+ALLTRIM(STR(pv_cuenta))
+
+	* traigo solo una vez la vista de deudas de todas las facturas*
+	IF USED('alldeudas') THEN 
 	
-	verror=sqlrun(pv_coneccion,"deudas_sql")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Costos de Artículos a Fecha ",0+48+0,"Error")
-	    RETURN "" 
-	ENDIF	
+	ELSE 
+		IF file("alldeudas.dbf") THEN 
+			USE alldeudas IN 0 
+		ELSE
+			* Obtengo la deuda todos los comprobantes 
+			sqlmatriz(1)=" select s.idfactura, s.saldof, f.fecha, f.fechavenc1, f.fechavenc2, f.fechavenc3, f.entidad, f.servicio, f.cuenta, "
+			sqlmatriz(2)=" f.tipo, p.puntov, f.numero, f.total "
+			sqlmatriz(3)=" from facturasaldo s left join facturas f on f.idfactura = s.idfactura "
+			sqlmatriz(4)=" left join puntosventa p on p.pventa = f.pventa "
+			sqlmatriz(5)=" where s.saldof > 0 and f.servicio = "+ALLTRIM(STR(pv_servicio))	
+			
+			verror=sqlrun(pv_coneccion,"alldeudas_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Todas las deudas del servicio pasado ",0+48+0,"Error")
+			    RETURN "" 
+			ENDIF	
+			SELECT *, ALLTRIM(tipo)+' '+ALLTRIM(puntov)+' '+STRTRAN(STR(numero,8),' ','0')+'  '+ ;
+			ALLTRIM(SUBSTR(fecha,7,2))+'/'+ALLTRIM(SUBSTR(fecha,5,2))+'/'+ALLTRIM(SUBSTR(fecha,1,4))+ ;
+			'  $ '+ALLTRIM(STR(total,13,2)) as detalle  FROM alldeudas_sql INTO TABLE alldeudas
+			USE IN alldeudas_sql 
+		ENDIF 
+	ENDIF 
+	SELECT alldeudas 
+	INDEX on STR(entidad)+STR(cuenta) TAG cuenta 
+	**************************************************************
 	
-	SELECT * FROM deudas_sql INTO CURSOR fcdeuda WHERE idfactura <> pv_idfactura AND ;
-	 ( EMPTY(fechavenc1) AND fecha <= pv_fechaven) OR ( !EMPTY(fechavenc1) AND (fechavenc1 <= pv_fechaven) ) 
 	
-	SELECT deudas_sql
-	USE 
+*!*		* Obtengo la deuda de los comprobantes asociados a la cuenta
+*!*		sqlmatriz(1)=" select s.idfactura, s.saldof, f.fecha, f.fechavenc1, f.fechavenc2, f.fechavenc3  from facturasaldo s left join facturas f on f.idfactura = s.idfactura "
+*!*		sqlmatriz(2)=" where s.saldof > 0 and s.idfactura > 0 and f.entidad="+ALLTRIM(STR(pv_entidad))
+*!*		sqlmatriz(3)=" and f.servicio = "+ALLTRIM(STR(pv_servicio))+" and f.cuenta="+ALLTRIM(STR(pv_cuenta))
+*!*		
+*!*		verror=sqlrun(pv_coneccion,"deudas_sql")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Costos de Artículos a Fecha ",0+48+0,"Error")
+*!*		    RETURN "" 
+*!*		ENDIF	
+	
+	
+	*si calcula para tablas temporarias no debe tener en cuenta el idfactura
+	v_condicionid = IIF(EMPTY(pv_tmp)," and idfactura <> "+ALLTRIM(STR(pv_idfactura)),"")
+	
+	SELECT * FROM alldeudas INTO CURSOR fcdeuda WHERE STR(entidad)+STR(cuenta) == STR(pv_entidad)+STR(pv_cuenta) ;
+	&v_condicionid  AND ( EMPTY(fechavenc1) AND fecha <= pv_fechaven) OR ( !EMPTY(fechavenc1) AND (fechavenc1 <= pv_fechaven) ) 
+	
+	
 	
 	SELECT fcdeuda
-	COPY TO &v_deudareto TYPE CSV 	
+*	COPY TO &v_deudareto TYPE CSV 	
 	
 	** fin calculo de deuda **
 	
 	** inserta si se llamo a la funcion para incertar  asociada a factura **
 	IF pv_idfactura > 0 AND UPPER(pv_insert) ='I'
 		
-		* Elimino si hubiere alguna deuda ya asociada
-		sqlmatriz(1)=" delete from facturasd  where idfactura = "+ALLTRIM(STR(pv_idfactura))
-		
+			* Elimino si hubiere alguna deuda ya asociada
+		sqlmatriz(1)=" delete from facturasd"+ALLTRIM(pv_tmp)+"  where idfactura = "+ALLTRIM(STR(pv_idfactura))	
 		verror=sqlrun(pv_coneccion,"delete_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Facturas Asociadas ",0+48+0,"Error")
 		    RETURN "" 
 		ENDIF	
 		
-		DIMENSION lamatrizd(4,2)
+		DIMENSION lamatrizd(5,2)
 		SELECT fcdeuda
 		GO TOP 
 		DO WHILE !EOF()
@@ -12498,11 +12536,13 @@ PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_ins
 			lamatrizd(3,2)= ALLTRIM(STR(fcdeuda.idfactura))
 			lamatrizd(4,1)='importe'
 			lamatrizd(4,2)=ALLTRIM(STR(fcdeuda.saldof,13,2))
+			lamatrizd(5,1)='detalle'
+			lamatrizd(5,2)="'"+ALLTRIM(fcdeuda.detalle)+"'"
 
 			p_tipoope     = 'I'
 			p_condicion   = ''
 			v_titulo      = " EL ALTA "
-			p_tabla     = 'facturasd'
+			p_tabla     = 'facturasd'+pv_tmp
 			p_matriz    = 'lamatrizd'
 			p_conexion  = pv_coneccion
 			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
@@ -12532,6 +12572,9 @@ PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_ins
 		= abreycierracon(pv_coneccion,"")
 	ENDIF 
 	
+	IF EMPTY(pv_tmp) THEN 
+		USE IN alldeuda
+	ENDIF 
 
 	RETURN v_deudareto 
 ENDFUNC 

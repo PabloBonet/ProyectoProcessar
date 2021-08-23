@@ -35,6 +35,12 @@ PARAMETERS par_idperiodo
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Conceptos para Facturar ",0+48+0,"Error")
 	ENDIF 
 
+	sqlmatriz(1)="delete from facturasdtmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(par_idperiodo)+" )"
+	verror=sqlrun(vconeFacturar,"elim_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error al Eliminar el listado de Facturas Adeudadas ",0+48+0,"Error")
+	ENDIF 
+
 	sqlmatriz(1)="delete from  facturasimptmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(par_idperiodo)+" )"
 	verror=sqlrun(vconeFacturar,"elim_sql"+vartmp)
 	IF verror=.f.  
@@ -431,7 +437,7 @@ PARAMETERS par_idperiodo
 	SELECT h.* , h.identidadh as idfactura, h.identidadh as idcomproba, h.identidadh as pventa, h.identidadh as numero, 'X' as tipo,   ;
 			&vfactulotes_sql..fechaemite as fecha, &vfactulotes_sql..idperiodo as idperiodo, &vfactulotes_sql..fechavenc1 as fechavenc1, ;
 			&vfactulotes_sql..fechavenc2 as fechavenc2, &vfactulotes_sql..fechavenc3 as fechavenc3,&vfactulotes_sql..proxvenc as proxvenc, ;
-			&vfactulotes_sql..cesp as cespcae, &vfactulotes_sql..cespvence as caevence, ; 
+			&vfactulotes_sql..cesp as cespcae, &vfactulotes_sql..cespvence as caevence, &vfactulotes_sql..interesd as interesd, ; 
 			1 as idtipopera, SUM(d.neto) as neto, SUM(d.neto) as subtotal, 0 as descuento, 0 as recargo, SUM(d.total) as total, ;
 			SUM(d.impuestos) as totalimpu, 'N' as operexenta, 'N' as anulado, "" as observa1, "" as observa2, "" as observa3, "" as observa4 ;
 		FROM &vdetafactutmp d LEFT JOIN &ventidadeshf_sql h ON h.identidadh = d.identidadh INTO TABLE &vfacturastmp ORDER BY h.identidadh GROUP BY h.identidadh
@@ -559,7 +565,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 	
 	SELECT &pfacturas
 	GO TOP 
-	DIMENSION lamatriz1(54,2)
+	DIMENSION lamatriz1(55,2)
 
 	DO WHILE !EOF() 
 	
@@ -672,6 +678,8 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		lamatriz1(53,2)= ALLTRIM(STR(1))
 		lamatriz1(54,1)='identidadh'
 		lamatriz1(54,2)= ALLTRIM(STR(&pfacturas..identidadh))
+		lamatriz1(55,1)='interesd'
+		lamatriz1(55,2)= ALLTRIM(STR(&pfacturas..interesd,13,2))
 
 
 		p_tabla     = 'facturastmp'
@@ -682,10 +690,18 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		    RETURN 
 		ENDIF  
 
+		varchi = FCAdeudadas ( 0, 0, 0, ALLTRIM(&pfacturas..fecha), &pfacturas..idfactura, "I", "tmp", vconeccionFa )
+
+
 		SELECT &pfacturas
 		SKIP 
 	ENDDO 
 
+	IF USED('alldeudas') THEN 
+		SELECT alldeudas
+		USE IN alldeudas 
+	ENDIF 
+	
 	SELECT &pdetafactu
 	GO TOP 
 	DIMENSION lamatriz2(22,2) 
@@ -914,7 +930,7 @@ ENDFUNC
 	
 */** Confirma el Período Facturado , pasa de la tabla de facturas tmporarias 
 */   a la tabla de facturas finales. 
-*/  pasa 3 tablas : Facturas -  detafactu - facturasimp
+*/  pasa 5 tablas : facturas -  detafactu - facturasimp - facturasbser - facturasd
 */
 */**********************************************************
 FUNCTION ConfFcPeriodo
@@ -967,6 +983,14 @@ PARAMETERS pcon_idperiodo
 		RETURN vretorno	
 	ENDIF 
 
+	sqlmatriz(1)=" create temporary table dtmpt as ( select * from facturasdtmp  where idfactura in "
+	sqlmatriz(2)=" ( select idfactura from facturastmp where idperiodo = "+STR(pcon_idperiodo)+" ) ) "
+	verror=sqlrun(vcone,"dtmpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Adeudadas Asociadas a la Cuenta ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
 
 	* Obtengo los Minimos y Maximos de los id de facturas y de Detalles de Facturas 
 	sqlmatriz(1)=" select COUNT(1) as registros, MAX(idfactura) as maxid, MIN(idfactura) as minid from  factutmpt "
@@ -1034,6 +1058,16 @@ PARAMETERS pcon_idperiodo
 		RETURN vretorno	
 	ENDIF 
 
+
+	* Corrijo idfactura en el temporario de Facturas Adeudadas asociadas a la facturacion actual 
+	sqlmatriz(1)=" update dtmpt set idfactura = idfactura + ( "+STR(idfactura_ini)+" - "+STR(var_minid)+" ) "
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion del facturasdtmp con deuda de facturas ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
 	* Corrijo la Numeracion de la Factura en el temporario de Facturas
 	*************************************************************************
 	*************************************************************************
@@ -1049,12 +1083,15 @@ PARAMETERS pcon_idperiodo
 	ENDIF 
 	SELECT cantidadnu_sql 
 	GO TOP 
+
 	DO WHILE !EOF()
 		var_cantidadnu = IIF(TYPE('cantidadnu_sql.registros')='C',VAL(cantidadnu_sql.registros),cantidadnu_sql.registros)
-		var_maxinum	   = cantidadnu_sql.maxnum
-		var_mininum	   = cantidadnu_sql.minnum
-		numero_ini	   = cantidadnu_sql.maxnumero + 1
-		
+	
+
+		var_maxinum	   = IIF(TYPE('cantidadnu_sql.maxnum')='C',VAL(cantidadnu_sql.maxnum),cantidadnu_sql.maxnum) 
+		var_mininum	   = IIF(TYPE('cantidadnu_sql.minnum')='C',VAL(cantidadnu_sql.minnum),cantidadnu_sql.minnum) 
+		numero_ini	   = IIF(ISNULL(cantidadnu_sql.maxnumero),0,cantidadnu_sql.maxnumero) + 1
+
 		* Corrijo numero de factura  temporario de Factura
 		sqlmatriz(1)=" update factutmpt set numero = numero + ( "+STR(numero_ini)+" - "+STR(var_mininum)+" ) where idcomproba = "+STR(cantidadnu_sql.idcomproba)+" and pventa = "+STR(cantidadnu_sql.pventa)
 		verror=sqlrun(vcone,"selfcpt_sql")
@@ -1065,21 +1102,22 @@ PARAMETERS pcon_idperiodo
 		SELECT cantidadnu_sql 
 		SKIP 
 	ENDDO 
+
 	
 
 ********************************************************************************
-	** Iserto desde las tablas temporarias en Facturas, detafactu, facturasimp, facturasbser
+	** Iserto desde las tablas temporarias en facturas, detafactu, facturasimp, facturasbser, facturasd
 
 	sqlmatriz(1)=" insert into facturas ( idfactura, idcomproba, pventa, numero, tipo, fecha, entidad, servicio, cuenta, apellido, "
 	sqlmatriz(2)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
 	sqlmatriz(3)=" stock, idtipoopera, neto, subtotal, descuento, recargo, total, totalimpu, operexenta, anulado, observa1, observa2, "
 	sqlmatriz(4)=" observa3, observa4, idperiodo, ruta1, folio1, ruta2, folio2, fechavenc1, fechavenc2, fechavenc3, proxvenc, confirmada, "
-	sqlmatriz(5)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh )"
+	sqlmatriz(5)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd )"
 	sqlmatriz(6)=" select idfactura, idcomproba, pventa, numero, tipo, fecha, entidad, servicio, cuenta, apellido, "
 	sqlmatriz(7)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
 	sqlmatriz(8)=" stock, idtipoopera, neto, subtotal, descuento, recargo, total, totalimpu, operexenta, anulado, observa1, observa2, "
 	sqlmatriz(9)=" observa3, observa4, idperiodo, ruta1, folio1, ruta2, folio2, fechavenc1, fechavenc2, fechavenc3, proxvenc, confirmada, "
-	sqlmatriz(10)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh from factutmpt  "
+	sqlmatriz(10)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd from factutmpt  "
 	verror=sqlrun(vcone,"selfcpt_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
@@ -1119,6 +1157,15 @@ PARAMETERS pcon_idperiodo
 		RETURN vretorno	
 	ENDIF 
 
+
+	sqlmatriz(1)=" insert into facturasd ( idfacturad, idfactura, idfcdeuda, importe, detalle ) "
+	sqlmatriz(2)=" select 0 as idfacbser, idfactura, idfcdeuda, importe, detalle from dtmpt  "
+	verror=sqlrun(vcone,"selfcpt_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Adeudadas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
 
 	*/***************************************
 	*/ Registro el Estado de la Factura Confirmada de acuerdo a su tipo 
@@ -1219,6 +1266,14 @@ PARAMETERS pcon_idperiodo
 	verror=sqlrun(vcone,"elim_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de FacturasbserTmp ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+
+	sqlmatriz(1)="delete from  facturasdtmp where idfactura in (select idfactura from facturastmp where idperiodo = "+STR(pcon_idperiodo)+" )"
+	verror=sqlrun(vcone,"elim_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de FacturasdTmp ",0+48+0,"Error")
 		=abreycierracon(vcone,"")
 		RETURN vretorno	
 	ENDIF 
