@@ -1487,13 +1487,13 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 		IF v_objConfigurado = .F.
 		
 		
-			v_ubicacionCertificado = STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+_SYSNOMBRECERT),"\","\\")
+			v_ubicacionCertificado = STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+ALLTRIM(_SYSNOMBRECERT)),"\","\\")
 			v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(_SYSCUIT,'-',''))
 			v_ticketAcceso			= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"TA"+v_cuitSinGuiones),"\","\\")
 			v_log					= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"LOG"+v_cuitSinGuiones+".txt"),"\","\\")
 									
 *			v_objconfigurado	= objModuloAFIP.CargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, _SYSCERTIFICADO, _SYSTA, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, _SYSLOGAFIP)
-			v_objconfigurado	= objModuloAFIP.CargaConfiguracion(_SYSSERVICIOFE, _SYSURLWSAA, _SYSSERVICIOAFIP, _SYSPROXY, _SYSPROXYUSU, _SYSPROXYPASS, v_ubicacionCertificado, v_ticketAcceso, _SYSINTAUT, _SYSINTTA, _SYSNOMFISCAL, _SYSCUIT, v_log)
+			v_objconfigurado	= objModuloAFIP.CargaConfiguracion(ALLTRIM(_SYSSERVICIOFE), ALLTRIM(_SYSURLWSAA), ALLTRIM(_SYSSERVICIOAFIP), ALLTRIM(_SYSPROXY), ALLTRIM(_SYSPROXYUSU), ALLTRIM(_SYSPROXYPASS), ALLTRIM(v_ubicacionCertificado), ALLTRIM(v_ticketAcceso), _SYSINTAUT, _SYSINTTA, ALLTRIM(_SYSNOMFISCAL), ALLTRIM(_SYSCUIT), ALLTRIM(v_log))
 
 			IF v_objconfigurado = .T.
 			
@@ -1550,7 +1550,8 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 	CATCH TO loException
 			
 		IF p_nomsg = .f. THEN 
-			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+*			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+			MESSAGEBOX(loException.message,0+48+0,"Se produjo un Error")
 		ENDIF 
 		v_autorizar = .F.
 		RETURN v_autorizar
@@ -1775,16 +1776,15 @@ FUNCTION imprimirFactura
 PARAMETERS p_idFactura, p_esElectronica
 
 
-	v_idfactura = p_idFactura
+	v_idfactura 	= p_idFactura
 	v_esElectronica = p_esElectronica 
 
 	IF v_idfactura > 0
 		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+			
 		*** Busco los datos de la factura y el detalle
 		IF v_esElectronica  = .T.
-
-			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
-		
 
 			sqlmatriz(1)=" Select f.*,d.*,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov,ti.detalle as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv, "
 			sqlmatriz(2)=" com.comprobante as nomcomp from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
@@ -1802,8 +1802,6 @@ PARAMETERS p_idFactura, p_esElectronica
 		
 		ELSE
 			
-			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
-		
 			sqlmatriz(1)="Select f.*,d.*,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ti.detalle as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv, "
 			sqlmatriz(2)=" com.comprobante as nomcomp from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 			sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
@@ -1822,8 +1820,6 @@ PARAMETERS p_idFactura, p_esElectronica
 		
 		
 		*** Busco los datos de los impuestos
-			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
-		
 			sqlmatriz(1)="Select fi.detalle as detaIMP, fi.neto as netoIMP, fi.razon as razonIMP, fi.importe as importeIMP, ai.tipo as tipoIMP "
 			sqlmatriz(2)=" from facturasimp fi" 
 			sqlmatriz(3)=" left join impuestos i on fi.impuesto = i.impuesto "
@@ -1836,11 +1832,50 @@ PARAMETERS p_idFactura, p_esElectronica
 			ENDIF
 		
 
-		SELECT * FROM fac_det_sql INTO TABLE .\factu
+		*** Busco los datos de las deudas asociadas a la factura 	
+			sqlmatriz(1)=" Select idfacturad, idfactura, idfcdeuda, detalle , importe  "
+			sqlmatriz(2)=" from facturasd  " 
+			sqlmatriz(3)=" where importe > 0 and idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"deuda_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  las deudas",0+48+0,"Error")
+			ENDIF
+
+		*** Busco los datos de las Cuotas asociadas a la factura 	
+			sqlmatriz(1)=" Select idcuotafc, idfactura, cuota , cancuotas , importe , fechavenc "
+			sqlmatriz(2)=" from facturascta " 
+			sqlmatriz(3)=" where importe > 0 and idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"cuotas_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  las deudas",0+48+0,"Error")
+			ENDIF
+
+		*** Busco los datos de las Bocas de Servicios asociadas 	
+			sqlmatriz(1)=" Select b.idfacbser, b.idfactura, b.bocanumero, b.ruta1, b.folio1, "
+			sqlmatriz(2)=" b.ruta2, b.folio2, b.direccion, b.idtiposer, t.detalle as detatipo "
+			sqlmatriz(3)=" from facturasbser b " 
+			sqlmatriz(4)=" left join tiposervicio t on t.idtiposer = b.idtiposer "
+			sqlmatriz(5)=" where b.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"bocas_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  las deudas",0+48+0,"Error")
+			ENDIF
+
+
+		SELECT * FROM fac_det_sql 	INTO TABLE .\factu
 		
 		SELECT * FROM impuestos_sql INTO TABLE .\ImpIVA WHERE ALLTRIM(tipoIMP) = "IVA"
 		
 		SELECT * FROM impuestos_sql INTO TABLE .\ImpTRIB WHERE ALLTRIM(tipoIMP) = "TRIBUTO"
+
+		SELECT * FROM deuda_sql 	INTO TABLE .\deuda
+
+		SELECT * FROM cuotas_sql 	INTO TABLE .\cuotas
+
+		SELECT * FROM bocas_sql 	INTO TABLE .\bocas
 		
 		SELECT factu
 		GO TOP 
@@ -1983,10 +2018,16 @@ PARAMETERS p_idFactura, p_esElectronica
 			
 			ENDIF 
 			
-			DO FORM reporteform WITH "factu;impIva;impTRIB","facturasrc;impIVArc;impTRIBrc",v_idcomproba
+			=abreycierracon(vconeccionF,"")
+				
+
+			DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc",v_idcomproba
 			
 		ELSE
 			MESSAGEBOX("Error al cargar la factura para imprimir",0+48+0,"Error al cargar la factura")
+			
+			=abreycierracon(vconeccionF,"")	
+			
 			RETURN 	
 		ENDIF 
 		

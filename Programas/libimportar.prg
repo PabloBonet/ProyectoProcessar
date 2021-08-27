@@ -4089,14 +4089,16 @@ FUNCTION CargaAsiContables
 		ALTER table asientoscar ADD COLUMN idpland i
 		ALTER table asientoscar ADD COLUMN idasiento i
 		ALTER table asientoscar ADD COLUMN detaasto c(50)
-		ALTER table asientoscar ADD COLUMN valido c(1)
+		ALTER table asientoscar ADD COLUMN imputable c(1)
 		
 	
 		
 		SET RELATION TO ALLTRIM(codigocta) INTO planactivo
 		
 		GO TOP 
-		replace ALL nombrecta WITH planactivo.nombrecta, idpland WITH planactivo.idpland , codigoctab WITH STRTRAN(separarcadena(STRTRAN(SUBSTR(ALLTRIM(codigocta),3)+'00','.','')),'.00','')
+		replace ALL nombrecta WITH planactivo.nombrecta, idpland WITH planactivo.idpland , codigoctab WITH STRTRAN(separarcadena(STRTRAN(ALLTRIM(codigocta)+'00','.','')),'.00',''), ;
+					imputable WITH ALLTRIM(planactivo.imputable)
+		replace codigoctab WITH STRTRAN(separarcadena(STRTRAN(ALLTRIM(codigocta)+'00','.','')),'.00','') FOR idpland = 0
 		*** Numero los asientos a importar 	
 	  * Obtengo el idasiento nuevo y el numero de asiento nuevo por cada vez que el numero de asiento cambia
 		v_idasientoimp = maxnumeroidx("idasiento","I","asientos",0)
