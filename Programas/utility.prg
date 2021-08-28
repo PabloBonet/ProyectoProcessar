@@ -1793,9 +1793,10 @@ PARAMETERS p_idFactura, p_esElectronica
 			sqlmatriz(5)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
 			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor"
 			sqlmatriz(7)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) &&+  " and fe.resultado = 'A'"
+			sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
+			*sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) &&+  " and fe.resultado = 'A'"
 			
-			verror=sqlrun(vconeccionF,"fac_det_sql")
+			verror=sqlrun(vconeccionF,"fac_det_sql_au")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
 			ENDIF
@@ -1864,8 +1865,21 @@ PARAMETERS p_idFactura, p_esElectronica
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  las deudas",0+48+0,"Error")
 			ENDIF
 
+		IF v_esElectronica  = .T.
 
-		SELECT * FROM fac_det_sql 	INTO TABLE .\factu
+			SELECT fac_det_sql_au 
+			GO TOP
+			IF NOT EOF()
+				v_idfe = fac_det_sql_au.idfe
+				SELECT * FROM fac_det_sql_au WHERE idfe = v_idfe INTO TABLE .\factu
+			
+			ENDIF 
+		ELSE
+			SELECT * FROM fac_det_sql 	INTO TABLE .\factu
+		ENDIF 
+
+	
+		
 		
 		SELECT * FROM impuestos_sql INTO TABLE .\ImpIVA WHERE ALLTRIM(tipoIMP) = "IVA"
 		
