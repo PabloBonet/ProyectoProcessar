@@ -12638,8 +12638,52 @@ ENDFUNC
 
 
 
+*//////////////////////////////////////
+*/ Obtiene las facturas y cuotas adeudadas filtradas por fecha de comprobante
+*/ Devuelve una tabla con los datos de la facturas, cuotas
+* Parametros:
+* p_FechaIni: Fecha de Inicio del periodo de busqueda
+* p_FechaFin: Fecha de Fin del periodo de busqueda
+* p_nomTablaTmp: Nombre de la tabla temporaria donde se van a guardar los datos consultados
+* pv_conexion: puntero de la conexion a la base de datos
+* Retorno: Devuelve True si la función termino correctamente, False en otro caso. Además devuelve la consulta en una tabla con el nombre pasada como parámetro.
+* Aclaración: Si el comprobante no tiene cuotas, la columna idcuotafc tendra valor = 0
+*//////////////////////////////////////
+FUNCTION facturasCtasAdeudadas
+PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
+
+	
+	IF TYPE('p_fechaIni') = 'C' AND TYPE('p_fechaFin') = 'C' AND TYPE('p_nomTablaTmp ')
+		IF (UPPER(type("p_coneccion"))='I' or UPPER(type("p_coneccion"))='N')  THEN 
+			IF p_coneccion = 0 THEN 
+				pv_coneccion = abreycierracon(0,_SYSSCHEMA)
+			ELSE 
+				pv_coneccion = p_coneccion
+			ENDIF 
+		ELSE 
+			pv_coneccion = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 
+		
+	ELSE
+		RETURN .F.
+
+	ENDIF 
 
 
+	sqlmatriz(1)= " SELECT f.*,fs.cobrado as cobradotot,fs.saldof as saldoftot,ifnull(fc.idcuotafc,0) as idcuotafc,ifnull(fc.cuota,0) as cuota,fc.importe as importecta,fc.cobrado as cobradocta,fc.saldof as saldofcta,fc.fechavenc as fecvencta " 
+	sqlmatriz(2)= " FROM facturasaldo fs left join facturasctasaldo  fc on fs.idfactura = fc.idfactura left join facturas f on fs.idfactura = f.idfactura "
+	sqlmatriz(3)=" where f.fecha >= '"+ALLTRIM(p_fechaIni) + "' and f.fecha <='" +ALLTRIM(p_fechaFin)+"'"
+	
+	verror=sqlrun(pv_coneccion,"factctaade_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Todas las deudas del servicio pasado ",0+48+0,"Error")
+	    RETURN "" 
+	ENDIF	
 
 
+	SELECT * FROM factctaade_sql INTO TABLE &p_nomTablaTmp
+	
+	RETURN .T.
 
+
+ENDFUNC 
