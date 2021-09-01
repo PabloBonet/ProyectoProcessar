@@ -12653,7 +12653,7 @@ FUNCTION facturasCtasAdeudadas
 PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
 
 	
-	IF TYPE('p_fechaIni') = 'C' AND TYPE('p_fechaFin') = 'C' AND TYPE('p_nomTablaTmp ')
+	IF TYPE('p_fechaIni') = 'C' AND TYPE('p_fechaFin') = 'C' AND TYPE('p_nomTablaTmp') = 'C'
 		IF (UPPER(type("p_coneccion"))='I' or UPPER(type("p_coneccion"))='N')  THEN 
 			IF p_coneccion = 0 THEN 
 				pv_coneccion = abreycierracon(0,_SYSSCHEMA)
@@ -12670,9 +12670,11 @@ PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
 	ENDIF 
 
 
-	sqlmatriz(1)= " SELECT f.*,fs.cobrado as cobradotot,fs.saldof as saldoftot,ifnull(fc.idcuotafc,0) as idcuotafc,ifnull(fc.cuota,0) as cuota,fc.importe as importecta,fc.cobrado as cobradocta,fc.saldof as saldofcta,fc.fechavenc as fecvencta " 
-	sqlmatriz(2)= " FROM facturasaldo fs left join facturasctasaldo  fc on fs.idfactura = fc.idfactura left join facturas f on fs.idfactura = f.idfactura "
-	sqlmatriz(3)=" where f.fecha >= '"+ALLTRIM(p_fechaIni) + "' and f.fecha <='" +ALLTRIM(p_fechaFin)+"'"
+	sqlmatriz(1)= " SELECT f.*,fs.cobrado as cobradotot,fs.saldof as saldoftot,ifnull(fc.idcuotafc,0) as idcuotafc,ifnull(fc.cuota,0) as cuota,fc.importe as importecta, "
+	sqlmatriz(2)= " fc.cobrado as cobradocta,fc.saldof as saldofcta,ft.fechavenc as fecvencta " 
+	sqlmatriz(3)= " FROM facturasaldo fs left join facturasctasaldo  fc on fs.idfactura = fc.idfactura left join facturas f on fs.idfactura = f.idfactura  "
+	sqlmatriz(4)= " left join facturascta ft on fc.idcuotafc = ft.idcuotafc " 
+	sqlmatriz(5)=" where f.fecha >= '"+ALLTRIM(p_fechaIni) + "' and f.fecha <='" +ALLTRIM(p_fechaFin)+"'"
 	
 	verror=sqlrun(pv_coneccion,"factctaade_sql")
 	IF verror=.f.  
