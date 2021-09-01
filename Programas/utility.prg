@@ -2156,7 +2156,7 @@ PARAMETERS p_idRecibo
 		ENDDO 
 		
 		
-		SELECT * FROM recibo_sql_u INTO TABLE .\recibo
+		SELECT *, ALLTRIM(nombre)+' '+ALLTRIM(apellido) as apeynom FROM recibo_sql_u INTO TABLE .\recibo
 				
 		SELECT recibo
 		
@@ -4855,7 +4855,7 @@ IF v_idregistro	> 0
 	SELECT comprobante_sql
 	GO TOP 
 	v_entidad	= Comprobante_sql.entidad
-	v_nombre	= Comprobante_sql.nombre+" "+Comprobante_sql.apellido
+	v_nombre	= ALLTRIM(Comprobante_sql.apellido)+" "+ALLTRIM(Comprobante_sql.nombre)
 	v_puntov	= comprobante_sql.puntov
 	v_numComp	= comprobante_sql.numero
 *!*		v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
@@ -7244,7 +7244,7 @@ PARAMETERS p_idpagoProv
 		
 		
 
-		SELECT * FROM pagoprov_sql_u INTO TABLE .\pago
+		SELECT *, ALLTRIM(nombre)+' '+ALLTRIM(apellido) as apeynom FROM pagoprov_sql_u INTO TABLE .\pago
 				
 		SELECT pago
 		
@@ -7268,7 +7268,7 @@ PARAMETERS p_idpagoProv
 		
 		
 		
-			SELECT * FROM pagos_sql_u INTO TABLE .\pagos
+			SELECT *, ALLTRIM(nombre)+' '+ALLTRIM(apellido) as apeynom FROM pagos_sql_u INTO TABLE .\pagos
 			SELECT pagos
 			GO TOP 
 			
@@ -11726,12 +11726,12 @@ PARAMETERS  p_nombreTabla,p_estado
 	GO TOP 
 	
 	IF EOF()
-		v_sentencia = "SELECT * FROM autorizaopera_sql INTO TABLE "+alltrim(p_nombreTabla)
+		v_sentencia = "SELECT * FROM autorizaopera_sql INTO TABLE "+ALLTRIM(_SYSESTACION)+"\"+alltrim(p_nombreTabla)
 		&v_sentencia
 		RETURN .F.
 	ELSE
 	
-		v_sentencia = "SELECT * FROM autorizaopera_sql INTO TABLE "+alltrim(p_nombreTabla)
+		v_sentencia = "SELECT * FROM autorizaopera_sql INTO TABLE "+ALLTRIM(_SYSESTACION)+"\"+alltrim(p_nombreTabla)
 		&v_sentencia
 	ENDIF
 
