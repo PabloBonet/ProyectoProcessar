@@ -2168,9 +2168,10 @@ PARAMETERS p_idRecibo
 			v_idcomproba 	= recibo.idcomproba
 			*** Busco los datos de los cobros para el recibo
 		
-				sqlmatriz(1)=" Select c.*, f.numero,f.tipo,f.fecha,f.entidad, f.servicio, f.cuenta, f.nombre, f.apellido,f.cuit , pv.puntov "
+				sqlmatriz(1)=" Select c.*, f.numero,f.tipo,f.fecha,f.entidad, f.servicio, f.cuenta, f.nombre, f.apellido,f.cuit , pv.puntov,ifnull(fc.cuota,0) as cuota "
 				sqlmatriz(2)=" from cobros c left join facturas f on c.idfactura = f.idfactura left join puntosventa pv on f.pventa = pv.pventa "
-				sqlmatriz(3)=" where c.idcomproba = " +ALLTRIM(STR(v_idcomproba))+" and c.idregipago = "+ ALLTRIM(STR(v_idrecibo))
+				sqlmatriz(3)=" left join facturascta fc on c.idcuotafc = fc.idcuotafc "
+				sqlmatriz(4)=" where c.idcomproba = " +ALLTRIM(STR(v_idcomproba))+" and c.idregipago = "+ ALLTRIM(STR(v_idrecibo))
 
 				verror=sqlrun(vconeccionF,"cobros_sql_u")
 				IF verror=.f.  
@@ -2180,8 +2181,8 @@ PARAMETERS p_idRecibo
 			SELECT * FROM cobros_sql_u INTO TABLE .\cobros
 			SELECT cobros
 			GO TOP 
-			
 		
+			ALTER table cobros alter COLUMN cuota I
 			ALTER table recibo ADD COLUMN strImporte C(250)
 			
 			SELECT recibo
