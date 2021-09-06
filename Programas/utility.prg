@@ -1903,6 +1903,7 @@ PARAMETERS p_idFactura, p_esElectronica
 			ALTER table factu ADD COLUMN codBarra	 C(42)
 		*	ALTER table factu ADD COLUMN codQR		 general
 			ALTER table factu ADD COLUMN codQR C(100)
+			ALTER table factu ADD COLUMN apeynom C(200)
 
 	** AGREGO OBSERVACIONES FIJAS EN EL COMPROBANTE SEGÚN CONDICIONES EN LA TABLA observacond *
 	
@@ -1914,7 +1915,8 @@ PARAMETERS p_idFactura, p_esElectronica
 			
 			SELECT factu 
 			GO TOP 
-			replace ALL obsfijo WITH v_observaFijo 
+			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre))
+			
 			
 			
 			SELECT factu 
