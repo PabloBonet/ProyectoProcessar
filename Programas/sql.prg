@@ -68,12 +68,12 @@ FUNCTION Sqlrun
 	* Esta rutina pone en minuscula los caracteres de sqlmatriz(i), 
 	* salvo que el caractere se encuentre en una cadena encerrada en ''
 	V_FLAG     = 1 && SI VALE 0 LA CADENA ESTÁ ABIERTA - SI VALE 1 LA CADENA CERRADA
+	
 	FOR I = 1 TO 20 STEP 1
 		V_ORIGINAL = SQLMATRIZ(I)
 		V_NUEVOSTR = ''
 		V_TAMAÑO   = LEN(SQLMATRIZ(I)) 
 *		V_FLAG     = 1 && SI VALE 0 LA CADENA ESTÁ ABIERTA - SI VALE 1 LA CADENA CERRADA
-		
 		* Proceso el string de sqlmatriz(i)
 		FOR J=1 TO V_TAMAÑO STEP 1
 			v_char = SUBSTR(v_original,j,1)
@@ -530,13 +530,14 @@ PARAMETERS pv_conexion
 		
 		IF !(TYPE(SetVariables.variable)='U') THEN 
 			IF TYPE(ALLTRIM(SetVariables.variable))='C' THEN 
-				eje =" valorv = '"+SetVariables.variable+")'"
+				eje =" valorv = "+SetVariables.variable
 				&eje
+				v_consulta = "set @"+ALLTRIM(LOWER(setVariables.variable))+":='"+valorv+"'"
 			ELSE
 				eje = "valorv = ALLTRIM(STR("+ALLTRIM(SetVariables.variable)+"))"
 				&eje		
+				v_consulta = "set @"+ALLTRIM(LOWER(setVariables.variable))+":="+valorv
 			ENDIF 
-			v_consulta = "set @"+ALLTRIM(LOWER(setVariables.variable))+":="+valorv
 			r=SQLEXEC(pv_conexion ,V_consulta,"seteo")
 	
 		ELSE 
