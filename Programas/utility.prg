@@ -1773,7 +1773,7 @@ ENDFUNC
 * FUNCIÓN PARA IMPRIMIR UNA FACTURA (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
 * PARAMETROS: P_IDFACTURA, P_ESELECTRONICA
 FUNCTION imprimirFactura
-PARAMETERS p_idFactura, p_esElectronica
+PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 
 
 	v_idfactura 	= p_idFactura
@@ -2031,13 +2031,13 @@ PARAMETERS p_idFactura, p_esElectronica
 				
 								
 			ELSE
-			
+				
 			ENDIF 
 			
 			=abreycierracon(vconeccionF,"")
 				
 
-			DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc",v_idcomproba
+			DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc",v_idcomproba,.F.,pEnviarImpresora
 			
 		ELSE
 			MESSAGEBOX("Error al cargar la factura para imprimir",0+48+0,"Error al cargar la factura")
@@ -12689,7 +12689,16 @@ PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
 
 	SELECT * FROM factctaade_sql INTO TABLE &p_nomTablaTmp
 	
+	SELECT &p_nomTablaTmp 
+	
+	ALTER table &p_nomTablaTmp alter COLUMN idcuotafc I
+	ALTER table &p_nomTablaTmp alter COLUMN cuota I
+	
+	
 	RETURN .T.
 
 
 ENDFUNC 
+
+
+
