@@ -19,6 +19,7 @@ FUNCTION ImportarComprobantes
 
 		IF TYPE('p_idcbasociada') != 'N'
 			=messagebox("El ID de la entidad asociada no es válido",16,"Error al Importar comprobantes")
+			RETURN 0
 		ENDIF 
 
 		p_archivo = alltrim(p_archivo)
@@ -453,6 +454,44 @@ ENDIF
 ENDFUNC 
 
 
+*/------------------------------------------------------------------------------------------------------------
+*/ 	Obtiene el Máximo valor de secuencia utilizada por el cobrador pasada como parámetro
+** 	Funcion: calculaSecueciaMaxCob
+* 	
+*	Retorno: Retorna el número de Secuencia Máxima. Retorna -1 en caso de error
+*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION calculaSecuenciaMaxCob
+PARAMETERS p_idcbcobrador
+
+IF p_idcbcobrador  > 0
+	** Me conecto
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="SELECT c.esecuencia as maxsec "
+	sqlmatriz(2)=" FROM cbcobrador c "
+	sqlmatriz(3)=" WHERE c.idcbcobra = "+ALLTRIM(STR(p_idcbcobrador))
+
+	verror=sqlrun(vconeccionD,"maxSecuencia_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Datos ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+	    RETURN -1
+	ENDIF 
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		v_maxsec = maxSecuencia_sql.maxsec
+		v_maxsec = IIF(TYPE('v_maxsec')=='C', VAL(v_maxsec),v_maxsec)
+	 RETURN v_maxsec
+	 
+ELSE
+	RETURN  -1
+ENDIF 
+
+ENDFUNC 
 
 
 
@@ -992,7 +1031,441 @@ ENDFUNC
 
 
 
+*/------------------------------------------------------------------------------------------------------------
+*/ 	Obtiene el Máximo valor de secuencia utilizada por la empresa pasada como parámetro para exportar al modulo de cobro
+** 	Funcion: calculaSecueciaExpMax
+* 	
+*	Retorno: Retorna el número de Secuencia Máxima. Retorna -1 en caso de error
+*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION calculaSecueciaExpMax
+PARAMETERS p_idcbcobrador
+
+IF p_idcbcobrador > 0
+	** Me conecto
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="SELECT max(cc.esecuencia) as maxsec "
+	sqlmatriz(2)=" FROM cbcobrador cc "
+	sqlmatriz(3)=" WHERE cc.idcbcobra = "+ALLTRIM(STR(p_idcbcobrador))
+
+	verror=sqlrun(vconeccionD,"maxSecuencia_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Datos ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+	    RETURN -1
+	ENDIF 
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		v_maxsec = maxSecuencia_sql.maxsec
+		v_maxsec = IIF(TYPE('v_maxsec')=='C', VAL(v_maxsec),v_maxsec)
+	 RETURN v_maxsec
+	 
+ELSE
+	RETURN  -1
+ENDIF 
+
+ENDFUNC 
 
 
+*/------------------------------------------------------------------------------------------------------------
+*/ 	Exportación de comprobantes a un archivo de intercambio (Archivo de envio .ENV)
+** 	Funcion: ExportarComprobantes
+* 	Parametros: 
+*		P_idcbcobra: ID de la entidad que va a cobrar desde el archivo de Envio (Receptor del archivo de envio .ENV)
+*		p_archivo: Path completo con el nombre del archivo .ENV
+*		p_TablaComprobantes: Tabla donde están los compprobantes que se van a exportar
+*	Retorno: Retorna 1 si se exportó correctamente, 0 en otro caso
+*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION ExportarComprobantes
+	PARAMETERS p_idcbcobra, p_archivo,p_tablaComprobantes
+
+		IF TYPE('p_idcbcobra') != 'N'
+			=messagebox("El ID del cobrador no es válido",16,"Error al Exportar comprobantes")
+			RETURN 0
+		ENDIF 
+
+		p_archivo = alltrim(p_archivo)
+		
+		IF EMPTY(ALLTRIM(p_tablaComprobantes)) = .T.
+			MESSAGEBOX("Nombre de tabla temporal incorrecta",0+16+0,"Error al Exportar comprobantes")
+			RETURN 0
+		ENDIF 
 
 
+		** Controlar que el archivo sea de la entidad asociada **
+		v_nombreArchivo = ALLTRIM(JUSTSTEM(p_archivo))
+		v_extension = ALLTRIM(UPPER(JUSTEXT(p_archivo)))
+		
+		IF v_extension != 'ENV'
+			=messagebox("El Archivo: "+p_archivo+" Tiene una extensión incorrecta, la extensión debe ser .ENV ",16,"Error al Exportar comprobantes")
+			RETURN 0
+		ENDIF 
+			
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+		** Busco los datos de la entidad asociada pasada como parámetro **
+		sqlmatriz(1)= " select * from cbcobrador where idcbcobra = " +ALLTRIM(STR(p_idcbcobra))
+		
+		verror=sqlrun(vconeccionF,"cbcobrador_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error al obtener los datos del cobrador asociada ",0+48+0,"Error al Exportar comprobantes")
+			    RETURN 0
+			ENDIF	
+			
+		SELECT cbcobrador_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			v_nombArchivoEnv = ALLTRIM(cbcobrador_sql.narchivoe)
+			 v_ultSecEnv = calculaSecuenciaMaxCob(p_idcbcobra)
+
+	
+			v_longArcEnv = LEN(v_nombArchivoEnv)
+			
+			** Compruebo el nombre del archivo **
+			v_entArc = SUBSTR(v_nombreArchivo,1,v_longArcEnv)
+			v_secArc = SUBSTR(v_nombreArchivo,v_longArcEnv+1)
+			
+			IF ALLTRIM(v_entArc) != ALLTRIM(v_nombArchivoEnv)
+				MESSAGEBOX("El nombre del archivo no se corresponde con el cobrador",0+48+0,"Error al Exportar comprobantes")
+			    RETURN 0	
+			ENDIF 
+						
+			IF v_ultSecEnv > VAL(v_secArc)
+				v_secArc = v_ultSecEnv +1
+				
+				v_nuevoNombre = v_entArc + v_secArc 		
+				
+				v_nombreViejo = ALLTRIM(JUSTSTEM(p_archivo))
+				STRTRAN(p_archivo,v_nombreViejo,v_nuevoNombre)
+				 				
+			ENDIF 
+		ELSE
+			MESSAGEBOX("No se encuentran los datos de la entidada asociada",0+48+0,"Error al Importar comprobantes")
+			RETURN 0
+		ENDIF 
+		
+		** Obtengo información de ubicación de campos en el registro del archivo de retorno **
+		SELECT cbcobrador_sql
+		GO TOP 
+	
+			
+		SELECT &p_tablaComprobantes
+		GO TOP 
+		
+		IF NOT EOF()
+		
+			** Creo el archivo **
+			v_adminArc = FCREATE(p_archivo)
+	
+			SELECT &p_tablaComprobantes
+			GO TOP 
+			DO WHILE NOT EOF()
+				v_linea = ""
+			
+				*************************************
+				*** Código Del Ente de la empresa ***
+				*************************************					
+				
+				v_empresaid 	= ALLTRIM(cbcobrador_sql.narchivoe)
+				v_eempresaid	= cbcobrador_sql.eempresaid
+				
+				ALINES(ARR_eempresaid,v_eempresaid,'-')
+				v_tameempresaid = VAL(ARR_eempresaid(2))
+				
+				IF LEN(ALLTRIM(v_empresaid )) = v_tameempresaid 
+					
+					v_linea = v_linea+v_empresaid && Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("El tamaño del código 'secuencia de retorno' representado en el campo 'r0secuencia' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				**************************************			
+				*** Código de secuencia de Retorno ***
+				**************************************
+				v_eesecuencia 		= ALLTRIM(cbcobrador_sql.eesecuencia)
+				ALINES(ARR_esecuencia,v_eesecuencia,'-')
+
+				v_tamrsec = VAL(ARR_esecuencia(2))
+				IF LEN(ALLTRIM(v_secArc)) = v_tamrsec 
+					
+					v_linea = v_linea+v_secArc && Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("El tamaño del código 'secuencia de retorno' representado en el campo 'r0secuencia' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+					
+				
+				** Periodo de Facturación ***
+				v_periodo	= &p_tablaComprobantes..periodo
+				v_fechaI 	= SUBSTR(ALLTRIM(v_periodo),1,8)
+				v_fechaH 	= SUBSTR(ALLTRIM(v_periodo),9,8)
+								
+				v_eperiodo	= ALLTRIM(cbcobrador_sql.eperiodo)
+								
+				ALINES(ARR_eperiodo,v_eperiodo,'-')
+				v_tameperiodo = VAL(ARR_eperiodo(2))
+				
+				v_fechaIJ = SYS(11,DATE(VAL(ALLTRIM(SUBSTR(v_fechaI,1,4))),VAL(ALLTRIM(SUBSTR(v_fechaI,5,2))),VAL(ALLTRIM(SUBSTR(v_fechaI,7,2)))))	
+				v_fechaHJ = SYS(11,DATE(VAL(ALLTRIM(SUBSTR(v_fechaH,1,4))),VAL(ALLTRIM(SUBSTR(v_fechaH,5,2))),VAL(ALLTRIM(SUBSTR(v_fechaH,7,2)))))
+				v_fechaPJ = v_fechaIj+v_fechaHJ
+									
+				IF LEN(ALLTRIM(v_fechaPJ)) = v_tameperiodo 
+				*	v_ridcobrostr = ALLTRIM(REPLICATE('0',v_tamrcobro-len(ALLTRIM(STR(v_idcbcobro))))+ALLTRIM(STR(v_idcbcobro)))
+					
+					v_linea = v_linea+ALLTRIM(v_fechaPJ) && Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("El tamaño del código 'fechaPeriodo' representado en el campo 'eperiodo' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				
+				******************************
+				*** Código de Barras (CB) ***
+				******************************
+							
+				****************************
+				** CB Codigo del cobrador **
+				****************************
+				
+				v_codcobrador = cbcobrador_sql.narchivoe
+				v_ebceid	  = ALLTRIM(cbcobrador_sql.ebceid)
+							
+				ALINES(ARR_ebceid,v_ebceid,'-')
+				v_tamebcid = VAL(ARR_ebceid(2))
+			
+				IF LEN(ALLTRIM(v_codcobrador)) = v_tamebcid 
+				*	v_codempresaidstr = ALLTRIM(REPLICATE('0',v_tamecodidcobrador-len(ALLTRIM(STR(v_ebceid))))+ALLTRIM(STR(v_ebceid)))
+					
+					v_linea = v_linea+v_codcobrador&& Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("El tamaño del código 'CodEntidad' representado en el campo 'ebceid' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+							
+				*******************************
+				** CB Subcodigo del cobrador **
+				*******************************
+				
+				v_subcodcobrador = cbcobrador_sql.subcodid
+				
+				v_subcod = cbcobrador_sql.ebcsid
+				ALINES(ARR_subcod,v_subcod,'-')
+				v_tamebcsid = VAL(ARR_subcod(2))
+						
+				IF LEN(ALLTRIM(v_subcodcobrador)) = v_tamebcsid
+					*v_codempresaidstr = ALLTRIM(REPLICATE('0',v_tamecodidcobrador-len(ALLTRIM(STR(v_ebceid))))+ALLTRIM(STR(v_ebceid)))
+					
+					v_linea = v_linea+v_subcodcobrador&& Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("El tamaño del código 'CodSubCod' representado en el campo 'ebcsid' es mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				****************************
+				** Codigo del comprobante **
+				****************************
+				
+				v_codigocomp 	=  &p_tablaComprobantes..codigocomp
+				v_ebccom 		= cbcobrador_sql.ebcidcomp
+				
+				ALINES(ARR_codebccomp,v_ebccom,'-')
+				v_tamebccom = VAL(ARR_codebccomp(2))
+							
+				IF LEN(ALLTRIM(v_codigocomp)) <= v_tamebccom
+					v_codebccompstr = ALLTRIM(REPLICATE('0',v_tamebccom-len(ALLTRIM(v_codigocomp)))+ALLTRIM(v_codigocomp))
+					
+					v_linea = v_linea+v_codebccompstr && Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("El tamaño del código 'CodComprobante' representado en el campo 'ebcidcomp' es mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				
+				
+				*total1, vence1,total2, vence2,total3, vence3
+				***************************
+				** Importe Vencimiento 1 **
+				***************************
+							
+				v_total1	= &p_tablaComprobantes..total1
+				v_ebctotal1	= ALLTRIM(cbcobrador_sql.ebctotal1)
+							
+				ALINES(ARR_ebctotal1,v_ebctotal1,'-')
+				v_tamebctotal1 = VAL(ARR_ebctotal1(2))
+										
+				v_total1str = ALLTRIM(STR(v_total1 * 100))
+									
+				IF LEN(ALLTRIM(v_total1str)) <= v_tamebctotal1 
+					v_total1str = ALLTRIM(REPLICATE('0',v_tamebctotal1 - len(ALLTRIM(v_total1str)))+ALLTRIM(v_total1str))
+					
+					v_linea = v_linea+ALLTRIM(v_total1str) && Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("El tamaño del código 'ImporteVenc1' representado en el campo 'ebctotal1' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				
+				*************************
+				** Fecha Vencimiento 1 **
+				*************************
+				v_fechaVence1 	= &p_tablaComprobantes..vence1				
+				v_ebcvence1 	= ALLTRIM(cbcobrador_sql.ebcvence1)
+				
+				ALINES(ARR_ebcvence1,v_ebcvence1,'-')
+				v_tamebcvence1 = VAL(ARR_ebcvence1(2))
+		
+				
+				** Convierto la fecha a formato Juliano **
+							
+				v_fechaVence1J= SYS(11,DATE(VAL(ALLTRIM(SUBSTR(v_fechaVence1 ,1,4))),VAL(ALLTRIM(SUBSTR(v_fechaVence1 ,5,2))),VAL(ALLTRIM(SUBSTR(v_fechaVence1 ,7,2)))))
+												
+				IF LEN(ALLTRIM(v_fechaVence1J)) = v_tamebcvence1 
+					v_linea = v_linea+ALLTRIM(v_fechaVence1J) && Si está correcto: lo agrego a la linea
+				ELSE
+					MESSAGEBOX("El tamaño del código 'fechaVence1' representado en el campo 'ebcvence1' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				
+				***************************
+				** Importe Vencimiento 2 **
+				***************************
+							
+				v_total2	= &p_tablaComprobantes..total2
+				v_ebctotal2	= ALLTRIM(cbcobrador_sql.ebctotal2)
+							
+				ALINES(ARR_ebctotal2,v_ebctotal2,'-')
+				v_tamebctotal2 = VAL(ARR_ebctotal2(2))
+										
+				v_total2str = ALLTRIM(STR(v_total2 * 100))
+									
+				IF LEN(ALLTRIM(v_total2str)) <= v_tamebctotal2 
+					v_total2str = ALLTRIM(REPLICATE('0',v_tamebctotal2 - len(ALLTRIM(v_total2str)))+ALLTRIM(v_total2str))
+					
+					v_linea = v_linea+ALLTRIM(v_total2str) && Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("El tamaño del código 'ImporteVenc2' representado en el campo 'ebctotal2' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				
+				*************************
+				** Fecha Vencimiento 2 **
+				*************************
+				v_fechaVence2 	= &p_tablaComprobantes..vence2				
+				v_ebcvence2 	= ALLTRIM(cbcobrador_sql.ebcvence2)
+				
+				ALINES(ARR_ebcvence2,v_ebcvence2,'-')
+				v_tamebcvence2= VAL(ARR_ebcvence2(2))
+		
+				
+				** Convierto la fecha a formato Juliano **
+							
+				v_fechaVence2J= SYS(11,DATE(VAL(ALLTRIM(SUBSTR(v_fechaVence2,1,4))),VAL(ALLTRIM(SUBSTR(v_fechaVence2,5,2))),VAL(ALLTRIM(SUBSTR(v_fechaVence2,7,2)))))
+												
+				IF LEN(ALLTRIM(v_fechaVence2J)) = v_tamebcvence2
+					v_linea = v_linea+ALLTRIM(v_fechaVence2J) && Si está correcto: lo agrego a la linea
+				ELSE
+					MESSAGEBOX("El tamaño del código 'fechaVence2' representado en el campo 'ebcvence2' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				
+				***************************
+				** Importe Vencimiento 3**
+				***************************
+							
+				v_total3	= &p_tablaComprobantes..total3
+				v_ebctotal3	= ALLTRIM(cbcobrador_sql.ebctotal3)
+							
+				ALINES(ARR_ebctotal3,v_ebctotal3,'-')
+				v_tamebctotal3 = VAL(ARR_ebctotal3(2))
+										
+				v_total3str = ALLTRIM(STR(v_total3 * 100))
+									
+				IF LEN(ALLTRIM(v_total3str)) <= v_tamebctotal3 
+					v_total3str = ALLTRIM(REPLICATE('0',v_tamebctotal3 - len(ALLTRIM(v_total3str)))+ALLTRIM(v_total3str))
+					
+					v_linea = v_linea+ALLTRIM(v_total3str) && Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("El tamaño del código 'ImporteVenc3' representado en el campo 'ebctotal3' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				
+				*************************
+				** Fecha Vencimiento 2 **
+				*************************
+				v_fechaVence3 	= &p_tablaComprobantes..vence3				
+				v_ebcvence3 	= ALLTRIM(cbcobrador_sql.ebcvence3)
+				
+				ALINES(ARR_ebcvence3,v_ebcvence3,'-')
+				v_tamebcvence3= VAL(ARR_ebcvence3(2))
+		
+				
+				** Convierto la fecha a formato Juliano **
+							
+				v_fechaVence3J= SYS(11,DATE(VAL(ALLTRIM(SUBSTR(v_fechaVence3,1,4))),VAL(ALLTRIM(SUBSTR(v_fechaVence3,5,2))),VAL(ALLTRIM(SUBSTR(v_fechaVence3,7,2)))))
+												
+				IF LEN(ALLTRIM(v_fechaVence3J)) = v_tamebcvence3
+					v_linea = v_linea+ALLTRIM(v_fechaVence3J) && Si está correcto: lo agrego a la linea
+				ELSE
+					MESSAGEBOX("El tamaño del código 'fechaVence3' representado en el campo 'ebcvence3' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+				
+				
+				*********************************************
+				** Valido la Longitud del código de barras **
+				*********************************************
+				v_elong 		= ALLTRIM(cbcobrador_sql.elong)
+				
+				
+				v_tamCodBarra = ALLTRIM(cbcobrador_sql.ebc)
+				ALINES(ARR_ebccodbarra,v_tamCodBarra,'-')
+				v_posIniCOdBarra = VAL(ARR_ebccodbarra(1))
+				v_tamebccodbarra= VAL(ARR_ebccodbarra(2))
+				
+				v_CodBarra = SUBSTR(v_linea,v_posIniCodBarra)
+			
+				IF LEN(ALLTRIM(v_codBarra)) != v_tamebccodbarra
+					MESSAGEBOX("El tamaño del código 'CodBarra' representado en el campo 'ebc' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+									
+				ENDIF 
+			
+				FPUTS(v_adminArc,v_linea)
+
+			SELECT &p_tablaComprobantes
+			SKIP 1
+			
+		ENDDO 
+			
+			
+		FCLOSE(v_adminArc)
+			
+		ELSE
+			MESSAGEBOX("Error al obtener la tabla temporal de comprobantes",0+48+0,"Error al Exportar Comprobantes")
+			RETURN 0
+			
+		ENDIF 
+		
+		RETURN VAL(v_secArc )
+
+ENDFUNC 
