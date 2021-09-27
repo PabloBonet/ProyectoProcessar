@@ -6003,7 +6003,6 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	SELECT AstoValorAC_sql 
 	GO TOP 
 
-
 	
 	DO WHILE !EOF() 
 	
@@ -6023,6 +6022,8 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		
 		SELECT tablacampo 
 		GO top
+		
+		
 		
 		DO WHILE !EOF()
 			SELECT AstoValorAC
@@ -6069,6 +6070,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 					ENDIF 
 				CASE UPPER(AstoValorAC_sql.compara)="GRUPO"
 					var_valorgru = IIF(TYPE("var_valor")='C',var_valor,ALLTRIM(STR(var_valor)))
+					
 					IF GrupoCuentaContable (var_valorgru,AstoValorAC_sql.tablag,AstoValorAC_sql.campog,AstoValorAC_sql.tipog,AstoValorAC_sql.valor1, vconeccionATO) THEN 
 						v_incerta = .t.
 					ENDIF 
@@ -6277,7 +6279,11 @@ ENDFUNC
 FUNCTION GrupoCuentaContable 
 PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 	vpertenece = .f. 
-	var_pg_valorg = IIF((UPPER(SUBSTR(pg_tipog,1,1))='I' or UPPER(SUBSTR(pg_tipog,1,1))='D' or UPPER(SUBSTR(pg_tipog,1,1))='F'),ALLTRIM(STR(pg_valor,12,2)),"'"+ALLTRIM(pg_valor)+"'")	
+	
+	
+	*var_pg_valorg = IIF((UPPER(SUBSTR(pg_tipog,1,1))='I' or UPPER(SUBSTR(pg_tipog,1,1))='D' or UPPER(SUBSTR(pg_tipog,1,1))='F'),ALLTRIM(STR(pg_valor,12,2)),"'"+ALLTRIM(pg_valor)+"'")	
+	var_pg_valorg = IIF((UPPER(SUBSTR(pg_tipog,1,1))='I' or UPPER(SUBSTR(pg_tipog,1,1))='D' or UPPER(SUBSTR(pg_tipog,1,1))='F'),ALLTRIM(pg_valor),"'"+ALLTRIM(pg_valor)+"'")	
+	
 	
 	sqlmatriz(1)=" Select * from "+ALLTRIM(pg_tablag)+" where "+pg_campog+" = "+var_pg_valorg
 	verror=sqlrun(pg_vconeccion,"registro_sql")
