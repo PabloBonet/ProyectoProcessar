@@ -12706,5 +12706,44 @@ PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
 
 ENDFUNC 
 
+*//////////////////////////////////////
+*/ Agrega un parametro a la funcion
+*/ Devuelve la funcion pasada con el nuevo paràmetro
+* Parametros:
+* p_funcion: Funciòn a la que se le va a agregar un paràmetro
+* p_parametro: Paràmetro a agregar
+
+*//////////////////////////////////////
+FUNCTION agregarParamaetro
+PARAMETERS p_funcion,p_parametro
+
+	IF TYPE('p_funcion') = 'C' AND TYPE('p_parametro') = 'C'
+		v_funcion = p_funcion
+		
+		v_posP1 = AT('(',p_funcion)
+		v_posP2 = AT(')',p_funcion)
+		v_posC = AT(',',p_funcion)
+		v_long = v_posP2 - (v_posP1+1)
+		v_listaPar = ALLTRIM(SUBSTR(p_funcion,(v_posP1+1),v_long))
+	
+
+		
+		IF EMPTY(v_listaPar) && NO Tiene parametros
+			
+			v_funcion = STRTRAN(v_funcion,')',ALLTRIM(ALLTRIM(p_parametro)+')'))
+		
+		ELSE
+			v_funcion = STRTRAN(v_funcion,')',ALLTRIM(','+ALLTRIM(p_parametro)+')'))
+		ENDIF 
+	
+		RETURN v_funcion			
+	ENDIF 
+	
+	
+	RETURN p_funcion
+
+ENDFUNC 
+
+
 
 
