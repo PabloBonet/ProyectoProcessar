@@ -5919,10 +5919,14 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		vpar_tablaret = par_tablaret
 	ENDIF  	
 
-	** correccion para registros de recibos 
+	** correccion para registros de recibos y Ordenes de Pago
 	IF ALLTRIM(par_tabla) = 'recibos' THEN
 		_SQLIDRECIBO = par_registro
 	ENDIF  	
+	IF ALLTRIM(par_tabla) = 'pagosprov' THEN
+		_SQLIDPAGO = par_registro
+	ENDIF  	
+	
 
 	v_indicetabla = getIdTabla(par_tabla) && Obtengo el nombre del campo indice de la tabla
 	v_fechaasi = ""
