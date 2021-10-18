@@ -2792,6 +2792,66 @@ PARAMETERS p_idcump
 ENDFUNC 
 
 
+* FUNCIÓN PARA IMPRIMIR UN COmprobante de Vinculos (COMPROBANTES DE LA TABLA vinculocomp)
+* PARAMETROS: P_idvinculo
+FUNCTION imprimirVinculoComp
+PARAMETERS p_idvinculo
+
+
+	v_idvinculo = p_idvinculo
+
+
+	IF v_idvinculo > 0
+		
+
+	
+		*** Busco los datos de la cumplimentación y el detalle
+		
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+
+			sqlmatriz(1)=	" Select p.*, c.tipo, c.comprobante as nomcomp, pv.puntov "
+			sqlmatriz(2)=   " from vinculocomp p " 
+			sqlmatriz(3)=	" left join comprobantes c on c.idcomproba = p.idcomproba "
+			sqlmatriz(4)=   " left join puntosventa pv on p.pventa = pv.pventa "
+			sqlmatriz(5)=	" where p.idvinculo = "+ ALLTRIM(STR(v_idvinculo))
+					
+			verror=sqlrun(vconeccionF,"vinc_imp_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los Vinculos",0+48+0,"Error")
+			ENDIF
+		
+	
+		SELECT * FROM vinc_imp_sql INTO TABLE vinculocompim
+		USE IN vinc_imp_sql
+			
+		SELECT vinculocompim
+		
+		IF NOT EOF()
+			SELECT vinculocompim
+			v_idcomproba = vinculocompim.idcomproba
+			
+			DO FORM reporteform WITH "vinculocompim","vinculocompcr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar el Vinculo para imprimir",0+48+0,"Error al cargar la Vinculos de Comprobantes")
+			RETURN 	
+		ENDIF 
+		USE IN vinculocompim
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar el Vinculo de Comprobantes ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
+
+
+
+
+
 
 FUNCTION compruebaCajaReca
 
@@ -12748,6 +12808,265 @@ PARAMETERS p_funcion,p_parametro
 
 ENDFUNC 
 
+
+
+
+******************************************************
+******************************************************
+** Funcion Genera Comprobante de Vinculos entre Facturas y Recibos o Pagos
+** Regostra Vinculos y Libreraciones de Comprobantes
+** Parametros: 	pv_tipovin		= V/D Vincula o Desvincula Comprobantes
+** 				pv_idcomprobav	= ID del comprobante que cancela la Factura
+**				pv_idregistrov	= ID registro del comprobante que cancela la factura 
+**				pv_idfactuv		= ID de la factura de cliente o de la factura de proveedores cancelada
+**				pv_importe		= importe de la operación aplicada o desvinculada
+**
+******************************************************
+
+FUNCTION VinculoComp
+PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe 
+	
+
+	v_tablav 		= ""
+	v_tipovin		= pv_tipovin
+	v_idcomprobav 	= pv_idcomprobav
+	v_idregistrov 	= pv_idregistrov
+	v_idfactuv		= pv_idfactuv
+	v_importe 		= pv_importe
+	v_entidad 		= 0
+	v_servicio 		= 0
+	v_cuenta 		= 0
+	v_nombre		= ""
+	v_apellido 		= ""
+	v_fecha			= DTOS(DATE())
+	v_idvinculo  	= 0
+	v_vinculocomp_idcomproba = 0
+	v_vinculocomp_pventa 	 = 0
+	v_vinculocomp_numero 	 = 0
+	v_comproa		= ""
+	v_comprob		= ""
+	
+	vconeccionVi = abreycierracon(0,_SYSSCHEMA)
+
+	* Busco el comprobante definido para hacer los vinculos entre clientes/cobros proveedores/cobros 
+	sqlmatriz(1)=" select c.*, t.opera, p.pventa from comprobantes c left join tipocompro t on c.idtipocompro = t.idtipocompro "
+	sqlmatriz(2)=" left join compactiv p on p.idcomproba = c.idcomproba "
+	sqlmatriz(3)=" where c.tabla = 'vinculocomp' " 
+	verror=sqlrun(vconeccionVi ,"idcompro_vinc")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la Tabla de comprobantes al obtener el idcomproba de vinculos ",0+48+0,"Error")
+		=abreycierracon(vconeccionVi ,"")	
+	    RETURN .F.  
+	ENDIF	 
+		
+	SELECT idcompro_vinc
+	GO TOP 
+	IF EOF() THEN 
+		USE IN idcompro_vinc
+		MESSAGEBOX("No hay comprobante de Vinculos Definido")
+		RETURN .f. 
+	ENDIF 
+				
+	v_idvinculo  = 0
+	v_vinculocomp_idcomproba = idcompro_vinc.idcomproba
+	v_vinculocomp_pventa 	 = idcompro_vinc.pventa				
+	USE IN idcompro_vinc
+	
+	
+	* Busco la tabla del comprobante vinculado para saber si es un cobro (recibo / Nc) o un pago( Orden de Pago, NC)  
+	sqlmatriz(1)=" select * from comprobantes "
+	sqlmatriz(3)=" where idcomproba = "+ALLTRIM(STR(pv_idcomprobav))
+	verror=sqlrun(vconeccionVi ,"tablav_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la Tabla del Comprobante Vinculado ",0+48+0,"Error")
+		=abreycierracon(vconeccionVi ,"")	
+	    RETURN .F.  
+	ENDIF	 
+
+	SELECT tablav_sql
+	GO TOP
+	IF !EOF() THEN 
+
+		v_tablav = ALLTRIM(tablav_sql.tabla)
+
+		IF ALLTRIM(v_tablav) == "recibos" OR ALLTRIM(v_tablav) == "facturas" THEN && Los comprobantes a vincular/desvincular son de Clientes
+
+			sqlmatriz(1)=" select * from facturas "
+			sqlmatriz(3)=" where idfactura = "+ALLTRIM(STR(v_idfactuv))
+			verror=sqlrun(vconeccionVi ,"facturav_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Factura a Vincular ",0+48+0,"Error")
+				=abreycierracon(vconeccionVi ,"")	
+			   v_tablav = "" 
+			ENDIF	 
+		
+			SELECT facturav_sql
+			GO TOP 
+			IF !EOF() THEN 
+				v_entidad  	= facturav_sql.entidad
+				v_servicio 	= facturav_sql.servicio
+				v_cuenta 	= facturav_sql.cuenta
+				V_apellido	= facturav_sql.apellido
+				v_nombre 	= facturav_sql.nombre
+			ENDIF 
+			USE IN facturav_sql	
+			
+			v_comproa = fdescribecompro('facturas', 'idfactura',v_idfactuv)
+			
+			IF v_tablav == 'recibos' THEN 
+				v_nomindice = 'idrecibo'
+			ELSE
+				v_nomindice = 'idfactura'
+			ENDIF 
+			v_comprob = fdescribecompro(v_tablav, v_nomindice ,v_idregistrov)
+	
+		
+		ELSE  
+			IF ALLTRIM(v_tablav) == "pagosprov" OR ALLTRIM(v_tablav) == "factuprove" && los comprobantes a vincular / desvincular son de Proveedores
+		
+				sqlmatriz(1)=" select * from factuprove "
+				sqlmatriz(3)=" where idfactprove = "+ALLTRIM(STR(v_idfactuv))
+				verror=sqlrun(vconeccionVi ,"facturav_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Factura a Vincular ",0+48+0,"Error")
+					=abreycierracon(vconeccionVi ,"")	
+					v_tablav = ""
+				ENDIF	 
+				
+				SELECT facturav_sql
+				GO TOP 
+				IF !EOF() THEN 
+					v_entidad   = facturav_sql.entidad
+					V_apellido	= facturav_sql.apellido
+					v_nombre 	= facturav_sql.nombre
+				ENDIF 
+				USE IN facturav_sql	
+
+				v_comproa = fdescribecompro('factuprove', 'idfactprove',v_idfactuv)
+			
+				IF v_tablav == 'pagosprov' THEN 
+					v_nomindice = 'idpago'
+				ELSE
+					v_nomindice = 'idfactprove'
+				ENDIF 
+				v_comprob = fdescribecompro(v_tablav, v_nomindice ,v_idregistrov)
+		
+			
+			ELSE && los comprobantes pasados no se corresponden con los autorizados para generar el comprobante de vinculo
+				v_tablav = ""
+			ENDIF 
+		ENDIF 
+		
+
+		IF EMPTY(v_tablav) THEN 
+			=abreycierracon(vconeccionVi ,"")	
+			USE IN tablav_sql
+			RETURN .f.
+		ENDIF 
+		USE IN tablav_sql 
+				v_vinculocomp_numero 	 = maxnumerocom(v_vinculocomp_idcomproba ,v_vinculocomp_pventa ,1)
+
+	
+		DIMENSION lamatrizV(18,2)
+				
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		p_tabla     = 'vinculocomp'
+		p_matriz    = 'lamatrizV'
+		p_conexion  = vconeccionVi 
+
+		lamatrizV(1,1)='idvinculo'
+		lamatrizV(1,2)=ALLTRIM(STR(v_idvinculo))
+		lamatrizV(2,1)='idcomproba'
+		lamatrizV(2,2)= ALLTRIM(STR(v_vinculocomp_idcomproba))
+		lamatrizV(3,1)='pventa'
+		lamatrizV(3,2)=ALLTRIM(STR(v_vinculocomp_pventa))
+		lamatrizV(4,1)='numero'
+		lamatrizV(4,2)=ALLTRIM(STR(v_vinculocomp_numero))
+		lamatrizV(5,1)='fecha'
+		lamatrizV(5,2)="'"+ALLTRIM(v_fecha)+"'"
+		lamatrizV(6,1)='entidad'
+		lamatrizV(6,2)=ALLTRIM(STR(v_entidad))
+		lamatrizV(7,1)='servicio'
+		lamatrizV(7,2)=ALLTRIM(STR(v_servicio))
+		lamatrizV(8,1)='cuenta'
+		lamatrizV(8,2)=ALLTRIM(STR(v_cuenta))
+		lamatrizV(9,1)='apellido'
+		lamatrizV(9,2)="'"+v_apellido+"'"
+		lamatrizV(10,1)='nombre'
+		lamatrizV(10,2)="'"+v_nombre+"'"
+		lamatrizV(11,1)='importe'
+		lamatrizV(11,2)=ALLTRIM(STR(v_importe,13,2))
+		lamatrizV(12,1)='tipovin'
+		lamatrizV(12,2)="'"+v_tipovin+"'"
+		lamatrizV(13,1)='tablav'
+		lamatrizV(13,2)="'"+v_tablav+"'"
+		lamatrizV(14,1)='idcomprobav'
+		lamatrizV(14,2)=ALLTRIM(STR(v_idcomprobav))
+		lamatrizV(15,1)='idregistrov'
+		lamatrizV(15,2)=ALLTRIM(STR(v_idregistrov))
+		lamatrizV(16,1)='idfactuv'
+		lamatrizV(16,2)=ALLTRIM(STR(v_idfactuv))
+		lamatrizV(17,1)='comproa'
+		lamatrizV(17,2)="'"+v_comproa+"'"
+		lamatrizV(18,1)='comprob'
+		lamatrizV(18,2)="'"+v_comprob+"'"
+
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_vinculocomp_numero)),0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+			
+		RELEASE lamatrizV
+				
+				*** Ultimo ID registrado ***
+				
+				
+		sqlmatriz(1)="SELECT last_insert_id() as maxid "
+		verror=sqlrun(vconeccionVi,"vinculomax_sql")
+		IF verror=.f.  
+	 	   MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo ID de Anulación",0+48+0,"Error")
+		ENDIF 
+
+		SELECT vinculomax_sql
+		GO TOP 
+				
+		v_idvinculo = VAL(vinculomax_sql.maxid)
+	
+		USE in vinculomax_sql
+				
+				
+			*** REGISTRO ESTADO AUTORIZADO ***
+		registrarEstado("vinculocomp","idvinculo",v_idvinculo ,'I',"AUTORIZADO")
+						
+				*Registracion Contable del Caja Ingreso/Egreso	
+
+*!*					nuevo_asiento = Contrasiento( 0,_SYSCONTRADH, v_tablaPor, pan_idregistro, 'anularp', v_idanulaRP)
+	  	
+		*Registracion Contable del Vinculo de Comprobantes	
+		v_cargo = ContabilizaCompro('vinculocomp', v_idvinculo , vconeccionVi, v_importe)
+			
+		sino = MESSAGEBOX("¿Desea imprimir el Comprobante de Vínculación-Desvinculación?",4+32,"Imprimir")
+			IF sino = 6
+				*SI
+				imprimirVinculoComp(v_idvinculo)
+
+			ELSE
+				*NO
+			
+			ENDIF 
+	  
+	  	
+	  	
+		=abreycierracon(vconeccionVi ,"")	
+		RETURN .t. 
+	ELSE 
+		=abreycierracon(vconeccionVi ,"")	
+		RETURN .f. 
+	ENDIF 
+
+ENDFUNC 
 
 
 
