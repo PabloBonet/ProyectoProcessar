@@ -9616,12 +9616,29 @@ FUNCTION ContabilizaMov
 			IF !EMPTY(para_filtromodelo) THEN 
 				para_filtro 	= INT(VAL(SUBSTR(para_filtromodelo,1,4)))
 				para_modelo 	= INT(VAL(SUBSTR(para_filtromodelo,5,4)))
-						
-				rettabla=GenAstoContable(para_modelo, para_tabla, para_registro,para_filtro,1,1,para_tablaret)
-				IF !EMPTY(rettabla) THEN 
-					var_grabo = IncerAstoContable(rettabla) && Graba el Asiento recibido como parametro 
-					ret_idasiento = var_grabo
+				
+			* Verifico si el Modelo Seleccionado indica que debe generar asiento o es un movimiento sin asiento Contable 
+				sqlmatriz(1)= " select asiento from astomodelo where idastomode = "+ALLTRIM(STR(para_modelo))
+				verror=sqlrun(vcone_conta ,"siasienta_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Asiento Modelo para ver si Corresponde Asentar ",0+48+0,"Error")
+				    RETURN ""  
+				ENDIF	
+				SELECT siasienta_sql
+				GO TOP 
+				IF !EOF() AND siasienta_sql.asiento = 'N' THEN 
+						ret_idasiento = -2
+				ELSE 
+							
+					rettabla=GenAstoContable(para_modelo, para_tabla, para_registro,para_filtro,1,1,para_tablaret)
+					IF !EMPTY(rettabla) THEN 
+						var_grabo = IncerAstoContable(rettabla) && Graba el Asiento recibido como parametro 
+						ret_idasiento = var_grabo
+					ENDIF 
+					
 				ENDIF 
+				USE IN siasienta_sql
+			*****************************
 			ENDIF 
 		ENDIF 
 	ENDIF 
