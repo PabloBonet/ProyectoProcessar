@@ -1670,7 +1670,7 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 					p_condicion   = " idfactura = "+ ALLTRIM(STR(v_idfactura))
 					v_titulo      = " LA MODIFICACIÓN "
 					
-						DIMENSION lamatriz(3,2)
+						DIMENSION lamatriz(4,2)
 				
 					lamatriz(1,1)='numero'
 					lamatriz(1,2)=ALLTRIM(STR(v_numerofe))
@@ -1678,9 +1678,12 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 					lamatriz(2,2)="'"+ALLTRIM(v_caecesp)+"'"
 					lamatriz(3,1)='caecespven' 
 					lamatriz(3,2)="'"+ALLTRIM(v_caecespven)+"'"
-					
-
-
+					lamatriz(4,1)="observa4"
+					lamatriz(4,2)=IIF(EMPTY(respuestaComp.fchvtopago),"'"+ALLTRIM(respuestaComp.observa4)+"'","'Fecha Vto.:"+ ;
+									ALLTRIM(SUBSTR(respuestaComp.fchvtopago,7,2)+"/"+SUBSTR(respuestaComp.fchvtopago,5,2)+"/"+SUBSTR(respuestaComp.fchvtopago,1,4))+ ;
+									" CBU Emisor:"+ALLTRIM(_SYSCBUMIPYME)+"'")
+									
+									
 					
 					p_tabla     = 'facturas'
 					p_matriz    = 'lamatriz'
@@ -9243,13 +9246,13 @@ PARAMETERS p_idregistro, p_tabla
 					v_cuitEntidad = ALLTRIM(STRTRAN(facturaConsulta.cuitEnt,'-',''))		
 					v_fechaActual = DTOS(DATE())
 					*** Modifico la cabecera del reclamo ***
-					DIMENSION lamatriz(2,2)
+					DIMENSION lamatriz(1,2)
 					
 					
 					lamatriz(1,1)='fecha'
 					lamatriz(1,2)="'"+ALLTRIM(v_fechaActual)+"'"
-					lamatriz(2,1)='CUIT'
-					lamatriz(2,2)="'"+ALLTRIM(v_cuitEntidad)+"'"
+*!*						lamatriz(2,1)='CUIT'
+*!*						lamatriz(2,2)="'"+ALLTRIM(v_cuitEntidad)+"'"
 					
 					
 					vconeccionA=abreycierracon(0,_SYSSCHEMA)	
