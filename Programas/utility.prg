@@ -1781,7 +1781,8 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 
 	v_idfactura 	= p_idFactura
 	v_esElectronica = p_esElectronica 
-
+	v_idperiodo		= 0
+	
 	IF v_idfactura > 0
 		
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
@@ -1803,7 +1804,8 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
 			ENDIF
-		
+			
+			v_idperiodo = fac_det_sql_au.idperiodo
 		ELSE
 			
 			sqlmatriz(1)="Select f.*,d.*,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ti.detalle as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv, "
@@ -1819,6 +1821,8 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
 			ENDIF
+
+			v_idperiodo = fac_det_sql.idperiodo
 		
 		ENDIF 
 		
@@ -1858,7 +1862,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 
 		*** Busco los datos de las Bocas de Servicios asociadas 	
 			sqlmatriz(1)=" Select b.idfacbser, b.idfactura, b.bocanumero, b.ruta1, b.folio1, "
-			sqlmatriz(2)=" b.ruta2, b.folio2, b.direccion, b.idtiposer, t.detalle as detatipo "
+			sqlmatriz(2)=" b.ruta2, b.folio2, b.direccion, b.idtiposer, b.valorref, b.unidadref, b.manterior, b.mactual, b.consumo, t.detalle as detatipo "
 			sqlmatriz(3)=" from facturasbser b " 
 			sqlmatriz(4)=" left join tiposervicio t on t.idtiposer = b.idtiposer "
 			sqlmatriz(5)=" where b.idfactura = "+ ALLTRIM(STR(v_idfactura))
@@ -1867,6 +1871,14 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  las deudas",0+48+0,"Error")
 			ENDIF
+
+		*** Busco los datos de Lotes de Facturas ( en caso de que sea una factura de emisión Mensual )	
+			sqlmatriz(1)=" Select * from factulotes  where idperiodo = "+ ALLTRIM(STR(v_idperiodo))
+			verror=sqlrun(vconeccionF,"flotes_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del lote",0+48+0,"Error")
+			ENDIF
+			
 
 		IF v_esElectronica  = .T.
 
@@ -1884,15 +1896,17 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 	
 		
 		
-		SELECT * FROM impuestos_sql INTO TABLE .\ImpIVA WHERE ALLTRIM(tipoIMP) = "IVA"
+		SELECT * FROM impuestos_sql INTO TABLE .\ImpIVA WHERE ALLTRIM(tipoIMP) = "IVA" AND importeimp <> 0
 		
-		SELECT * FROM impuestos_sql INTO TABLE .\ImpTRIB WHERE ALLTRIM(tipoIMP) = "TRIBUTO"
+		SELECT * FROM impuestos_sql INTO TABLE .\ImpTRIB WHERE ALLTRIM(tipoIMP) = "TRIBUTO" AND importeimp <> 0
 
 		SELECT * FROM deuda_sql 	INTO TABLE .\deuda
 
 		SELECT * FROM cuotas_sql 	INTO TABLE .\cuotas
 
 		SELECT * FROM bocas_sql 	INTO TABLE .\bocas
+		
+		SELECT * FROM flotes_sql 	INTO TABLE .\flotes
 		
 		SELECT factu
 		GO TOP 
@@ -2040,7 +2054,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 			=abreycierracon(vconeccionF,"")
 				
 
-			DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc",v_idcomproba,.F.,pEnviarImpresora
+			DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc",v_idcomproba,.F.,pEnviarImpresora
 			
 		ELSE
 			MESSAGEBOX("Error al cargar la factura para imprimir",0+48+0,"Error al cargar la factura")
@@ -4807,7 +4821,7 @@ PARAMETERS p_idremito, p_esElectronica
 			
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
-			sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, p.nombre as nomProv, "
+			sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, TRIM(p.nombre) as nomProv, "
 			sqlmatriz(2)=" com.comprobante as nomcomp from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 			sqlmatriz(3)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
 			sqlmatriz(4)=" left join remitosh d on r.idremito = d.idremito "
@@ -4826,8 +4840,11 @@ PARAMETERS p_idremito, p_esElectronica
 		SELECT * FROM rec_det_sql INTO TABLE remi
 		
 		
-		SELECT remi
 		
+		SELECT remi
+		ALTER table remi alter COLUMN apellido c(200)
+		replace ALL apellido WITH ALLTRIM(apellido)+" "+ALLTRIM(nombre)
+		GO TOP 
 		IF NOT EOF()
 		
 *			ALTER table factu ADD COLUMN codBarra	 C(42)
@@ -6172,7 +6189,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 ***** Agrupo para obtener el monto final a imputar a cada cuenta
 	SET ENGINEBEHAVIOR 70 
 	 
-	SELECT idastomode, idastocuen, idcpoconta, dh, detalle, SUM(importe) as importe ;
+	SELECT idastomode, idastocuen, idcpoconta, dh, detalle, SUM(importe) as importe, codigocta ;
 		FROM AstoValorAC INTO TABLE AstoValorB ORDER BY idastocuen GROUP BY idastocuen
 	
 	SET ENGINEBEHAVIOR 90 
@@ -6312,15 +6329,27 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	 SELECT AVB.idastomode, AVB.idastocuen, AVB.idcpoconta, AVB.dh, AVB.detalle, AVB.importe ,AVB.importe as debe ,AVB.importe as haber , ;
 	 		 ACA.codigocta, ACA.valor, ACA.idcpocontg, SPACE(50) as tabla, 10000000000 as registro, '        ' as fecha, ;
 	 		 10000000000 as idfiltro, 10000000000 as idtipoasi, 10000000000 as idastoe, ACA.idpland, ACA.codigo, ACA.nombrecta   ;
-	 FROM  AstoValorB AVB left join AstoCuentaA ACA on AVB.idastocuen = ACA.idastocuen ;
+	 FROM  AstoValorB AVB left join AstoCuentaA ACA on ALLTRIM(AVB.codigocta) = ALLTRIM(ACA.codigocta) ;
 	 INTO TABLE AstoFinalA WHERE !ISNULL(ACA.idcpocontg)
+*	 FROM  AstoValorB AVB left join AstoCuentaA ACA on AVB.idastocuen = ACA.idastocuen 
 	 
 	 SELECT AstoFinalA
 	 GO TOP 
 	 replace ALL debe WITH IIF((((dh='D' AND importe > 0) OR (dh='H' AND importe < 0 ))),ABS(importe),0), haber WITH IIF((((dh='H' AND importe > 0) OR (dh='D' AND importe < 0))),ABS(importe),0), ;
 	 			tabla WITH par_tabla, registro WITH par_registro, idfiltro WITH vpar_idfiltro, idtipoasi WITH vpar_idtipoasi, idastoe WITH vpar_idastoe, fecha WITH v_fechaasi
 
-	 SELECT  idastomode, codigocta, debe, haber, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo, nombrecta FROM AstoFinalA INTO TABLE &vpar_tablaret 
+*	 SELECT  idastomode, codigocta, debe, haber, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo, nombrecta FROM AstoFinalA INTO TABLE &vpar_tablaret 
+	 SET ENGINEBEHAVIOR 70
+	 
+	 SELECT  idastomode, codigocta, SUM(debe) as debe, SUM(haber) as haber, SUM(debe-haber) as deoha, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo, nombrecta ;
+	 FROM AstoFinalA INTO TABLE AstoFinalA0 GROUP BY idpland
+	 
+	 SET ENGINEBEHAVIOR 90
+	 
+	 SELECT AstoFinalA0 
+	 replace ALL debe WITH IIF(deoha >= 0, deoha, 0.00 ), haber WITH IIF(deoha <= 0, -deoha, 0.00 )
+	 SELECT  idastomode, codigocta, debe, haber, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo, nombrecta FROM AstoFinalA0 INTO TABLE &vpar_tablaret 
+	 
 	 COPY TO &vpar_tablaret DELIMITED WITH ""
 	
 	 USE IN AstoCuentaA_sql

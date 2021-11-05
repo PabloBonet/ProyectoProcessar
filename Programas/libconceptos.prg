@@ -527,3 +527,65 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 ENDFUNC 
 ******************************************************************************
 
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ FUNCIONES DE OBTENCION DE VALORES DE MEDICIONES PARA UNA BOCA DE SERVICIO EN UN PERIODO DEL ARCHIVO MSERVICIOS
+
+*** Función de busqueda de Valores para una boca de servicio en un periodo dado
+FUNCTION FPXMSERVICIO
+PARAMETERS pper_periodo, pper_idbocaser, pper_conexion
+
+
+	sqlmatriz(1)=" select * from factulotes  " 
+	sqlmatriz(2)=" where idperiodo ="+STR(pper_periodo)
+	verror=sqlrun(pper_conexion,"periodocs")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Periodo a facturar ",0+48+0,"Error")
+	    RETURN 0
+	ENDIF 
+	
+	vfechad = ""
+	vfechah = ""
+	SELECT periodocs
+	IF !EOF() THEN 
+		vfechad = periodocs.fechad
+		vfechah = periodocs.fechah
+	ENDIF 
+	USE IN  periodocs 
+	IF EMPTY(vfechad) OR EMPTY(vfechah) THEN 
+		RETURN 0	
+	ENDIF 
+
+	sqlmatriz(1)=" select m.*  from bocaservicios b " 
+	sqlmatriz(2)=" left join mservicios m on TRIM(m.bocanumero) = TRIM(b.bocanumero) "
+	sqlmatriz(3)=" left join importadatosp p on p.idimportap = m.idimportap "
+	sqlmatriz(4)=" where b.idbocaser ="+STR(pper_idbocaser)+" and p.fechad >= '"+vfechad+"' and p.fechah <= '"+vfechah+"' "
+	sqlmatriz(5)="       and b.facturar = 'S' and b.habilitado = 'S' "
+	verror=sqlrun(pper_conexion,"medicionescs")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Mediciones de Telefonia ",0+48+0,"Error")
+	    RETURN 0 
+	ENDIF 
+
+	vmanterior = 0.00
+	vmactual = 0.00
+	vconsumo  = 0.00
+	SELECT medicionescs
+	GO TOP 
+	IF !EOF() THEN 
+		vmanterior 	= medicionescs.manterior
+		vmactual 	= medicionescs.mactual
+		vconsumo  	= medicionescs.consumo
+	ENDIF 
+	USE 	
+	
+	vreto = ALLTRIM(STR(vmanterior,12,2))+';'+ALLTRIM(STR(vmactual,12,2))+';'+ALLTRIM(STR(vconsumo,12,2))
+	
+	RETURN vreto
+	
+ENDFUNC 
+******************************************************************************
+
