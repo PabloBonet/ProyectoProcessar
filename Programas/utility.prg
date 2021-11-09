@@ -10235,7 +10235,7 @@ PARAMETERS pan_idcomproba, pan_idregistro
 				guardaCajaRecaH (v_anularp_idcomproba, v_idanulaRP, v_idcajarecaRP)
 				SELECT detalle
 				GO TOP 							
-				DIMENSION lamatriz(7,2)
+				DIMENSION lamatriz(6,2)
 				DIMENSION lamatrizL(8,2)
 			
 				DO WHILE NOT EOF() AND RECNO() >= 1
@@ -10279,9 +10279,7 @@ PARAMETERS pan_idcomproba, pan_idregistro
 					lamatriz(5,2)= ALLTRIM(STR(v_detallecp_importe,13,4))
 					lamatriz(6,1)= 'idcuenta'
 					lamatriz(6,2)= ALLTRIM(STR(id_cajabco))
-					lamatriz(7,1)='fecha'
-					lamatriz(7,2)="'"+ALLTRIM(v_fecha)+"'"
-
+					
 					p_tipoope	= 'I'
 					p_donficion = ''
 					p_tabla		= v_detallecp
@@ -13120,30 +13118,4 @@ PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe
 
 ENDFUNC 
 
-
-*!*	FUNCTION actualizaFechaDetapc
-
-*!*		vconeccionVi = abreycierracon(0,_SYSSCHEMA)
-
-*!*		* Busco el comprobante definido para hacer los vinculos entre clientes/cobros proveedores/cobros 
-*!*		
-*!*		sqlmatriz(1)=" SELECT d.*,c.tabla FROM detallepagos d left join comprobantes c on d.idcomproba = c.idcomproba "
-*!*		
-*!*		verror=sqlrun(vconeccionVi ,"deta_sql")
-*!*		IF verror=.f.  
-*!*		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la Tabla detalle",0+48+0,"Error")
-*!*			=abreycierracon(vconeccionVi ,"")	
-*!*		    RETURN .F.  
-*!*		ENDIF
-
-
-*!*		SELECT deta_sql
-*!*		GO TOP 
-*!*		
-*!*		DO WHILE NOT EOF()
-*!*		
-
-*!*		ENDDO
-
-*!*	ENDFUNC 
 
