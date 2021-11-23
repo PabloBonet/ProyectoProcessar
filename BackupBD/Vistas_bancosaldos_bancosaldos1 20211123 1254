@@ -1,0 +1,94 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.5-10.1.48-MariaDB-0+deb9u2
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar
+--
+
+CREATE DATABASE IF NOT EXISTS processar;
+USE processar;
+
+--
+-- Temporary table structure for view `bancosaldos`
+--
+DROP TABLE IF EXISTS `bancosaldos`;
+DROP VIEW IF EXISTS `bancosaldos`;
+CREATE TABLE `bancosaldos` (
+  `idcuenta` int(10) unsigned,
+  `codcuenta` char(100),
+  `detalle` char(254),
+  `cuentabco` char(100),
+  `idtipocta` int(10) unsigned,
+  `idbanco` int(10) unsigned,
+  `cbu` char(100),
+  `plcaja` char(1),
+  `cheques` char(1),
+  `cbancaria` char(1),
+  `banco` int(10) unsigned,
+  `nombre` char(254),
+  `filial` int(10) unsigned,
+  `cp` char(50),
+  `saldo` double(19,2)
+);
+
+--
+-- Temporary table structure for view `bancosaldos1`
+--
+DROP TABLE IF EXISTS `bancosaldos1`;
+DROP VIEW IF EXISTS `bancosaldos1`;
+CREATE TABLE `bancosaldos1` (
+  `idcuenta` int(10) unsigned,
+  `codcuenta` char(100),
+  `detalle` char(254),
+  `cuentabco` char(100),
+  `idtipocta` int(10) unsigned,
+  `idbanco` int(10) unsigned,
+  `cbu` char(100),
+  `plcaja` char(1),
+  `cheques` char(1),
+  `cbancaria` char(1),
+  `banco` int(10) unsigned,
+  `nombre` char(254),
+  `filial` int(10) unsigned,
+  `cp` char(50),
+  `saldo` double(19,2)
+);
+
+--
+-- Definition of view `bancosaldos`
+--
+
+DROP TABLE IF EXISTS `bancosaldos`;
+DROP VIEW IF EXISTS `bancosaldos`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`processaradmin`@`%` SQL SECURITY DEFINER VIEW `bancosaldos` AS select `c`.`idcuenta` AS `idcuenta`,`c`.`codcuenta` AS `codcuenta`,`c`.`detalle` AS `detalle`,`c`.`cuentabco` AS `cuentabco`,`c`.`idtipocta` AS `idtipocta`,`c`.`idbanco` AS `idbanco`,`c`.`cbu` AS `cbu`,`c`.`plcaja` AS `plcaja`,`c`.`cheques` AS `cheques`,`c`.`cbancaria` AS `cbancaria`,`b`.`banco` AS `banco`,`b`.`nombre` AS `nombre`,`b`.`filial` AS `filial`,`b`.`cp` AS `cp`,(ifnull(`i`.`ingresos`,0) - ifnull(`e`.`egresos`,0)) AS `saldo` from (((`cajabancos` `c` left join `bancosing` `i` on((`c`.`idcuenta` = `i`.`idcuenta`))) left join `bancosegr` `e` on((`c`.`idcuenta` = `e`.`idcuenta`))) left join `bancos` `b` on((`b`.`idbanco` = `c`.`idbanco`)));
+
+--
+-- Definition of view `bancosaldos1`
+--
+
+DROP TABLE IF EXISTS `bancosaldos1`;
+DROP VIEW IF EXISTS `bancosaldos1`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`processaradmin`@`%` SQL SECURITY DEFINER VIEW `bancosaldos1` AS select `c`.`idcuenta` AS `idcuenta`,`c`.`codcuenta` AS `codcuenta`,`c`.`detalle` AS `detalle`,`c`.`cuentabco` AS `cuentabco`,`c`.`idtipocta` AS `idtipocta`,`c`.`idbanco` AS `idbanco`,`c`.`cbu` AS `cbu`,`c`.`plcaja` AS `plcaja`,`c`.`cheques` AS `cheques`,`c`.`cbancaria` AS `cbancaria`,`b`.`banco` AS `banco`,`b`.`nombre` AS `nombre`,`b`.`filial` AS `filial`,`b`.`cp` AS `cp`,(ifnull(`i`.`ingresos`,0) - ifnull(`e`.`egresos`,0)) AS `saldo` from (((`cajabancos` `c` left join `bancosing1` `i` on((`c`.`idcuenta` = `i`.`idcuenta`))) left join `bancosegr1` `e` on((`c`.`idcuenta` = `e`.`idcuenta`))) left join `bancos` `b` on((`b`.`idbanco` = `c`.`idbanco`))) where (`c`.`idcuenta` = `_sqlidcuenta`());
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
