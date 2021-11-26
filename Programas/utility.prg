@@ -9604,7 +9604,7 @@ FUNCTION ContabilizaMov
 	GO TOP 
 	IF !EOF() AND RECNO() = 1 THEN 
 		vnombreidx = obtenerCampoIndice(ALLTRIM(pcont_tabla))
-		sqlmatriz(1)= " select t.idcomproba, c.astoconta from "+ALLTRIM(pcont_tabla)+" t "
+		sqlmatriz(1)= " select t.idcomproba, c.astoconta, t.fecha from "+ALLTRIM(pcont_tabla)+" t "
 		sqlmatriz(2)= " left join comprobantes c on c.idcomproba = t.idcomproba "
 		sqlmatriz(3)= " where "+ALLTRIM(vnombreidx)+" = "+alltrim(STR(pcont_id))
 		
@@ -9615,7 +9615,7 @@ FUNCTION ContabilizaMov
 		ENDIF	
 		SELECT asentar_sql
 		
-		IF asentar_sql.astoconta = 'N' THEN 
+		IF asentar_sql.astoconta = 'N' OR asentar_sql.fecha < _SYSFEINICONTA THEN 
 			ret_idasiento = -2
 		ENDIF 
 		USE IN asentar_sql
