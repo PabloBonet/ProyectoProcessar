@@ -1,0 +1,86 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema trsoftdb
+--
+
+CREATE DATABASE IF NOT EXISTS trsoftdb;
+USE trsoftdb;
+
+--
+-- Definition of table `facturaopciones`
+--
+
+DROP TABLE IF EXISTS `facturaopciones`;
+CREATE TABLE `facturaopciones` (
+  `idfactop` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idfactura` int(10) unsigned NOT NULL,
+  `idopcion` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idfactop`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `facturaopciones`
+--
+
+/*!40000 ALTER TABLE `facturaopciones` DISABLE KEYS */;
+INSERT INTO `facturaopciones` (`idfactop`,`idfactura`,`idopcion`) VALUES 
+ (1,318,1),
+ (2,318,4),
+ (4,320,1),
+ (5,320,4);
+/*!40000 ALTER TABLE `facturaopciones` ENABLE KEYS */;
+
+
+--
+-- Definition of table `opcionesafip`
+--
+
+DROP TABLE IF EXISTS `opcionesafip`;
+CREATE TABLE `opcionesafip` (
+  `idopcion` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `codigo` char(10) NOT NULL,
+  `valor` char(200) NOT NULL,
+  `descrip` char(254) NOT NULL,
+  `tipo` char(1) NOT NULL,
+  PRIMARY KEY (`idopcion`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `opcionesafip`
+--
+
+/*!40000 ALTER TABLE `opcionesafip` DISABLE KEYS */;
+INSERT INTO `opcionesafip` (`idopcion`,`codigo`,`valor`,`descrip`,`tipo`) VALUES 
+ (1,'2101','_SYSCBUMIPYME','CBU utilizado para autorización de comprobante MiPyMEs','V'),
+ (2,'2102','_SYSALIASMIPYME','ALIAS utilizado para autorización de comprobante MiPyMEs','V'),
+ (3,'27','SCA','Sistema de Circulación Abierta de la Cámara de Compensación Electrónica de la República Argentina','F'),
+ (4,'27','ADC','Agente de Depósito Colectivo','F'),
+ (5,'22','N','ND/NC. No es de anulación','F'),
+ (6,'22','S','ND/NC. Es de anulación','F');
+/*!40000 ALTER TABLE `opcionesafip` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
