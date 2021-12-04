@@ -1586,7 +1586,9 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 
 			SELECT respuestaComp
 			GO TOP 
-			
+			ALTER table respuestaComp alter COLUMN fchvtopago C(8)
+			SELECT respuestaComp
+			GO TOP 
 			IF NOT EOF()
 				*** REGISTRO LA RESPUESTA DEL COMPROBANTE EN LA TABLA facturasfe ***
 									
@@ -1660,8 +1662,7 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
 				ENDIF	
-				
-				
+			
 				
 				*** Actualizo Tabla de Facturas SI esta autorizada ***
 				
@@ -1669,6 +1670,8 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 					p_tipoope     = 'U'
 					p_condicion   = " idfactura = "+ ALLTRIM(STR(v_idfactura))
 					v_titulo      = " LA MODIFICACIÓN "
+				
+				
 					
 						DIMENSION lamatriz(4,2)
 				
@@ -1682,8 +1685,8 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 					lamatriz(4,2)=IIF(EMPTY(respuestaComp.fchvtopago),"'"+ALLTRIM(respuestaComp.observa4)+"'","'Fecha Vto.:"+ ;
 									ALLTRIM(SUBSTR(respuestaComp.fchvtopago,7,2)+"/"+SUBSTR(respuestaComp.fchvtopago,5,2)+"/"+SUBSTR(respuestaComp.fchvtopago,1,4))+ ;
 									" CBU Emisor:"+ALLTRIM(_SYSCBUMIPYME)+"'")
-									
-									
+					
+										
 					
 					p_tabla     = 'facturas'
 					p_matriz    = 'lamatriz'
@@ -1727,7 +1730,7 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 					registrarEstado("facturas","idfactura",v_idfactura,'I',"RECHAZADO")
 				ENDIF 	
 				
-													
+											
 			
 				
 				abreycierracon(vconeccionp,"")
@@ -8834,9 +8837,8 @@ PARAMETERS p_idFactura
 *				v_opcionales = ""
 			ENDCASE
 *!*				
-			
 			v_opcionales = obtenerOpcionesFactura(v_idfactura)
-			
+						
 			SELECT tablaFactura
 			GO TOP 
 
@@ -8844,7 +8846,6 @@ PARAMETERS p_idFactura
 			
 			SELECT tablaFactura
 			GO TOP 
-			
 *!*				cursoraxml("facimp")
 			v_nombreArchivo = _SYSESTACION+"\"+"factura_"+ALLTRIM(STR(v_idfactura))+".xml"
 
@@ -8859,7 +8860,7 @@ PARAMETERS p_idFactura
 	
 			ENDIF 
 	
-	
+				
 			*** BUSCO COMPROBANTE ASOCIADO PARA NOTA DE CREDITO O NOTA DE DEBITO ***
 			
 			SELECT tablaFactura
@@ -13774,8 +13775,6 @@ ENDFUNC
 *!*		ENDIF 
 *!*		
 *!*		
-*!*		MESSAGEBOX(sqlmatriz(1))
-*!*		MESSAGEBOX(sqlmatriz(2))
 *!*		verror=sqlrun(vconeccionAn,"detacobropago_sql")
 *!*		IF verror=.f.  
 *!*		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de detalle de movimientos",0+48+0,"Error")
@@ -14465,13 +14464,12 @@ PARAMETERS p_idFactura
 				&& Queda el mismo valor gurdado		
 			ENDCASE
 			
-						
+									
 			IF EMPTY(v_opcionesRet)
 				v_opcionesRet = ALLTRIM(v_codigo)+","+ALLTRIM(v_valor)
 			ELSE
 				v_opcionesRet = ALLTRIM(v_opcionesRet)+";"+ALLTRIM(v_codigo)+","+ALLTRIM(v_valor)			
 			ENDIF 
-		
 		ELSE
 			RETURN v_opcionesRet		
 		ENDIF 
