@@ -13136,6 +13136,9 @@ ENDFUNC
 FUNCTION TarjetaCtaBaja
 PARAMETERS pct_idcheque
 
+	IF  MESSAGEBOX("CONFIRMA LA LIQUIDACIÓN DE LA CUOTA SELECCIONADA  ",4+32,"Liquidacion de Cuotas de Tarjetas")= 7 THEN 
+		RETURN 		
+	ENDIF 
 
 	IF  TYPE("_SYSCIFPTAR")="U" OR  EMPTY(_SYSCIFPTAR) OR ALLTRIM(_SYSCIFPTAR)="0" THEN 
 	   	MESSAGEBOX("No ha Configurado el Comprobante asociado a esta Operación ( Variable _SYSCIFPTAR ) ",0+48+0,"Error")
@@ -13147,7 +13150,7 @@ PARAMETERS pct_idcheque
 	** Busco la Cuota a Cancelar de la tabla Cheques 
 
 	sqlmatriz(1)=" select c.*, dc.iddetapago, dc.idcuenta as idcuentatj, ifnull(be.entidad,0) as entidad, ifnull(be.codigoctac,' ') as codigoctac, ifnull(be.codigoctap,0) as codigoctap, "
-	sqlmatriz(2)=" ifnull(en.nombre,' ') as nomenti, ifnull(en.apellido,' ') as apeenti, ifnull(en.compania,' ') as compaenti   "
+	sqlmatriz(2)=" ifnull(en.nombre,' ') as nomenti, ifnull(en.apellido,' ') as apeenti, ifnull(en.compania,' ') as compaenti, en.cuit as cuitenti, en.iva as ivaenti   "
 	sqlmatriz(3)=" from cheques c "
 	sqlmatriz(4)=" left join cobropagolink k on k.tablacp = 'detallepagos' and k.tabla = 'cheques' and k.idregistro = c.idcheque "
 	sqlmatriz(5)=" left join detallepagos dc on dc.iddetapago = k.registrocp "
@@ -13183,7 +13186,7 @@ PARAMETERS pct_idcheque
 		v_idcomprobaci = INT(VAL(SUBSTR(_SYSCIFPTAR,1,2)))
 		v_pventaci	   = INT(VAL(SUBSTR(_SYSCIFPTAR,3,2)))
 		v_idcomprobafp = INT(VAL(SUBSTR(_SYSCIFPTAR,5,2)))
-		v_pventafp	   = INT(VAL(SUBSTR(_SYSCIFPTAR,7,2)))
+		v_idtipocompfp = INT(VAL(SUBSTR(_SYSCIFPTAR,7,2)))
 		v_tipopago	   = INT(VAL(SUBSTR(_SYSCIFPTAR,9,2)))
 		v_impuestofp   = INT(VAL(SUBSTR(_SYSCIFPTAR,11,2)))
 
@@ -13288,8 +13291,7 @@ PARAMETERS pct_idcheque
 			guardaCajaRecaH (v_cajaie_idcomproba, v_idcajaie)
 			
 			
-			**** GUARDO DATOS DE DETALLECOBRO
-			
+			**** GUARDO DATOS DE DETALLECOBRO		
 			
 				DIMENSION lamatriz5(6,2)
 				v_nombreID	= ""
@@ -13353,344 +13355,217 @@ PARAMETERS pct_idcheque
 ***************************************************************************
 
 
+		*** ID_FACTURA = 0 SE ESTÁ CREANDO UNA FACTURA, PUEDE GUARDAR
 
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+
+			v_idfactura = maxnumeroidx("idfactprove","I","factuprove",1)
+		
+			v_fp_idcomproba = v_idcomprobafp
+			v_fp_idtipocomp	= v_idtipocompfp
+			v_fp_tipo 		= "X"
+			v_fp_actividad  = 1
+			v_fp_numero 	= cuotasliq.idcheque
+			v_fp_fecha 		= DTOS(DATE())
+			v_fp_entidad 	= v_entidadCajaie
+			v_fp_nombre 	= ALLTRIM(cuotasliq.nomenti)
+			v_fp_apellido	= ALLTRIM(cuotasliq.apeenti)+" "+ALLTRIM(cuotasliq.compaenti)
+			v_fp_direccion	= " "	
+			v_fp_cuit		= ALLTRIM(cuotasliq.cuitenti)
+			v_fp_dni		= 0
+			v_fp_docTipo	= "80"
+			v_fp_iva		= cuotasliq.ivaenti
+			v_fp_condVta	= 1
+			v_fp_nroremito 	= ""
+			v_fp_nropedido 	= ""
+			v_fp_neto 		= cuotasliq.importe
+			v_fp_impuestos	= 0.00
+			v_fp_total		= cuotasliq.importe
+			v_fp_fechacarga	= DTOS(DATE())
+			v_fp_fechaing	= DTOS(DATE())
+			v_fp_observa	= "Paso Deuda a Proveedores : "+ALLTRIM(cuotasliq.serie)+" "+ALLTRIM(cuotasliq.numero)+" "+ALLTRIM(cuotasliq.alaorden)
+			v_fp_liva 		= 'N'
+			
+	
+			*** GUARDA DATOS DE CABECERA DE LA FACTURA de PROVEEDOR
+
+			DIMENSION lamatriz1(24,2)
+
+			lamatriz1(1,1)='idfactprove'
+			lamatriz1(1,2)= ALLTRIM(STR(v_idfactura))
+			lamatriz1(2,1)='idtipocompro'
+			lamatriz1(2,2)=ALLTRIM(STR(v_fp_idtipocomp))
+			lamatriz1(3,1)='tipo'
+			lamatriz1(3,2)="'"+ALLTRIM(v_fp_tipo)+"'"
+			lamatriz1(4,1)='actividad'
+			lamatriz1(4,2)= ALLTRIM(STR(v_fp_actividad))
+			lamatriz1(5,1)='numero'
+			lamatriz1(5,2)= ALLTRIM(STR(v_fp_numero))
+			lamatriz1(6,1)='fecha'
+			lamatriz1(6,2)="'"+ALLTRIM(v_fp_fecha)+"'"
+			lamatriz1(7,1)='entidad'
+			lamatriz1(7,2)=ALLTRIM(STR(v_fp_entidad))
+			lamatriz1(8,1)='apellido'
+			lamatriz1(8,2)= "'"+ALLTRIM(v_fp_apellido)+"'"
+			lamatriz1(9,1)='nombre'
+			lamatriz1(9,2)= "'"+ALLTRIM(v_fp_nombre)+"'"
+			lamatriz1(10,1)='cuit'
+			lamatriz1(10,2)= "'"+ALLTRIM(v_fp_cuit)+"'"
+			lamatriz1(11,1)='dni'
+			lamatriz1(11,2)= ALLTRIM(STR(v_fp_dni))
+			lamatriz1(12,1)='tipodoc'
+			lamatriz1(12,2)= "'"+ALLTRIM(v_fp_docTIpo)+"'"
+			lamatriz1(13,1)='iva'
+			lamatriz1(13,2)= ALLTRIM(STR(v_fp_iva))
+			lamatriz1(14,1)='condvta'
+			lamatriz1(14,2)= ALLTRIM(STR(v_fp_condVta))
+			lamatriz1(15,1)='nroremito'
+			lamatriz1(15,2)="'"+ALLTRIM(v_fp_nroremito)+"'"
+			lamatriz1(16,1)='nropedido'
+			lamatriz1(16,2)="'"+ALLTRIM(v_fp_nropedido)+"'"
+			lamatriz1(17,1)='neto'
+			lamatriz1(17,2)= ALLTRIM(STR(v_fp_neto,13,4))
+			lamatriz1(18,1)= 'impuesto'
+			lamatriz1(18,2)= ALLTRIM(STR(v_fp_impuestos,13,4))
+			lamatriz1(19,1)='total'
+			lamatriz1(19,2)= ALLTRIM(STR(v_fp_total,13,4))
+			lamatriz1(20,1)='fechacarga'
+			lamatriz1(20,2)= "'"+ALLTRIM(v_fp_fechaCarga)+"'"
+			lamatriz1(21,1)='fechaingreso'
+			lamatriz1(21,2)= "'"+ALLTRIM(v_fp_fechaIng)+"'"
+			lamatriz1(22,1)='observa'
+			lamatriz1(22,2)= "'"+ALLTRIM(v_fp_observa)+"'"
+			lamatriz1(23,1)='idcomproba'
+			lamatriz1(23,2)=ALLTRIM(STR(v_fp_idcomproba))
+			lamatriz1(24,1)='liva'
+			lamatriz1(24,2)= "'"+ALLTRIM(v_fp_liva)+"'"
+
+
+			p_tabla     = 'factuprove'
+			p_matriz    = 'lamatriz1'
+			p_conexion  = vconeccionTa
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+			    RETURN 
+			ENDIF  
+
+
+			*** GUARDO DETALLE de IMPUESTOS DE LA FACTURA ***	
+
+			DIMENSION lamatriz3(6,2)
+
+				
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+					
+				
+			lamatriz3(1,1)='idfactprove'
+			lamatriz3(1,2)= ALLTRIM(STR(v_idfactura))
+			lamatriz3(2,1)= 'impuesto'
+			lamatriz3(2,2)= ALLTRIM(STR(v_impuestofp))
+			lamatriz3(3,1)= 'detalle'
+			lamatriz3(3,2)= "'SIN IMPUESTOS'"
+			lamatriz3(4,1)= 'neto'
+			lamatriz3(4,2)= ALLTRIM(STR(cuotasliq.importe,13,2))
+			lamatriz3(5,1)= 'razon'
+			lamatriz3(5,2)= ALLTRIM(STR(0.00,13,2))
+			lamatriz3(6,1)= 'importe'
+			lamatriz3(6,2)= ALLTRIM(STR(0.00,13,2))
+					
+
+			p_tabla     = 'factuproveimp'
+			p_matriz    = 'lamatriz3'
+			p_conexion  = vconeccionTa
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+			ENDIF
+
+
+			*** GENERO EL ASIENTO CONTABLE DE LA FACTURA DE PROVEEDOR RECIEN INGRESADA ***			
+			IF TYPE('_SYSCONTABLE') <> 'N' THEN 
+				*RETURN ret_idasiento 
+			ELSE 
+			
+				IF _SYSCONTABLE <= 0 OR _SYSCONTABLE > 3  OR EMPTY(cuotasliq.codigoctac) OR EMPTY(cuotasliq.codigoctap)THEN 
+
+				ELSE 
+				
+					** Busco las Cuentas Contables en el Plan de Cuentas Activo
+					v_codigoctac = cuotasliq.codigoctac
+					v_codigoc	 = ""
+					v_nombrectac = ""
+					v_idplandc	 = 0
+					v_codigoctap = cuotasliq.codigoctap
+					v_codigop	 = ""
+					v_nombrectap = ""
+					v_idplandp	 = 0
+					v_debec		 = 0.00
+					v_haberc	 = 0.00
+					
+					sqlmatriz(1)="SELECT * FROM plancuentasd "
+					sqlmatriz(2)="WHERE activa = 'S' and imputable = 'S' and ( codigocta = '"+v_codigoctac+"' or codigocta = '"+v_codigoctap+"' ) and idplan = "+STR(_SYSIDPLAN)
+					verror=sqlrun(vconeccionTa,"plancta")
+					IF verror=.f.
+						* me desconecto
+					ELSE 
+						* me desconecto
+						SELECT plancta
+						GO TOP
+						IF EOF() THEN 
+						ELSE
+							DO WHILE !EOF()
+								IF ALLTRIM(plancta.codigocta)==ALLTRIM(v_codigoctac) THEN 
+									v_codigoc	 = plancta.codigo
+									v_nombrectac = plancta.nombrecta
+									v_idplandc	 = plancta.idpland
+									v_debec		 = cuotasliq.importe
+								ENDIF 
+								IF ALLTRIM(plancta.codigocta)==ALLTRIM(v_codigoctap) THEN 
+									v_codigop	 = plancta.codigo
+									v_nombrectap = plancta.nombrecta
+									v_idplandp	 = plancta.idpland	
+									v_haberp	 = cuotasliq.importe								
+								ENDIF 
+								SKIP 
+							ENDDO 						
+						ENDIF 
+						USE IN plancta			
+					ENDIF 	
+				
+					
+					IF v_idplandp > 0 AND v_idplandc > 0 THEN 
+				
+						
+						*CREO EL ASIENTO CONTABLE
+						CREATE TABLE asientofp.dbf ( idastomode i, codigocta c(20), debe y, haber y, tabla c(30), registro i, fecha c(8), idfiltro i, idtipoasi i, idastoe i, idpland i, codigo c(22), nombrecta c(200) ) 
+						
+						SELECT asientofp
+						
+						INSERT INTO asientofp VALUES (0,v_codigoctac,v_debec,0,'factuprove',v_idfactura, v_fp_fecha,0,1,1,v_idplandc,v_codigoc, v_nombrectac)
+						INSERT INTO asientofp VALUES (0,v_codigoctap,0,v_haberp,'factuprove',v_idfactura, v_fp_fecha,0,1,1,v_idplandp,v_codigop, v_nombrectap)
+
+						SELECT asientofp
+						COPY TO asientofp.txt DELIMITED WITH ""
+						USE IN asientofp 
+						var_grabo = IncerAstoContable("asientofp.txt")  
+					ENDIF 
+									
+				ENDIF 	
+			ENDIF 			
+			
+***************************************************************************
 
 ***************************************************************************
 ***************************************************************************
 	ENDIF 
 
-
-USE IN cuotasliq 
-=abreycierracon(vconeccionTa ,"")	
-RETURN 
-
-
-
-
-*!*		IF !EOF() THEN 
-*!*		
-*!*			LOCATE FOR idcomproba = pan_idcomproba 	 
-*!*			v_opera	  = tablarp.opera
-*!*			v_tablaor = ''	
-*!*			v_tablaPor= ""
-
-*!*			** Veo si el comprobante a Anular esta ACTIVO , sino no es posible anularlo nuevamente ***	
-*!*	*********************************************************************
-*!*			sqlmatriz(1)=" select * from ultimoestado "
-*!*			sqlmatriz(4)=" where tabla = '"+ALLTRIM(tablarp.tabla)+"' and id = '"+ALLTRIM(STR(pan_idregistro))+"'"
-*!*			verror=sqlrun(vconeccionAn ,"ultimoestado")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda Ultimo Estado del Recibo - OP ",0+48+0,"Error")
-*!*				=abreycierracon(vconeccionAn ,"")	
-*!*			    RETURN .F.  
-*!*			ENDIF
-*!*			SELECT ultimoestado
-*!*			GO TOP 
-*!*			IF ultimoestado.idestador = v_estadoRPAnulado THEN 
-*!*				MESSAGEBOX("El Comprobante Ya se Encuentra ANULADO... Verifique",0+64,"Anulación de Comprobantes")
-*!*				USE IN ultimoestado
-*!*				=abreycierracon(vconeccionAn ,"")	
-*!*			    RETURN .F.  			
-*!*			ENDIF 
-*!*			USE IN ultimoestado
-*!*	*********************************************************************
-*!*			IF tablarp.tabla = 'recibos' THEN 
-*!*				v_tablaPor = 'recibos'
-*!*				v_tablaor = 'detallecobros'	
-*!*				v_idtablaor = "iddetacobro"
-*!*			ENDIF 
-*!*			IF tablarp.tabla = 'pagosprov' THEN
-*!*				v_tablaPor= 'pagosprov' 		
-*!*				v_tablaor = 'detallepagos'	
-*!*				v_idtablaor = "iddetapago"
-*!*			ENDIF 
-
-*!*			IF EMPTY(v_tablaor) THEN 
-*!*				=abreycierracon(vconeccionAn ,"")	
-*!*				RETURN .f.
-*!*			ENDIF 
-*!*			* Obtengo el detalle de cobros o de pagos a anular
-*!*			sqlmatriz(1)=" select t.*, h.idcajareca, h.fecha, h.hora, tp.idtipocompro from "+v_tablaor+" t left join cajarecaudah h on t.idcomproba = h.idcomproba and t.idregistro = h.idregicomp "
-*!*			sqlmatriz(2)=" left join comprobantes cp on cp.idcomproba   = t.idcomproba "
-*!*			sqlmatriz(3)=" left join tipocompro   tp on tp.idtipocompro = cp.idtipocompro "
-*!*			sqlmatriz(4)=" where t.idcomproba = "+ALLTRIM(STR(pan_idcomproba))+" and t.idregistro = "+ALLTRIM(STR(pan_idregistro))
-*!*			verror=sqlrun(vconeccionAn ,"detalle")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del detalle de cobros ",0+48+0,"Error")
-*!*				=abreycierracon(vconeccionAn ,"")	
-*!*			    RETURN .F.  
-*!*			ENDIF
-*!*			SELECT detalle
-*!*			GO TOP 
-*!*			CALCULATE SUM(importe) TO v_importeAn
-*!*			
-*!*			* Obtener Tipo de Comprobante de Pago 
-*!*			v_idcomprobarp = 0
-*!*			v_pventa 	   = 0
-*!*			SELECT tablarp
-*!*			GO TOP 
-*!*			LOCATE FOR idcomproba <> pan_idcomproba AND opera <> v_opera 
-*!*			IF FOUND()
-*!*				v_idcomprobarp = tablarp.idcomproba 
-*!*				v_pventarp	   = tablarp.pventa
-*!*				v_tipocomprorp = tablarp.idtipocompro
-*!*			ENDIF 	
-*!*			
-*!*			
-*!*			* Grabo en las tablas de Anulación
-*!*	*************************************************************************************		
-*!*			sino = MESSAGEBOX("¿Confirma La Generación del Comprobante de Anulación...? ",4+32," Anular Comprobante ")
-
-*!*			IF sino = 6
-*!*			
-*!*					v_idanulaRP  = 0
-
-*!*					v_anularp_idcomproba = v_idcomprobarp
-*!*					v_anularp_pventa 	 = v_pventarp
-*!*					v_anularp_numero 	 = maxnumerocom(v_anularp_idcomproba ,v_anularp_pventa ,1)
-*!*					v_fecha = cftofc(DATE())
-*!*					v_anularp_importe = v_importeAn
-*!*					v_detallecp			= ""
-*!*					v_anularp_idrecibo = 0
-*!*					v_anularp_idpago   = 0
-
-*!*					IF v_tablaor = 'detallecobros'
-*!*						v_detallecp = "detallepagos"
-*!*						v_anularp_idrecibo = pan_idregistro	
-*!*					ELSE
-*!*						IF v_tablaor = 'detallepagos'
-*!*							v_detallecp = "detallecobros"
-*!*							v_anularp_idpago = pan_idregistro	
-*!*						ENDIF 
-*!*					ENDIF 
-*!*					
-*!*					DIMENSION lamatrizA(9,2)
-*!*					
-*!*					p_tipoope     = 'I'
-*!*					p_condicion   = ''
-*!*					v_titulo      = " EL ALTA "
-*!*					p_tabla     = 'anularp'
-*!*					p_matriz    = 'lamatrizA'
-*!*					p_conexion  = vconeccionAn 
-
-*!*					lamatrizA(1,1)='idanularp'
-*!*					lamatrizA(1,2)=ALLTRIM(STR(v_idanulaRP))
-*!*					lamatrizA(2,1)='idcomproba'
-*!*					lamatrizA(2,2)= ALLTRIM(STR(v_anularp_idcomproba))
-*!*					lamatrizA(3,1)='pventa'
-*!*					lamatrizA(3,2)=ALLTRIM(STR(v_anularp_pventa))
-*!*					lamatrizA(4,1)='numero'
-*!*					lamatrizA(4,2)=ALLTRIM(STR(v_anularp_numero))
-*!*					lamatrizA(5,1)='fecha'
-*!*					lamatrizA(5,2)="'"+ALLTRIM(v_fecha)+"'"
-*!*					lamatrizA(6,1)='importe'
-*!*					lamatrizA(6,2)=ALLTRIM(STR(v_anularp_importe,13,4))
-*!*					lamatrizA(7,1)='idrecibo'
-*!*					lamatrizA(7,2)=ALLTRIM(STR(v_anularp_idrecibo))
-*!*					lamatrizA(8,1)='idpago'
-*!*					lamatrizA(8,2)=ALLTRIM(STR(v_anularp_idpago ))
-*!*					lamatrizA(9,1)='detallecp'
-*!*					lamatrizA(9,2)="'"+v_detallecp+"'"
-
-*!*					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
-*!*					    RETURN 
-*!*					ENDIF 
-*!*					
-*!*					RELEASE lamatrizA
-*!*					
-*!*					*** Ultimo ID registrado ***
-*!*					
-*!*					
-*!*					sqlmatriz(1)="SELECT last_insert_id() as maxid "
-
-*!*					verror=sqlrun(vconeccionAn,"anularpmax_sql")
-*!*					IF verror=.f.  
-*!*				 	   MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo ID de Anulación",0+48+0,"Error")
-*!*					ENDIF 
-
-*!*					SELECT anularpmax_sql
-*!*					GO TOP 
-*!*					
-*!*					v_idanulaRP = VAL(anularpmax_sql.maxid)
-*!*		
-*!*					USE in anularpmax_sql
-*!*					
-*!*					
-*!*				*** REGISTRO ESTADO AUTORIZADO ***
-*!*					registrarEstado("anularp","idanularp",v_idanulaRP,'I',"AUTORIZADO")
-*!*			
-*!*					SELECT detalle
-*!*					GO TOP 			
-*!*					v_idcajarecaRP = 0
-*!*					IF !EOF() THEN 
-*!*						v_idcajarecaRP = detalle.idcajareca
-*!*					ENDIF 				
-*!*					*** ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO  ***
-*!*					guardaCajaRecaH (v_anularp_idcomproba, v_idanulaRP, v_idcajarecaRP)
-*!*					SELECT detalle
-*!*					GO TOP 							
-*!*					DIMENSION lamatriz(6,2)
-*!*					DIMENSION lamatrizL(8,2)
-*!*				
-*!*					DO WHILE NOT EOF() AND RECNO() >= 1
-*!*					
-*!*					**** GUARDO DATOS DE DETALLECOBRO / DETALLEPAGOS****
-*!*						v_nombreID	= ""
-*!*						v_iddetacp 	= 0
-*!*						
-*!*						IF v_detallecp == "detallecobros"
-*!*							v_iddetacp	= maxnumeroidx("iddetacobro", "I","detallecobros",1)
-*!*							v_nombreID	= "iddetacobro" 	
-*!*						ELSE
-*!*							IF v_detallecp == "detallepagos"
-*!*							v_iddetacp 	= maxnumeroidx("iddetapago", "I","detallepagos",1)
-*!*							v_nombreID	= "iddetapago" 	
-*!*							ENDIF 
-*!*						ENDIF 
-*!*						
-*!*						IF v_iddetacp <= 0
-*!*							MESSAGEBOX("Error al registrar el detalle de cobro o pago",0+16+0,"Error al registrar el comprobante")
-*!*						
-*!*						ENDIF 
-*!*						
-*!*						SELECT detalle 
-*!*						v_detallecp_idcomproba 		= v_anularp_idcomproba 
-*!*						v_detallecp_idregi			= v_idanulaRP
-*!*						v_idtipoPago 				= detalle.idtipopago 				
-*!*						v_detallecp_importe			= detalle.importe 
-*!*						id_cajabco					= detalle.idcuenta 
-*!*						v_fecha = cftofc(DATE())
-*!*						
-*!*						lamatriz(1,1)= v_nombreID
-*!*						lamatriz(1,2)=ALLTRIM(STR(v_iddetacp))
-*!*						lamatriz(2,1)='idcomproba'
-*!*						lamatriz(2,2)= ALLTRIM(STR(v_detallecp_idcomproba ))
-*!*						lamatriz(3,1)='idregistro'
-*!*						lamatriz(3,2)= ALLTRIM(STR(v_detallecp_idregi))
-*!*						lamatriz(4,1)= 'idtipopago'
-*!*						lamatriz(4,2)= ALLTRIM(STR(v_idtipoPago))		
-*!*						lamatriz(5,1)='importe'
-*!*						lamatriz(5,2)= ALLTRIM(STR(v_detallecp_importe,13,4))
-*!*						lamatriz(6,1)= 'idcuenta'
-*!*						lamatriz(6,2)= ALLTRIM(STR(id_cajabco))
-*!*						
-*!*						p_tipoope	= 'I'
-*!*						p_donficion = ''
-*!*						p_tabla		= v_detallecp
-*!*						p_matriz    = 'lamatriz'
-*!*						p_conexion  = vconeccionAn 
-*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")    
-*!*						ENDIF 
-
-
-*!*						* Obtengo si existe el registro de Cobro Pago Link que referencia al Detalle 
-*!*						v_registrocp = 0
-*!*						eje = " v_registrocp = detalle."+ALLTRIM(v_idtablaor)
-*!*						&eje 
-*!*						sqlmatriz(1)=" select * from cobropagolink "
-*!*						sqlmatriz(2)=" where tablacp = '"+v_tablaor+"' and campocp = '"+v_idtablaor+"' and registrocp = "+ALLTRIM(STR(v_registrocp))
-*!*						verror=sqlrun(vconeccionAn ,"cobropagolink")
-*!*						IF verror=.f.  
-*!*						    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del detalle de cobros ",0+48+0,"Error")
-*!*							=abreycierracon(vconeccionAn ,"")	
-*!*						    RETURN .F.  
-*!*						ENDIF
-*!*						SELECT cobropagolink
-*!*						GO TOP 
-
-*!*						IF !EOF() AND RECNO() >= 1 THEN 	
-*!*							*** Guardo en COBROPAGO LINK PARA CUPONES O CHEQUES ***
-*!*							v_idcplink = maxnumeroidx("idcplink", "I", "cobropagolink",1)	
-
-*!*							v_tablacp	= v_detallecp
-*!*							v_campocp	= v_nombreID
-*!*							v_tabla		= cobropagolink.tabla
-*!*							v_campo		= cobropagolink.campo
-*!*							v_idregistro= cobropagolink.idregistro
-*!*							v_fecha		= DTOS(DATE())
-*!*							v_hora 		= TIME()
-*!*							
-*!*							p_tipoope     = 'I'
-*!*							p_condicion   = ''
-*!*							v_titulo      = " EL ALTA "
-*!*							p_tabla     = 'cobropagolink'
-*!*							p_matriz    = 'lamatrizL'
-*!*							p_conexion  = vconeccionAn 
-
-*!*							lamatrizL(1,1)='idcplink'
-*!*							lamatrizL(1,2)=ALLTRIM(STR(v_idcplink))
-*!*							lamatrizL(2,1)='tablacp'
-*!*							lamatrizL(2,2)="'"+v_tablacp+"'"
-*!*							lamatrizL(3,1)='campocp'
-*!*							lamatrizL(3,2)="'"+v_campocp+"'"
-*!*							lamatrizL(4,1)='registrocp'
-*!*							lamatrizL(4,2)=ALLTRIM(STR(v_iddetacp))
-*!*							lamatrizL(5,1)='tabla'
-*!*							lamatrizL(5,2)="'"+v_tabla+"'"
-*!*							lamatrizL(6,1)='campo'
-*!*							lamatrizL(6,2)="'"+v_campo+"'"
-*!*							lamatrizL(7,1)='idregistro'
-*!*							lamatrizL(7,2)=ALLTRIM(STR(v_idregistro))
-*!*							lamatrizL(8,1)='fecha'
-*!*							lamatrizL(8,2)="'"+ALLTRIM(v_fecha)+"'"
-*!*							
-*!*									
-*!*							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*							    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")		    
-*!*							ENDIF 
-*!*							
-*!*	*!*							MESSAGEBOX(v_tablacp)
-*!*	*!*							MESSAGEBOX(v_campocp)
-*!*	*!*							MESSAGEBOX(v_iddetacp)
-*!*							v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistro, v_idcajarecaRP , id_cajabco, v_tipocomprorp, v_tablacp, v_campocp, v_iddetacp)
-*!*							IF v_ret = .F.
-*!*								MESSAGEBOX("Ha Ocurrido un Error al intentar registrar el Movimiento para el Tipo de pago",0+48+0,"Error")
-*!*							ENDIF 					
-*!*						ENDIF 
-*!*					
-*!*						SELECT detalle
-*!*						SKIP 1
-*!*					ENDDO 
-*!*					
-*!*		
-*!*					** Elimino los registros de Cobro que corresponden al Recibo Anulado o Pago Anulado ***	
-*!*					***************************************************************************************
-*!*					* si el origen es detallecobros es un recibo por lo que hay que elimirar el registro asociado
-*!*					* al recibo pasado como parametro para anular
-*!*					IF v_tablaor = 'detallecobros' THEN 
-*!*						sqlmatriz(1)=" delete from cobros where idcomproba = "+ALLTRIM(STR(pan_idcomproba))+" and idregipago = "+ALLTRIM(STR(pan_idregistro))
-*!*						verror=sqlrun(vconeccionAn ,"delrecibo")
-*!*						IF verror=.f.  
-*!*						    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de los Cobros ",0+48+0,"Error")
-*!*							=abreycierracon(vconeccionAn ,"")	
-*!*						ENDIF
-*!*					ENDIF 
-*!*							
-*!*	*!*				*Registracion Contable del Caja Ingreso/Egreso	
-
-*!*					nuevo_asiento = Contrasiento( 0,_SYSCONTRADH, v_tablaPor, pan_idregistro, 'anularp', v_idanulaRP)
-*!*			
-*!*			ELSE
-*!*					
-*!*				=abreycierracon(vconeccionAn ,"")	
-*!*				RETURN .f.
-*!*			ENDIF 
-*!*		  	
-*!*			=abreycierracon(vconeccionAn ,"")	
-*!*			RETURN .t. 
-*!*		ELSE 
-*!*			=abreycierracon(vconeccionAn ,"")	
-*!*			RETURN .f. 
-*!*		ENDIF 
+	USE IN cuotasliq 
+	=abreycierracon(vconeccionTa ,"")	
 
 ENDFUNC 
-
-
-
-
-
 
 
 

@@ -147,7 +147,9 @@ PARAMETERS par_idperiodo
 	*/*************
 	* Obtengo las entidades a facturar para el lote solicitado 
 	*/
-	sqlmatriz(1)="Select e.idperiodoe, h.* from factulotese e left join entidadesh h on h.identidadh = e.identidadh where e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(1)=" Select e.idperiodoe, h.*, a.codafip from factulotese e left join entidadesh h on h.identidadh = e.identidadh "
+	sqlmatriz(2)=" left join afiptipodocu a on a.idafiptipod = h.tipodoc "
+	sqlmatriz(3)=" where e.idperiodo = "+STR(par_idperiodo)
 	verror=sqlrun(vconeFacturar,"entidadeshf_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
@@ -621,7 +623,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		lamatriz1(15,1)='cuit'
 		lamatriz1(15,2)= "'"+ALLTRIM(&pfacturas..cuit)+"'"
 		lamatriz1(16,1)='tipodoc'
-		lamatriz1(16,2)= "'"+ALLTRIM(&pfacturas..tipodoc)+"'"
+		lamatriz1(16,2)= "'"+ALLTRIM(&pfacturas..codafip)+"'" &&tipodoc
 		lamatriz1(17,1)='dni'
 		lamatriz1(17,2)= ALLTRIM(STR(&pfacturas..dni))
 		lamatriz1(18,1)='telefono'
