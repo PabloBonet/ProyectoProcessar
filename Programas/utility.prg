@@ -10147,7 +10147,8 @@ PARAMETERS pan_idcomproba, pan_idregistro
 		
 		
 		* Grabo en las tablas de Anulación
-*************************************************************************************		
+
+		
 		sino = MESSAGEBOX("¿Confirma La Generación del Comprobante de Anulación...? ",4+32," Anular Comprobante ")
 
 		IF sino = 6
@@ -10377,10 +10378,17 @@ PARAMETERS pan_idcomproba, pan_idregistro
 					ENDIF
 				ENDIF 
 						
-*!*				*Registracion Contable del Caja Ingreso/Egreso	
+*!*				*Registracion Contable de la Anulacion	
 
 				nuevo_asiento = Contrasiento( 0,_SYSCONTRADH, v_tablaPor, pan_idregistro, 'anularp', v_idanulaRP)
-		
+				
+				
+				
+				** Elimino los Vinculos de Comprobantes y Asientos de vinculos que pueda haber tenido el Comprobante Anulado
+				************************************************************************************************************
+				= EliminaVinculo(v_tablaPor,pan_idregistro)
+				*************************************************************************************		
+				*************************************************************************************				
 		ELSE
 				
 			=abreycierracon(vconeccionAn ,"")	
@@ -10440,6 +10448,29 @@ PARAMETERS pca_idasiento,pca_DH, pca_tablaOri, pca_idOri, pca_tablaDes, pca_idDe
 	
 	* Abro conexion con la base de datos 
 	vconeccionCa = abreycierracon(0,_SYSSCHEMA)
+
+	vnomindice=obtenerCampoIndice(ALLTRIM(pca_tablaDes))
+
+	* Busco el comprobante de anulacion para saber la fecha que le pongo al asiento 
+	sqlmatriz(1)=" select * from "+ALLTRIM(pca_tablaDes)+" where "+ALLTRIM(vnomindice)+" = "+ALLTRIM(STR(pca_idDes))
+	verror=sqlrun(vconeccionCa ,"fechaDes")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda Comprobante Destino ",0+48+0,"Error")
+		=abreycierracon(vconeccionCa ,"")	
+	    RETURN 0  
+	ENDIF	 
+
+	SELECT fechaDes
+	GO TOP 
+	v_fechades = ""
+	IF !EOF() THEN 
+		v_fechades = ALLTRIM(fechades.fecha)
+	ENDIF 
+	IF EMPTY(v_fechades) THEN 
+		v_fechades = DTOS(DATE())
+	ENDIF 
+	USE IN fechades 
+	
 	
 	* Busco el comprobante a anular para saber si anulo un recibo o un pago a proveedor 
 	sqlmatriz(1)=" select a.*, ac.tabla, ac.idregicomp from asientos a left join asientoscompro ac on ac.idasiento = a.idasiento "
@@ -10459,7 +10490,7 @@ PARAMETERS pca_idasiento,pca_DH, pca_tablaOri, pca_idOri, pca_tablaDes, pca_idDe
 		v_idasiento =  maxnumeroidx("idasiento","I","asientos",1)
 		v_numero	=  maxnumeroidx("numero","I","asientos",1)
 
-		v_fecha			= asientoOri.fecha
+		v_fecha			= v_fechades
 		v_ejercicio		= asientoOri.ejercicio
 
 
@@ -14355,5 +14386,75 @@ PARAMETERS p_idFactura
 	
 
 	RETURN v_opcionesRet
+
+ENDFUNC 
+
+
+
+*** Función para eliminar los Vinculos de Comprobantes los Asientos de estos
+*** que se hayan vinculado con un Recibo u Orden de Pago que se Anula
+***
+FUNCTION EliminaVinculo
+PARAMETERS pe_tablav, pe_idregiv
+
+	**** Busco los Vinculos Asociados al Comprobante ***
+	
+	MESSAGEBOX(pe_tablav, pe_idregiv)
+	
+	vconeccionOp=abreycierracon(0,_SYSSCHEMA)	
+	
+	sqlmatriz(1)=" Select v.*, ifnull(a.idasiento,0) as idasiento from vinculocomp v "
+	sqlmatriz(2)=" left join asientoscompro a on a.idregicomp = v.idvinculo and a.tabla = 'vinculocomp' "
+	sqlmatriz(3)=" where TRIM(tablav) = '"+ALLTRIM(pe_tablav)+"' and idregistrov = "+ ALLTRIM(STR(pe_idregiv))
+
+	verror=sqlrun(vconeccionOp,"vinculoseli_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las opciones de AFIP",0+48+0,"Error")
+	    =abreycierracon(vconeccionOp,"")
+		RETURN v_opcionesRet
+	ENDIF 
+	SELECT * FROM vinculoseli_sql INTO TABLE vinculoseli
+	
+	SELECT vinculoseli_sql  
+	USE IN vinculoseli_sql 
+	SELECT vinculoseli 
+	ALTER table vinculoseli alter COLUMN idasiento n(12)
+	GO TOP 
+	DO WHILE !EOF()
+		*Primero Elimino el Asiento Asociado al Comprobante de Vínculo
+		
+		IF vinculoseli.idasiento > 0  THEN 
+
+			* Elimino Asiento * 
+			sqlmatriz(1)="DELETE FROM asientos WHERE idasiento = " + ALLTRIM(STR(vinculoseli.idasiento))
+			verror=sqlrun(vconeccionOp,"asiento1")
+			
+			* Elimino Asociacion con Comprobantes 
+			sqlmatriz(1)="DELETE FROM asientoscompro WHERE idasiento = " + ALLTRIM(STR(vinculoseli.idasiento))
+			verror=sqlrun(vconeccionOp,"asiento1")
+			
+			* Elimino Asociacion con Asientos Agrupados si la Hubiere 
+			sqlmatriz(1)="DELETE FROM asientosg WHERE idasiento = " + ALLTRIM(STR(vinculoseli.idasiento))
+			verror=sqlrun(vconeccionOp,"asiento1")
+			
+		ENDIF 
+
+		*Luego elimino el Comprobante de Vínculo
+		sqlmatriz(1)=" delete from vinculocomp where idvinculo="+ALLTRIM(STR(vinculoseli.idvinculo))
+		verror=sqlrun(vconeccionOp,"vinculoseli_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al Eliminar el Registro del Vinculo",0+48+0,"Error")
+		    =abreycierracon(vconeccionOp,"")
+			RETURN 
+		ENDIF 
+			
+
+		SELECT vinculoseli
+		SKIP 
+	ENDDO 
+	 USE IN vinculoseli 
+
+    =abreycierracon(vconeccionOp,"")
+	
 
 ENDFUNC 
