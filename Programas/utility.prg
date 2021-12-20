@@ -13631,6 +13631,28 @@ PARAMETERS pIdregistro
 *!*		    RETURN .F.  
 *!*		ENDIF	 
 	
+	** Valido que no estè anulado **
+	sqlmatriz(1)=" select * from cajaie c left join linkcompro l on c.idcomproba = l.idcomprobaa and c.idcajaie = l.idregistroa  "
+	sqlmatriz(2)=" where l.idregistroa = "+ALLTRIM(STR(pIdregistro))+" or l.idregistrob = "+ALLTRIM(STR(pIdregistro)) 
+	verror=sqlrun(vconeccionAn ,"validaAnul")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del comprobante a anular ",0+48+0,"Error")
+		=abreycierracon(vconeccionAn ,"")	
+	    RETURN -1  
+	ENDIF	 
+	SELECT validaAnul
+	GO TOP 
+	
+	IF NOT EOF()
+		MESSAGEBOX("El comprobante ya se encuentra anulado",0+48+0,"Error")
+		=abreycierracon(vconeccionAn ,"")	
+	    RETURN -1 
+	
+	ENDIF 
+	
+	
+	
+	
 	sqlmatriz(1)=" select c.*,t.opera, t.idtipocompro as idtipocomp from cajaie c left join comprobantes o on c.idcomproba = o.idcomproba "
 	sqlmatriz(2)=" left join tipocompro t on o.idtipocompro = t.idtipocompro " 
 	sqlmatriz(3)=" where idcajaie = "+ALLTRIM(STR(pIdregistro)) 
@@ -13835,7 +13857,6 @@ GO TOP
 
 			registrarEstado("cajaie","idcajaie",v_idcajaie,'I',"AUTORIZADO")
 	
-				MESSAGEBOX("Despues de registrar estado")
 		*** ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO  ***
 		
 			guardaCajaRecaH (v_cajaie_idcomproba, v_idcajaie)
@@ -13928,7 +13949,7 @@ GO TOP
 				v_tipoPagoCupon = tipopagoObj.gettipospagos('CUPONES')
 					*** Registro movitpago
 					SELECT detacobropago_sql
-					BROWSE 
+					
 					v_idtipocomp = detacobropago_sql.idtipocomp
 
 					
@@ -14056,22 +14077,57 @@ GO TOP
 			
 			ENDDO 
 
+
+	*** Asocio el comprobante de anulación con el CajaIE anulado **
+							
+			DIMENSION lamatriz7(5,2)
+
+			v_idlinkComp = 0
+			v_idcomprobaa=cajaieA.idcomproba
+			v_idregistroa=cajaieA.idcajaie
+			v_idcomprobab=v_cajaie_idcomproba
+			v_idregistrob=v_idcajaie
+			
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+			p_tabla     = 'linkcompro'
+			p_matriz    = 'lamatriz7'
+			p_conexion  = vconeccionF
+
+							lamatriz7(1,1)='idlinkcomp'
+							lamatriz7(1,2)=ALLTRIM(STR(v_idlinkComp))
+							lamatriz7(2,1)='idcomprobaa'
+							lamatriz7(2,2)=ALLTRIM(STR(v_idcomprobaa))
+							lamatriz7(3,1)='idregistroa'
+							lamatriz7(3,2)=ALLTRIM(STR(v_idregistroa))
+							lamatriz7(4,1)='idcomprobab'
+							lamatriz7(4,2)=ALLTRIM(STR(v_idcomprobab))
+							lamatriz7(5,1)='idregistrob'
+							lamatriz7(5,2)=ALLTRIM(STR(v_idregistrob))
+														
+							
+							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+							    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar linkcompro",0+48+0,"Error")
+							
+							ENDIF 
+	
 						
-			*Registracion Contable del Caja Ingreso/Egreso	
-		pan_idregistro = pIdregistro
+				*Registracion Contable del Caja Ingreso/Egreso	
+			pan_idregistro = pIdregistro
 		
 	
 		
 				nuevo_asiento = Contrasiento( 0,_SYSCONTRADH, v_tablaPor, pan_idregistro, 'cajaie', v_idcajaie)
-		MESSAGEBOX(nuevo_asiento)
+	
 		ELSE
 				
 			=abreycierracon(vconeccionAn ,"")	
 			RETURN -1
 		ENDIF 
 		
-	  	*** REGISTRO ESTADO ANULADO PARA EL CAJAIE ***
-			registrarEstado("cajaie","idcajaie",pIdregistro,'I',"ANULADO")
+*!*		  	*** REGISTRO ESTADO ANULADO PARA EL CAJAIE ***
+*!*				registrarEstado("cajaie","idcajaie",pIdregistro,'I',"ANULADO")
 
 		=abreycierracon(vconeccionAn ,"")	
 	
@@ -14082,9 +14138,7 @@ GO TOP
 	ENDIF 
 
 
-	MESSAGEBOX("D5")
-	MESSAGEBOX(v_retorno)
-	MESSAGEBOX(TYPE('v_retorno'))
+
 	RETURN v_retorno
 
 ENDFUNC 
