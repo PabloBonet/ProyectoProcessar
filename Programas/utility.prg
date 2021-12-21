@@ -1915,30 +1915,34 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 		GO TOP 
 		IF NOT EOF()
 		
-			
-			
 
 
 
 			ALTER table factu ADD COLUMN codBarra	 C(42)
-		*	ALTER table factu ADD COLUMN codQR		 general
 			ALTER table factu ADD COLUMN codQR C(100)
 			ALTER table factu ADD COLUMN apeynom C(200)
 
 	** AGREGO OBSERVACIONES FIJAS EN EL COMPROBANTE SEGÚN CONDICIONES EN LA TABLA observacond *
 	
 			ALTER table factu ADD COLUMN obsfijo C(250)
-			
-			
 			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.F.)
-
-			
 			SELECT factu 
 			GO TOP 
 			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre))
+
+	** AGREGO EL CALCULO PARA LOS RECARGOS PARA AQUELLAS FACTURAS QUE TIENEN VENCIMIENTOS 1 2 Y 3
+			ALTER table factu ADD COLUMN recargo1 n(13,2)
+			ALTER table factu ADD COLUMN recargo2 n(13,2)
+			GO TOP 
+			v_interesdia = factu.interesd
+			v_fechavence1 = cftofc(factu.fechavenc1)
+			v_fechavence2 = cftofc(factu.fechavenc2)
+			v_fechavence3 = cftofc(factu.fechavenc3)
+			v_recargo1 	 = IIF(!EMPTY(v_fechavence1) and !EMPTY(v_fechavence2), ((v_fechavence2 - v_fechavence1)* factu.total * (v_interesdia / 100)), 0.00 )
+			v_recargo2 	 = IIF(!EMPTY(v_fechavence1) and !EMPTY(v_fechavence3), ((v_fechavence3 - v_fechavence1)* factu.total * (v_interesdia / 100)), 0.00 )
+			replace ALL recargo1 WITH v_recargo1, recargo2 WITH v_recargo2 
 			
-			
-			
+	**********************************************************************************************		
 			SELECT factu 
 			GO TOP 
 			
@@ -9514,7 +9518,6 @@ PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movim
 
 	
 	v_condicion = ALLTRIM(v_valorTP)+ALLTRIM(v_valorCa)+ALLTRIM(v_valorCu)+ALLTRIM(v_valorRe)+ALLTRIM(v_valorMo)
-	MESSAGEBOX(v_condicion)
 	vconeccionMo = abreycierracon(0,_SYSSCHEMA)
 	
 	DO CASE
@@ -13601,7 +13604,6 @@ ENDFUNC
 
 
 
-
 **********************************************************
 ** FUNCIÓN para anular Caja Ingreso o Egreso
 ** Parametros: pIdRegistro: Id del registro de la tabla cajaie que se desea anular.
@@ -14143,6 +14145,9 @@ GO TOP
 
 ENDFUNC 
 
+
+
+
 *** Función que obtiene las opciones asociadas a la factura**
 ** Recibe como parámetro el IDFactura
 ** Retorna una lista de opciones con el siguiente formato: 'codigo1,valor1;codigo2,valor2;codigoN,valorN'
@@ -14222,7 +14227,6 @@ PARAMETERS pe_tablav, pe_idregiv
 
 	**** Busco los Vinculos Asociados al Comprobante ***
 	
-	MESSAGEBOX(pe_tablav, pe_idregiv)
 	
 	vconeccionOp=abreycierracon(0,_SYSSCHEMA)	
 	
