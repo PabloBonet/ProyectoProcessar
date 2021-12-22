@@ -10420,6 +10420,7 @@ ENDFUNC
 FUNCTION ContrAsiento
 PARAMETERS pca_idasiento,pca_DH, pca_tablaOri, pca_idOri, pca_tablaDes, pca_idDes
 
+
 	IF !(TYPE('pca_tablaOri')='C') THEN 
 		pca_tablaOri = ""
 	ENDIF 
@@ -13613,7 +13614,7 @@ ENDFUNC
 FUNCTION anularCajaIE
 PARAMETERS pIdregistro
 
-	v_retorno = 0
+	v_retornocie = 0
 
 
 *!*		estadosRP	= CREATEOBJECT('estadosclass')
@@ -13652,6 +13653,17 @@ PARAMETERS pIdregistro
 	
 	ENDIF 
 	
+	
+	**** Obtengo los comprobantes ***
+	
+	sqlmatriz(1)=" select idtipocompro as idtipocom, idcomproba from comprobantes "
+									
+	verror=sqlrun(vconeccionAn ,"comprobantes_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda los comprobantes",0+48+0,"Error")
+		=abreycierracon(vconeccionAn ,"")	
+	    RETURN -1
+	ENDIF
 	
 	
 	
@@ -13723,9 +13735,7 @@ GO TOP
 
 
 *************************************************************************************		
-		sino = MESSAGEBOX("¿Confirma La Generación del Comprobante de Anulación...? ",4+32," Anular Comprobante ")
-
-		IF sino = 6
+	
 				
 				v_idcompE = 0
 				v_idptovtaE = 0
@@ -13737,6 +13747,35 @@ GO TOP
 					v_idcompE = VAL(ALLTRIM(SUBSTR(_SYSANULAIE,3,2)))
 					v_idptoVtaI = VAL(ALLTRIM(SUBSTR(_SYSANULAIE,5,2)))
 					v_idcompI = VAL(ALLTRIM(SUBSTR(_SYSANULAIE,7,2)))
+					
+					SELECT idtipocom FROM  comprobantes_sql WHERE idcomproba = v_idcompE INTO CURSOR tipoCompE
+					
+					SELECT tipocompE
+					GO TOP 
+					
+					IF NOT EOF()
+						v_idtipoCompE = tipoCompE.idtipocom
+					ELSE
+						MESSAGEBOX("Error al buscar el tipo de comprobante de anulación",0+48+0,"No se puede anular")
+						RETURN -1
+					ENDIF 
+
+					SELECT idtipocom FROM  comprobantes_sql WHERE idcomproba = v_idcompI INTO CURSOR tipoCompI
+					
+					SELECT tipoCompI
+					GO TOP 
+					
+					IF NOT EOF()
+						v_idtipoCompI = tipoCompI.idtipocom
+					ELSE
+						MESSAGEBOX("Error al buscar el tipo de comprobante de anulación",0+48+0,"No se puede anular")
+						RETURN -1
+					ENDIF 
+
+					
+					
+					
+					
 				ELSE
 					MESSAGEBOX("No se han definido los comprobantes de anulación de Caja Ingreo y Egreso",0+48+0,"No se puede anular")
 					RETURN -1
@@ -13764,23 +13803,24 @@ GO TOP
 			v_detallecp			= ""
 			IF v_opera_comp < 0
 				v_detallecp = "detallepagos" 
-				v_cajaie_idcomproba = v_idcompE
-				v_cajaie_pventa 	= v_idptovtaE
+				v_cajaie_idcomproba = v_idcompI
+				v_cajaie_pventa 	= v_idptovtaI
 				v_cajaie_numero = maxnumerocom(v_cajaie_idcomproba ,v_cajaie_pventa ,1)
 				v_tablaPor= 'cajaie' 		
 				v_tablaor = 'detallecobros'	
 				v_idtablaor = "idcajaie"
-			
+				v_idtipocomp = v_idtipocompI
 
 			ELSE
 				IF v_opera_comp > 0
 					v_detallecp = "detallecobros" 
-					v_cajaie_idcomproba = v_idcompI
-					v_cajaie_pventa 	= v_idptovtaI
+					v_cajaie_idcomproba = v_idcompE
+					v_cajaie_pventa 	= v_idptovtaE
 					v_cajaie_numero = maxnumerocom(v_cajaie_idcomproba ,v_cajaie_pventa ,1)
 					v_tablaPor= 'cajaie' 			
 					v_tablaor = 'detallepagos'	
 					v_idtablaor = "idcajaie"
+					v_idtipocomp = v_idtipocompE
 				ENDIF 
 			
 			ENDIF 
@@ -13844,7 +13884,7 @@ GO TOP
 		GO TOP 
 	
 		v_idcajaie = VAL(cajaiemax_sql.maxid)
-		v_retorno = v_idcajaie 
+		v_retornocie = v_idcajaie 
 		
 		
 		USE in cajaiemax_sql
@@ -13967,7 +14007,8 @@ GO TOP
 						v_campocp	= v_nombreID
 						v_tabla		= "cupones"
 						v_campo		= "idcupon"	
-						v_idregistro= v_detallecp_idregi
+						*v_idregistro= v_detallecp_idregi
+						v_idregistro = detacobropago_sql.idregistro
 						*v_fecha		= DTOS(DATE())
 						v_fecha = cftofc(DATE())						
 						p_tipoope     = 'I'
@@ -14024,7 +14065,8 @@ GO TOP
 							v_campocp	= v_nombreID
 							v_tabla		= "cheques"
 							v_campo		= "idcheque"	
-							v_idregistro= v_detallecp_idregi
+							*v_idregistro= v_detallecp_idregi
+							v_idregistro = detacobropago_sql.idregistro
 							*v_fecha		= DTOS(DATE())
 							v_fecha = cftofc(DATE())
 							p_tipoope     = 'I'
@@ -14119,9 +14161,10 @@ GO TOP
 			pan_idregistro = pIdregistro
 		
 	
-		
+
 				nuevo_asiento = Contrasiento( 0,_SYSCONTRADH, v_tablaPor, pan_idregistro, 'cajaie', v_idcajaie)
-	
+		
+		
 		ELSE
 				
 			=abreycierracon(vconeccionAn ,"")	
@@ -14134,14 +14177,15 @@ GO TOP
 		=abreycierracon(vconeccionAn ,"")	
 	
 
-	ELSE 
-		=abreycierracon(vconeccionAn ,"")	
-		RETURN -1
+	
+
+
+	IF TYPE('v_retornocie') == 'C'
+		v_retornocie= VAL(v_retornocie)
 	ENDIF 
+	
 
-
-
-	RETURN v_retorno
+	RETURN v_retornocie
 
 ENDFUNC 
 
