@@ -9410,8 +9410,6 @@ FUNCTION guardarMoviTPago
 PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro, p_tablacp, p_campocp, p_idregistrocp
 			
 	v_retorno = .F.	
-	
-
 
 	v_movimiento	=  movimientoTPago(P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta)
 
@@ -13809,7 +13807,7 @@ GO TOP
 				v_tablaPor= 'cajaie' 		
 				v_tablaor = 'detallecobros'	
 				v_idtablaor = "idcajaie"
-				v_idtipocomp = v_idtipocompI
+				v_idtipocompAn = v_idtipocompI
 
 			ELSE
 				IF v_opera_comp > 0
@@ -13820,7 +13818,7 @@ GO TOP
 					v_tablaPor= 'cajaie' 			
 					v_tablaor = 'detallepagos'	
 					v_idtablaor = "idcajaie"
-					v_idtipocomp = v_idtipocompE
+					v_idtipocompAn = v_idtipocompE
 				ENDIF 
 			
 			ENDIF 
@@ -14008,7 +14006,7 @@ GO TOP
 						v_tabla		= "cupones"
 						v_campo		= "idcupon"	
 						*v_idregistro= v_detallecp_idregi
-						v_idregistro = detacobropago_sql.idregistro
+						v_idregistroD = detacobropago_sql.idreg
 						*v_fecha		= DTOS(DATE())
 						v_fecha = cftofc(DATE())						
 						p_tipoope     = 'I'
@@ -14031,15 +14029,16 @@ GO TOP
 						lamatriz6(6,1)='campo'
 						lamatriz6(6,2)="'"+v_campo+"'"
 						lamatriz6(7,1)='idregistro'
-						lamatriz6(7,2)=ALLTRIM(STR(v_idregistro))
+						lamatriz6(7,2)=ALLTRIM(STR(v_idregistroD))
 						lamatriz6(8,1)='fecha'
 						lamatriz6(8,2)="'"+ALLTRIM(v_fecha)+"'"
 						
+					
 						
 						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
 						ELSE
-							v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistro, _SYSCAJARECA, id_cajabco, v_idtipocomp, v_tablacp, v_campocp, v_iddetacp )
+							v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistroD, _SYSCAJARECA, id_cajabco, v_idtipocompAn, v_tablacp, v_campocp, v_iddetacp )
 						
 							IF v_ret = .F.
 								MESSAGEBOX("Ha Ocurrido un Error al intentar registrar el Movimiento para el Tipo de pago",0+48+0,"Error")
@@ -14066,7 +14065,7 @@ GO TOP
 							v_tabla		= "cheques"
 							v_campo		= "idcheque"	
 							*v_idregistro= v_detallecp_idregi
-							v_idregistro = detacobropago_sql.idregistro
+							v_idregistroD = detacobropago_sql.idreg
 							*v_fecha		= DTOS(DATE())
 							v_fecha = cftofc(DATE())
 							p_tipoope     = 'I'
@@ -14089,7 +14088,7 @@ GO TOP
 							lamatriz6(6,1)='campo'
 							lamatriz6(6,2)="'"+v_campo+"'"
 							lamatriz6(7,1)='idregistro'
-							lamatriz6(7,2)=ALLTRIM(STR(v_idregistro))
+							lamatriz6(7,2)=ALLTRIM(STR(v_idregistroD))
 							lamatriz6(8,1)='fecha'
 							lamatriz6(8,2)="'"+ALLTRIM(v_fecha)+"'"
 							
@@ -14097,7 +14096,7 @@ GO TOP
 							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 							    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
 							ELSE
-								v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistro, _SYSCAJARECA,id_cajabco,v_idtipocomp, v_tablacp, v_campocp, v_iddetacp )
+								v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistroD, _SYSCAJARECA,id_cajabco,v_idtipocompAn, v_tablacp, v_campocp, v_iddetacp )
 						
 								IF v_ret = .F.
 									MESSAGEBOX("Ha Ocurrido un Error al intentar registrar el Movimiento para el Tipo de pago",0+48+0,"Error")
@@ -14105,7 +14104,7 @@ GO TOP
 
 								* Actualizo el idcuenta del cheque SI ES PROPIO con la cuenta seleccionada
 								* En el pago asociado al cheque
-								sqlmatriz(1)= "update cheques set idcuenta = "+ALLTRIM(STR(id_cajabco))+" where detercero = 'N' and idcheque ="+ALLTRIM(STR(v_idregistro))
+								sqlmatriz(1)= "update cheques set idcuenta = "+ALLTRIM(STR(id_cajabco))+" where detercero = 'N' and idcheque ="+ALLTRIM(STR(v_idregistroD))
 								verror=sqlrun(p_conexion,"upcheque_sql")
 								IF verror=.f.  
 								    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion de Cheques  ",0+48+0,"Error")
