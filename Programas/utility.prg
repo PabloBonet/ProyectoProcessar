@@ -1794,13 +1794,15 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 		IF v_esElectronica  = .T.
 
 			sqlmatriz(1)=" Select f.*,d.*,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov, ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv, "
-			sqlmatriz(2)=" com.comprobante as nomcomp from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
-			sqlmatriz(4)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
-			sqlmatriz(5)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
-			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(7)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
+			sqlmatriz(2)=" com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
+			sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+			sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(6)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
 			*sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) &&+  " and fe.resultado = 'A'"
 			
 			verror=sqlrun(vconeccionF,"fac_det_sql_au")
@@ -1812,13 +1814,15 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 		ELSE
 			
 			sqlmatriz(1)="Select f.*,d.*,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv, "
-			sqlmatriz(2)=" com.comprobante as nomcomp from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
-			sqlmatriz(4)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
-			sqlmatriz(5)=" left join condfiscal c on f.iva = c.iva"
-			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(7)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+			sqlmatriz(2)=" com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
+			sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+			sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(6)=" left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
