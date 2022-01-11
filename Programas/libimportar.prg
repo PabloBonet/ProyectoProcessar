@@ -2050,7 +2050,7 @@ FUNCTION CargaArticulos
 
 		CREATE TABLE .\articuloscar FREE (articulo C(50), detalle C(254), unidad C(200), abrevia C(50), codbarra C(100), costo n(13,4), linea C(20), ;
 		ctrlstock C(1), observa C(254), ocultar C(1), stockmin N(13,4), desc1 N(13,4), desc2 N(13,4), desc3 N(13,4), desc4 N(13,4), desc5 N(13,4), moneda I, ;
-		impuesto I, margen N(13,4),proveedor I,codigop C(50))			
+		impuesto I, margen N(13,4),proveedor I,codigop C(50),idsublinea I)			
 					
 		SELECT articuloscar 
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
@@ -2134,7 +2134,7 @@ FUNCTION CargaArticulos
 		*v_idlistah = v_maximoListah 
 		v_fechaAct = ALLTRIM(DTOS(DATE()))
 
-		DIMENSION lamatriz(17,2)
+		DIMENSION lamatriz(18,2)
 		DIMENSION lamatriz2(4,2)
 		DIMENSION lamatriz3(6,2)
 		DIMENSION lamatriz4(4,2)
@@ -2184,7 +2184,8 @@ FUNCTION CargaArticulos
 			lamatriz(16,2) = ALLTRIM(STR(articuloscar.desc5,13,2))
 			lamatriz(17,1) = 'moneda'
 			lamatriz(17,2) = ALLTRIM(STR(articuloscar.moneda))
-					
+			lamatriz(18,1) = 'idsublinea'
+			lamatriz(18,2) = ALLTRIM(STR(articuloscar.idsublinea))
 
 			p_tabla     = 'articulos'
 			p_matriz    = 'lamatriz'
