@@ -10382,6 +10382,15 @@ PARAMETERS pan_idcomproba, pan_idregistro
 						=abreycierracon(vconeccionAn ,"")	
 					ENDIF
 				ENDIF 
+				IF v_tablaor = 'detallepagos' THEN 
+					sqlmatriz(1)=" delete from pagosprovfc where idcomproba = "+ALLTRIM(STR(pan_idcomproba))+" and idpago = "+ALLTRIM(STR(pan_idregistro))
+					verror=sqlrun(vconeccionAn ,"delpago")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de los Cobros ",0+48+0,"Error")
+						=abreycierracon(vconeccionAn ,"")	
+					ENDIF
+				ENDIF 
+
 						
 *!*				*Registracion Contable de la Anulacion	
 

@@ -1943,18 +1943,31 @@ FUNCTION CargaLineas
 
 		COUNT TO v_registros 
 		IF v_registros > 0 THEN 
-			MESSAGEBOX(v_registros)
-			*Elimino las subcuentas que tenga el sistema
+			*Elimino las Lineas que tenga el sistema
 			*La carga debe hacerce con la tabla vacia
-			sqlmatriz(1)=" delete * from lineas "
+			sqlmatriz(1)=" delete from lineas "
 			verror=sqlrun(vconeccionF,"lineas")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Lineas... ",0+48+0,"Error")
 			    RETURN 
 			ENDIF
+			sqlmatriz(1)=" delete from sublineas "
+			verror=sqlrun(vconeccionF,"sublineas")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de SubLineas... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+			sqlmatriz(1)="alter table sublineas auto_increment = 1"
+			verror=sqlrun(vconeccion,"modifauto")
+			IF verror=.f.  
+		    	MESSAGEBOX("Ha Ocurrido un Error el reseteo del valor de auto_increment de sublineas",0+48+0,"Eliminación de Registros")
+		    	RETURN -9
+			ENDIF 
+
 		ENDIF 		
 		
 		DIMENSION lamatriz(7,2)
+		DIMENSION lamatriz1(3,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
@@ -1983,20 +1996,40 @@ FUNCTION CargaLineas
 			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lineas ",0+48+0,"Error")
 			ENDIF 
+
+			
+			lamatriz1(1,1) = 'idsublinea'
+			lamatriz1(1,2) = "0"
+			lamatriz1(2,1) = 'linea'
+			lamatriz1(2,2) = "'"+ALLTRIM(lineascar.linea)+"'"
+			lamatriz1(3,1) = 'sublinea'
+			lamatriz1(3,2) = "'"+ALLTRIM(lineascar.detalle)+"'"
+
+			p_tabla     = 'sublineas'
+			p_matriz    = 'lamatriz1'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lineas ",0+48+0,"Error")
+			ENDIF 
+			
 			
 			SELECT lineascar
 			SKIP 					
 		ENDDO 
 */*/*/*/*/*/
+
 	=abreycierracon(vconeccionF,"")	
-	SELECT lineascar
-	USE IN lineascar
+		SELECT lineascar
+		USE IN lineascar
+		RELEASE lamatriz1
+		RELEASE lamatriz
+		MESSAGEBOX("Importación de Lineas de Articulos Finalizada",0+64,"Importar Lineas de Articulos")
 	ENDIF 	&& 1- Carga de Archivo de CPP -
 */**************************************************************
 */**************************************************************
 */ && 2- Visualiza Datos de Claro
 	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
-		=fconsutablas(p_idimportap,'lineascar',.T.)
+*		=fconsutablas(p_idimportap,'lineascar',.T.)
 	ENDIF && 2- Visualiza Datos de CPP -
 */**************************************************************
 	lreto = p_func
@@ -2292,9 +2325,15 @@ FUNCTION CargaArticulos
 			SKIP 					
 		ENDDO 
 */*/*/*/*/*/
-	=abreycierracon(vconeccionF,"")	
-	SELECT articuloscar
-	USE IN articuloscar
+		=abreycierracon(vconeccionF,"")	
+		SELECT articuloscar
+		USE IN articuloscar
+		RELEASE lamatriz
+		RELEASE lamatriz2
+		RELEASE lamatriz3
+		RELEASE lamatriz4
+		MESSAGEBOX("Importación de Articulos Finalizada",0+64,"Importar  Articulos")
+
 	ENDIF 	&& 1- Carga de Archivo de CPP -
 */**************************************************************
 */**************************************************************
@@ -2501,34 +2540,119 @@ FUNCTION CargaCtaCteClientes
 			RETURN 0
 		ENDIF
 
-		CREATE TABLE .\ctasctesentcar FREE ( entidad I,servicio I, cuenta I, fecha C(8),numerocomp C(200), monto Y, cuota I, vtocta C(8))			
+		CREATE TABLE .\ctasctesentcar FREE ( entidad I, servicio I, cuenta I, fecha C(8),numerocomp C(200), monto Y, cuota I, vtocta C(8), fechavenc1 c(8), fechavenc2 c(8), fechavenc3 c(8) )			
 					
 		SELECT ctasctesentcar
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
  		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
 		&eje
 
-*!*			COUNT TO v_registros 
-*!*			IF v_registros > 0 THEN 
-*!*				*Elimino las Entidades que tenga el sistema
-*!*				*La carga debe hacerce con la tabla vacia
-*!*				sqlmatriz(1)=" delete from localidades "
-*!*				verror=sqlrun(vconeccionF,"local")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de localidades... ",0+48+0,"Error")
-*!*				    RETURN 
-*!*				ENDIF	
-*!*				sqlmatriz(1)=" delete from provincias "
-*!*				verror=sqlrun(vconeccionF,"provi")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de provincias... ",0+48+0,"Error")
-*!*				    RETURN 
-*!*				ENDIF		
-*!*				
-*!*			ENDIF 
-*!*			
-	
-	
+*** AQUI AGREGAR LOGICA PARA CONSULTAR Y ELIMINAR FACTURAS SI ASI LO DESEA QUIEN IMPORTA ***
+		rta =MESSAGEBOX("Desea Eliminar los Comprobantes Existentes en las Cuentas Corrientes",3+32+256,"Eliminar Comprobantes ")
+		IF rta=6  THEN 
+		
+			*Elimino las Facturas 
+			sqlmatriz(1)=" delete from facturas "
+			verror=sqlrun(vconeccionF,"fc")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Facturas... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF	
+			sqlmatriz(1)=" delete from detafactu "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)=" delete from facturasimp "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)=" delete from facturascta "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)=" delete from facturasd "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)="alter table facturasd auto_increment = 1 "
+			verror=sqlrun(vconeccionF,"dfa")
+			IF verror=.f.  
+		    	MESSAGEBOX("Ha Ocurrido un Error en la Actualización del indice autoincremental de facturasd ",0+48+0,"Eliminación de Registros")
+		    	RETURN 0
+			ENDIF 
+
+			sqlmatriz(1)=" delete from facturasbser "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Bocas de Servicios de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)="alter table facturasbser auto_increment = 1 "
+			verror=sqlrun(vconeccionF,"fab")
+			IF verror=.f.  
+		    	MESSAGEBOX("Ha Ocurrido un Error en la Actualización del indice autoincremental de facturasd ",0+48+0,"Eliminación de Registros")
+		    	RETURN 0
+			ENDIF 
+
+			
+			sqlmatriz(1)=" delete from facturasfe "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)=" delete from facturasrec "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+
+			sqlmatriz(1)=" delete from facturaopciones "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Opciones de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)="alter table facturaopciones auto_increment = 1 "
+			verror=sqlrun(vconeccionF,"fab")
+			IF verror=.f.  
+		    	MESSAGEBOX("Ha Ocurrido un Error en la Actualización del indice autoincremental de facturaopciones ",0+48+0,"Eliminación de Registros")
+		    	RETURN 0
+			ENDIF 
+			
+			sqlmatriz(1)=" delete from estadosreg where tabla = 'facturas' "
+			verror=sqlrun(vconeccionF,"er")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+
+			* Reinicio indices de tablas afectadas a facturas 
+			sqlmatriz(1)=" update tablasidx set maxvalori = 0 where tabla = 'detafactu' or tabla = 'facturas' or tabla = 'facturascta' "
+			verror=sqlrun(vconeccionF,"er")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+
+
+		ELSE 
+			IF rta = 2 THEN 
+				USE IN ctasctesentcar 
+				=abreycierracon(vconeccionF,"")	
+				RETURN 0
+			ENDIF  	
+		ENDIF 
+		
 	
 	SELECT ctasctesentcar
 	GO TOP 
@@ -2554,7 +2678,7 @@ FUNCTION CargaCtaCteClientes
 	ENDIF 
 
 	SET ENGINEBEHAVIOR 70
-	SELECT entidad,servicio,cuenta,fecha,numerocomp,SUM(monto) as monto,cuota,vtocta FROM ctasctesentcar GROUP BY entidad,numerocomp INTO TABLE ctasctesentcarA
+	SELECT entidad,servicio,cuenta,fecha,numerocomp,SUM(monto) as monto,cuota,vtocta,fechavenc1,fechavenc2,fechavenc3 FROM ctasctesentcar GROUP BY entidad,numerocomp INTO TABLE ctasctesentcarA
 	SET ENGINEBEHAVIOR 90
 v_pventaIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,1,2)))
 v_idcompIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,3,2)))
@@ -2637,6 +2761,9 @@ ENDIF
 			a_monto	  = ctasctesentcarA.monto
 			a_cuota   = IIF(ISNULL(ctasctesentcarA.cuota)=.T.,0,ctasctesentcarA.cuota)
 			a_vtocta  = IIF(ISNULL(ctasctesentcarA.vtocta)=.T.,'',ctasctesentcarA.vtocta)
+			a_fechavenc1=ctasctesentcarA.fechavenc1
+			a_fechavenc2=ctasctesentcarA.fechavenc2
+			a_fechavenc3=ctasctesentcarA.fechavenc3
 			
 			
 			
@@ -2670,7 +2797,7 @@ ENDIF
 			LOCATE FOR opera = v_opera
 			
 			
-			v_idcom = compIngEgr_sql.idcomproba
+			v_idcom  = compIngEgr_sql.idcomproba
 			v_pventa = compIngEgr_sql.pventa
 			v_numero = maxnumerocom(v_idcom,v_pventa  ,1)
 			v_tipo	 = compIngEgr_sql.tipo
@@ -2870,11 +2997,11 @@ ENDIF
 			lamatriz1(43,1)='folio2'
 			lamatriz1(43,2)= ALLTRIM(STR(v_folio2))
 			lamatriz1(44,1)='fechavenc1'
-			lamatriz1(44,2)= "'"+ALLTRIM(v_fechavenc1)+"'"
+			lamatriz1(44,2)= "'"+ALLTRIM(a_fechavenc1)+"'"
 			lamatriz1(45,1)='fechavenc2'
-			lamatriz1(45,2)= "'"+ALLTRIM(v_fechavenc2)+"'"
+			lamatriz1(45,2)= "'"+ALLTRIM(a_fechavenc2)+"'"
 			lamatriz1(46,1)='fechavenc3'
-			lamatriz1(46,2)= "'"+ALLTRIM(v_fechavenc3)+"'"
+			lamatriz1(46,2)= "'"+ALLTRIM(a_fechavenc3)+"'"
 			lamatriz1(47,1)='proxvenc'
 			lamatriz1(47,2)= "'"+ALLTRIM(v_proxvenc)+"'"
 			lamatriz1(48,1)='confirmada'
@@ -3013,81 +3140,6 @@ ENDIF
 			ENDIF 
 			
 			
-*!*				
-*!*				IF a_cuota > 0 
-*!*					DIMENSION lamatriz10(6,2)
-*!*					** Cuota 0 (anticipo en Cero)
-*!*					v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
-
-*!*						p_tipoope     = 'I'
-*!*						p_condicion   = ''
-*!*						v_titulo      = " EL ALTA "
-*!*						p_tabla     = 'facturascta'
-*!*						p_matriz    = 'lamatriz10'
-*!*						p_conexion  = vconeccionF
-
-
-
-*!*						lamatriz10(1,1)='idcuotafc'
-*!*						lamatriz10(1,2)=ALLTRIM(STR(v_idcuotafc))
-*!*						lamatriz10(2,1)='idfactura'
-*!*						lamatriz10(2,2)=ALLTRIM(STR(v_idfactura))
-*!*						lamatriz10(3,1)='cuota'
-*!*						lamatriz10(3,2)= "0"
-*!*						lamatriz10(4,1)='cancuotas'
-*!*						lamatriz10(4,2)=ALLTRIM(STR(a_cuota))
-*!*						lamatriz10(5,1)='importe'
-*!*						lamatriz10(5,2)="0.00"
-*!*						lamatriz10(6,1)='fechavenc'
-*!*						lamatriz10(6,2)="'"+ALLTRIM(a_vtocta)+"'"
-*!*													
-*!*						
-*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
-*!*						    RETURN 
-*!*						ENDIF 
-*!*						
-*!*					v_montoCta = ROUND(a_monto / a_cuota,2)
-*!*					
-*!*					
-*!*					FOR ctai = 1 TO a_cuota
-*!*					
-*!*						v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
-
-*!*						p_tipoope     = 'I'
-*!*						p_condicion   = ''
-*!*						v_titulo      = " EL ALTA "
-*!*						p_tabla     = 'facturascta'
-*!*						p_matriz    = 'lamatriz10'
-*!*						p_conexion  = vconeccionF
-*!*						
-
-
-*!*						lamatriz10(1,1)='idcuotafc'
-*!*						lamatriz10(1,2)=ALLTRIM(STR(v_idcuotafc))
-*!*						lamatriz10(2,1)='idfactura'
-*!*						lamatriz10(2,2)=ALLTRIM(STR(v_idfactura))
-*!*						lamatriz10(3,1)='cuota'
-*!*						lamatriz10(3,2)= ALLTRIM(STR(ctai))
-*!*						lamatriz10(4,1)='cancuotas'
-*!*						lamatriz10(4,2)=ALLTRIM(STR(a_cuota))
-*!*						lamatriz10(5,1)='importe'
-*!*						lamatriz10(5,2)=ALLTRIM(STR(v_montoCta,13,4))
-*!*						lamatriz10(6,1)='fechavenc'
-*!*						lamatriz10(6,2)="'"+ALLTRIM(a_vtocta)+"'"
-*!*													
-*!*						
-*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*						    MESSAGEBOX("Ha Ocurrido un Error en la grabación de la cta",0+48+0,"Error")
-*!*						    RETURN 
-*!*						ENDIF 
-*!*					
-*!*					
-*!*					
-*!*					ENDFOR 
-*!*						
-*!*				ENDIF
-*!*			 
 		
 			registrarEstado("facturas","idfactura",v_idfactura,'I',"AUTORIZADO")
 		
@@ -3423,6 +3475,90 @@ ENDFUNC
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
  		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
 		&eje
+
+*** AQUI AGREGAR LOGICA PARA CONSULTAR Y ELIMINAR FACTURAS SI ASI LO DESEA QUIEN IMPORTA ***
+		rta =MESSAGEBOX("Desea Eliminar los Comprobantes Existentes en las Cuentas Corrientes de Proveedores ",3+32+256,"Eliminar Comprobantes ")
+		IF rta=6  THEN 
+		
+			*Elimino las Facturas de Proveedores
+			sqlmatriz(1)=" delete from factuprove "
+			verror=sqlrun(vconeccionF,"fc")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Facturas de Proveedor... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF	
+			sqlmatriz(1)=" delete from factuproved "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas de Proveedor... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)=" delete from factuprovec "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas  de Proveedor",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)="alter table factuprovec auto_increment = 1 "
+			verror=sqlrun(vconeccionF,"dfa")
+			IF verror=.f.  
+		    	MESSAGEBOX("Ha Ocurrido un Error en la Actualización del indice autoincremental de facturasd ",0+48+0,"Eliminación de Registros")
+		    	RETURN 0
+			ENDIF 
+			
+			sqlmatriz(1)=" delete from factuprovecc "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas  de Proveedor",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)="alter table factuprovecc auto_increment = 1 "
+			verror=sqlrun(vconeccionF,"dfa")
+			IF verror=.f.  
+		    	MESSAGEBOX("Ha Ocurrido un Error en la Actualización del indice autoincremental de facturasd ",0+48+0,"Eliminación de Registros")
+		    	RETURN 0
+			ENDIF 
+
+			sqlmatriz(1)=" delete from factuproveimp "
+			verror=sqlrun(vconeccionF,"df")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Impuestos de Facturas  de Proveedor Proveedor ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)="alter table factuproveimp auto_increment = 1 "
+			verror=sqlrun(vconeccionF,"dfa")
+			IF verror=.f.  
+		    	MESSAGEBOX("Ha Ocurrido un Error en la Actualización del indice autoincremental de factuproveimp ",0+48+0,"Eliminación de Registros")
+		    	RETURN 0
+			ENDIF 
+
+			sqlmatriz(1)=" delete from estadosreg where tabla = 'factuprove' "
+			verror=sqlrun(vconeccionF,"er")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Estados de Facturas de Proveedores ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+
+			* Reinicio indices de tablas afectadas a facturas 
+			sqlmatriz(1)=" update tablasidx set maxvalori = 0 where tabla = 'factuprove' or tabla = 'factuproved'  "
+			verror=sqlrun(vconeccionF,"er")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Facturas ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+
+
+		ELSE 
+			IF rta = 2 THEN 
+				USE IN ctasctesentcar 
+				=abreycierracon(vconeccionF,"")	
+				RETURN 0
+			ENDIF  	
+		ENDIF 
+		
+
+
+
 
 	
 	SELECT ctasctesentcarp
@@ -4224,6 +4360,176 @@ FUNCTION CargaAsiContables
 	=abreycierracon(vconeccionF,"")	
 	SELECT asientoscar
 	USE IN asientoscar
+	
+	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
+
+*/*/*/*/*/*/*/*/*/*/*/*/*/*
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ Carga de Plan de Cuentas 
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaPlanCuentas
+	PARAMETERS p_idimportap, p_archivo, p_func
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Plan de Cuentas -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+		if file(".\plancar.dbf") THEN
+			if used("plancar") then
+				sele plancar
+				use
+			endif
+			DELETE FILE .\plancar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\plancar FREE ( idplan I,codigocta C(20) ,nombrecta C(50), imputable c(1), activa c(1), detalle c(50), idpland i, idplandp i, codigo c(20), nivel c(1))
+					
+		SELECT plancar
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+
+		COUNT TO v_registros 
+		IF v_registros > 0 THEN 
+			*Elimino las Cuentas que tenga el sistema
+			*La carga debe hacerce con la tabla vacia
+			sqlmatriz(1)=" delete from plancuentasd "
+			verror=sqlrun(vconeccionF,"plan")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Cuentas Existentes... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+		ENDIF 		
+	
+	
+		sqlmatriz(1)=" SELECT * from plancuentas  where idplan = 1 "
+		verror=sqlrun(vconeccionF,"plancuentas_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Plan de Cuentas ",0+48+0,"Error")
+		*** me desconecto	
+			=abreycierracon(vconeccionF,"")
+		    RETURN 
+		ENDIF 
+					
+		SELECT  plancuentas_sql 
+		GO TOP 
+		IF EOF() THEN
+			v_fechade = DTOS(DATE(YEAR(DATE()),01,01))
+			v_fechaha = DTOS(DATE(YEAR(DATE()),12,31))
+			sqlmatriz(1)=" INSERT INTO plancuentas (idplan, fechad, fechah, detalle) values (1,'"+v_fechade+"','"+v_fechaha+"','PLAN DE CUENTAS') "
+			verror=sqlrun(vconeccionF,"plancuentas_sql")
+
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Plan de Cuentas ",0+48+0,"Error")
+			*** me desconecto	
+				=abreycierracon(vconeccionF,"")
+			    RETURN 0
+			ENDIF 
+		
+		ENDIF 
+		USE IN plancuentas_sql 
+
+		SELECT plancar		
+		GO TOP 
+		DIMENSION lamatriz1(10,2)
+	
+		DO WHILE !EOF()
+		
+			IF plancar.idpland > 0 THEN 
+				
+				a_idplan		= plancar.idplan
+				a_codigocta		= plancar.codigocta
+				a_nombrecta		= plancar.nombrecta
+				a_imputable		= plancar.imputable
+				a_activa		= plancar.activa
+				a_detalle		= plancar.detalle
+				a_idpland  		= plancar.idpland
+				a_idplandp 		= plancar.idplandp
+				a_codigo		= plancar.codigo
+				a_nivel			= plancar.nivel
+							
+
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+		
+				
+				lamatriz1(1,1)='idplan'
+				lamatriz1(1,2)= ALLTRIM(STR(a_idplan))
+				lamatriz1(2,1)='codigocta'
+				lamatriz1(2,2)="'"+ALLTRIM(a_codigocta)+"'"
+				lamatriz1(3,1)='nombrecta'
+				lamatriz1(3,2)= "'"+ALLTRIM(STRTRAN(a_nombrecta,'\',' '))+"'"
+				lamatriz1(4,1)='imputable'
+				lamatriz1(4,2)="'"+ALLTRIM(a_imputable)+"'"
+				lamatriz1(5,1)='activa'
+				lamatriz1(5,2)="'"+ALLTRIM(a_activa)+"'"
+				lamatriz1(6,1)='detalle'
+				lamatriz1(6,2)="'"+ALLTRIM(STRTRAN(a_detalle,'\',' '))+"'"
+				lamatriz1(7,1)='idpland'
+				lamatriz1(7,2)=ALLTRIM(STR(a_idpland))
+				lamatriz1(8,1)='idplandp'
+				lamatriz1(8,2)= ALLTRIM(STR(a_idplandp))
+				lamatriz1(9,1)='codigo'
+				lamatriz1(9,2)= "'"+ALLTRIM(a_codigo)+"'"
+				lamatriz1(10,1)='nivel'
+				lamatriz1(10,2)= "'"+ALLTRIM(a_nivel)+"'"
+		
+				p_tabla     = 'plancuentasd'
+				p_matriz    = 'lamatriz1'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en Importación y Carga de Asientos ",0+48+0,"Error")
+				    RETURN 0
+				ENDIF  
+				
+			ENDIF 
+				
+			SELECT plancar
+			SKIP 					
+			
+		ENDDO 
+		RELEASE lamatriz1
+		
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT plancar
+	USE IN plancar
 	
 	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
 */**************************************************************
