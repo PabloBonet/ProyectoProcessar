@@ -3580,7 +3580,7 @@ ENDFUNC
 		
 	
 	IF LEN(_SYSCOMPACCP) <> 8
-		 MESSAGEBOX("No se ha especificado correctamente los comprobantes de ajuste de Cta Cte de Cliente",0+48+0,"Error")
+		 MESSAGEBOX("No se ha especificado correctamente los comprobantes de ajuste de Cta Cte de Proveedores ",0+48+0,"Error")
 		 RETURN 0
 	ENDIF 
 
