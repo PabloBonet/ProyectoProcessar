@@ -4169,8 +4169,6 @@ FUNCTION CargaAsiContables
 */**************************************************************
 
 	IF p_func = -1 THEN  &&  Eliminacion de Registros
-*!*			p_func = fdeltablas("cablemodems",p_idimportap)
-*!*			RETURN p_func 
 	
 
 	ENDIF 
@@ -4531,6 +4529,225 @@ FUNCTION CargaPlanCuentas
 	SELECT plancar
 	USE IN plancar
 	
+	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
+
+
+
+
+*/*/*/*/*/*/*/*/*/*/*/*/*/*
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+*/------------------------------------------------------------------------------------------------------------
+*/ Asociar Cablemodems con Cuentas de Clientes 
+*/ Si p_archivo = '(ACTUALIZA)INTERNET' --> entonces actualiza el perfil con los datos de acuerdo al cablemodem y agrega 
+*/ aquellos cablemodems que no están a los actuales 
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION AsociarCablemodems
+	PARAMETERS p_idimportap, p_archivo, p_func
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Plan de Cuentas -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+			p_actualizar = substr(UPPER(p_archivo)+SPACE(12),1,12)
+			p_archivo    = STRTRAN(UPPER(p_archivo),"(ACTUALIZAR)",'')
+		
+			IF ALLTRIM(p_actualizar) <> "(ACTUALIZAR)" THEN 		
+				*Elimino las Cuentas que tenga el sistema
+				*La carga debe hacerce con la tabla vacia
+				sqlmatriz(1)=" delete from bocaservicios where identidadh in "
+				sqlmatriz(2)=" ( select h.identidadh from entidadesh h left join servicios s on s.servicio = h.servicio where s.detalle = '"+ALLTRIM(UPPER(p_archivo))+"')"
+				verror=sqlrun(vconeccionF,"del_bocas")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Bocas de Servicios... ",0+48+0,"Error")
+				    RETURN 0
+				ENDIF
+			ENDIF 
+			
+	*!*		Obtengo el Codigo del Servicio al cual se asocian los cablemodems
+			sqlmatriz(2)=" select h.servicio, s.detalle from entidadesh h left join servicios s on s.servicio = h.servicio where s.detalle = '"+ALLTRIM(UPPER(p_archivo))+"'"
+			verror=sqlrun(vconeccionF,"servicio")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del servicio... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF	
+				
+		
+			*Veo el idimportap de la ultima carga de Cablemodems
+			sqlmatriz(1)=" select MAX(idimportap) as idimportap from cablemodems "
+			verror=sqlrun(vconeccionF,"maxidimporta")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la ultima importación de Cablemodems ... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+			v_ultimoidimportap= maxidimporta.idimportap 
+			v_inicialempre	= UPPER(SUBSTR(ALLTRIM(_SYSEMPRESA),1,1))
+			v_servicio 		= servicio.servicio
+			
+			USE IN maxidimporta
+			USE IN servicio
+				
+			*Traigo los Cablemodems cargados en la ultima lectura de archivo
+			sqlmatriz(1)=" select * from cablemodems where idimportap = "+ALLTRIM(STR(v_ultimoidimportap))+" and telefono like '("+v_inicialempre+"%'"
+			verror=sqlrun(vconeccionF,"cablemodems")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la ultima importación de Cablemodems ... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+
+			SELECT cablemodems		
+			GO TOP 
+			DIMENSION lamatriz1(14,2)
+		
+			DO WHILE !EOF()
+
+				** Busco las bocaservicios que coincidan con la actualizada, si está la actualizo, sino la cargo de nuevo 
+				sqlmatriz(1)=" select * from bocaservicios where TRIM(bocanumero) = '"+ALLTRIM(UPPER(cablemodems.bocanumero))+"'"
+				verror=sqlrun(vconeccionF,"existe_boca")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Bocas de Servicios... ",0+48+0,"Error")
+				    RETURN 0
+				ENDIF
+				SELECT existe_boca
+				GO TOP 
+				IF !EOF() AND existe_boca.identidadh > 0 THEN 
+					** actualizo los datos de la boca con el valor del perfil seleccionado para esa boca 
+					sqlmatriz(1)=" update bocaservicios set unidadref= '"+ALLTRIM(cablemodems.perfil)+"' where TRIM(bocanumero) = '"+ALLTRIM(cablemodems.bocanumero)+"'"
+					verror=sqlrun(vconeccionF,"actuboca")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Bocas de Servicios... ",0+48+0,"Error")
+					    RETURN 0
+					ENDIF		
+				
+				ELSE 
+
+					v_entidad = SUBSTR(cablemodems.telefono,3,(ATC(')',cablemodems.telefono)-3))
+					
+					sqlmatriz(1)=" select identidadh from entidadesh  where entidad ="+v_entidad+" and servicio = "+ALLTRIM(STR(v_servicio))+" and cuenta = 1 "
+					verror=sqlrun(vconeccionF,"entidadh")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Entidades... ",0+48+0,"Error")
+					    RETURN 0
+					ENDIF
+
+					SELECT entidadh 
+						
+					IF !EOF() AND entidadh.identidadh > 0 THEN 
+						
+						a_identidadh    = entidadh.identidadh
+						a_bocanumero	= UPPER(ALLTRIM(cablemodems.bocanumero))
+						a_facturar		= IIF(UPPER(SUBSTR(ALLTRIM(cablemodems.estado),1,6))="ACTIVO","S","N")
+						a_habilitado	= IIF(UPPER(SUBSTR(ALLTRIM(cablemodems.estado),1,6))="ACTIVO","S","N")
+						a_direccion		= ALLTRIM(cablemodems.direccin) 
+						a_unidadref		= ALLTRIM(cablemodems.perfil)	
+
+						p_tipoope     = 'I'
+						p_condicion   = ''
+						v_titulo      = " EL ALTA "
+
+						lamatriz1(1,1)='identidadh'
+						lamatriz1(1,2)= ALLTRIM(STR(a_identidadh))
+						lamatriz1(2,1)='bocanumero'
+						lamatriz1(2,2)="'"+ALLTRIM(a_bocanumero)+"'"
+						lamatriz1(3,1)='ruta1'
+						lamatriz1(3,2)="0"
+						lamatriz1(4,1)='folio1'
+						lamatriz1(4,2)="0"
+						lamatriz1(5,1)='ruta2'
+						lamatriz1(5,2)="0"
+						lamatriz1(6,1)='folio2'
+						lamatriz1(6,2)="0"
+						lamatriz1(7,1)='facturar'
+						lamatriz1(7,2)="'"+a_facturar+"'"
+						lamatriz1(8,1)='habilitado'
+						lamatriz1(8,2)= "'"+a_habilitado+"'"
+						lamatriz1(9,1)='direccion'
+						lamatriz1(9,2)= "'"+ALLTRIM(a_direccion)+"'"
+						lamatriz1(10,1)='idbocaser'
+						lamatriz1(10,2)= "0"
+						lamatriz1(11,1)='ubicacion'
+						lamatriz1(11,2)= "' '"
+						lamatriz1(12,1)='idtiposer'
+						lamatriz1(12,2)= "1"
+						lamatriz1(13,1)='valorref'
+						lamatriz1(13,2)= "0.00"
+						lamatriz1(14,1)='unidadref'
+						lamatriz1(14,2)= "'"+ALLTRIM(a_unidadref)+"'"
+				
+						p_tabla     = 'bocaservicios'
+						p_matriz    = 'lamatriz1'
+						p_conexion  = vconeccionF
+						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+						    MESSAGEBOX("Ha Ocurrido un Error en Asociación de Cablemodems con Cuentas ",0+48+0,"Error")
+						    RETURN 0
+						ENDIF  
+						
+					ENDIF 
+					
+				ENDIF 	
+				
+				SELECT existe_boca 
+				USE IN existe_boca
+						
+				SELECT cablemodems
+				SKIP 					
+				
+			ENDDO 
+			RELEASE lamatriz1
+			
+			** Obtengo los Cablemodems que no tienen referencia con cuentas 
+			** deben controlarse, se exportan a un archivo .CSV para su procesamiento
+			** posterior
+			*Traigo los Cablemodems cargados en la ultima lectura de archivo
+			sqlmatriz(1)=" select * from cablemodems where idimportap = "+ALLTRIM(STR(v_ultimoidimportap)) &&+" and telefono like '("+v_inicialempre+"%' "
+			sqlmatriz(2)=" and TRIM(bocanumero) not in (select TRIM(bocanumero) from bocaservicios )"
+			verror=sqlrun(vconeccionF,"sincuentas")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la ultima importación de Cablemodems ... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+			SELECT sincuentas
+			GO TOP 
+			IF !EOF() THEN 
+				COPY TO cm_verificar.csv TYPE CSV
+	 			APLIC=CREATEOBJECT("WSCript.Shell")
+				APLIC.RUN("cm_verificar.csv")
+				RELEASE APLIC 
+			ENDIF 
+			
+			USE IN sincuentas
+	*/*/*/*/*/*/
+			=abreycierracon(vconeccionF,"")	
+			SELECT cablemodems
+			USE IN cablemodems
+		
+		
 	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
 */**************************************************************
 */**************************************************************
