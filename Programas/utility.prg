@@ -11561,6 +11561,7 @@ FUNCTION BuscaLoteEti
 PARAMETERS pl_tablaeti
 	cretorno = ""
 	DO FORM lecturaetiquetas TO v_loteeti
+	
 	IF v_loteeti > 0 THEN 
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		*Busco El Lote de Lectura Seleccionado 
@@ -14339,5 +14340,70 @@ PARAMETERS pe_tablav, pe_idregiv
 
     =abreycierracon(vconeccionOp,"")
 	
+
+ENDFUNC 
+
+
+
+
+* FUNCIÓN PARA IMPRIMIR MOVIMIENTOS DE ETIQUETAS
+* PARAMETROS: p_idtransfeti
+FUNCTION imprimirTransfEti
+PARAMETERS p_idtransfeti
+
+
+
+	v_idtransfe = p_idtransfeti
+	
+	IF v_idtransfe > 0
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+		
+		*** Busco los datos del recibo
+		 sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip,com.comprobante as nomcomp, cd.detalle as ctaDes, co.detalle as ctaOri,d.idtipopago, d.iddetacobro, d.importe as importetp,cpl.descrip as desccpl,tp.detalle as tipopago "
+         sqlmatriz(2)=" FROM transfeti r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro t on com.idtipocompro = t.idtipocompro"
+		sqlmatriz(3)=" left join transfetih h on r.idtraeti = h.idtraeti "
+		sqlmatriz(4)=" where r.idcomproba = d.idcomproba and r.idtraeti = "+ALLTRIM(STR(p_idtransfeti))
+
+
+			verror=sqlrun(vconeccionF,"transfeti_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la los movimientos de etiquetas ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+									
+		
+		SELECT transfeti_sql 
+		GO TOP 
+		
+
+				
+		SELECT * FROM transfeti_sql INTO TABLE movieti
+				
+		SELECT movieti
+		GO TOP 
+	
+		IF NOT EOF()
+*!*		
+*!*				replace ALL desccpl WITH tipopago FOR ISNULL(desccpl) = .T.
+*!*				
+					
+			SELECT movieti
+			GO TOP 
+			v_idcomproba = movieti.idcomproba
+			
+			DO FORM reporteform WITH "movieti","movieticr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar los movimientos para imprimir",0+48+0,"Error al cargar los movimientos")
+			RETURN 	
+		ENDIF 
+				
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar los movimientos el ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
 
 ENDFUNC 
