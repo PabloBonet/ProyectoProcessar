@@ -2044,7 +2044,6 @@ ENDFUNC
 */------------------------------------------------------------------------------------------------------------
 
 
-
 */------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
 */ Carga de Articulos con articulosimp,listaprecioh (solo para lista 1), articulospro
@@ -2094,23 +2093,35 @@ FUNCTION CargaArticulos
 		
 		IF NOT EOF()
 		
-			*** Borro las tablas que voy a ingresar ***
-			
-			*** Borro articulos ***
-			sqlmatriz(1)="delete from articulos "
-			verror=sqlrun(vconeccion,"NoUso")
+*!*				*** Borro las tablas que voy a ingresar ***
+*!*				
+*!*				*** Borro articulos ***
+*!*				sqlmatriz(1)="delete from articulos "
+*!*				verror=sqlrun(vconeccion,"NoUso")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulos ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ENDIF 
+*!*				
+*!*				*** Borro articulosimp ***
+*!*				sqlmatriz(1)="delete from articulosimp "
+*!*				verror=sqlrun(vconeccion,"NoUso")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulosimp ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ENDIF 
+	
+
+
+			*** Obtengo todas las condiciones Fiscales para Cargar los impuestos ***
+			sqlmatriz(1)="select articulo from articulos"
+			verror=sqlrun(vconeccion,"articulos_sql")
 			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulos ",0+48+0,"Eliminación de Registros")
+			    MESSAGEBOX("Ha Ocurrido un Error en la Obtencion de los articulos existentes",0+48+0,"Eliminación de Registros")
 			    RETURN -9
-			ENDIF 
+			ENDIF
 			
-			*** Borro articulosimp ***
-			sqlmatriz(1)="delete from articulosimp "
-			verror=sqlrun(vconeccion,"NoUso")
-			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulosimp ",0+48+0,"Eliminación de Registros")
-			    RETURN -9
-			ENDIF 
+			
 	
 			*** Obtengo todas las condiciones Fiscales para Cargar los impuestos ***
 			sqlmatriz(1)="select * from condfiscal "
@@ -2121,48 +2132,46 @@ FUNCTION CargaArticulos
 			ENDIF 
 					
 					
-			*** Borro listaprecioh (lista 1) ***
-			sqlmatriz(1)="delete from listaprecioh where idlista = 1 "
-			verror=sqlrun(vconeccion,"NoUso")
-			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
-			    RETURN -9
-			ENDIF
-			
-			*** Borro articulospro ***
-			sqlmatriz(1)="delete from articulospro "
-			verror=sqlrun(vconeccion,"NoUso")
-			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulospro ",0+48+0,"Eliminación de Registros")
-			    RETURN -9
-			ENDIF 
+*!*				*** Borro listaprecioh (lista 1) ***
+*!*				sqlmatriz(1)="delete from listaprecioh where idlista = 1 "
+*!*				verror=sqlrun(vconeccion,"NoUso")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ENDIF
+*!*				
+*!*				*** Borro articulospro ***
+*!*				sqlmatriz(1)="delete from articulospro "
+*!*				verror=sqlrun(vconeccion,"NoUso")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulospro ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ENDIF 
 			 
-			
-			v_maximoListah = 0
+			v_idartimp = 0
+			v_maximoArtiimp = 0
 			*** Calulo el Maximo de listaprecioh ***
-			sqlmatriz(1)="select MAX(idlistah) as maxi from listaprecioh  "
-			verror=sqlrun(vconeccion,"maxLIstah")
+			sqlmatriz(1)="select MAX(idartimp) as maxi from articulosimp "
+			verror=sqlrun(vconeccion,"maxarticulosimp")
 			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
+			    MESSAGEBOX("Ha Ocurrido un Error en busqueda del maximo valor de articulosimp",0+48+0,"Eliminación de Registros")
 			    RETURN -9
 			ELSE
-				v_maximoListah = IIF(ISNULL(maxLIstah.maxi)=.T.,0,maxLIstah.maxi)
-				v_maximoListah = v_maximoListah + 1
+				v_maximoArtiimp = IIF(ISNULL(maxarticulosimp.maxi)=.T.,0,maxarticulosimp.maxi)
+				v_idartimp = v_maximoArtiimp 
 				** Modifico el indice idlistah para que tome el maximo valor como el indice autoincremental **
-				sqlmatriz(1)="alter table listaprecioh auto_increment = "+ALLTRIM(STR(v_maximoListah ))
-				verror=sqlrun(vconeccion,"modifauto")
-				IF verror=.f.  
-			    	MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh(Error al modificar el autoincremental)",0+48+0,"Eliminación de Registros")
-			    	RETURN -9
-				ENDIF 
+*!*					sqlmatriz(1)="alter table listaprecioh auto_increment = "+ALLTRIM(STR(v_maximoListah ))
+*!*					verror=sqlrun(vconeccion,"modifauto")
+*!*					IF verror=.f.  
+*!*				    	MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh(Error al modificar el autoincremental)",0+48+0,"Eliminación de Registros")
+*!*				    	RETURN -9
+*!*					ENDIF 
 			ENDIF 
 					
 							
 		ENDIF 
 	
-		
-
-		v_idartimp = 0
+	
 		v_idartpro = 0
 		*v_idlistah = v_maximoListah 
 		v_fechaAct = ALLTRIM(DTOS(DATE()))
@@ -2178,47 +2187,52 @@ FUNCTION CargaArticulos
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
 		
-		SELECT articuloscar 
+		
+		SELECT * FROM articuloscar WHERE articulo NOT in (SELECT articulo FROM articulos_sql) INTO TABLE articuloscarF
+		
+		SELECT articuloscarF
 		GO TOP 
 		DO WHILE !EOF()
+			
+			
 		
 		*** Cargo el articulo en tabla articulos ***
 			lamatriz(1,1) = 'articulo'
-			lamatriz(1,2) = "'"+ALLTRIM(articuloscar.articulo)+"'"
+			lamatriz(1,2) = "'"+ALLTRIM(articuloscarF.articulo)+"'"
 			lamatriz(2,1) = 'detalle'
-			lamatriz(2,2) = "'"+ALLTRIM(articuloscar.detalle)+"'"
+			lamatriz(2,2) = "'"+ALLTRIM(articuloscarF.detalle)+"'"
 			lamatriz(3,1) = 'unidad'
-			lamatriz(3,2) = "'"+ALLTRIM(articuloscar.unidad)+"'"
+			lamatriz(3,2) = "'"+ALLTRIM(articuloscarF.unidad)+"'"
 			lamatriz(4,1) = 'abrevia'
-			lamatriz(4,2) = "'"+ALLTRIM(articuloscar.abrevia)+"'"
+			lamatriz(4,2) = "'"+ALLTRIM(articuloscarF.abrevia)+"'"
 			lamatriz(5,1) = 'codbarra'
-			lamatriz(5,2) = "'"+ALLTRIM(articuloscar.codbarra)+"'"
+			lamatriz(5,2) = "'"+ALLTRIM(articuloscarF.codbarra)+"'"
 			lamatriz(6,1) = 'costo'
-			lamatriz(6,2) = ALLTRIM(STR(articuloscar.costo,13,2))
+			lamatriz(6,2) = ALLTRIM(STR(articuloscarF.costo,13,2))
 			lamatriz(7,1) = 'linea'
-			lamatriz(7,2) = "'"+ALLTRIM(articuloscar.linea)+"'"
+			lamatriz(7,2) = "'"+ALLTRIM(articuloscarF.linea)+"'"
 			lamatriz(8,1) = 'ctrlstock'
-			lamatriz(8,2) = "'"+ALLTRIM(articuloscar.ctrlstock)+"'"
+			lamatriz(8,2) = "'"+ALLTRIM(articuloscarF.ctrlstock)+"'"
 			lamatriz(9,1) = 'observa'
-			lamatriz(9,2) = "'"+ALLTRIM(articuloscar.observa)+"'"
+			lamatriz(9,2) = "'"+ALLTRIM(articuloscarF.observa)+"'"
 			lamatriz(10,1) = 'ocultar'
-			lamatriz(10,2) = "'"+ALLTRIM(articuloscar.ocultar)+"'"
+			lamatriz(10,2) = "'"+ALLTRIM(articuloscarF.ocultar)+"'"
 			lamatriz(11,1) = 'stockmin'
-			lamatriz(11,2) = ALLTRIM(STR(articuloscar.stockmin))
+			lamatriz(11,2) = ALLTRIM(STR(articuloscarF.stockmin))
 			lamatriz(12,1) = 'desc1'
-			lamatriz(12,2) = ALLTRIM(STR(articuloscar.desc1,13,2))
+			lamatriz(12,2) = ALLTRIM(STR(articuloscarF.desc1,13,2))
 			lamatriz(13,1) = 'desc2'
-			lamatriz(13,2) = ALLTRIM(STR(articuloscar.desc2,13,2))
+			lamatriz(13,2) = ALLTRIM(STR(articuloscarF.desc2,13,2))
 			lamatriz(14,1) = 'desc3'
-			lamatriz(14,2) = ALLTRIM(STR(articuloscar.desc3,13,2))
+			lamatriz(14,2) = ALLTRIM(STR(articuloscarF.desc3,13,2))
 			lamatriz(15,1) = 'desc4'
-			lamatriz(15,2) = ALLTRIM(STR(articuloscar.desc4,13,2))
+			lamatriz(15,2) = ALLTRIM(STR(articuloscarF.desc4,13,2))
 			lamatriz(16,1) = 'desc5'
-			lamatriz(16,2) = ALLTRIM(STR(articuloscar.desc5,13,2))
+			lamatriz(16,2) = ALLTRIM(STR(articuloscarF.desc5,13,2))
 			lamatriz(17,1) = 'moneda'
-			lamatriz(17,2) = ALLTRIM(STR(articuloscar.moneda))
+			lamatriz(17,2) = ALLTRIM(STR(articuloscarF.moneda))
 			lamatriz(18,1) = 'idsublinea'
-			lamatriz(18,2) = ALLTRIM(STR(articuloscar.idsublinea))
+			lamatriz(18,2) = ALLTRIM(STR(articuloscarF.idsublinea))
 
 			p_tabla     = 'articulos'
 			p_matriz    = 'lamatriz'
@@ -2228,7 +2242,7 @@ FUNCTION CargaArticulos
 			ELSE
 				 *** Guardo el historial del costo del articulo ***
 *				   guardaHistCostoArt(articuloscar.articulo, articuloscar.costo)
-				 
+
 				 
 				 SELECT Cfiscal
 				 GO TOP 
@@ -2242,9 +2256,9 @@ FUNCTION CargaArticulos
 					lamatriz2(1,1)='idartimp'
 					lamatriz2(1,2)= ALLTRIM(STR(v_idartimp))
 					lamatriz2(2,1)='articulo'
-					lamatriz2(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+					lamatriz2(2,2)="'"+ALLTRIM(articuloscarF.articulo)+"'"
 					lamatriz2(3,1)='impuesto'
-					lamatriz2(3,2)=ALLTRIM(STR(articuloscar.impuesto))
+					lamatriz2(3,2)=ALLTRIM(STR(articuloscarF.impuesto))
 					lamatriz2(4,1)='iva'
 					lamatriz2(4,2)=ALLTRIM(STR(cfiscal.iva))
 		
@@ -2274,9 +2288,9 @@ FUNCTION CargaArticulos
 					lamatriz3(2,1)='idlista'
 					lamatriz3(2,2)= ALLTRIM(STR(v_idlista))
 					lamatriz3(3,1)='articulo'
-					lamatriz3(3,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+					lamatriz3(3,2)="'"+ALLTRIM(articuloscarF.articulo)+"'"
 					lamatriz3(4,1)='margen'
-					lamatriz3(4,2)=ALLTRIM(STR(articuloscar.margen,13,4))
+					lamatriz3(4,2)=ALLTRIM(STR(articuloscarF.margen,13,4))
 					lamatriz3(5,1)='fechaalta'
 					lamatriz3(5,2)="'"+ALLTRIM(v_fechaAct)+"'"
 					lamatriz3(6,1)='fechaact'
@@ -2293,7 +2307,7 @@ FUNCTION CargaArticulos
 					
 					
 				*** Cargo el proveedor asociado al articulo y el codigo del proveedor en tabla articulosimp***
-				IF articuloscar.proveedor > 0 THEN
+				IF articuloscarF.proveedor > 0 THEN
 				 
 					p_tipoope     = 'I'
 					p_condicion   = ''
@@ -2303,11 +2317,11 @@ FUNCTION CargaArticulos
 					lamatriz4(1,1)='idartpro'
 					lamatriz4(1,2)= ALLTRIM(STR(v_idartpro))
 					lamatriz4(2,1)='articulo'
-					lamatriz4(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+					lamatriz4(2,2)="'"+ALLTRIM(articuloscarF.articulo)+"'"
 					lamatriz4(3,1)='entidad'
-					lamatriz4(3,2)=ALLTRIM(STR(articuloscar.proveedor))
+					lamatriz4(3,2)=ALLTRIM(STR(articuloscarF.proveedor))
 					lamatriz4(4,1)='codigop'
-					lamatriz4(4,2)="'"+ALLTRIM(articuloscar.codigop)+"'"	
+					lamatriz4(4,2)="'"+ALLTRIM(articuloscarF.codigop)+"'"	
 		
 					p_tabla     = 'articulospro'
 					p_matriz    = 'lamatriz4'
@@ -2321,13 +2335,15 @@ FUNCTION CargaArticulos
 	
 			ENDIF 
 			
-			SELECT articuloscar
+			SELECT articuloscarF
 			SKIP 					
 		ENDDO 
 */*/*/*/*/*/
-		=abreycierracon(vconeccionF,"")	
+		=abreycierracon(vconeccionF,"")
 		SELECT articuloscar
 		USE IN articuloscar
+		SELECT articuloscarF
+		USE IN articuloscarF
 		RELEASE lamatriz
 		RELEASE lamatriz2
 		RELEASE lamatriz3
@@ -2345,6 +2361,308 @@ FUNCTION CargaArticulos
 	lreto = p_func
 	RETURN lreto
 ENDFUNC  
+
+
+*!*	*/------------------------------------------------------------------------------------------------------------
+*!*	*/------------------------------------------------------------------------------------------------------------
+*!*	*/ Carga de Articulos con articulosimp,listaprecioh (solo para lista 1), articulospro
+*!*	*/------------------------------------------------------------------------------------------------------------
+*!*	FUNCTION CargaArticulos
+*!*		PARAMETERS p_idimportap, p_archivo, p_func
+*!*		IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+*!*			RETURN p_func
+*!*		ENDIF 
+*!*	*/**************************************************************
+
+*!*		IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*	*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*	*!*			RETURN p_func 
+*!*		
+
+*!*		ENDIF 
+*!*	*/**************************************************************
+*!*		IF p_func = 1 then && 1- Carga de Archivo de Articulos -
+*!*			p_archivo = alltrim(p_archivo)
+*!*			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+*!*			if file(".\articuloscar.dbf") THEN
+*!*				if used("articuloscar") then
+*!*					sele articuloscar
+*!*					use
+*!*				endif
+*!*				DELETE FILE .\articuloscar.dbf
+*!*			ENDIF
+*!*			
+*!*			if !file(p_archivo) THEN
+*!*				=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+*!*				=abreycierracon(vconeccionF,"")	
+*!*				RETURN 0
+*!*			ENDIF
+
+*!*			CREATE TABLE .\articuloscar FREE (articulo C(50), detalle C(254), unidad C(200), abrevia C(50), codbarra C(100), costo n(13,4), linea C(20), ;
+*!*			ctrlstock C(1), observa C(254), ocultar C(1), stockmin N(13,4), desc1 N(13,4), desc2 N(13,4), desc3 N(13,4), desc4 N(13,4), desc5 N(13,4), moneda I, ;
+*!*			impuesto I, margen N(13,4),proveedor I,codigop C(50),idsublinea I)			
+*!*						
+*!*			SELECT articuloscar 
+*!*	*		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
+*!*	 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+*!*			&eje
+
+*!*			GO TOP 
+*!*			
+*!*			IF NOT EOF()
+*!*			
+*!*				*** Borro las tablas que voy a ingresar ***
+*!*				
+*!*				*** Borro articulos ***
+*!*				sqlmatriz(1)="delete from articulos "
+*!*				verror=sqlrun(vconeccion,"NoUso")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulos ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ENDIF 
+*!*				
+*!*				*** Borro articulosimp ***
+*!*				sqlmatriz(1)="delete from articulosimp "
+*!*				verror=sqlrun(vconeccion,"NoUso")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulosimp ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ENDIF 
+*!*		
+*!*				*** Obtengo todas las condiciones Fiscales para Cargar los impuestos ***
+*!*				sqlmatriz(1)="select * from condfiscal "
+*!*				verror=sqlrun(vconeccion,"Cfiscal")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Obtencion de las Condiciones Fiscales ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ENDIF 
+*!*						
+*!*						
+*!*				*** Borro listaprecioh (lista 1) ***
+*!*				sqlmatriz(1)="delete from listaprecioh where idlista = 1 "
+*!*				verror=sqlrun(vconeccion,"NoUso")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ENDIF
+*!*				
+*!*				*** Borro articulospro ***
+*!*				sqlmatriz(1)="delete from articulospro "
+*!*				verror=sqlrun(vconeccion,"NoUso")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulospro ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ENDIF 
+*!*				 
+*!*				
+*!*				v_maximoListah = 0
+*!*				*** Calulo el Maximo de listaprecioh ***
+*!*				sqlmatriz(1)="select MAX(idlistah) as maxi from listaprecioh  "
+*!*				verror=sqlrun(vconeccion,"maxLIstah")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
+*!*				    RETURN -9
+*!*				ELSE
+*!*					v_maximoListah = IIF(ISNULL(maxLIstah.maxi)=.T.,0,maxLIstah.maxi)
+*!*					v_maximoListah = v_maximoListah + 1
+*!*					** Modifico el indice idlistah para que tome el maximo valor como el indice autoincremental **
+*!*					sqlmatriz(1)="alter table listaprecioh auto_increment = "+ALLTRIM(STR(v_maximoListah ))
+*!*					verror=sqlrun(vconeccion,"modifauto")
+*!*					IF verror=.f.  
+*!*				    	MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh(Error al modificar el autoincremental)",0+48+0,"Eliminación de Registros")
+*!*				    	RETURN -9
+*!*					ENDIF 
+*!*				ENDIF 
+*!*						
+*!*								
+*!*			ENDIF 
+*!*		
+*!*			
+
+*!*			v_idartimp = 0
+*!*			v_idartpro = 0
+*!*			*v_idlistah = v_maximoListah 
+*!*			v_fechaAct = ALLTRIM(DTOS(DATE()))
+
+*!*			DIMENSION lamatriz(18,2)
+*!*			DIMENSION lamatriz2(4,2)
+*!*			DIMENSION lamatriz3(6,2)
+*!*			DIMENSION lamatriz4(4,2)
+*!*			
+*!*			
+*!*			
+*!*			p_tipoope     = 'I'
+*!*			p_condicion   = ''
+*!*			v_titulo      = " EL ALTA "
+*!*			
+*!*			SELECT articuloscar 
+*!*			GO TOP 
+*!*			DO WHILE !EOF()
+*!*			
+*!*			*** Cargo el articulo en tabla articulos ***
+*!*				lamatriz(1,1) = 'articulo'
+*!*				lamatriz(1,2) = "'"+ALLTRIM(articuloscar.articulo)+"'"
+*!*				lamatriz(2,1) = 'detalle'
+*!*				lamatriz(2,2) = "'"+ALLTRIM(articuloscar.detalle)+"'"
+*!*				lamatriz(3,1) = 'unidad'
+*!*				lamatriz(3,2) = "'"+ALLTRIM(articuloscar.unidad)+"'"
+*!*				lamatriz(4,1) = 'abrevia'
+*!*				lamatriz(4,2) = "'"+ALLTRIM(articuloscar.abrevia)+"'"
+*!*				lamatriz(5,1) = 'codbarra'
+*!*				lamatriz(5,2) = "'"+ALLTRIM(articuloscar.codbarra)+"'"
+*!*				lamatriz(6,1) = 'costo'
+*!*				lamatriz(6,2) = ALLTRIM(STR(articuloscar.costo,13,2))
+*!*				lamatriz(7,1) = 'linea'
+*!*				lamatriz(7,2) = "'"+ALLTRIM(articuloscar.linea)+"'"
+*!*				lamatriz(8,1) = 'ctrlstock'
+*!*				lamatriz(8,2) = "'"+ALLTRIM(articuloscar.ctrlstock)+"'"
+*!*				lamatriz(9,1) = 'observa'
+*!*				lamatriz(9,2) = "'"+ALLTRIM(articuloscar.observa)+"'"
+*!*				lamatriz(10,1) = 'ocultar'
+*!*				lamatriz(10,2) = "'"+ALLTRIM(articuloscar.ocultar)+"'"
+*!*				lamatriz(11,1) = 'stockmin'
+*!*				lamatriz(11,2) = ALLTRIM(STR(articuloscar.stockmin))
+*!*				lamatriz(12,1) = 'desc1'
+*!*				lamatriz(12,2) = ALLTRIM(STR(articuloscar.desc1,13,2))
+*!*				lamatriz(13,1) = 'desc2'
+*!*				lamatriz(13,2) = ALLTRIM(STR(articuloscar.desc2,13,2))
+*!*				lamatriz(14,1) = 'desc3'
+*!*				lamatriz(14,2) = ALLTRIM(STR(articuloscar.desc3,13,2))
+*!*				lamatriz(15,1) = 'desc4'
+*!*				lamatriz(15,2) = ALLTRIM(STR(articuloscar.desc4,13,2))
+*!*				lamatriz(16,1) = 'desc5'
+*!*				lamatriz(16,2) = ALLTRIM(STR(articuloscar.desc5,13,2))
+*!*				lamatriz(17,1) = 'moneda'
+*!*				lamatriz(17,2) = ALLTRIM(STR(articuloscar.moneda))
+*!*				lamatriz(18,1) = 'idsublinea'
+*!*				lamatriz(18,2) = ALLTRIM(STR(articuloscar.idsublinea))
+
+*!*				p_tabla     = 'articulos'
+*!*				p_matriz    = 'lamatriz'
+*!*				p_conexion  = vconeccionF
+*!*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos ",0+48+0,"Error")
+*!*				ELSE
+*!*					 *** Guardo el historial del costo del articulo ***
+*!*	*				   guardaHistCostoArt(articuloscar.articulo, articuloscar.costo)
+*!*					 
+*!*					 
+*!*					 SELECT Cfiscal
+*!*					 GO TOP 
+*!*					 DO while !EOF()
+*!*					*** Cargo el el impuesto del articulo en tabla articulosimp ***
+*!*						p_tipoope     = 'I'
+*!*						p_condicion   = ''
+*!*						v_titulo      = " EL ALTA "
+*!*						
+*!*						v_idartimp = v_idartimp + 1
+*!*						lamatriz2(1,1)='idartimp'
+*!*						lamatriz2(1,2)= ALLTRIM(STR(v_idartimp))
+*!*						lamatriz2(2,1)='articulo'
+*!*						lamatriz2(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+*!*						lamatriz2(3,1)='impuesto'
+*!*						lamatriz2(3,2)=ALLTRIM(STR(articuloscar.impuesto))
+*!*						lamatriz2(4,1)='iva'
+*!*						lamatriz2(4,2)=ALLTRIM(STR(cfiscal.iva))
+*!*			
+*!*			
+*!*						p_tabla     = 'articulosimp'
+*!*						p_matriz    = 'lamatriz2'
+*!*						p_conexion  = vconeccionF
+*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Impuestos ",0+48+0,"Error")
+*!*						
+*!*						ENDIF 
+*!*					
+*!*						SELECT cfiscal
+*!*						SKIP 
+*!*					ENDDO 
+*!*					
+*!*				*** Cargo el margen del articulo en tabla listaprecioh ***
+*!*						p_tipoope     = 'I'
+*!*						p_condicion   = ''
+*!*						v_titulo      = " EL ALTA "
+*!*						v_idlista	 = 1
+*!*						v_idlistah = 0
+*!*						v_fehcaAct 		= ALLTRIM(DTOS(DATE())+TIME())
+*!*								
+*!*						lamatriz3(1,1)='idlistah'
+*!*						lamatriz3(1,2)= ALLTRIM(STR(v_idlistah))
+*!*						lamatriz3(2,1)='idlista'
+*!*						lamatriz3(2,2)= ALLTRIM(STR(v_idlista))
+*!*						lamatriz3(3,1)='articulo'
+*!*						lamatriz3(3,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+*!*						lamatriz3(4,1)='margen'
+*!*						lamatriz3(4,2)=ALLTRIM(STR(articuloscar.margen,13,4))
+*!*						lamatriz3(5,1)='fechaalta'
+*!*						lamatriz3(5,2)="'"+ALLTRIM(v_fechaAct)+"'"
+*!*						lamatriz3(6,1)='fechaact'
+*!*						lamatriz3(6,2)= "'"+ALLTRIM(v_fehcaAct)+"'"
+*!*			
+*!*			
+*!*						p_tabla     = 'listaprecioh'
+*!*						p_matriz    = 'lamatriz3'
+*!*						p_conexion  = vconeccionF
+*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lista de Precios ",0+48+0,"Error")
+*!*								
+*!*						ENDIF 
+*!*						
+*!*						
+*!*					*** Cargo el proveedor asociado al articulo y el codigo del proveedor en tabla articulosimp***
+*!*					IF articuloscar.proveedor > 0 THEN
+*!*					 
+*!*						p_tipoope     = 'I'
+*!*						p_condicion   = ''
+*!*						v_titulo      = " EL ALTA "
+*!*						
+*!*						v_idartpro = v_idartpro + 1
+*!*						lamatriz4(1,1)='idartpro'
+*!*						lamatriz4(1,2)= ALLTRIM(STR(v_idartpro))
+*!*						lamatriz4(2,1)='articulo'
+*!*						lamatriz4(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
+*!*						lamatriz4(3,1)='entidad'
+*!*						lamatriz4(3,2)=ALLTRIM(STR(articuloscar.proveedor))
+*!*						lamatriz4(4,1)='codigop'
+*!*						lamatriz4(4,2)="'"+ALLTRIM(articuloscar.codigop)+"'"	
+*!*			
+*!*						p_tabla     = 'articulospro'
+*!*						p_matriz    = 'lamatriz4'
+*!*						p_conexion  = vconeccionF
+*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Proveedor ",0+48+0,"Error")
+*!*						
+*!*						ENDIF 
+*!*						
+*!*					ENDIF 				
+*!*		
+*!*				ENDIF 
+*!*				
+*!*				SELECT articuloscar
+*!*				SKIP 					
+*!*			ENDDO 
+*!*	*/*/*/*/*/*/
+*!*			=abreycierracon(vconeccionF,"")	
+*!*			SELECT articuloscar
+*!*			USE IN articuloscar
+*!*			RELEASE lamatriz
+*!*			RELEASE lamatriz2
+*!*			RELEASE lamatriz3
+*!*			RELEASE lamatriz4
+*!*			MESSAGEBOX("Importación de Articulos Finalizada",0+64,"Importar  Articulos")
+
+*!*		ENDIF 	&& 1- Carga de Archivo de CPP -
+*!*	*/**************************************************************
+*!*	*/**************************************************************
+*!*	*!*	*/ && 2- Visualiza Datos de Claro
+*!*	*!*		IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+*!*	*!*			=fconsutablas(p_idimportap,'articulos',.T.)
+*!*	*!*		ENDIF && 2- Visualiza Datos de CPP -
+*!*	*/**************************************************************
+*!*		lreto = p_func
+*!*		RETURN lreto
+*!*	ENDFUNC  
 
 
 *******************************************************
