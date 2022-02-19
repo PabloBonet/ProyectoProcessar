@@ -167,11 +167,11 @@ _SYSIP = IPADDRESS(1)
 _SYSHOST= IPADDRESS(2)
 
 
-I= frandom()
-AUX = _SYSESTACION+"\"+ALLTRIM(I)
+I=1
+AUX = _SYSESTACION+"\"+ALLTRIM(STR(I))
 DO WHILE DIRECTORY(AUX)
-	I= frandom(5)
-	AUX = _SYSESTACION+"\"+ALLTRIM(I)
+	I = I+1
+	AUX = _SYSESTACION+"\"+ALLTRIM(STR(I))
 ENDDO
 IF !DIRECTORY(AUX) then
 	MKDIR(AUX)
@@ -210,10 +210,11 @@ toolbarsys.dock(1)
 	DO FORM LOGIN TO LOGEO
 
 	IF LOGEO > 0 THEN 
-	  	KEYBOARD '{F10}'
+	    	KEYBOARD '{F10}'
 		toolbarsys.show 
 *!*			SET MESSAGE TO "Esta es la Barra"
- 		READ EVENTS
+		=variables_sys(0)
+		READ EVENTS
 	ELSE 
 	ENDIF 
 	

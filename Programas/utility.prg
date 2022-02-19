@@ -14407,3 +14407,146 @@ PARAMETERS p_idtransfeti
 	ENDIF 
 
 ENDFUNC 
+
+
+FUNCTION variables_sys
+	PARAMETERS p_ec
+*!*		v_llave = 20
+	IF p_ec = 0 THEN &&encripta
+
+		DISPLAY MEMORY LIKE '_S*' TO FILE varpublicas._v NOCONSOLE 
+		CREATE TABLE varpublicas_sys ( variables c(200) )
+		APPEND FROM varpublicas._v TYPE SDF 
+		DELETE FOR SUBSTR(ALLTRIM(variables),1,2) <> '_S'
+		PACK 
+		REPLACE ALL variables WITH IIF(AT(' ',ALLTRIM(VARIABLEs))=0,ALLTRIM(variables),SUBSTR(ALLTRIM(variables),1,AT(' ',ALLTRIM(variables))))
+		INDEX on variables TAG variable
+		p=FCREATE("variables._s1")
+		GO TOP 
+		DO WHILE !EOF()
+			v_var = ALLTRIM(variables)
+			v_linea = ALLTRIM(variables)+"="+IIF(TYPE(v_var)='C','"'+ALLTRIM(&v_var)+'"',ALLTRIM(STR(&v_var,12,2)))
+			IF LEN(ALLTRIM(v_linea))<50 THEN 
+				FPUTS(p,v_linea)
+			ENDIF
+			SELECT varpublicas_sys 	
+			SKIP 
+		ENDDO 
+		FCLOSE(p)
+		v_variables_b64 = STRCONV(FILETOSTR("variables._s1"),13)
+		STRTOFILE(v_variables_b64,"variables._c")
+		
+		SELECT varpublicas_sys
+		USE IN varpublicas_sys
+		DELETE FILE varpublicas_sys.dbf
+		DELETE FILE varpublicas_sys.cdx
+		DELETE FILE varpublicas._v
+		DELETE FILE variables._s1
+		RETURN "variables._c"
+	ELSE && desencripta
+	
+		v_variables_pl = STRCONV(FILETOSTR("variables._c"),14)
+		STRTOFILE(v_variables_pl ,"variables._s")
+	
+	ENDIF 
+ENDFUNC 
+
+
+
+* FUNCIÓN PARA IMPRIMIR UN AJUSTE DE STOCK
+* PARAMETROS: p_idajuste
+FUNCTION imprimirAjuste
+PARAMETERS p_idajuste
+
+	v_idajuste = p_idajuste
+	IF v_idajuste > 0
+	
+	
+		** Compruebo que no esté anulado
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+*!*			MESSAGEBOX("A1")
+*!*			v_estado  = 0	
+*!*			v_estado = obtenerEstado("ajustestockp","idajuste",v_idajuste,"I")
+*!*			MESSAGEBOX("A2")
+*!*			
+*!*			IF TYPE('v_estado') = 'L'
+*!*			
+*!*			
+*!*			ELSE
+*!*				estadoAjuObjTmp = CREATEOBJECT('estadosclass')
+*!*					
+*!*				v_estadoAnuladoTmp	=  estadoAjuObjTmp.getidestado("ANULADO")
+
+
+
+*!*				IF v_estado = v_estadoAnuladoTmp
+*!*				
+*!*				
+*!*					MESSAGEBOX("El comprobante que se desea imprimir está anulado",0+48+0,"Imprimir comprobante")
+*!*					
+*!*					RETURN 
+*!*				ENDIF 
+*!*			ENDIF 
+
+*!*		
+*!*				MESSAGEBOX("A3")
+		
+		*** Busco los datos del movimiento y el detalle
+		
+		
+*!*				sqlmatriz(1)="Select p.*,h.*, e.apellido as apellEnt, e.nombre as nomEnt, e.compania, e.cuit, e.direccion, t.ie,t.reporte, d.detalle as detDepo "
+*!*				sqlmatriz(2)=" from otmovistockp p left join otmovistockh h on p.idmovip = h.idmovip " 
+*!*				sqlmatriz(3)=" left join entidades e on p.entidad = e.entidad "
+*!*				*sqlmatriz(4)=" left join otmateriales m on h.idmate = m.idmate "
+*!*				sqlmatriz(5)=" left join tipomstock t on h.idtipomov = t.idtipomov "
+*!*				sqlmatriz(6)=" left join otdepositos d on h.iddepo = d.iddepo "
+*!*				sqlmatriz(7)=" where p.idmovip = "+ ALLTRIM(STR(v_idmovip))
+
+
+			sqlmatriz(1)="Select p.*,h.*,a.unidad, ifnull(e.apellido,'') as apellEnt, ifnull(e.nombre,'') as nomEnt, ifnull(e.compania,'') as compania, "
+			sqlmatriz(2)=" ifnull(e.cuit,'') as cuit, ifnull(e.direccion,'') as direccion, t.ie,t.reporte, d.detalle as detDepo"
+			sqlmatriz(3)="  from ajustestockp p left join ajustestockh h on p.idajuste = h.idajuste " 
+			sqlmatriz(4)=" 	 left join entidades e on p.entidad = e.entidad "
+			sqlmatriz(5)=" left join articulos a on h.articulo = a.articulo "
+			sqlmatriz(6)=" left join tipomstock t on h.idtipomov = t.idtipomov "
+			sqlmatriz(7)=" left join depositos d on h.deposito = d.deposito "
+			sqlmatriz(8)=" where p.idajuste = "+ ALLTRIM(STR(v_idajuste))
+
+
+			verror=sqlrun(vconeccionF,"ajustestock_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los ajustes de stock ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+		
+	
+	
+		
+
+		SELECT * FROM ajustestock_sql INTO TABLE .\ajustockimp
+
+		
+		SELECT ajustockimp
+		
+		IF NOT EOF()
+		
+			
+			DO FORM reporteform WITH "ajustockimp","ajustockcr","ajustestockp"
+			
+			
+		ELSE
+			MESSAGEBOX("Error al cargar el movimiento para imprimir",0+48+0,"Error al cargar el movimiento")
+			RETURN 	
+		ENDIF 
+		
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar el movimiento de stock ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+	
+
+ENDFUNC 
