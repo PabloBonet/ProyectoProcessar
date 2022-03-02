@@ -14359,13 +14359,19 @@ PARAMETERS p_idtransfeti
 		
 		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
 		
-		*** Busco los datos del recibo
-		 sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip,com.comprobante as nomcomp, cd.detalle as ctaDes, co.detalle as ctaOri,d.idtipopago, d.iddetacobro, d.importe as importetp,cpl.descrip as desccpl,tp.detalle as tipopago "
-         sqlmatriz(2)=" FROM transfeti r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro t on com.idtipocompro = t.idtipocompro"
-		sqlmatriz(3)=" left join transfetih h on r.idtraeti = h.idtraeti "
-		sqlmatriz(4)=" where r.idcomproba = d.idcomproba and r.idtraeti = "+ALLTRIM(STR(p_idtransfeti))
+*!*			*** Busco los datos del recibo
+*!*			 sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip,com.comprobante as nomcomp, cd.detalle as ctaDes, co.detalle as ctaOri,d.idtipopago, d.iddetacobro, d.importe as importetp,cpl.descrip as desccpl,tp.detalle as tipopago "
+*!*	         sqlmatriz(2)=" FROM transfeti r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro t on com.idtipocompro = t.idtipocompro"
+*!*			sqlmatriz(3)=" left join transfetih h on r.idtraeti = h.idtraeti "
+*!*			sqlmatriz(4)=" where r.idcomproba = d.idcomproba and r.idtraeti = "+ALLTRIM(STR(p_idtransfeti))
 
-
+sqlmatriz(1)=" Select r.idtraeti,r.depositoo,r.depositod,r.numero,r.fecha,r.hora,r.observa,r.idcomproba,r.usuario,et.etiqueta,et.fechaalta,et.codigo,et.articulo,a.detalle as nomarti,a.unidad,a.abrevia,a.codbarra,a.costo,h.idtraetih, pv.puntov, com.tipo, "
+sqlmatriz(2)= " com.comprobante as nomcomp, ifnull(d.detalle,'SIN DEPOSITO') as depoori,ifnull(e.detalle,'SALIDA') as depodes "
+sqlmatriz(3)=" FROM transfeti r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro t on com.idtipocompro = t.idtipocompro "
+sqlmatriz(4)=" left join transfetih h on r.idtraeti = h.idtraeti left join depositos d on r.depositoo = d.deposito left join depositos e on r.depositod = e.deposito left join etiquetas et on h.etiqueta = et.etiqueta "
+sqlmatriz(5)=" left join articulos a on et.articulo = a.articulo and et.tabla = 'articulos' "
+sqlmatriz(6)="  where r.idtraeti = "+ALLTRIM(STR(p_idtransfeti))
+	
 			verror=sqlrun(vconeccionF,"transfeti_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la los movimientos de etiquetas ",0+48+0,"Error")
