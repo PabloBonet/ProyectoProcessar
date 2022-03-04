@@ -12733,7 +12733,7 @@ PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_ins
 	v_condicionid = IIF(EMPTY(pv_tmp)," and idfactura <> "+ALLTRIM(STR(pv_idfactura)),"")
 	
 	SELECT * FROM alldeudas INTO CURSOR fcdeuda WHERE STR(entidad)+STR(cuenta) == STR(pv_entidad)+STR(pv_cuenta) ;
-	&v_condicionid  AND ( EMPTY(fechavenc1) AND fecha <= pv_fechaven) OR ( !EMPTY(fechavenc1) AND (fechavenc1 <= pv_fechaven) ) 
+	&v_condicionid  AND (( EMPTY(fechavenc1) AND fecha <= pv_fechaven) OR ( !EMPTY(fechavenc1) AND (fechavenc1 <= pv_fechaven) ))  && modificado 
 	
 	
 	
