@@ -8966,7 +8966,7 @@ PARAMETERS p_idregistro,p_idcomproba
 			sqlmatriz(1)=" Select f.*, a.codigo as codAfip, p.puntov, tc.idtipocompro as idtipocomp  "
 			sqlmatriz(2)=" from linkcompro l left join facturas f on l.idcomprobaB = f.idcomproba and l.idregistroB = f.idfactura left join comprobantes c on f.idcomproba = c.idcomproba "
 			sqlmatriz(3)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom left join puntosventa p on f.pventa = p.pventa "
-			sqlmatriz(4)=" where l.idregistroa = "+ ALLTRIM(STR(v_idfactura))+" and l.idcomprobaa = "+ALLTRIM(STR(p_idcomproba))
+			sqlmatriz(4)=" where l.idregistroa = "+ ALLTRIM(STR(v_idfactura))+" and l.idcomprobaa = "+ALLTRIM(STR(p_idcomproba))+ " and c.tabla = 'facturas' "
 
 			verror=sqlrun(vconeccionF,"factuA_sql")
 			IF verror=.f.  
@@ -8984,7 +8984,7 @@ PARAMETERS p_idregistro,p_idcomproba
 			sqlmatriz(1)=" Select f.*, a.codigo as codAfip, p.puntov, tc.idtipocompro as idtipocomp  "
 			sqlmatriz(2)=" from linkcompro l left join facturas f on l.idcomprobaA = f.idcomproba and l.idregistroA = f.idfactura left join comprobantes c on f.idcomproba = c.idcomproba "
 			sqlmatriz(3)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom left join puntosventa p on f.pventa = p.pventa "
-			sqlmatriz(4)=" where l.idregistrob = "+ ALLTRIM(STR(v_idfactura))+" and l.idcomprobab = "+ALLTRIM(STR(p_idcomproba))
+			sqlmatriz(4)=" where l.idregistrob = "+ ALLTRIM(STR(v_idfactura))+" and l.idcomprobab = "+ALLTRIM(STR(p_idcomproba))+ " and c.tabla = 'facturas' "
 
 			verror=sqlrun(vconeccionF,"factuB_sql")
 			IF verror=.f.  
