@@ -1805,7 +1805,7 @@ FUNCTION ImportarCobros
 									v_sentenciaIns3 = ALLTRIM(STR(NUM_r1importe,14,2))+","+ALLTRIM(STR(NUM_r1recargo,14,2))+",'"+ALLTRIM(COD_r1bc)+"')"
 
 									v_sentenciaIns = v_sentenciaIns1+v_sentenciaIns2+v_sentenciaIns3
-									MESSAGEBOX(v_sentenciaIns)
+								
 									&v_sentenciaIns
 						
 							
