@@ -1,0 +1,20 @@
+Pasos para activar Triggers en Base de Datos:
+1.- Restaurar Procedimientos mediante Archivo "Procedimientos_20220327 1250.sql" (ultimo backup actualizado)
+2.- Crear los Triggers en las tablas que necesitan actualizar . Restaurar archivo "CreaTrigger.sql"
+3.- Ingresar al Schemma de la base seleccionada y mediante MySQL Query Browser u otro aplicativo ejecutar: " CALL p_creartablasr_(); "
+    Esto creará las tablas de Resultado para almacenar los registros que son utilizadas por los Triggers. 
+    Estas Tablas comienzan con r_ y tienen como nombre el mismo de las vistas correspondientes. 
+4.- En caso de ser necesario, se puede programar un evento de Cron en MySQL para regenerar todas las tablas de resultado.
+    Esto lo hace para asegurar que los datos se refrescan y se pueden eliminar errores aleatorios generados durante la ejecucion
+    de los Triggers. 
+    Importante: para que se ejecuten eventos programados, en el archivo de configuracion de MySQL my.cnf se debe activar el cron 
+		para ello se debe especificar la variable de eventos en ON 
+                
+		event_scheduler = ON
+                
+
+    Ej. Evento programado para ejecutarse Diariamente a las 23:00:00 hs. 
+
+    CREATE EVENT recalcular_tablas_r ON SCHEDULE EVERY 1 DAY STARTS '2022-03-27 23:00:00' DO CALL p_creartablasr_() ;
+
+

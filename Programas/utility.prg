@@ -8518,152 +8518,198 @@ ENDIF
 
 IF vtmp_recalcular = .t. THEN 
 
-	vconeccionF = abreycierracon(0,_SYSSCHEMA)
-	fvarticulos_sql 	= 'articulos_sql'+vtmp 
-	fvlistapreciop_sql 	= 'listapreciop_sql'+vtmp 
-	fvlistaprecioh_sql 	= 'listaprecioh_sql'+vtmp 
-	fvlistaprecioc_sql 	= 'listaprecioc_sql'+vtmp 
-	fvarticulosimp_sql	= 'articulosimp_sql'+vtmp
+	WAIT windows "Calculando Listas de Precios... Aguarde..." NOWAIT 
 
-	sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact  from articulos a "
-	sqlmatriz(2)=" left join lineas l on l.linea = a.linea "
-	sqlmatriz(3)=" left join articulostock s on s.articulo = a.articulo left join ultimoartcosto u on a.articulo = u.articulo " 
-	verror=sqlrun(vconeccionF,fvarticulos_sql)
+	vconeccionF = abreycierracon(0,_SYSSCHEMA)
+
+	** Busco las Listas de Precios guardadas en las tablas recalculadas
+	** r_listaprea r_listapreb
+	*--------------------------
+	fvr_listaprea_sql 	= 'r_listaprea_sql'+vtmp 
+	fvr_listapreb_sql 	= 'r_listapreb_sql'+vtmp 
+	
+	sqlmatriz(1)="select * from r_listaprea   " 
+	verror=sqlrun(vconeccionF,fvr_listaprea_sql)
 	IF verror=.f.
-		MESSAGEBOX("No se puede obtener  Articulos ",0+16,"Advertencia")
+		MESSAGEBOX("No se puede obtener La Lista de Precios de la Base ",0+16,"Advertencia")
 		RETURN 
 	ENDIF 
-	sqlmatriz(1)="select * from listapreciop   " 
-	verror=sqlrun(vconeccionF,fvlistapreciop_sql)
+	sqlmatriz(1)="select * from r_listapreb   " 
+	verror=sqlrun(vconeccionF,fvr_listapreb_sql)
 	IF verror=.f.
 		MESSAGEBOX("No se puede obtener  Lista de Precios ",0+16,"Advertencia")
 		RETURN 
 	ENDIF 
-	sqlmatriz(1)="select * from listaprecioh   " 
-	verror=sqlrun(vconeccionF,fvlistaprecioh_sql)
-	IF verror=.f.
-		MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
-		RETURN 
-	ENDIF 
-*	sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto group by a.articulo " 
-	sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto where a.iva = "+ALLTRIM(STR(v_condfis))+" group by a.articulo " 
-	verror=sqlrun(vconeccionF,fvarticulosimp_sql)
-	IF verror=.f.
-		MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
-		RETURN 
-	ENDIF 
-	sqlmatriz(1)="select l.*, c.habilitado from listaprecioc l left join financiacion c on l.idfinancia = c.idfinancia  " 
-	verror=sqlrun(vconeccionF,fvlistaprecioc_sql)
-	IF verror=.f.
-		MESSAGEBOX("No se puede obtener Cuotas de Listas de Precios ",0+16,"Advertencia")
-		RETURN 
-	ENDIF 
-	* me desconecto	
-	=abreycierracon(vconeccionF,"")
-
-
-	* Obtengo los Articulos de Cada Lista Seleccionada 
-	fvlistasart = 'listasart'+vtmp 
-	fvlistasartp = 'listasartp'+vtmp 
-	fvarticulos = 'articulos'+vtmp 
-
-	SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.idlistap, p.actualiza, l.idlistah, ;  
-		a.articulo, SUBSTR(a.detalle+SPACE(200),1,200) as detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea, a.ctrlstock, a.ocultar, ;
-		a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
-		a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact ;
-	 	FROM &fvlistaprecioh_sql l ;
-		LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
-		LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
-		LEFT JOIN &fvarticulosimp_sql i  ON l.articulo = i.articulo ;
-		INTO TABLE &fvlistasart 
-
-	SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
-		a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.detalinea, a.ctrlstock, a.ocultar, ;
-		a.stockmin, a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
-		a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,a.fechaact   ;
-		FROM &fvarticulos_sql a ;
-		LEFT JOIN &fvarticulosimp_sql i  ON a.articulo = i.articulo ;
-		INTO TABLE &fvarticulos
-
-	SELECT &fvlistasart
-	APPEND FROM &fvarticulos  
-	INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
-	GO TOP 
-	replace razonimpu WITH 0 FOR ISNULL(razonimpu)
-
-
-	SELECT * FROM &fvlistasart INTO TABLE &fvlistasartp
-	SELECT &fvlistasartp
-	INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
-	SELECT &fvlistasart
-	SET RELATION TO STR(idlistap)+'#'+ALLTRIM(articulo) INTO &fvlistasartp 
-
-
-
-	fvlistas = 'listas'+vtmp
-	SELECT idlista, idlistap, 1 as actul, 1 as actup  FROM &fvlistapreciop_sql INTO TABLE &fvlistas 
-	SELECT &fvlistas
-	replace actup WITH 0 FOR idlistap = 0
-
-	vactualizadas = 1 
-	DO WHILE vactualizadas > 0
-
-		SELECT &fvlistas 
-		
-		SCAN FOR &fvlistas..actul = 1 AND actup = 0
-
-			SELECT &fvlistasart
-			* Reemplazo los costos en la lista nueva con los costos de la lista padre
-			replace pcosto WITH &fvlistasartp..pventa, pventa WITH &fvlistasartp..pventa * (1 + margen/100)  ;
-				    impuestos WITH (&fvlistasartp..pventa * (1 + margen/100))*(razonimpu/100), pventatot WITH (&fvlistasartp..pventa * (1 + margen/100))*(1 + razonimpu/100) FOR &fvlistasart..idlista	= &fvlistas..idlista
-				    
-			SET RELATION TO 
-			SELECT &fvlistasartp
-			SET RELATION TO STR(idlista)+'#'+ALLTRIM(articulo) INTO &fvlistasart 
-			* actualizo los costos de la lista recien reemplazada en la tabla de listas padres 
-			replace pcosto WITH &fvlistasart..pcosto, pventa WITH &fvlistasart..pventa ;
-				FOR &fvlistasart..idlista	= &fvlistas..idlista
-				
-			SET RELATION TO 
-			SELECT &fvlistasart
-			SET RELATION TO STR(idlistap)+'#'+ALLTRIM(articulo) INTO &fvlistasartp 
-			
-			
-			SELECT &fvlistas 
-			replace &fvlistas..actul WITH 0 
-		ENDSCAN 
-		
-		SELECT * FROM &fvlistas INTO CURSOR lista01 WHERE &fvlistas..actul = 0
-		UPDATE &fvlistas SET actup = 0 WHERE idlistap in (select idlista from lista01)
-		
-		SELECT &fvlistas
-		CALCULATE SUM(actul+actup) TO vactualizadas
-	ENDDO  
-
-*!*		SELECT * FROM &fvlistasart 			INTO TABLE &v_nombrearchivop	
-*!*		SELECT idlistac, idlista, SUBSTR(detalle+SPACE(254),1,254) as detalle, cuotas, razon, idfinancia, habilitado   FROM &fvlistaprecioc_sql  	INTO TABLE &v_nombrearchivoc
-
-	SELECT MAX(actualiza) as maxactual FROM &fvlistasart INTO CURSOR maximolis 
-	SELECT &fvlistasart 
-	UPDATE &fvlistasart SET actualiza=maximolis.maxactual
-	SELECT maximolis
-	USE IN maximolis
 	
-	SELECT * FROM &fvlistasart 			INTO TABLE syslistaprea	
-	SELECT idlistac, idlista, SUBSTR(detalle+SPACE(200),1,200) as detalle, cuotas, razon, idfinancia, habilitado   FROM &fvlistaprecioc_sql  	INTO TABLE syslistapreb	
+	SELECT &fvr_listaprea_sql 
+	GO TOP 
+	 
+	IF !EOF() THEN && Debe Recalcular toda la Lista de Precios
+	
+		SELECT * FROM &fvr_listaprea_sql	INTO TABLE syslistaprea	
+		SELECT * FROM &fvr_listapreb_sql	INTO TABLE syslistapreb	
+		SELECT syslistaprea
+		USE 
+		SELECT syslistapreb
+		USE
+		* me desconecto	
+		=abreycierracon(vconeccionF,"")
 
-	USE IN &fvlistas  
-	USE IN &fvlistasart  
-	USE IN &fvlistasartp  
-	USE IN &fvarticulos
-	USE IN &fvarticulos_sql 
-	USE IN &fvlistapreciop_sql 	
-	USE IN &fvlistaprecioh_sql 	
-	USE IN &fvlistaprecioc_sql 	
-	SELECT syslistaprea
-	USE 
-	SELECT syslistapreb
-	USE
+	
+	ELSE && Recalcula la Lista de Precios si no está disponible en la Base de Datos
+	
+	
+		fvarticulos_sql 	= 'articulos_sql'+vtmp 
+		fvlistapreciop_sql 	= 'listapreciop_sql'+vtmp 
+		fvlistaprecioh_sql 	= 'listaprecioh_sql'+vtmp 
+		fvlistaprecioc_sql 	= 'listaprecioc_sql'+vtmp 
+		fvarticulosimp_sql	= 'articulosimp_sql'+vtmp
+
+		sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea  from articulos a "
+		sqlmatriz(2)=" left join lineas l on l.linea = a.linea left join sublineas sl on sl.idsublinea = a.idsublinea "
+		sqlmatriz(3)=" left join r_articulostock s on s.articulo = a.articulo left join ultimoartcosto u on a.articulo = u.articulo " 
+		verror=sqlrun(vconeccionF,fvarticulos_sql)
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener  Articulos ",0+16,"Advertencia")
+			RETURN 
+		ENDIF 
+		sqlmatriz(1)="select * from listapreciop   " 
+		verror=sqlrun(vconeccionF,fvlistapreciop_sql)
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener  Lista de Precios ",0+16,"Advertencia")
+			RETURN 
+		ENDIF 
+		sqlmatriz(1)="select * from listaprecioh   " 
+		verror=sqlrun(vconeccionF,fvlistaprecioh_sql)
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
+			RETURN 
+		ENDIF 
+	*	sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto group by a.articulo " 
+		sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto where a.iva = "+ALLTRIM(STR(v_condfis))+" group by a.articulo " 
+		verror=sqlrun(vconeccionF,fvarticulosimp_sql)
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
+			RETURN 
+		ENDIF 
+		sqlmatriz(1)="select l.*, c.habilitado from listaprecioc l left join financiacion c on l.idfinancia = c.idfinancia  " 
+		verror=sqlrun(vconeccionF,fvlistaprecioc_sql)
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener Cuotas de Listas de Precios ",0+16,"Advertencia")
+			RETURN 
+		ENDIF 
+		* me desconecto	
+		=abreycierracon(vconeccionF,"")
+
+
+		* Obtengo los Articulos de Cada Lista Seleccionada 
+		fvlistasart = 'listasart'+vtmp 
+		fvlistasartp = 'listasartp'+vtmp 
+		fvarticulos = 'articulos'+vtmp 
+
+		SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.idlistap, p.actualiza, l.idlistah, ;  
+			a.articulo, SUBSTR(a.detalle+SPACE(200),1,200) as detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea,a.idsublinea,a.sublinea, a.ctrlstock, a.ocultar, ;
+			a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
+			a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact ;
+		 	FROM &fvlistaprecioh_sql l ;
+			LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
+			LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
+			LEFT JOIN &fvarticulosimp_sql i  ON l.articulo = i.articulo ;
+			INTO TABLE &fvlistasart 
+
+		SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
+			a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.detalinea, a.idsublinea, a.sublinea, a.ctrlstock, a.ocultar, ;
+			a.stockmin, a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
+			a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,a.fechaact   ;
+			FROM &fvarticulos_sql a ;
+			LEFT JOIN &fvarticulosimp_sql i  ON a.articulo = i.articulo ;
+			INTO TABLE &fvarticulos
+
+		SELECT &fvlistasart
+		APPEND FROM &fvarticulos  
+		INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
+		GO TOP 
+		replace razonimpu WITH 0 FOR ISNULL(razonimpu)
+
+
+		SELECT * FROM &fvlistasart INTO TABLE &fvlistasartp
+		SELECT &fvlistasartp
+		INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
+		SELECT &fvlistasart
+		SET RELATION TO STR(idlistap)+'#'+ALLTRIM(articulo) INTO &fvlistasartp 
+
+
+
+		fvlistas = 'listas'+vtmp
+		SELECT idlista, idlistap, 1 as actul, 1 as actup  FROM &fvlistapreciop_sql INTO TABLE &fvlistas 
+		SELECT &fvlistas
+		replace actup WITH 0 FOR idlistap = 0
+
+		vactualizadas = 1 
+		DO WHILE vactualizadas > 0
+
+			SELECT &fvlistas 
+			
+			SCAN FOR &fvlistas..actul = 1 AND actup = 0
+
+				SELECT &fvlistasart
+				* Reemplazo los costos en la lista nueva con los costos de la lista padre
+				replace pcosto WITH &fvlistasartp..pventa, pventa WITH &fvlistasartp..pventa * (1 + margen/100)  ;
+					    impuestos WITH (&fvlistasartp..pventa * (1 + margen/100))*(razonimpu/100), pventatot WITH (&fvlistasartp..pventa * (1 + margen/100))*(1 + razonimpu/100) FOR &fvlistasart..idlista	= &fvlistas..idlista
+					    
+				SET RELATION TO 
+				SELECT &fvlistasartp
+				SET RELATION TO STR(idlista)+'#'+ALLTRIM(articulo) INTO &fvlistasart 
+				* actualizo los costos de la lista recien reemplazada en la tabla de listas padres 
+				replace pcosto WITH &fvlistasart..pcosto, pventa WITH &fvlistasart..pventa ;
+					FOR &fvlistasart..idlista	= &fvlistas..idlista
+					
+				SET RELATION TO 
+				SELECT &fvlistasart
+				SET RELATION TO STR(idlistap)+'#'+ALLTRIM(articulo) INTO &fvlistasartp 
+				
+				
+				SELECT &fvlistas 
+				replace &fvlistas..actul WITH 0 
+			ENDSCAN 
+			
+			SELECT * FROM &fvlistas INTO CURSOR lista01 WHERE &fvlistas..actul = 0
+			UPDATE &fvlistas SET actup = 0 WHERE idlistap in (select idlista from lista01)
+			
+			SELECT &fvlistas
+			CALCULATE SUM(actul+actup) TO vactualizadas
+		ENDDO  
+
+
+		SELECT MAX(actualiza) as maxactual FROM &fvlistasart INTO CURSOR maximolis 
+		SELECT &fvlistasart 
+		UPDATE &fvlistasart SET actualiza=maximolis.maxactual
+		SELECT maximolis
+		USE IN maximolis
+		
+		SELECT * FROM &fvlistasart 			INTO TABLE syslistaprea	
+		SELECT idlistac, idlista, SUBSTR(detalle+SPACE(200),1,200) as detalle, cuotas, razon, idfinancia, habilitado   FROM &fvlistaprecioc_sql  	INTO TABLE syslistapreb	
+
+		USE IN &fvlistas  
+		USE IN &fvlistasart  
+		USE IN &fvlistasartp  
+		USE IN &fvarticulos
+		USE IN &fvarticulos_sql 
+		USE IN &fvlistapreciop_sql 	
+		USE IN &fvlistaprecioh_sql 	
+		USE IN &fvlistaprecioc_sql 	
+		
+		SELECT syslistaprea
+		USE 
+		SELECT syslistapreb
+		USE
+
+
+		=ActualizaListasR("syslistapre")
+
+		
+	ENDIF 	
+		
 ENDIF 
 
 
@@ -8688,7 +8734,8 @@ ENDIF
 	USE IN syslistaprea
 	USE IN syslistapreb
 
-
+	WAIT CLEAR 
+	
 	RETURN v_nombreretorno 
 
 ENDFUNC 
@@ -11990,7 +12037,7 @@ PARAMETERS  pv_articulos
 	vconeccionD = abreycierracon(0,_SYSSCHEMA)
 		
 *	sqlmatriz(1)=" SELECT * FROM depostock where TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
-	sqlmatriz(1)=" SELECT s.*, d.detalle as nombredep FROM depostock s left join depositos d on s.deposito = d.deposito where 1 = 1 "+v_condicion  &&TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
+	sqlmatriz(1)=" SELECT s.*, d.detalle as nombredep FROM r_depostock s left join depositos d on s.deposito = d.deposito where 1 = 1 "+v_condicion  &&TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
 	verror=sqlrun(vconeccionD ,"depostock_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Stock por Depósitos... ",0+48+0,"Error")
@@ -12697,7 +12744,7 @@ PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_ins
 			* Obtengo la deuda todos los comprobantes 
 			sqlmatriz(1)=" select s.idfactura, s.saldof, f.fecha, f.fechavenc1, f.fechavenc2, f.fechavenc3, f.entidad, f.servicio, f.cuenta, "
 			sqlmatriz(2)=" f.tipo, p.puntov, f.numero, f.total "
-			sqlmatriz(3)=" from facturasaldo s left join facturas f on f.idfactura = s.idfactura "
+			sqlmatriz(3)=" from r_facturasaldo s left join facturas f on f.idfactura = s.idfactura "
 			sqlmatriz(4)=" left join puntosventa p on p.pventa = f.pventa "
 			sqlmatriz(5)=" where s.saldof > 0 and f.servicio = "+ALLTRIM(STR(pv_servicio))	
 			
@@ -12847,7 +12894,7 @@ PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
 
 	sqlmatriz(1)= " SELECT f.*,fs.cobrado as cobradotot,fs.saldof as saldoftot,ifnull(fc.idcuotafc,0) as idcuotafc,ifnull(fc.cuota,0) as cuota,fc.importe as importecta, "
 	sqlmatriz(2)= " fc.cobrado as cobradocta,fc.saldof as saldofcta,ft.fechavenc as fecvencta,c.comprobante as nomcomp " 
-	sqlmatriz(3)= " FROM facturasaldo fs left join facturasctasaldo  fc on fs.idfactura = fc.idfactura left join facturas f on fs.idfactura = f.idfactura  "
+	sqlmatriz(3)= " FROM r_facturasaldo fs left join r_facturasctasaldo  fc on fs.idfactura = fc.idfactura left join facturas f on fs.idfactura = f.idfactura  "
 	sqlmatriz(4)= " left join facturascta ft on fc.idcuotafc = ft.idcuotafc left join comprobantes c on f.idcomproba = c.idcomproba " 
 	sqlmatriz(5)=" where f.fecha >= '"+ALLTRIM(p_fechaIni) + "' and f.fecha <='" +ALLTRIM(p_fechaFin)+"'"
 	
@@ -14556,3 +14603,222 @@ PARAMETERS p_idajuste
 	
 
 ENDFUNC 
+
+
+
+
+
+* Funcion de Actualizacion de Listas de Precios Resultados 
+* - Calculos de Listas de Precios Finalizadas - 
+* - Tablas actualizadas : r_listaprea (contienes precios de articulos finales)
+*						  r_listapreb (contiene las listas de precios )
+* PARAMETROS: p_ListaP : Si está vacío entonces elimina los registros del Calculo Actual (Vacia las Tablas )
+FUNCTION ActualizaListasR
+PARAMETERS p_ListaP
+
+	IF !(TYPE("p_ListaP")="C") THEN 
+		p_ListaP = ""
+	ENDIF 
+	
+	
+	IF !EMPTY(p_ListaP) THEN 
+		p_listaPA = ALLTRIM(p_ListaP)+'a'
+		p_listaPB = ALLTRIM(p_ListaP)+'b'
+		
+		vcerrar_locales = .f.
+		IF !USED(p_ListaPA) THEN 
+			USE &p_ListaPA IN 0
+			vcerrar_locales = .t.
+		ENDIF 
+		IF !USED(p_ListaPB) THEN 
+			USE &p_ListaPB IN 0
+			vcerrar_locales = .t.
+		ENDIF 
+
+		** Abro la Conexión
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+		** Elimino si hubiere algún cálculo de Listas de Precios 
+		sqlmatriz(1)=" delete from r_listaprea "
+		verror=sqlrun(vconeccionF,"r_listaprea")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Listas de Precios Calculadas ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+		sqlmatriz(1)=" delete from r_listapreb "
+		verror=sqlrun(vconeccionF,"r_listapreb")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Listas de Precios Calculadas ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+
+		* Cargo el Nuevo Calculo de Listas de Precios A
+		SELECT &p_ListaPA
+		GO TOP 
+		DIMENSION lamatrizLi(36,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		DO WHILE !EOF()
+						
+			lamatrizLi(1,1)='idlista'
+			lamatrizLi(1,2)=ALLTRIM(STR(&p_ListaPA..idlista))
+			lamatrizLi(2,1)='detallep'
+			lamatrizLi(2,2)="'"+ALLTRIM(&p_ListaPA..detallep)+"'"
+			lamatrizLi(3,1)='vigedesde'
+			lamatrizLi(3,2)="'"+ALLTRIM(&p_ListaPA..vigedesde)+"'"
+			lamatrizLi(4,1)='vigehasta'
+			lamatrizLi(4,2)="'"+ALLTRIM(&p_ListaPA..vigehasta)+"'"
+			lamatrizLi(5,1)='margenp'
+			lamatrizLi(5,2)=ALLTRIM(STR(&p_ListaPA..margenp,13,2))
+			lamatrizLi(6,1)='condvta'
+			lamatrizLi(6,2)=ALLTRIM(STR(&p_ListaPA..condvta))
+			lamatrizLi(7,1)='idlistap'
+			lamatrizLi(7,2)=ALLTRIM(STR(&p_ListaPA..idlistap))
+			lamatrizLi(8,1)='actualiza'
+			lamatrizLi(8,2)="'"+ALLTRIM(&p_ListaPA..actualiza)+"'"
+			lamatrizLi(9,1)='idlistah'
+			lamatrizLi(9,2)=ALLTRIM(STR(&p_ListaPA..idlistah))
+			lamatrizLi(10,1)='articulo'
+			lamatrizLi(10,2)="'"+ALLTRIM(&p_ListaPA..articulo)+"'"
+			lamatrizLi(11,1)='detalle'
+			lamatrizLi(11,2)="'"+ALLTRIM(&p_ListaPA..detalle)+"'"		
+			lamatrizLi(12,1)='unidad'
+			lamatrizLi(12,2)="'"+ALLTRIM(&p_ListaPA..unidad)+"'"
+			lamatrizLi(13,1)='abrevia'
+			lamatrizLi(13,2)="'"+ALLTRIM(&p_ListaPA..abrevia)+"'"
+			lamatrizLi(14,1)='codbarra'
+			lamatrizLi(14,2)="'"+ALLTRIM(&p_ListaPA..codbarra)+"'"
+			lamatrizLi(15,1)='costoa'
+			lamatrizLi(15,2)=ALLTRIM(STR(&p_ListaPA..costoa,13,2))
+			lamatrizLi(16,1)='linea'
+			lamatrizLi(16,2)="'"+ALLTRIM(&p_ListaPA..linea)+"'"
+			lamatrizLi(17,1)='detalinea'
+			lamatrizLi(17,2)="'"+ALLTRIM(&p_ListaPA..detalinea)+"'"
+			lamatrizLi(18,1)='idsublinea'
+			lamatrizLi(18,2)=ALLTRIM(STR(&p_ListaPA..idsublinea))
+			lamatrizLi(19,1)='sublinea'
+			lamatrizLi(19,2)="'"+ALLTRIM(&p_ListaPA..sublinea)+"'"
+			lamatrizLi(20,1)='ctrlstock'
+			lamatrizLi(20,2)="'"+ALLTRIM(&p_ListaPA..ctrlstock)+"'"
+			lamatrizLi(21,1)='ocultar'
+			lamatrizLi(21,2)="'"+ALLTRIM(&p_ListaPA..ocultar)+"'"
+			lamatrizLi(22,1)='stockmin'
+			lamatrizLi(22,2)=ALLTRIM(STR(&p_ListaPA..stockmin,13,2))
+			lamatrizLi(23,1)='stocktot'
+			lamatrizLi(23,2)=ALLTRIM(STR(&p_ListaPA..stocktot,13,2))
+			lamatrizLi(24,1)='desc1'
+			lamatrizLi(24,2)=ALLTRIM(STR(&p_ListaPA..desc1,13,2))
+			lamatrizLi(25,1)='desc2'
+			lamatrizLi(25,2)=ALLTRIM(STR(&p_ListaPA..desc2,13,2))
+			lamatrizLi(26,1)='desc3'
+			lamatrizLi(26,2)=ALLTRIM(STR(&p_ListaPA..desc3,13,2))
+			lamatrizLi(27,1)='desc4'
+			lamatrizLi(27,2)=ALLTRIM(STR(&p_ListaPA..desc4,13,2))
+			lamatrizLi(28,1)='desc5'
+			lamatrizLi(28,2)=ALLTRIM(STR(&p_ListaPA..desc5,13,2))
+			lamatrizLi(29,1)='moneda'
+			lamatrizLi(29,2)=ALLTRIM(STR(&p_ListaPA..moneda))
+			lamatrizLi(30,1)='pcosto'
+			lamatrizLi(30,2)=ALLTRIM(STR(&p_ListaPA..pcosto,13,2))
+			lamatrizLi(31,1)='margen'
+			lamatrizLi(31,2)=ALLTRIM(STR(&p_ListaPA..margen,13,2))
+			lamatrizLi(32,1)='pventa'
+			lamatrizLi(32,2)=ALLTRIM(STR(&p_ListaPA..pventa,13,2))
+			lamatrizLi(33,1)='razonimpu'
+			lamatrizLi(33,2)=ALLTRIM(STR(&p_ListaPA..razonimpu,13,2))
+			lamatrizLi(34,1)='impuestos'
+			lamatrizLi(34,2)=ALLTRIM(STR(&p_ListaPA..impuestos,13,2))
+			lamatrizLi(35,1)='pventatot'
+			lamatrizLi(35,2)=ALLTRIM(STR(&p_ListaPA..pventatot,13,2))
+			lamatrizLi(36,1)='fechaact'
+			lamatrizLi(36,2)="'"+ALLTRIM(&p_ListaPA..fechaact)+"'"
+						
+
+			p_tabla     = 'r_listaprea'
+			p_matriz    = 'lamatrizLi'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de ListaPreA",0+48+0,"Error")
+			    RETURN ""
+			ENDIF 
+		
+			SELECT &p_ListaPA
+			SKIP 
+		ENDDO 
+
+		* Cargo el Nuevo Calculo de Listas de Precios B
+		SELECT &p_ListaPB
+		GO TOP 
+		DIMENSION lamatrizLi(7,2)
+
+		DO WHILE !EOF()
+		
+			lamatrizLi(1,1)='idlistac'
+			lamatrizLi(1,2)=ALLTRIM(STR(&p_ListaPB..idlistac))
+			lamatrizLi(2,1)='idlista'
+			lamatrizLi(2,2)=ALLTRIM(STR(&p_ListaPB..idlista))
+			lamatrizLi(3,1)='detalle'
+			lamatrizLi(3,2)="'"+ALLTRIM(&p_ListaPB..detalle)+"'"
+			lamatrizLi(4,1)='cuotas'
+			lamatrizLi(4,2)=ALLTRIM(STR(&p_ListaPB..cuotas))
+			lamatrizLi(5,1)='razon'
+			lamatrizLi(5,2)=ALLTRIM(STR(&p_ListaPB..razon,13,2))
+			lamatrizLi(6,1)='idfinancia'
+			lamatrizLi(6,2)=ALLTRIM(STR(&p_ListaPB..idfinancia))
+			lamatrizLi(7,1)='habilitado'
+			lamatrizLi(7,2)="'"+ALLTRIM(&p_ListaPB..habilitado)+"'"
+						
+
+			p_tabla     = 'r_listapreb'
+			p_matriz    = 'lamatrizLi'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de ListaPreB",0+48+0,"Error")
+			    RETURN ""
+			ENDIF 
+		
+			SELECT &p_ListaPB
+			SKIP 
+		ENDDO 		
+		
+		RELEASE lamatrizLi 
+		
+		** Cierro la Conexion
+		=abreycierracon(vconeccionF,"")	
+		
+		IF vcerrar_locales = .t. THEN 
+			SELE &p_ListaPA
+			USE 
+			SELE &p_ListaPB
+			USE 
+		ENDIF 
+		
+
+	ELSE && Elimino las Listas Calculadas Guardadas
+
+		** Compruebo que no esté anulado
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+		sqlmatriz(1)=" delete from r_listaprea "
+		verror=sqlrun(vconeccionF,"r_listaprea")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Listas de Precios Calculadas ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+		sqlmatriz(1)=" delete from r_listapreb "
+		verror=sqlrun(vconeccionF,"r_listapreb")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Listas de Precios Calculadas ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+		** Cierro la Conexion
+		=abreycierracon(vconeccionF,"")	
+
+	
+	ENDIF 	
+
+
+
+RETURN 
