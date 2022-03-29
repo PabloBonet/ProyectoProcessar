@@ -1888,3 +1888,457 @@ FUNCTION ImportarCobros
 	RETURN 1
 
 ENDFUNC  
+
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/ 	Imputación de cobros a facturas.
+*/ 		Se imputa el total cobrado sin recargo al saldo de la factura, en caso de tener recargo o que el cobro sea mayor al saldo se deja a cuenta el monto 
+** 	Funcion: ImputarCobros
+* 	Parametros: 
+*		P_tabla: Tabla con los comprobantes de facturas que se van a imputar 
+*		p_IDPvta: ID del punto de venta que se va a utilizar en el comprobante de recibo, para elegir el ID por defecto dejar en 0 (Cero)
+*		p_Idcomp: ID del comprobante del tipo recibo que se va a utilizar para los cobros, para elegir el ID por defecto dejar en 0 (Cero)
+*	Retorno: Retorna 1 si se generaron correctamente los recibos, 0 en otro caso
+*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION ImputarCobros
+	PARAMETERS p_tabla, p_IDPvta, p_Idcomp
+	
+	
+	v_idpvta = 0
+	v_idcomp = 0
+	
+	*** Validación de parámetros ***
+	IF EMPTY(p_tabla) = .T.
+	
+		MESSAGEBOX("NO se indico la tabla donde se encuentran los comprobantes de facturas",0+16+256,"Error al Imputar facturas")
+		RETURN 0
+	ENDIF 
+	
+	IF TYPE('p_idpvta') ='L' and TYPE('p_idcomp') = 'L' && Los dos parámetros son logicos
+	
+		IF p_idpvta = .F. AND p_idcomp  =.F. && No especificó IDs -> elijo el comprobante por defecto
+		
+			IF ISBLANK(_SYSRECIBOCB) = .T. OR  EMPTY(_SYSRECIBOCB) = .T.
+			
+				MESSAGEBOX("No existe variable para comprobante de recibo por defecto. Cree la variable '_SYSRECIBOCB'",0+16+256,"Error al imputar facturas")
+				RETURN 0
+			
+			ELSE
+							
+				v_idpvta = VAL(SUBSTR(_SYSRECIBOCB,1,2))
+				v_idcomp = VAL(SUBSTR(_SYSRECIBOCB,3,2))
+				
+			ENDIF 
+		ELSE
+			MESSAGEBOX("Uno de los parámetros de la función 'imputarFacturas' es incorrecto",0+16+256,"Error al imputar facturas")
+			RETURN 0
+		ENDIF 
+	
+	
+	ELSE
+		
+		IF TYPE('p_idpvta') ='N' and TYPE('p_idcomp') = 'N' && Los dos parámetros son numéricos
+	
+			v_idpvta = p_idpvta
+			v_idcomp = p_idcomp
+		ELSE
+			MESSAGEBOX("Uno de los parámetros de la función 'imputarFacturas' es incorrecto",0+16+256,"Error al imputar facturas")
+			RETURN 0
+		ENDIF 
+	
+	ENDIF 
+	
+	****
+	
+	
+	*** Busco los datos del recibo ***
+	
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+	sqlmatriz(1)=" SELECT CONCAT_WS(' - ',TRIM(c.comprobante),TRIM(a.puntov),MID(TRIM(p.detalle),1,15)) as deta, c.tipo, c.idcomproba, a.puntov, a.pventa,t.opera,c.idtipocompro as idtipocomp FROM comprobantes c "
+	sqlmatriz(2)=" left join tipocompro t on c.idtipocompro = t.idtipocompro  LEFT JOIN compactiv a ON a.idcomproba = c.idcomproba " 
+	sqlmatriz(3)=" left join puntosventa p on p.pventa = a.pventa "
+	sqlmatriz(4)=" WHERE a.puntov <> '0' and c.tabla = 'recibos' and c.idcomproba = "+ALLTRIM(STR(v_idcomp))+" and a.pventa = "+ALLTRIM(STR(v_idpvta))
+
+	verror=sqlrun(vconeccionF,"compReci_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error al Buscar el Comprobante",0+48+0,"Error")
+	    RETURN 
+	ENDIF
+
+
+	* me desconecto	
+	=abreycierracon(vconeccionF,"")
+
+	SELECT * FROM compReci_sql INTO TABLE .\comprobareci ORDER BY deta
+	sele comprobareci
+	GO TOP 
+	USE IN comproba_sqlr 
+
+
+	
+	*** Creo un comprobante del tipo de recibo por cada factura ***
+	** El recibo se hace por el total del cobro. EN caso de que el monto del recibo sea mayor al saldo de la factura, el exedente queda a cuenta **
+	
+	
+		
+	
+*!*	v_sentenciacrea1 = "CREATE TABLE " +ALLTRIM(vtmpgrilla) + " FREE (idcbcobra I, idfactura I, comproba C(100),total1 Y,vence1 C(8),total2 Y,vence2 C(8),total3 Y,vence3 C(8), "
+*!*	 v_sentenciaCrea2 = " idcobro I,fechacob C(8),importeCob Y,recargoCob Y, secuencia I, loteimp I, cb C(254), ident I, entidad c(100),idcuotafc I, cuota I, saldof Y , saldofc Y ) "
+	
+	SELECT &p_tabla
+	
+	GO TOP 
+	
+	DO WHILE NOT EOF()
+		
+		v_idrecibo = maxnumeroidx("idrecibo", "I", "recibos",1)
+
+	
+	
+			SELECT comprobareci
+
+			vconeccionF = abreycierracon(0,_SYSSCHEMA)
+	
+			v_recibo_idcomproba = v_idcomp
+			v_recibo_pventa 	= v_idpvta
+			v_recibo_numero = maxnumerocom(v_recibo_idcomproba ,v_recibo_pventa ,1)
+			v_fecha = DTOS(DATE())		
+			
+			v_entidadRecibo = &p_tabla..ident
+			v_apellido = ""
+			v_nombre = &p_tabla..entidad
+			v_recibo_importe = &p_tabla..importeCob 
+			v_idcobro	= &p_tabla..idcobro
+			v_concepto 		= "Imputación de cobro según cobro N°: "+ALLTRIM(REPLICATE('0',8-LEN(ALLTRIM(STR(v_idcobro))))+ALLTRIM(STR(v_idcobro)))+" del cobrador N°: "+ALLTRIM(REPLICATE('0',8-LEN(ALLTRIM(STR(v_idcobro))))+ALLTRIM(STR(v_idcobro)))
+		
+			DIMENSION lamatriz8(10,2)
+			
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+			p_tabla     = 'recibos'
+			p_matriz    = 'lamatriz8'
+			p_conexion  = vconeccionF
+
+				
+			
+			lamatriz8(1,1)='idrecibo'
+			lamatriz8(1,2)=ALLTRIM(STR(v_idrecibo))
+			lamatriz8(2,1)='idcomproba'
+			lamatriz8(2,2)= ALLTRIM(STR(v_recibo_idcomproba ))
+			lamatriz8(3,1)='pventa'
+			lamatriz8(3,2)=ALLTRIM(STR(v_recibo_pventa))
+			lamatriz8(4,1)='numero'
+			lamatriz8(4,2)=ALLTRIM(STR(v_recibo_numero))
+			lamatriz8(5,1)='fecha'
+			lamatriz8(5,2)="'"+ALLTRIM(v_fecha)+"'"
+			lamatriz8(6,1)='entidad'
+			lamatriz8(6,2)=ALLTRIM(STR(v_entidadRecibo))
+			lamatriz8(7,1)='apellido'
+			lamatriz8(7,2)="'"+ALLTRIM(v_apellido)+"'"
+			lamatriz8(8,1)='nombre'
+			lamatriz8(8,2)="'"+ALLTRIM(v_nombre)+"'"
+			lamatriz8(9,1)='importe'
+			lamatriz8(9,2)=ALLTRIM(STR(v_recibo_importe,13,2))
+			lamatriz8(10,1)='concepto'
+			lamatriz8(10,2)="'"+ALLTRIM(v_concepto)+"'"
+		
+
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+			    RETURN 
+			ENDIF 
+			
+				*** REGISTRO ESTADO AUTORIZADO ***
+
+			registrarEstado("recibos","idrecibo",v_idrecibo,'I',"AUTORIZADO")
+	
+				
+		*** ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO  ***
+		
+			guardaCajaRecaH (v_recibo_idcomproba, v_idrecibo)
+			
+	
+				*** GUARDO EL COBRO DE LA FACTURA ***
+				
+			v_idcuotafc = &p_tabla..idcuotafc
+			v_cuota	= &p_tabla..cuota
+			v_saldof = &p_tabla..saldof
+			v_saldofc = &p_tabla..saldofc
+			
+			v_importeCob = &p_tabla..importeCob 
+			v_recargocob = &p_tabla..recargoCob
+			
+			v_importe = v_importeCob - v_recargoCob
+				
+			v_cobro_idcuotafc = 0
+			
+			IF v_idcuotafc  >= 0 &&
+				
+				IF v_importe > v_saldofc 
+				
+*					v_saldoCob = v_importe - v_saldofc + v_recargoCob  && SUMO EL RECARGO ACÁ O LO AGREGO A RECARGO EN EL COBRO ?
+					v_saldoCob = v_importe - v_saldofc 
+					v_cobro_imputado = v_saldofc 
+
+					
+				ELSE
+					v_cobro_imputado = v_importe
+*					v_saldoCob = v_saldofc - v_importe  + v_recargoCob  && SUMO EL RECARGO ACÁ O LO AGREGO A RECARGO EN EL COBRO ?
+					v_saldoCob = v_saldofc - v_importe  
+					
+				ENDIF 
+				v_cobro_idcuotafc = v_idcuotafc				
+			ELSE
+			
+				IF v_importe > v_saldof 
+				
+*					v_saldoCob = v_importe - v_saldof + v_recargoCob && SUMO EL RECARGO ACÁ O LO AGREGO A RECARGO EN EL COBRO ?
+					v_saldoCob = v_importe - v_saldof 
+					
+					v_cobro_imputado = v_saldof 
+					
+				ELSE
+					v_cobro_imputado = v_importe
+					v_saldoCob = v_recargoCob
+					
+				ENDIF 
+			
+			
+			ENDIF  		
+				
+			v_idfactura = &p_Tabla..idfactura
+			
+			v_cobro_recargo = v_recargoCob
+			v_cobro_saldof = v_saldoCob
+			
+			IF v_cobro_imputado > 0
+				
+					DIMENSION lamatriz9(8,2)
+
+					v_idcobro = maxnumeroidx("idcobro", "I", "cobros",1)
+
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					p_tabla     = 'cobros'
+					p_matriz    = 'lamatriz9'
+					p_conexion  = vconeccionF
+					v_cobro_idcomproba 	= v_recibo_idcomproba 
+					v_cobro_idregipago 	= v_idrecibo
+					v_cobro_idfactura 	= v_idFactura
+
+
+
+					lamatriz9(1,1)='idcobro'
+					lamatriz9(1,2)=ALLTRIM(STR(v_idcobro))
+					lamatriz9(2,1)='idcomproba'
+					lamatriz9(2,2)=ALLTRIM(STR(v_cobro_idcomproba))
+					lamatriz9(3,1)='idfactura'
+					lamatriz9(3,2)= ALLTRIM(STR(v_cobro_idfactura))
+					lamatriz9(4,1)='recargo'
+					lamatriz9(4,2)=ALLTRIM(STR(v_cobro_recargo,13,2))
+					lamatriz9(5,1)='idregipago'
+					lamatriz9(5,2)=ALLTRIM(STR(v_cobro_idregipago))
+					lamatriz9(6,1)='idcuotafc'
+					lamatriz9(6,2)=ALLTRIM(STR(v_cobro_idcuotafc))
+					lamatriz9(7,1)='imputado'
+					lamatriz9(7,2)=ALLTRIM(STR(v_cobro_imputado,13,2))
+					lamatriz9(8,1)='saldof'
+					lamatriz9(8,2)=ALLTRIM(STR(v_cobro_saldof,13,2))
+							
+				
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+				
+				
+				
+				
+				**** GUARDO DATOS DE DETALLECOBRO ****
+				
+				v_iddetacobro 				= maxnumeroidx("iddetacobro", "I","detallecobros",1)
+				v_detallecobro_idcomproba 	= v_recibo_idcomproba 
+				v_detallecobro_idregi		= v_idrecibo
+				v_detallecobro_importe 		= v_cobro_imputado
+				
+				v_idtipopagoTra				= tipopagoObj.gettipospagos('TRANSFERENCIA')
+				v_idtipoPago 				= v_idtipopagoTra		
+				
+				id_cajabco					= _SYSCTAIMPUTACB
+								
+				
+				DIMENSION lamatriz5(6,2)
+				
+				lamatriz5(1,1)='iddetacobro'
+				lamatriz5(1,2)=ALLTRIM(STR(v_iddetacobro))
+				lamatriz5(2,1)='idcomproba'
+				lamatriz5(2,2)= ALLTRIM(STR(v_detallecobro_idcomproba))
+				lamatriz5(3,1)='idregistro'
+				lamatriz5(3,2)= ALLTRIM(STR(v_detallecobro_idregi))
+				lamatriz5(4,1)=	'idtipopago'
+				lamatriz5(4,2)=	ALLTRIM(STR(v_idtipoPago))		
+				lamatriz5(5,1)='importe'
+				lamatriz5(5,2)= ALLTRIM(STR(v_detallecobro_importe,13,2))
+				lamatriz5(6,1)= 'idcuenta'
+				lamatriz5(6,2)= ALLTRIM(STR(id_cajabco))
+				
+		
+				
+				p_tipoope	= 'I'
+				p_donficion = ''
+				p_tabla     = 'detallecobros'
+				p_matriz    = 'lamatriz5'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+				ENDIF 
+			
+*!*				
+*!*					*** Guardo en COBROPAGO LINK PARA CUPONES O CHEQUES ***
+*!*					
+*!*					v_tipoPagoCupon = tipopagoObj.gettipospagos('CUPONES')
+*!*						
+*!*				
+*!*						IF v_idtipoPago == v_tipoPagoCupon
+*!*							***GUARDA RELACION CUPON - DETALLE PAGO (EN TABLA COBROPAGOLINK)***
+*!*							
+*!*							DIMENSION lamatriz6(8,2)
+*!*					
+*!*							
+*!*							v_idcplink  = 0
+*!*							v_tablacp	= "detallecobros"
+*!*							v_campocp	= "iddetacobro"
+*!*							v_tabla		= "cupones"
+*!*							v_campo		= "idcupon"	
+*!*							v_idregistro= tmpDetaCobros.idregistro				
+*!*							v_fecha = cftofc(thisform.tb_fecha.Value)
+*!*							p_tipoope     = 'I'
+*!*							p_condicion   = ''
+*!*							v_titulo      = " EL ALTA "
+*!*							p_tabla     = 'cobropagolink'
+*!*							p_matriz    = 'lamatriz6'
+*!*							p_conexion  = vconeccionF
+
+*!*							lamatriz6(1,1)='idcplink'
+*!*							lamatriz6(1,2)=ALLTRIM(STR(v_idcplink))
+*!*							lamatriz6(2,1)='tablacp'
+*!*							lamatriz6(2,2)="'"+v_tablacp+"'"
+*!*							lamatriz6(3,1)='campocp'
+*!*							lamatriz6(3,2)="'"+v_campocp+"'"
+*!*							lamatriz6(4,1)='registrocp'
+*!*							lamatriz6(4,2)=ALLTRIM(STR(v_iddetacobro))
+*!*							lamatriz6(5,1)='tabla'
+*!*							lamatriz6(5,2)="'"+v_tabla+"'"
+*!*							lamatriz6(6,1)='campo'
+*!*							lamatriz6(6,2)="'"+v_campo+"'"
+*!*							lamatriz6(7,1)='idregistro'
+*!*							lamatriz6(7,2)=ALLTRIM(STR(v_idregistro))
+*!*							lamatriz6(8,1)='fecha'
+*!*							lamatriz6(8,2)="'"+ALLTRIM(v_fecha)+"'"
+*!*							
+*!*							
+*!*							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*							    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+*!*							ELSE
+*!*									
+*!*								v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistro, _SYSCAJARECA,id_cajabco,v_idtipocomp,v_tablacp, v_campocp, v_iddetacobro )
+*!*						
+*!*								IF v_ret = .F.
+*!*									MESSAGEBOX("Ha Ocurrido un Error al intentar registrar el Movimiento para el Tipo de pago",0+48+0,"Error")
+*!*								ENDIF 
+
+*!*							ENDIF 
+*!*								
+*!*						ELSE
+*!*						
+*!*							v_tipoPagoCheque = tipopagoObj.gettipospagos('CHEQUE')	
+*!*					
+*!*							IF v_idtipoPago == v_tipoPagoCheque 
+*!*								***GUARDA RELACION CHEQUE - DETALLE PAGO (EN TABLA COBROPAGOLINK)***
+*!*									
+*!*								DIMENSION lamatriz6(8,2)
+*!*						
+*!*								
+*!*								v_idcplink 	= 0
+*!*								v_tablacp	= "detallecobros"
+*!*								v_campocp	= "iddetacobro"
+*!*								v_tabla		= "cheques"
+*!*								v_campo		= "idcheque"	
+*!*								v_idregistro= tmpDetaCobros.idregistro
+*!*								v_fecha = cftofc(thisform.tb_fecha.Value)
+*!*								p_tipoope     = 'I'
+*!*								p_condicion   = ''
+*!*								v_titulo      = " EL ALTA "
+*!*								p_tabla     = 'cobropagolink'
+*!*								p_matriz    = 'lamatriz6'
+*!*								p_conexion  = vconeccionF
+
+*!*								lamatriz6(1,1)='idcplink'
+*!*								lamatriz6(1,2)=ALLTRIM(STR(v_idcplink))
+*!*								lamatriz6(2,1)='tablacp'
+*!*								lamatriz6(2,2)="'"+v_tablacp+"'"
+*!*								lamatriz6(3,1)='campocp'
+*!*								lamatriz6(3,2)="'"+v_campocp+"'"
+*!*								lamatriz6(4,1)='registrocp'
+*!*								lamatriz6(4,2)=ALLTRIM(STR(v_iddetacobro))
+*!*								lamatriz6(5,1)='tabla'
+*!*								lamatriz6(5,2)="'"+v_tabla+"'"
+*!*								lamatriz6(6,1)='campo'
+*!*								lamatriz6(6,2)="'"+v_campo+"'"
+*!*								lamatriz6(7,1)='idregistro'
+*!*								lamatriz6(7,2)=ALLTRIM(STR(v_idregistro))
+*!*								lamatriz6(8,1)='fecha'
+*!*								lamatriz6(8,2)="'"+ALLTRIM(v_fecha)+"'"
+*!*								
+*!*								
+*!*								IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*								    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+*!*								ELSE
+*!*														*** Registro movitpago 
+*!*									v_ret = guardarMoviTPago(v_idtipoPago, v_tabla, v_campo, v_idregistro, _SYSCAJARECA,id_cajabco,v_idtipocomp, v_tablacp, v_campocp, v_iddetacobro )
+*!*						
+*!*								IF v_ret = .F.
+*!*									MESSAGEBOX("Ha Ocurrido un Error al intentar registrar el Movimiento para el Tipo de pago",0+48+0,"Error")
+*!*								ENDIF 
+*!*								ENDIF 
+*!*								
+*!*							
+
+
+*!*							ENDIF 
+
+
+*!*						ENDIF 
+*!*				
+*!*					
+*!*					
+*!*				
+				
+				
+				ENDIF 
+	
+		
+		** GENERO EL ASIENTO PARA EL RECIBO			
+		v_cargo = ContabilizaCompro('recibos', v_idrecibo, vconeccionF, v_recibo_importe)
+
+	
+
+* me desconecto	
+=abreycierracon(vconeccionF,"")
+	
+			
+		SELECT &p_tabla
+		SKIP 1
+
+	ENDDO
+	
+		
+	
+ENDFUNC 
