@@ -188,11 +188,11 @@ BEGIN
     where `c`.`idcuenta`= pidcuenta and (`u`.`idestador` <> 2) and (`u`.`tabla` <> 'anularp') ;
 
     if @vingresos = null then 
-	   @vingresos := 0 ;
+	  set @vingresos := 0.00 ;
 	end if ;
 
     if @vegresos = null then 
-	   @vegresos := 0 ;
+	  set @vegresos := 0.00 ;
 	end if ;
 	
 	set @vsaldo := ( @vingresos - @vegresos ) ;
