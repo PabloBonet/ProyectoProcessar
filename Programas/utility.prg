@@ -3546,6 +3546,8 @@ IF !EOF()
 	
 	SELECT columnaPKdb
 	GO TOP 
+	ALTER table columnaPKdb ALTER COLUMN type c(100)
+	ALTER table columnaPKdb alter COLUMN DEFAULT c(100)
 	
 	
 	IF NOT EOF()
@@ -6125,11 +6127,11 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 
 		**decidir si incerto o no			
 		*********************************			
-			var_valor = IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),tablacampo.valorcf,ALLTRIM(tablacampo.valorcf))  
-			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoValorAC_sql.valor1))','ALLTRIM(AstoValorAC_sql.valor1)')
+			var_valor = IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'  or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B'),tablacampo.valorcf,ALLTRIM(tablacampo.valorcf))  
+			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B'),'VAL(ALLTRIM(AstoValorAC_sql.valor1))','ALLTRIM(AstoValorAC_sql.valor1)')
 			&eje 
 					
-			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoValorAC_sql.valor2))','ALLTRIM(AstoValorAC_sql.valor2)')
+			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B'),'VAL(ALLTRIM(AstoValorAC_sql.valor2))','ALLTRIM(AstoValorAC_sql.valor2)')
 			&eje 
 			v_incerta = .f.
 			DO CASE 
@@ -6226,21 +6228,25 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		
 		sqlmatriz(1)=" Select "+ALLTRIM(AstoCuentaA_sql.campo)+" as valor from "+ALLTRIM(AstoCuentaA_sql.tabla)
 		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
-		verror=sqlrun(vconeccionATO,"tablacuenta")
+		verror=sqlrun(vconeccionATO,"tablacuenta0")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la Cuenta Seleccionada ",0+48+0,"Error")
 		    =abreycierracon(vconeccionATO,"")
 		    RETURN var_retorno
 		ENDIF
 
+		SELECT * FROM tablacuenta0 INTO TABLE .\tablacuenta
 		SELECT tablacuenta
+		
 		GO top
+		
 		DO WHILE !EOF()
-			var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),tablacuenta.valor,ALLTRIM(tablacuenta.valor))  
-			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoCuentaA_sql.valor1))','ALLTRIM(AstoCuentaA_sql.valor1)')
+
+			var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='B'),tablacuenta.valor,ALLTRIM(tablacuenta.valor))  
+			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='B'),'VAL(ALLTRIM(AstoCuentaA_sql.valor1))','ALLTRIM(AstoCuentaA_sql.valor1)')
 			&eje 
 					
-			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F'),'VAL(ALLTRIM(AstoCuentaA_sql.valor2))','ALLTRIM(AstoCuentaA_sql.valor2)')
+			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='B'),'VAL(ALLTRIM(AstoCuentaA_sql.valor2))','ALLTRIM(AstoCuentaA_sql.valor2)')
 			&eje 
 
 			v_incerta = .f.
@@ -6303,6 +6309,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 
 					SELECT AstoCuentaA
 					IF !SEEK(AstoCuentaA_sql.codigocta) THEN &&** AGREGADO PARA VERIFICAR QUE YA NO HAYA INGRESADO LA CUENTA **
+
 					
 						INSERT INTO AstoCuentaA VALUES (AstoCuentaA_sql.idastomode, AstoCuentaA_sql.idastocuen, AstoCuentaA_sql.idcpoconta, AstoCuentaA_sql.dh, ;
 										   AstoCuentaA_sql.detalle, AstoCuentaA_sql.tabla, AstoCuentaA_sql.campo, AstoCuentaA_sql.tipo, ;
@@ -14655,98 +14662,121 @@ PARAMETERS p_ListaP
 		* Cargo el Nuevo Calculo de Listas de Precios A
 		SELECT &p_ListaPA
 		GO TOP 
-		DIMENSION lamatrizLi(36,2)
+
+		SELECT idlista, detallep, vigedesde, vigehasta, margenp, condvta, idlistap, actualiza,idlistah, articulo, ;
+			detalle, unidad, abrevia, codbarra, costoa, linea, detalinea, idsublinea, sublinea, ctrlstock, ocultar, stockmin, stocktot, ;
+			desc1, desc2, desc3,  desc4, desc5, moneda, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact ;
+		from &p_ListaPA INTO TABLE p_listaPACSV
+		
+		SELECT p_listaPACSV
+		p_archivocsv= STRTRAN(_sysestacion,'\','/')+"/p_listaPA"+frandom()+".csv"
+		COPY TO &p_archivocsv DELIMITED WITH ";"
+		USE IN p_listaPACSV
+		
+		sqlmatriz(1)=" LOAD DATA LOCAL INFILE '"+p_archivocsv+"'"
+		sqlmatriz(2)=" INTO TABLE r_listaprea fields terminated by ',' "
+		sqlmatriz(3)=" ENCLOSED BY ';' "
+		sqlmatriz(4)=" LINES TERMINATED BY '\r\n' "
+		sqlmatriz(5)=" IGNORE 1 ROWS "
+
+		verror=sqlrun(vconeccionF,"loadlp")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Carga de las Listas de Precios (LOAD DATA ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+
+*!*			DIMENSION lamatrizLi(36,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
-		
-		DO WHILE !EOF()
-						
-			lamatrizLi(1,1)='idlista'
-			lamatrizLi(1,2)=ALLTRIM(STR(&p_ListaPA..idlista))
-			lamatrizLi(2,1)='detallep'
-			lamatrizLi(2,2)="'"+ALLTRIM(&p_ListaPA..detallep)+"'"
-			lamatrizLi(3,1)='vigedesde'
-			lamatrizLi(3,2)="'"+ALLTRIM(&p_ListaPA..vigedesde)+"'"
-			lamatrizLi(4,1)='vigehasta'
-			lamatrizLi(4,2)="'"+ALLTRIM(&p_ListaPA..vigehasta)+"'"
-			lamatrizLi(5,1)='margenp'
-			lamatrizLi(5,2)=ALLTRIM(STR(&p_ListaPA..margenp,13,2))
-			lamatrizLi(6,1)='condvta'
-			lamatrizLi(6,2)=ALLTRIM(STR(&p_ListaPA..condvta))
-			lamatrizLi(7,1)='idlistap'
-			lamatrizLi(7,2)=ALLTRIM(STR(&p_ListaPA..idlistap))
-			lamatrizLi(8,1)='actualiza'
-			lamatrizLi(8,2)="'"+ALLTRIM(&p_ListaPA..actualiza)+"'"
-			lamatrizLi(9,1)='idlistah'
-			lamatrizLi(9,2)=ALLTRIM(STR(&p_ListaPA..idlistah))
-			lamatrizLi(10,1)='articulo'
-			lamatrizLi(10,2)="'"+ALLTRIM(&p_ListaPA..articulo)+"'"
-			lamatrizLi(11,1)='detalle'
-			lamatrizLi(11,2)="'"+ALLTRIM(&p_ListaPA..detalle)+"'"		
-			lamatrizLi(12,1)='unidad'
-			lamatrizLi(12,2)="'"+ALLTRIM(&p_ListaPA..unidad)+"'"
-			lamatrizLi(13,1)='abrevia'
-			lamatrizLi(13,2)="'"+ALLTRIM(&p_ListaPA..abrevia)+"'"
-			lamatrizLi(14,1)='codbarra'
-			lamatrizLi(14,2)="'"+ALLTRIM(&p_ListaPA..codbarra)+"'"
-			lamatrizLi(15,1)='costoa'
-			lamatrizLi(15,2)=ALLTRIM(STR(&p_ListaPA..costoa,13,2))
-			lamatrizLi(16,1)='linea'
-			lamatrizLi(16,2)="'"+ALLTRIM(&p_ListaPA..linea)+"'"
-			lamatrizLi(17,1)='detalinea'
-			lamatrizLi(17,2)="'"+ALLTRIM(&p_ListaPA..detalinea)+"'"
-			lamatrizLi(18,1)='idsublinea'
-			lamatrizLi(18,2)=ALLTRIM(STR(&p_ListaPA..idsublinea))
-			lamatrizLi(19,1)='sublinea'
-			lamatrizLi(19,2)="'"+ALLTRIM(&p_ListaPA..sublinea)+"'"
-			lamatrizLi(20,1)='ctrlstock'
-			lamatrizLi(20,2)="'"+ALLTRIM(&p_ListaPA..ctrlstock)+"'"
-			lamatrizLi(21,1)='ocultar'
-			lamatrizLi(21,2)="'"+ALLTRIM(&p_ListaPA..ocultar)+"'"
-			lamatrizLi(22,1)='stockmin'
-			lamatrizLi(22,2)=ALLTRIM(STR(&p_ListaPA..stockmin,13,2))
-			lamatrizLi(23,1)='stocktot'
-			lamatrizLi(23,2)=ALLTRIM(STR(&p_ListaPA..stocktot,13,2))
-			lamatrizLi(24,1)='desc1'
-			lamatrizLi(24,2)=ALLTRIM(STR(&p_ListaPA..desc1,13,2))
-			lamatrizLi(25,1)='desc2'
-			lamatrizLi(25,2)=ALLTRIM(STR(&p_ListaPA..desc2,13,2))
-			lamatrizLi(26,1)='desc3'
-			lamatrizLi(26,2)=ALLTRIM(STR(&p_ListaPA..desc3,13,2))
-			lamatrizLi(27,1)='desc4'
-			lamatrizLi(27,2)=ALLTRIM(STR(&p_ListaPA..desc4,13,2))
-			lamatrizLi(28,1)='desc5'
-			lamatrizLi(28,2)=ALLTRIM(STR(&p_ListaPA..desc5,13,2))
-			lamatrizLi(29,1)='moneda'
-			lamatrizLi(29,2)=ALLTRIM(STR(&p_ListaPA..moneda))
-			lamatrizLi(30,1)='pcosto'
-			lamatrizLi(30,2)=ALLTRIM(STR(&p_ListaPA..pcosto,13,2))
-			lamatrizLi(31,1)='margen'
-			lamatrizLi(31,2)=ALLTRIM(STR(&p_ListaPA..margen,13,2))
-			lamatrizLi(32,1)='pventa'
-			lamatrizLi(32,2)=ALLTRIM(STR(&p_ListaPA..pventa,13,2))
-			lamatrizLi(33,1)='razonimpu'
-			lamatrizLi(33,2)=ALLTRIM(STR(&p_ListaPA..razonimpu,13,2))
-			lamatrizLi(34,1)='impuestos'
-			lamatrizLi(34,2)=ALLTRIM(STR(&p_ListaPA..impuestos,13,2))
-			lamatrizLi(35,1)='pventatot'
-			lamatrizLi(35,2)=ALLTRIM(STR(&p_ListaPA..pventatot,13,2))
-			lamatrizLi(36,1)='fechaact'
-			lamatrizLi(36,2)="'"+ALLTRIM(&p_ListaPA..fechaact)+"'"
-						
+*!*			
+*!*			DO WHILE !EOF()
+*!*							
+*!*				lamatrizLi(1,1)='idlista'
+*!*				lamatrizLi(1,2)=ALLTRIM(STR(&p_ListaPA..idlista))
+*!*				lamatrizLi(2,1)='detallep'
+*!*				lamatrizLi(2,2)="'"+ALLTRIM(&p_ListaPA..detallep)+"'"
+*!*				lamatrizLi(3,1)='vigedesde'
+*!*				lamatrizLi(3,2)="'"+ALLTRIM(&p_ListaPA..vigedesde)+"'"
+*!*				lamatrizLi(4,1)='vigehasta'
+*!*				lamatrizLi(4,2)="'"+ALLTRIM(&p_ListaPA..vigehasta)+"'"
+*!*				lamatrizLi(5,1)='margenp'
+*!*				lamatrizLi(5,2)=ALLTRIM(STR(&p_ListaPA..margenp,13,2))
+*!*				lamatrizLi(6,1)='condvta'
+*!*				lamatrizLi(6,2)=ALLTRIM(STR(&p_ListaPA..condvta))
+*!*				lamatrizLi(7,1)='idlistap'
+*!*				lamatrizLi(7,2)=ALLTRIM(STR(&p_ListaPA..idlistap))
+*!*				lamatrizLi(8,1)='actualiza'
+*!*				lamatrizLi(8,2)="'"+ALLTRIM(&p_ListaPA..actualiza)+"'"
+*!*				lamatrizLi(9,1)='idlistah'
+*!*				lamatrizLi(9,2)=ALLTRIM(STR(&p_ListaPA..idlistah))
+*!*				lamatrizLi(10,1)='articulo'
+*!*				lamatrizLi(10,2)="'"+ALLTRIM(&p_ListaPA..articulo)+"'"
+*!*				lamatrizLi(11,1)='detalle'
+*!*				lamatrizLi(11,2)="'"+ALLTRIM(&p_ListaPA..detalle)+"'"		
+*!*				lamatrizLi(12,1)='unidad'
+*!*				lamatrizLi(12,2)="'"+ALLTRIM(&p_ListaPA..unidad)+"'"
+*!*				lamatrizLi(13,1)='abrevia'
+*!*				lamatrizLi(13,2)="'"+ALLTRIM(&p_ListaPA..abrevia)+"'"
+*!*				lamatrizLi(14,1)='codbarra'
+*!*				lamatrizLi(14,2)="'"+ALLTRIM(&p_ListaPA..codbarra)+"'"
+*!*				lamatrizLi(15,1)='costoa'
+*!*				lamatrizLi(15,2)=ALLTRIM(STR(&p_ListaPA..costoa,13,2))
+*!*				lamatrizLi(16,1)='linea'
+*!*				lamatrizLi(16,2)="'"+ALLTRIM(&p_ListaPA..linea)+"'"
+*!*				lamatrizLi(17,1)='detalinea'
+*!*				lamatrizLi(17,2)="'"+ALLTRIM(&p_ListaPA..detalinea)+"'"
+*!*				lamatrizLi(18,1)='idsublinea'
+*!*				lamatrizLi(18,2)=ALLTRIM(STR(&p_ListaPA..idsublinea))
+*!*				lamatrizLi(19,1)='sublinea'
+*!*				lamatrizLi(19,2)="'"+ALLTRIM(&p_ListaPA..sublinea)+"'"
+*!*				lamatrizLi(20,1)='ctrlstock'
+*!*				lamatrizLi(20,2)="'"+ALLTRIM(&p_ListaPA..ctrlstock)+"'"
+*!*				lamatrizLi(21,1)='ocultar'
+*!*				lamatrizLi(21,2)="'"+ALLTRIM(&p_ListaPA..ocultar)+"'"
+*!*				lamatrizLi(22,1)='stockmin'
+*!*				lamatrizLi(22,2)=ALLTRIM(STR(&p_ListaPA..stockmin,13,2))
+*!*				lamatrizLi(23,1)='stocktot'
+*!*				lamatrizLi(23,2)=ALLTRIM(STR(&p_ListaPA..stocktot,13,2))
+*!*				lamatrizLi(24,1)='desc1'
+*!*				lamatrizLi(24,2)=ALLTRIM(STR(&p_ListaPA..desc1,13,2))
+*!*				lamatrizLi(25,1)='desc2'
+*!*				lamatrizLi(25,2)=ALLTRIM(STR(&p_ListaPA..desc2,13,2))
+*!*				lamatrizLi(26,1)='desc3'
+*!*				lamatrizLi(26,2)=ALLTRIM(STR(&p_ListaPA..desc3,13,2))
+*!*				lamatrizLi(27,1)='desc4'
+*!*				lamatrizLi(27,2)=ALLTRIM(STR(&p_ListaPA..desc4,13,2))
+*!*				lamatrizLi(28,1)='desc5'
+*!*				lamatrizLi(28,2)=ALLTRIM(STR(&p_ListaPA..desc5,13,2))
+*!*				lamatrizLi(29,1)='moneda'
+*!*				lamatrizLi(29,2)=ALLTRIM(STR(&p_ListaPA..moneda))
+*!*				lamatrizLi(30,1)='pcosto'
+*!*				lamatrizLi(30,2)=ALLTRIM(STR(&p_ListaPA..pcosto,13,2))
+*!*				lamatrizLi(31,1)='margen'
+*!*				lamatrizLi(31,2)=ALLTRIM(STR(&p_ListaPA..margen,13,2))
+*!*				lamatrizLi(32,1)='pventa'
+*!*				lamatrizLi(32,2)=ALLTRIM(STR(&p_ListaPA..pventa,13,2))
+*!*				lamatrizLi(33,1)='razonimpu'
+*!*				lamatrizLi(33,2)=ALLTRIM(STR(&p_ListaPA..razonimpu,13,2))
+*!*				lamatrizLi(34,1)='impuestos'
+*!*				lamatrizLi(34,2)=ALLTRIM(STR(&p_ListaPA..impuestos,13,2))
+*!*				lamatrizLi(35,1)='pventatot'
+*!*				lamatrizLi(35,2)=ALLTRIM(STR(&p_ListaPA..pventatot,13,2))
+*!*				lamatrizLi(36,1)='fechaact'
+*!*				lamatrizLi(36,2)="'"+ALLTRIM(&p_ListaPA..fechaact)+"'"
+*!*							
 
-			p_tabla     = 'r_listaprea'
-			p_matriz    = 'lamatrizLi'
-			p_conexion  = vconeccionF
-			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-			    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de ListaPreA",0+48+0,"Error")
-			    RETURN ""
-			ENDIF 
-		
-			SELECT &p_ListaPA
-			SKIP 
-		ENDDO 
+*!*				p_tabla     = 'r_listaprea'
+*!*				p_matriz    = 'lamatrizLi'
+*!*				p_conexion  = vconeccionF
+*!*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de ListaPreA",0+48+0,"Error")
+*!*				    RETURN ""
+*!*				ENDIF 
+*!*			
+*!*				SELECT &p_ListaPA
+*!*				SKIP 
+*!*			ENDDO 
 
 		* Cargo el Nuevo Calculo de Listas de Precios B
 		SELECT &p_ListaPB
