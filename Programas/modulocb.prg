@@ -1904,14 +1904,14 @@ ENDFUNC
 */------------------------------------------------------------------------------------------------------------
 
 FUNCTION ImputarCobros
-	PARAMETERS p_tabla, p_IDPvta, p_Idcomp
+	PARAMETERS p_tablacom, p_IDPvta, p_Idcomp
 	
 	
 	v_idpvta = 0
 	v_idcomp = 0
-	MESSAGEBOX("A1")
+
 	*** Validación de parámetros ***
-	IF EMPTY(p_tabla) = .T.
+	IF EMPTY(p_tablacom) = .T.
 	
 		MESSAGEBOX("NO se indico la tabla donde se encuentran los comprobantes de facturas",0+16+256,"Error al Imputar facturas")
 		RETURN 0
@@ -1927,7 +1927,7 @@ FUNCTION ImputarCobros
 				RETURN 0
 			
 			ELSE
-					MESSAGEBOX("A2")			
+								
 				v_idpvta = VAL(SUBSTR(_SYSRECIBOCB,1,2))
 				v_idcomp = VAL(SUBSTR(_SYSRECIBOCB,3,2))
 				
@@ -1939,7 +1939,7 @@ FUNCTION ImputarCobros
 	
 	
 	ELSE
-			MESSAGEBOX("A3")
+		
 		IF TYPE('p_idpvta') ='N' and TYPE('p_idcomp') = 'N' && Los dos parámetros son numéricos
 	
 			v_idpvta = p_idpvta
@@ -1950,7 +1950,7 @@ FUNCTION ImputarCobros
 		ENDIF 
 	
 	ENDIF 
-		MESSAGEBOX("A4")
+	
 	****
 	
 	
@@ -1979,7 +1979,6 @@ FUNCTION ImputarCobros
 	GO TOP 
 	USE IN compReci_sql
 
-	MESSAGEBOX("A5")
 	
 	*** Creo un comprobante del tipo de recibo por cada factura ***
 	** El recibo se hace por el total del cobro. EN caso de que el monto del recibo sea mayor al saldo de la factura, el exedente queda a cuenta **
@@ -1990,12 +1989,8 @@ FUNCTION ImputarCobros
 *!*	v_sentenciacrea1 = "CREATE TABLE " +ALLTRIM(vtmpgrilla) + " FREE (idcbcobra I, idfactura I, comproba C(100),total1 Y,vence1 C(8),total2 Y,vence2 C(8),total3 Y,vence3 C(8), "
 *!*	 v_sentenciaCrea2 = " idcobro I,fechacob C(8),importeCob Y,recargoCob Y, secuencia I, loteimp I, cb C(254), ident I, entidad c(100),idcuotafc I, cuota I, saldof Y , saldofc Y ) "
 	
-	SELECT &p_tabla
 	
-	GO TOP 
-	BROWSE 
-	
-	SELECT &p_tabla
+	SELECT &p_tablacom
 	
 	GO TOP 
 	
@@ -2014,11 +2009,11 @@ FUNCTION ImputarCobros
 			v_recibo_numero = maxnumerocom(v_recibo_idcomproba ,v_recibo_pventa ,1)
 			v_fecha = DTOS(DATE())		
 			
-			v_entidadRecibo = &p_tabla..ident
+			v_entidadRecibo = &p_tablacom..ident
 			v_apellido = ""
-			v_nombre = &p_tabla..entidad
-			v_recibo_importe = &p_tabla..importeCob 
-			v_idcobro	= &p_tabla..idcobro
+			v_nombre = &p_tablacom..entidad
+			v_recibo_importe = &p_tablacom..importeCob 
+			v_idcobro	= &p_tablacom..idcobro
 			v_concepto 		= "Imputación de cobro según cobro N°: "+ALLTRIM(REPLICATE('0',8-LEN(ALLTRIM(STR(v_idcobro))))+ALLTRIM(STR(v_idcobro)))+" del cobrador N°: "+ALLTRIM(REPLICATE('0',8-LEN(ALLTRIM(STR(v_idcobro))))+ALLTRIM(STR(v_idcobro)))
 		
 			DIMENSION lamatriz8(10,2)
@@ -2030,8 +2025,7 @@ FUNCTION ImputarCobros
 			p_matriz    = 'lamatriz8'
 			p_conexion  = vconeccionF
 
-					MESSAGEBOX("A6")
-			
+					
 			lamatriz8(1,1)='idrecibo'
 			lamatriz8(1,2)=ALLTRIM(STR(v_idrecibo))
 			lamatriz8(2,1)='idcomproba'
@@ -2060,30 +2054,33 @@ FUNCTION ImputarCobros
 			ENDIF 
 			
 				*** REGISTRO ESTADO AUTORIZADO ***
-	MESSAGEBOX("A7")
+
 			registrarEstado("recibos","idrecibo",v_idrecibo,'I',"AUTORIZADO")
-		MESSAGEBOX("A8")
+	
 				
 		*** ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO  ***
 		
 			guardaCajaRecaH(v_recibo_idcomproba, v_idrecibo)
-				MESSAGEBOX("A8.1")
+			
 	
 				*** GUARDO EL COBRO DE LA FACTURA ***
 
-				
-			v_idcuotafc = &p_tabla..idcuotafc
-			v_cuota	= &p_tabla..cuota
-			v_saldof = &p_tabla..saldof
-			v_saldofc = &p_tabla..saldofc
+			SELECT &p_tablacom
 			
-			v_importeCob = &p_tabla..importeCob 
-*			v_recargocob = &p_tabla..recargoCob
+			v_idcuotafc = &p_tablacom..idcuotafc
+			v_cuota	= &p_tablacom..cuota
+			v_saldof = &p_tablacom..saldof
+			v_saldofc = &p_tablacom..saldofc
+			
+			v_importeCob = &p_tablacom..importeCob 
+*			v_recargocob = &p_tablacom..recargoCob
 			v_recargocob = 0.00
 			v_importe = v_importeCob - v_recargoCob
 				
-			v_cobro_idcuotafc = 0
+			v_cobro_idcuotafc = 0.00
 			
+			v_cobro_imputado = 0.00
+
 			IF v_idcuotafc  >= 0 &&
 				
 				IF v_importe > v_saldofc 
@@ -2117,11 +2114,13 @@ FUNCTION ImputarCobros
 			
 			
 			ENDIF  		
-					MESSAGEBOX("A9")
-			v_idfactura = &p_Tabla..idfactura
+
+					
+			v_idfactura = &p_tablacom..idfactura
 			
 			v_cobro_recargo = v_recargoCob
 			v_cobro_saldof = v_saldoCob
+	
 			
 			IF v_cobro_imputado > 0
 				
@@ -2165,8 +2164,9 @@ FUNCTION ImputarCobros
 					ENDIF 
 				
 				
-				
-					MESSAGEBOX("A10")
+			
+				ENDIF 
+
 				**** GUARDO DATOS DE DETALLECOBRO ****
 				
 				v_iddetacobro 				= maxnumeroidx("iddetacobro", "I","detallecobros",1)
@@ -2174,6 +2174,8 @@ FUNCTION ImputarCobros
 				v_detallecobro_idregi		= v_idrecibo
 				v_detallecobro_importe 		= v_cobro_imputado
 				
+
+				tipoPagoObj		= CREATEOBJECT('tipospagosclass')
 				v_idtipopagoTra				= tipopagoObj.gettipospagos('TRANSFERENCIA')
 				v_idtipoPago 				= v_idtipopagoTra		
 				
@@ -2191,7 +2193,7 @@ FUNCTION ImputarCobros
 				lamatriz5(4,1)=	'idtipopago'
 				lamatriz5(4,2)=	ALLTRIM(STR(v_idtipoPago))		
 				lamatriz5(5,1)='importe'
-				lamatriz5(5,2)= ALLTRIM(STR(v_detallecobro_importe,13,2))
+				lamatriz5(5,2)= ALLTRIM(STR(v_recibo_importe,13,2))
 				lamatriz5(6,1)= 'idcuenta'
 				lamatriz5(6,2)= ALLTRIM(STR(id_cajabco))
 				
@@ -2206,12 +2208,10 @@ FUNCTION ImputarCobros
 				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
 				ENDIF 
 		
-			
-				ENDIF 
-		MESSAGEBOX("A11")
-		
-		** GENERO EL ASIENTO PARA EL RECIBO			
-		v_cargo = ContabilizaCompro('recibos', v_idrecibo, vconeccionF, v_recibo_importe)
+	
+*!*			
+*!*			** GENERO EL ASIENTO PARA EL RECIBO			
+*!*			v_cargo = ContabilizaCompro('recibos', v_idrecibo, vconeccionF, v_recibo_importe)
 
 	
 
@@ -2219,7 +2219,7 @@ FUNCTION ImputarCobros
 =abreycierracon(vconeccionF,"")
 	
 			
-		SELECT &p_tabla
+		SELECT &p_tablacom
 		SKIP 1
 
 	ENDDO
