@@ -6021,6 +6021,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	ENDIF  	
 	
 
+
 	v_indicetabla = getIdTabla(par_tabla) && Obtengo el nombre del campo indice de la tabla
 	v_fechaasi = ""
 	var_retorno = ""
@@ -6036,6 +6037,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	    =abreycierracon(vconeccionATO,"")
 	    RETURN var_retorno
 	ENDIF
+
 
 	sqlmatriz(1)=" Select "+ALLTRIM(Astofil_sql.campofecha)+" as fecha from "+ALLTRIM(par_tabla)+" where "+ALLTRIM(v_indicetabla)+" = "+ALLTRIM(STR(par_registro))
 	verror=sqlrun(vconeccionATO,"ComproFecha_sql")
@@ -6100,6 +6102,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	SELECT AstoValorAC_sql 
 	GO TOP 
 
+
 	
 	DO WHILE !EOF() 
 	
@@ -6116,23 +6119,34 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		    =abreycierracon(vconeccionATO,"")
 		    RETURN var_retorno
 		ENDIF
+
+SELECT * FROM tablacampo INTO TABLE tablacampo00 		
 		
 		SELECT tablacampo 
 		GO top
-		
-		
+
 		
 		DO WHILE !EOF()
 			SELECT AstoValorAC
 
 		**decidir si incerto o no			
 		*********************************			
-			var_valor = IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'  or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B'),tablacampo.valorcf,ALLTRIM(tablacampo.valorcf))  
+
+
+*!*				var_valor = IIF(((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'  or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B') and (TYPE("tablacampo.valorcf")<>'C' )),tablacampo.valorcf,ALLTRIM(tablacampo.valorcf))  
+			IF TYPE("tablacampo.valorcf")='C' THEN 
+				var_valor = IIF(((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'  or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B')),VAL(tablacampo.valorcf),ALLTRIM(tablacampo.valorcf))  
+			ELSE
+				var_valor = IIF(((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'  or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B')),tablacampo.valorcf,ALLTRIM(tablacampo.valorcf))  			
+			ENDIF 
+
 			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B'),'VAL(ALLTRIM(AstoValorAC_sql.valor1))','ALLTRIM(AstoValorAC_sql.valor1)')
 			&eje 
 					
 			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B'),'VAL(ALLTRIM(AstoValorAC_sql.valor2))','ALLTRIM(AstoValorAC_sql.valor2)')
 			&eje 
+			
+
 			v_incerta = .f.
 			DO CASE 
 				CASE UPPER(AstoValorAC_sql.compara)="TODOS"
@@ -6173,7 +6187,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 					ENDIF 
 
 			ENDCASE 
-		
+			
 			IF v_incerta = .t. THEN 
 				SELECT AstoValorAC
 		
@@ -6182,9 +6196,6 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 							AstoValorAC_sql.tipo, AstoValorAC_sql.valor1, AstoValorAC_sql.compara, AstoValorAC_sql.valor2, AstoValorAC_sql.codigocta, AstoValorAC_sql.tablag, ;
 							AstoValorAC_sql.tipog, AstoValorAC_sql.tipog, AstoValorAC_sql.idcpocontg, tablacampo.importe)
 
-*				INSERT INTO AstoValorA VALUES (AstoValorAC_sql.idastomode, AstoValorAC_sql.idastocuen, AstoValorAC_sql.idcpoconta, AstoValorAC_sql.dh, ;
-*											   AstoValorAC_sql.detalle, AstoValorAC_sql.tabla, AstoValorAC_sql.campo, AstoValorAC_sql.opera, ;
-*											   AstoValorAC_sql.idastoval, tablacampo.importe)
 			ENDIF 
 
 			SELECT tablacampo 
@@ -6208,6 +6219,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	SET ENGINEBEHAVIOR 90 
 	
 	SELECT AstoValorB
+
 
 	
 *************************************************************************
@@ -6242,12 +6254,21 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		
 		DO WHILE !EOF()
 
-			var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='B'),tablacuenta.valor,ALLTRIM(tablacuenta.valor))  
+
+*!*				var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='B'),tablacuenta.valor,ALLTRIM(tablacuenta.valor))  
+			IF TYPE("tablacuenta.valor")='C' THEN 
+				var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='B'),VAL(tablacuenta.valor),ALLTRIM(tablacuenta.valor))  
+			ELSE
+				var_valor = IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='B'),tablacuenta.valor,ALLTRIM(tablacuenta.valor))  
+			ENDIF 
+
+
 			eje = " var_valor1= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='B'),'VAL(ALLTRIM(AstoCuentaA_sql.valor1))','ALLTRIM(AstoCuentaA_sql.valor1)')
 			&eje 
 					
 			eje = " var_valor2= "+IIF((UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='F' or UPPER(SUBSTR(AstoCuentaA_sql.tipo,1,1))='B'),'VAL(ALLTRIM(AstoCuentaA_sql.valor2))','ALLTRIM(AstoCuentaA_sql.valor2)')
 			&eje 
+
 
 			v_incerta = .f.
 			DO CASE 
@@ -6288,6 +6309,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 					ENDIF 
 
 			ENDCASE 
+
 			
 			SELECT AstoCuentaA
 			IF v_incerta = .t. THEN 
@@ -9664,6 +9686,7 @@ FUNCTION ContabilizaMov
 	ENDIF	
 	SELECT escompro_sql
 	GO TOP 
+
 	IF !EOF() AND RECNO() = 1 THEN 
 		vnombreidx = obtenerCampoIndice(ALLTRIM(pcont_tabla))
 		sqlmatriz(1)= " select t.idcomproba, c.astoconta, t.fecha from "+ALLTRIM(pcont_tabla)+" t "
@@ -9698,6 +9721,8 @@ FUNCTION ContabilizaMov
 		ENDIF	
 		SELECT conta_sql
 		GO TOP 
+
+
 		IF !EOF() AND RECNO() = 1 THEN 
 			 ret_idasiento = conta_sql.idasiento
 		ELSE  
@@ -9710,6 +9735,7 @@ FUNCTION ContabilizaMov
 			IF !EMPTY(para_filtromodelo) THEN 
 				para_filtro 	= INT(VAL(SUBSTR(para_filtromodelo,1,4)))
 				para_modelo 	= INT(VAL(SUBSTR(para_filtromodelo,5,4)))
+
 				
 			* Verifico si el Modelo Seleccionado indica que debe generar asiento o es un movimiento sin asiento Contable 
 				sqlmatriz(1)= " select asiento from astomodelo where idastomode = "+ALLTRIM(STR(para_modelo))
@@ -9723,6 +9749,7 @@ FUNCTION ContabilizaMov
 				IF !EOF() AND siasienta_sql.asiento = 'N' THEN 
 						ret_idasiento = -2
 				ELSE 
+
 							
 					rettabla=GenAstoContable(para_modelo, para_tabla, para_registro,para_filtro,1,1,para_tablaret)
 					IF !EMPTY(rettabla) THEN 
