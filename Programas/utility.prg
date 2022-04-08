@@ -14716,94 +14716,6 @@ PARAMETERS p_ListaP
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
-*!*			
-*!*			DO WHILE !EOF()
-*!*							
-*!*				lamatrizLi(1,1)='idlista'
-*!*				lamatrizLi(1,2)=ALLTRIM(STR(&p_ListaPA..idlista))
-*!*				lamatrizLi(2,1)='detallep'
-*!*				lamatrizLi(2,2)="'"+ALLTRIM(&p_ListaPA..detallep)+"'"
-*!*				lamatrizLi(3,1)='vigedesde'
-*!*				lamatrizLi(3,2)="'"+ALLTRIM(&p_ListaPA..vigedesde)+"'"
-*!*				lamatrizLi(4,1)='vigehasta'
-*!*				lamatrizLi(4,2)="'"+ALLTRIM(&p_ListaPA..vigehasta)+"'"
-*!*				lamatrizLi(5,1)='margenp'
-*!*				lamatrizLi(5,2)=ALLTRIM(STR(&p_ListaPA..margenp,13,2))
-*!*				lamatrizLi(6,1)='condvta'
-*!*				lamatrizLi(6,2)=ALLTRIM(STR(&p_ListaPA..condvta))
-*!*				lamatrizLi(7,1)='idlistap'
-*!*				lamatrizLi(7,2)=ALLTRIM(STR(&p_ListaPA..idlistap))
-*!*				lamatrizLi(8,1)='actualiza'
-*!*				lamatrizLi(8,2)="'"+ALLTRIM(&p_ListaPA..actualiza)+"'"
-*!*				lamatrizLi(9,1)='idlistah'
-*!*				lamatrizLi(9,2)=ALLTRIM(STR(&p_ListaPA..idlistah))
-*!*				lamatrizLi(10,1)='articulo'
-*!*				lamatrizLi(10,2)="'"+ALLTRIM(&p_ListaPA..articulo)+"'"
-*!*				lamatrizLi(11,1)='detalle'
-*!*				lamatrizLi(11,2)="'"+ALLTRIM(&p_ListaPA..detalle)+"'"		
-*!*				lamatrizLi(12,1)='unidad'
-*!*				lamatrizLi(12,2)="'"+ALLTRIM(&p_ListaPA..unidad)+"'"
-*!*				lamatrizLi(13,1)='abrevia'
-*!*				lamatrizLi(13,2)="'"+ALLTRIM(&p_ListaPA..abrevia)+"'"
-*!*				lamatrizLi(14,1)='codbarra'
-*!*				lamatrizLi(14,2)="'"+ALLTRIM(&p_ListaPA..codbarra)+"'"
-*!*				lamatrizLi(15,1)='costoa'
-*!*				lamatrizLi(15,2)=ALLTRIM(STR(&p_ListaPA..costoa,13,2))
-*!*				lamatrizLi(16,1)='linea'
-*!*				lamatrizLi(16,2)="'"+ALLTRIM(&p_ListaPA..linea)+"'"
-*!*				lamatrizLi(17,1)='detalinea'
-*!*				lamatrizLi(17,2)="'"+ALLTRIM(&p_ListaPA..detalinea)+"'"
-*!*				lamatrizLi(18,1)='idsublinea'
-*!*				lamatrizLi(18,2)=ALLTRIM(STR(&p_ListaPA..idsublinea))
-*!*				lamatrizLi(19,1)='sublinea'
-*!*				lamatrizLi(19,2)="'"+ALLTRIM(&p_ListaPA..sublinea)+"'"
-*!*				lamatrizLi(20,1)='ctrlstock'
-*!*				lamatrizLi(20,2)="'"+ALLTRIM(&p_ListaPA..ctrlstock)+"'"
-*!*				lamatrizLi(21,1)='ocultar'
-*!*				lamatrizLi(21,2)="'"+ALLTRIM(&p_ListaPA..ocultar)+"'"
-*!*				lamatrizLi(22,1)='stockmin'
-*!*				lamatrizLi(22,2)=ALLTRIM(STR(&p_ListaPA..stockmin,13,2))
-*!*				lamatrizLi(23,1)='stocktot'
-*!*				lamatrizLi(23,2)=ALLTRIM(STR(&p_ListaPA..stocktot,13,2))
-*!*				lamatrizLi(24,1)='desc1'
-*!*				lamatrizLi(24,2)=ALLTRIM(STR(&p_ListaPA..desc1,13,2))
-*!*				lamatrizLi(25,1)='desc2'
-*!*				lamatrizLi(25,2)=ALLTRIM(STR(&p_ListaPA..desc2,13,2))
-*!*				lamatrizLi(26,1)='desc3'
-*!*				lamatrizLi(26,2)=ALLTRIM(STR(&p_ListaPA..desc3,13,2))
-*!*				lamatrizLi(27,1)='desc4'
-*!*				lamatrizLi(27,2)=ALLTRIM(STR(&p_ListaPA..desc4,13,2))
-*!*				lamatrizLi(28,1)='desc5'
-*!*				lamatrizLi(28,2)=ALLTRIM(STR(&p_ListaPA..desc5,13,2))
-*!*				lamatrizLi(29,1)='moneda'
-*!*				lamatrizLi(29,2)=ALLTRIM(STR(&p_ListaPA..moneda))
-*!*				lamatrizLi(30,1)='pcosto'
-*!*				lamatrizLi(30,2)=ALLTRIM(STR(&p_ListaPA..pcosto,13,2))
-*!*				lamatrizLi(31,1)='margen'
-*!*				lamatrizLi(31,2)=ALLTRIM(STR(&p_ListaPA..margen,13,2))
-*!*				lamatrizLi(32,1)='pventa'
-*!*				lamatrizLi(32,2)=ALLTRIM(STR(&p_ListaPA..pventa,13,2))
-*!*				lamatrizLi(33,1)='razonimpu'
-*!*				lamatrizLi(33,2)=ALLTRIM(STR(&p_ListaPA..razonimpu,13,2))
-*!*				lamatrizLi(34,1)='impuestos'
-*!*				lamatrizLi(34,2)=ALLTRIM(STR(&p_ListaPA..impuestos,13,2))
-*!*				lamatrizLi(35,1)='pventatot'
-*!*				lamatrizLi(35,2)=ALLTRIM(STR(&p_ListaPA..pventatot,13,2))
-*!*				lamatrizLi(36,1)='fechaact'
-*!*				lamatrizLi(36,2)="'"+ALLTRIM(&p_ListaPA..fechaact)+"'"
-*!*							
-
-*!*				p_tabla     = 'r_listaprea'
-*!*				p_matriz    = 'lamatrizLi'
-*!*				p_conexion  = vconeccionF
-*!*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de ListaPreA",0+48+0,"Error")
-*!*				    RETURN ""
-*!*				ENDIF 
-*!*			
-*!*				SELECT &p_ListaPA
-*!*				SKIP 
-*!*			ENDDO 
 
 		* Cargo el Nuevo Calculo de Listas de Precios B
 		SELECT &p_ListaPB
@@ -14876,6 +14788,103 @@ PARAMETERS p_ListaP
 	
 	ENDIF 	
 
-
-
 RETURN 
+
+
+
+* Funcion de Actualizacion de DatosAnexos 
+* - Calculos de Listas de Precios Finalizadas - 
+* - Tablas actualizadas : datosanexo (Contienes Datos Anexos)
+* PARAMETROS: pda_tablatmp: Tabla que contiene los Registros a Grabar en datosanexo
+FUNCTION ActuDatosAnexos
+PARAMETERS pda_tablatmp, pda_id
+
+	IF !(TYPE("pda_tablatmp")="C") THEN 
+		pda_tablatmp = ""
+	ENDIF 
+	
+	IF EMPTY(pda_tablatmp) THEN 
+		RETURN 
+	ENDIF 
+
+	farchivo= ALLTRIM(pda_tablatmp)+".dbf"
+	IF file(farchivo) THEN 
+		IF !USED(pda_tablatmp) THEN 
+			USE &pda_tablatmp IN 0
+		ENDIF 	
+	ELSE 
+		RETURN 
+	ENDIF
+
+	SELECT &pda_tablatmp
+	replace ALL id WITH pda_id
+	GO TOP 
+	LOCATE FOR iddatoan = -999999
+	vtablaaso = &pda_tablatmp..tabla
+	vidaso	  = &pda_tablatmp..id
+	
+	** Abro la Conexión
+	vconeccionACA=abreycierracon(0,_SYSSCHEMA)	
+		
+	** Elimino si hubiere algún cálculo de Listas de Precios 
+	sqlmatriz(1)=" delete from datosanexo where tabla ='"+ALLTRIM(vtablaaso)+"' and id="+STR(vidaso)
+	verror=sqlrun(vconeccionACA,"del_datoaso")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Datos Asociados ",0+48+0,"Error")
+	    RETURN 
+	ENDIF
+
+	SELECT &pda_tablatmp
+	GO TOP 
+	p_tipoope   = 'I'
+	p_condicion = ''
+	v_titulo    = " EL ALTA "
+	tablaACA     = "datosanexo"
+	p_matriz    = 'lamatrizACA'
+	DIMENSION lamatrizACA(7,2)
+
+	DO WHILE !EOF()
+	
+		IF &pda_tablatmp..iddatoan <> -999999 THEN 
+
+			lamatrizACA(1,1)='iddatoan'
+			lamatrizACA(1,2)=ALLTRIM(STR(&pda_tablatmp..iddatoan))
+			lamatrizACA(2,1)='fecha'
+			lamatrizACA(2,2)="'"+ALLTRIM(&pda_tablatmp..fecha)+"'"
+			lamatrizACA(3,1)='detalle'
+			lamatrizACA(3,2)="'"+&pda_tablatmp..detalle+"'"
+			lamatrizACA(4,1)='numero'
+			lamatrizACA(4,2)=ALLTRIM(STR(&pda_tablatmp..numero))
+			lamatrizACA(5,1)='importe'
+			lamatrizACA(5,2)=ALLTRIM(STR(&pda_tablatmp..importe,13,2))
+			lamatrizACA(6,1)='tabla'
+			lamatrizACA(6,2)="'"+ALLTRIM(&pda_tablatmp..tabla)+"'"
+			lamatrizACA(7,1)='id'
+			lamatrizACA(7,2)=ALLTRIM(STR(&pda_tablatmp..id))
+						
+			p_conexion  = vconeccionACA
+			IF SentenciaSQL(tablaACA,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de ListaPreB",0+48+0,"Error")
+			    RETURN ""
+			ENDIF 
+		
+		ENDIF 	
+	
+		SELECT &pda_tablatmp
+		SKIP 
+	
+	ENDDO 
+	RELEASE lamatrizACA 
+	** Abro la Conexión
+	=abreycierracon(vconeccionACA,"")	
+
+	USE IN &pda_tablatmp
+	eje = "DELETE FILE "+ALLTRIM(pda_tablatmp)+".dbf"
+	&eje
+	eje = "DELETE FILE "+ALLTRIM(pda_tablatmp)+".fpt"
+	&eje
+	
+	RETURN 
+ENDFUNC 
+
+	
