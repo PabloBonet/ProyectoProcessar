@@ -1787,7 +1787,7 @@ FUNCTION ImportarCobros
 								ALINES(ARR_r1recargo,v_r1recargo,'-')
 								COD_r1recargo = SUBSTR(v_linea,VAL(ARR_r1recargo(1)),VAL(ARR_r1recargo(2)))
 								NUM_r1recargo = (VAL(COD_r1recargo)/100)
-								
+							
 								** Código de Barras **
 								ALINES(ARR_r1bc,v_r1bc,'-')
 								COD_r1bc = SUBSTR(v_linea,VAL(ARR_r1bc(1)),VAL(ARR_r1bc(2)))
@@ -1826,7 +1826,7 @@ FUNCTION ImportarCobros
 							** Monto total ** 
 							ALINES(ARR_r2total,v_r2total,'-')
 							COD_r2total = SUBSTR(v_linea,VAL(ARR_r2total(1)),VAL(ARR_r2total(2)))
-							NUM_r2total = (VAL(COD_r1importe)/100)
+							NUM_r2total = (VAL(COD_r2total)/100)
 							
 							
 							SELECT &p_tablaCobros
@@ -1846,6 +1846,7 @@ FUNCTION ImportarCobros
 			
 													
 							ENDIF 
+					
 							IF v_totalCobrado <> NUM_r2total
 													
 								MESSAGEBOX("El importe total declarado en el archivo no coincide con los cargados",0+48+0,"Error al Importar cobros")
@@ -1952,8 +1953,6 @@ FUNCTION ImputarCobros
 	ENDIF 
 	
 	****
-	
-	
 	*** Busco los datos del recibo ***
 	
 	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
@@ -1982,14 +1981,7 @@ FUNCTION ImputarCobros
 	
 	*** Creo un comprobante del tipo de recibo por cada factura ***
 	** El recibo se hace por el total del cobro. EN caso de que el monto del recibo sea mayor al saldo de la factura, el exedente queda a cuenta **
-	
-	
 		
-	
-*!*	v_sentenciacrea1 = "CREATE TABLE " +ALLTRIM(vtmpgrilla) + " FREE (idcbcobra I, idfactura I, comproba C(100),total1 Y,vence1 C(8),total2 Y,vence2 C(8),total3 Y,vence3 C(8), "
-*!*	 v_sentenciaCrea2 = " idcobro I,fechacob C(8),importeCob Y,recargoCob Y, secuencia I, loteimp I, cb C(254), ident I, entidad c(100),idcuotafc I, cuota I, saldof Y , saldofc Y ) "
-	
-	
 	SELECT &p_tablacom
 	
 	GO TOP 
@@ -1998,8 +1990,6 @@ FUNCTION ImputarCobros
 		
 		v_idrecibo = maxnumeroidx("idrecibo", "I", "recibos",1)
 
-	
-	
 			SELECT comprobareci
 
 			vconeccionF = abreycierracon(0,_SYSSCHEMA)
@@ -2024,7 +2014,6 @@ FUNCTION ImputarCobros
 			p_tabla     = 'recibos'
 			p_matriz    = 'lamatriz8'
 			p_conexion  = vconeccionF
-
 					
 			lamatriz8(1,1)='idrecibo'
 			lamatriz8(1,2)=ALLTRIM(STR(v_idrecibo))
@@ -2053,7 +2042,7 @@ FUNCTION ImputarCobros
 			    RETURN 
 			ENDIF 
 			
-				*** REGISTRO ESTADO AUTORIZADO ***
+			*** REGISTRO ESTADO AUTORIZADO ***
 
 			registrarEstado("recibos","idrecibo",v_idrecibo,'I',"AUTORIZADO")
 	
@@ -2212,17 +2201,73 @@ FUNCTION ImputarCobros
 *!*			
 *!*			** GENERO EL ASIENTO PARA EL RECIBO			
 *!*			v_cargo = ContabilizaCompro('recibos', v_idrecibo, vconeccionF, v_recibo_importe)
-
 	
+	
+		*** Guardo los datos del cobro en cbcobrados ***
+		
+		
+				SELECT &p_tablacom
+		
+				v_idcbcob = 0
+				v_idfactura = &p_tablacom..idfactura
+				v_idcbcobra = &p_tablacom..idcbcobra
+				v_idcobro = &p_tablacom..idcobro
+				v_secuencia = &p_tablacom..secuencia
+				v_fechaCobro = &p_tablacom..fechacob
+				v_impcobro = &p_tablacom..importecob
+				v_recargo = &p_tablacom..recargocob
+				v_bc = &p_tablacom..cb
+				v_loteImp = &p_tablacom..loteimp
+				
+				
+				DIMENSION lamatriz6(10,2)
+				
+				lamatriz6(1,1)='idcbcob'
+				lamatriz6(1,2)=ALLTRIM(STR(v_idcbcob ))
+				lamatriz6(2,1)='idfactura'
+				lamatriz6(2,2)= ALLTRIM(STR(v_idfactura ))
+				lamatriz6(3,1)='idcbcobra'
+				lamatriz6(3,2)= ALLTRIM(STR(v_idcobro))
+				lamatriz6(4,1)=	'idcobro'
+				lamatriz6(4,2)=	ALLTRIM(STR(v_idtipoPago))		
+				lamatriz6(5,1)='secuencia'
+				lamatriz6(5,2)= ALLTRIM(STR(v_secuencia))
+				lamatriz6(6,1)= 'fechacobro'
+				lamatriz6(6,2)= "'"+ALLTRIM(v_fechaCobro)+"'"
+				lamatriz6(7,1)= 'impcobro'
+				lamatriz6(7,2)= ALLTRIM(STR(v_impcobro,13,2))
+				lamatriz6(8,1)= 'imprecargo'
+				lamatriz6(8,2)= ALLTRIM(STR(v_recargo,13,2))
+				lamatriz6(9,1)= 'bc'
+				lamatriz6(9,2)= "'"+ALLTRIM(v_bc)+"'"
+				lamatriz6(10,1)= 'loteimp'
+				lamatriz6(10,2)= ALLTRIM(STR(v_loteimp))
+				
+		
+				
+				p_tipoope	= 'I'
+				p_donficion = ''
+				p_tabla     = 'cbcobrados'
+				p_matriz    = 'lamatriz6'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+				ENDIF 
+		
+		
 
-* me desconecto	
-=abreycierracon(vconeccionF,"")
+			* me desconecto	
+			=abreycierracon(vconeccionF,"")
+
 	
 			
 		SELECT &p_tablacom
 		SKIP 1
 
 	ENDDO
+	
+	
+	
 	
 		RETURN 1
 	
