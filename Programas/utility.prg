@@ -2415,27 +2415,12 @@ PARAMETERS p_idnp
 			v_electronica	= .F.
 			v_cuitEmpresa	= _SYSCUIT
 			
-*!*				IF  ALLTRIM(v_electronica) == "S"
-*!*					v_cuitempresa	= ALLTRIM(v_CuitEmpresa)
-*!*					
-*!*					v_puntoVta		= ALLTRIM(factu.puntov)
-*!*					v_fechaVenc_cae	= ALLTRIM(factu.caecespven)
-*!*					v_cespcae		= ALLTRIM(factu.cespcae)
-*!*					
-*!*					v_codBarra		= v_cuitEmpresa+v_tipoCompAfip+"0"+v_puntoVta+v_fechaVenc_cae+v_Cespcae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
-*!*					MESSAGEBOX(v_codBarra)
-*!*					v_codBarraD 		= calculaDigitoVerif(v_codBarra)
-*!*					
-*!*					MESSAGEBOX(v_codBarraD)
-*!*					
-*!*					SELECT factu
-*!*					replace ALL codBarra WITH v_codBarraD
-*!*									
-*!*				ELSE
-*!*				
-*!*				ENDIF 
-			
+
 			DO FORM reporteform WITH "np_impr","npcr",v_idcomproba
+			
+			* Impresion de Datos Anexos si los hubiere
+			=ImprimirDetalleAnexo ('np', v_idnp)
+		
 			
 		ELSE
 			MESSAGEBOX("Error al cargar la NP  para imprimir",0+48+0,"Error al cargar la NP")
@@ -11365,6 +11350,7 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 		USE IN printetique			
 		par_etiqueimp = "printetique"
 	ENDIF 
+
 	
 	eje = " USE "+par_etiqueimp+" in 0 "
 	&eje 
@@ -11389,12 +11375,14 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 		=abreycierracon(vconeccionF,"")
 		RETURN 
 	ENDIF 
+
 	
 	narchivo = "petiquetas"+ALLTRIM(LOWER(par_BCQR))
 	SELECT *, SPACE(50) as cb1, SPACE(50) as cb2, SPACE(100) qr1, SPACE(100) as qr2 FROM etiquetasimp_sql INTO TABLE .\&narchivo
 	USE IN etiquetasimp_sql 
 	
 	=abreycierracon(vconeccionF,"")
+
 
 	SELECT &narchivo
 	IF par_BCQR = 'QR' THEN 
@@ -11405,6 +11393,7 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 		poFbc.nCorrectionLevel = 0 && Medium 15%
 	ENDIF 
 	
+	
 	DO WHILE !EOF()
 		
 ********************************************************************************************
@@ -11414,6 +11403,7 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 		v_etiquetaqr 	= "*"+ALLTRIM(STR(&narchivo..etiqueta))+"*"
 		v_codigoqr		= "*/"+IIF(&narchivo..idregistro <> 0,"//"+ALLTRIM(STR(&narchivo..idregistro)),IIF(EMPTY(ALLTRIM(&narchivo..articulo))=.t.,"/"+ALLTRIM(&narchivo..codigo),ALLTRIM(&narchivo..articulo)))+"*"
 		replace cb1 WITH v_etiquetaqr, cb2 WITH v_codigoqr 
+
 
 		IF par_BCQR = 'QR' THEN 	&& Armo la cadena a codificar en el código QR **
 
@@ -14552,43 +14542,6 @@ PARAMETERS p_idajuste
 		** Compruebo que no esté anulado
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
-*!*			MESSAGEBOX("A1")
-*!*			v_estado  = 0	
-*!*			v_estado = obtenerEstado("ajustestockp","idajuste",v_idajuste,"I")
-*!*			MESSAGEBOX("A2")
-*!*			
-*!*			IF TYPE('v_estado') = 'L'
-*!*			
-*!*			
-*!*			ELSE
-*!*				estadoAjuObjTmp = CREATEOBJECT('estadosclass')
-*!*					
-*!*				v_estadoAnuladoTmp	=  estadoAjuObjTmp.getidestado("ANULADO")
-
-
-
-*!*				IF v_estado = v_estadoAnuladoTmp
-*!*				
-*!*				
-*!*					MESSAGEBOX("El comprobante que se desea imprimir está anulado",0+48+0,"Imprimir comprobante")
-*!*					
-*!*					RETURN 
-*!*				ENDIF 
-*!*			ENDIF 
-
-*!*		
-*!*				MESSAGEBOX("A3")
-		
-		*** Busco los datos del movimiento y el detalle
-		
-		
-*!*				sqlmatriz(1)="Select p.*,h.*, e.apellido as apellEnt, e.nombre as nomEnt, e.compania, e.cuit, e.direccion, t.ie,t.reporte, d.detalle as detDepo "
-*!*				sqlmatriz(2)=" from otmovistockp p left join otmovistockh h on p.idmovip = h.idmovip " 
-*!*				sqlmatriz(3)=" left join entidades e on p.entidad = e.entidad "
-*!*				*sqlmatriz(4)=" left join otmateriales m on h.idmate = m.idmate "
-*!*				sqlmatriz(5)=" left join tipomstock t on h.idtipomov = t.idtipomov "
-*!*				sqlmatriz(6)=" left join otdepositos d on h.iddepo = d.iddepo "
-*!*				sqlmatriz(7)=" where p.idmovip = "+ ALLTRIM(STR(v_idmovip))
 
 
 			sqlmatriz(1)="Select p.*,h.*,a.unidad, ifnull(e.apellido,'') as apellEnt, ifnull(e.nombre,'') as nomEnt, ifnull(e.compania,'') as compania, "
@@ -14888,3 +14841,55 @@ PARAMETERS pda_tablatmp, pda_id
 ENDFUNC 
 
 	
+
+
+* FUNCIÓN PARA IMPRIMIR DETALLES ANEXOS DE COMPROBANTES ()
+* PARAMETROS: P_IDtabla , P_IDcomp
+FUNCTION imprimirDetalleAnexo
+PARAMETERS p_tablacomp, p_idcomp
+
+	IF p_idcomp  > 0
+		
+		
+		*** Busco los datos Anexos a Imprimir
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		sqlmatriz(1)=" Select * from datosanexo  where tabla='"+ALLTRIM(p_tablacomp)+"' and id = "+ ALLTRIM(STR(p_idcomp))
+		verror=sqlrun(vconeccionF,"datosanexo_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de Datos Anexos",0+48+0,"Error")
+		ENDIF
+	   
+	   =abreycierracon(vconeccionF,"")	
+	
+	
+		
+		SELECT datosanexo_sql 
+		GO TOP 
+		IF !EOF()
+			if  MESSAGEBOX("¿Existen Datos Anexos, Desea Imprimirlos?",4+48+256,"Imprimir Datos Anexos")= 7 THEN 
+				USE IN datosanexo_sql
+				RETURN 
+			ENDIF 
+		ENDIF 	
+	
+
+		SELECT * FROM datosanexo_sql INTO TABLE .\anexoimpr
+		USE IN datosanexo_sql
+			
+		SELECT anexoimpr
+		
+		IF NOT EOF()
+			
+			SELECT anexoimpr
+			GO TOP 
+
+			DO FORM reporteform WITH "anexoimpr","anexoimprcr","datosanexo"
+		ENDIF 
+		USE IN anexoimpr
+	ENDIF 
+
+ENDFUNC 
+
+
