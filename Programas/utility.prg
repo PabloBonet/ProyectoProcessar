@@ -14893,3 +14893,43 @@ PARAMETERS p_tablacomp, p_idcomp
 ENDFUNC 
 
 
+
+*-----------------------------------------------------------------------------------
+* Obtiene todos los Comprobantes Electrónicos Pendientes de Autorización
+*-----------------------------------------------------------------------------------
+
+
+FUNCTION ObtieneCompNoAutoriza
+PARAMETERS  para_aliasrnl
+p_aliasretorno  = ""
+
+	vconeccionM = abreycierracon(0,_SYSSCHEMA)
+		
+	sqlmatriz(1)= "SELECT f.idfactura , e.idestador FROM ultimoestado e left join facturas f on e.tabla ='facturas' and e.id = f.idfactura where e.tabla = 'facturas' and ( e.idestador = 3 or e.idestador = 5) "
+
+	verror=sqlrun(vconeccionM ,"fpendiente_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Facturas No Autorizadas ... ",0+48+0,"Error")
+	    RETURN p_aliasretorno  
+	ENDIF
+	=abreycierracon(vconeccionM ,"")	
+
+	SELECT fpendiente_sql
+	GO TOP 
+	
+	IF EOF()
+		USE IN fpendiente_sql 
+		RETURN p_aliasretorno  
+	ENDIF
+
+	
+	SELECT idfactura,idestador FROM fpendiente_sql	INTO TABLE &para_aliasrnl WHERE !ISNULL(idfactura)
+		
+	SELECT fpendiente_sql
+	USE IN fpendiente_sql
+	p_aliasretorno  = para_aliasrnl
+	RETURN para_aliasrnl
+ENDFUNC 
+
+
+
