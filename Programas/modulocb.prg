@@ -103,14 +103,20 @@ FUNCTION ImportarComprobantes
 		v_ebceid 		= ALLTRIM(cbasociada_sql.ebceid)
 		v_ebcsid		= ALLTRIM(cbasociada_sql.ebcsid)
 		v_ebcidcomp 	= ALLTRIM(cbasociada_sql.ebcidcomp)
-		v_ebctotal1 	= ALLTRIM(cbasociada_sql.ebctotal1)
-		v_ebcvence1 	= ALLTRIM(cbasociada_sql.ebcvence1)
-		v_ebctotal2 	= ALLTRIM(cbasociada_sql.ebctotal2)
-		v_ebcvence2		= ALLTRIM(cbasociada_sql.ebcvence2)
-		v_ebctotal3 	= ALLTRIM(cbasociada_sql.ebctotal3)
-		v_ebcvence3 	= ALLTRIM(cbasociada_sql.ebcvence3)
+		v_ebctotal1 	= ALLTRIM(cbasociada_sql.etotal1)
+		v_ebcvence1 	= ALLTRIM(cbasociada_sql.evence1)
+		v_ebctotal2 	= ALLTRIM(cbasociada_sql.etotal2)
+		v_ebcvence2		= ALLTRIM(cbasociada_sql.evence2)
+		v_ebctotal3 	= ALLTRIM(cbasociada_sql.etotal3)
+		v_ebcvence3 	= ALLTRIM(cbasociada_sql.evence3)
+		v_eentidad		= ALLTRIM(cbasociada_sql.eentidad)
+		v_eservicio		= ALLTRIM(cbasociada_sql.eservicio)
+		v_ecuenta		= ALLTRIM(cbasociada_sql.ecuenta)
+		v_edescrip		= ALLTRIM(cbasociada_sql.edescrip)
 				
-		v_sentenciaCrea = "create table "+ALLTRIM(p_tablaComprobantes)+ " (ident I, narchivo C(100), lote I, eperiodo C(20), esecuencia C(10), comproba C(100),idcomp I, total1 Y, vence1 C(8),total2 Y, vence2 C(8), total3 Y, vence3 C(8), bc C(254))"
+		v_sentenciaCrea1 = "create table "+ALLTRIM(p_tablaComprobantes)+ " (ident I, narchivo C(100), lote I, eperiodo C(20), esecuencia C(10), comproba C(100),idcomp I, total1 Y, vence1 C(8),total2 Y, vence2 C(8), total3 Y, vence3 C(8), bc C(254), "
+		v_sentenciaCrea2 = " eentidad I, eservicio I, ecuenta I, edescrip C(250))"
+		v_sentenciaCrea = v_sentenciaCrea1 + v_sentenciaCrea2
 		&v_sentenciaCrea
 	
 		** Recorro el archivo de envio, linea por linea **	
@@ -132,7 +138,7 @@ FUNCTION ImportarComprobantes
 					ELSE
 						&& CODIGO CORRECTO
 												
-						** Código Empresa/Ente **
+						** Código Empresa **
 						ALINES(ARR_eempresaid,v_eempresaid,'-')
 						COD_eempresaid = SUBSTR(v_linea,VAL(ARR_eempresaid(1)),VAL(ARR_eempresaid(2)))
 						
@@ -150,11 +156,11 @@ FUNCTION ImportarComprobantes
 							ALINES(ARR_ebc,v_ebc,'-')
 							COD_ebc = SUBSTR(v_linea,VAL(ARR_ebc(1)),VAL(ARR_ebc(2)))
 
-							** Código de Entidad (en código de barra) **
+							** Código de Empresa (en código de barra) **
 							ALINES(ARR_ebceid,v_ebceid,'-')
 							COD_ebceid = SUBSTR(v_linea,VAL(ARR_ebceid(1)),VAL(ARR_ebceid(2)))
 
-							** Subcódigo de Entidad (en código de barra) **
+							** Subcódigo de Empresa(en código de barra) **
 							ALINES(ARR_ebcsid,v_ebcsid,'-')
 							COD_ebcsid = SUBSTR(v_linea,VAL(ARR_ebcsid(1)),VAL(ARR_ebcsid(2)))
 						
@@ -168,7 +174,7 @@ FUNCTION ImportarComprobantes
 							ALINES(ARR_ebcvence1,v_ebcvence1,'-')
 							COD_ebcvence1 = SUBSTR(v_linea,VAL(ARR_ebcvence1(1)),VAL(ARR_ebcvence1(2)))
 							
-							** Importe del primer vencimiento (en código de barra) **
+							** Importe del primer vencimiento **
 							ALINES(ARR_ebctotal1,v_ebctotal1,'-')
 							COD_ebctotal1 = SUBSTR(v_linea,VAL(ARR_ebctotal1(1)),VAL(ARR_ebctotal1(2)))
 														
@@ -201,15 +207,37 @@ FUNCTION ImportarComprobantes
 							NUM_ebctotal3 = (v_NUM_entt3/100)
 							
 							
+							** Código de Entidad **
+							ALINES(ARR_eentidad,v_eentidad,'-')
+							COD_eentidad = SUBSTR(v_linea,VAL(ARR_eentidad(1)),VAL(ARR_eentidad(2)))
+													
+							
+							** Código de Entidad **
+							ALINES(ARR_eservicio,v_eservicio,'-')
+							COD_eservicio = SUBSTR(v_linea,VAL(ARR_eservicio(1)),VAL(ARR_eservicio(2)))
+							
+						
+							** Código de Cuenta  **
+							ALINES(ARR_ecuenta,v_ecuenta,'-')
+							COD_ecuenta = SUBSTR(v_linea,VAL(ARR_ecuenta(1)),VAL(ARR_ecuenta(2)))
+							
+							
+							** Descripción de entidad **
+							ALINES(ARR_edescrip,v_edescrip,'-')
+							COD_edescrip = SUBSTR(v_linea,VAL(ARR_edescrip(1)),VAL(ARR_edescrip(2)))
+							
+							
+							
 							v_lote = 0
 							v_comprobante = ""
 																									
-							v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaComprobantes)+ " (ident, narchivo, lote, eperiodo, esecuencia, comproba,idcomp, total1, vence1,total2, vence2, total3, vence3, bc) "
+							v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaComprobantes)+ " (ident, narchivo, lote, eperiodo, esecuencia, comproba,idcomp, total1, vence1,total2, vence2, total3, vence3, bc,eentidad,eservicio,ecuenta,edescrip) "
 							v_sentenciaIns2 = " values ("+ALLTRIM(STR(p_idcbasociada))+",'"+ALLTRIM(v_nombArchivoEnv)+"',"+ALLTRIM(STR(v_lote))+",'"+ALLTRIM(COD_eperiodo)+"','"+ALLTRIM(COD_eesecuencia)+"','"+ALLTRIM(v_comprobante)+"',"+ALLTRIM(STR(NUM_ebcidcomp))+","
-							v_sentenciaIns3 = ALLTRIM(STR(NUM_ebctotal1,13,2))+",'"+ALLTRIM(COD_ebcvence1)+"',"+ALLTRIM(STR(NUM_ebctotal2,13,2))+",'"+ALLTRIM(COD_ebcvence2)+"',"+ALLTRIM(STR(NUM_ebctotal3,13,2))+",'"+ALLTRIM(COD_ebcvence3)+"','"+alltrim(COD_ebc)+"')"
+							v_sentenciaIns3 = ALLTRIM(STR(NUM_ebctotal1,13,2))+",'"+ALLTRIM(COD_ebcvence1)+"',"+ALLTRIM(STR(NUM_ebctotal2,13,2))+",'"+ALLTRIM(COD_ebcvence2)+"',"+ALLTRIM(STR(NUM_ebctotal3,13,2))+",'"+ALLTRIM(COD_ebcvence3)+"','"+alltrim(COD_ebc)+"',"
+							v_sentenciaIns4 = ALLTRIM(COD_eentidad)+","+ALLTRIM(COD_eservicio)+","+ALLTRIM(COD_ecuenta)+",'"+ALLTRIM(COD_edescrip)+"')"
 							
 
-							v_sentenciaIns = v_sentenciaIns1+v_sentenciaIns2+v_sentenciaIns3
+							v_sentenciaIns = v_sentenciaIns1+v_sentenciaIns2+v_sentenciaIns3+v_sentenciaIns4
 							
 							&v_sentenciaIns
 				
