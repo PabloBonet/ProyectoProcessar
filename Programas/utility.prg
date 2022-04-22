@@ -12917,9 +12917,9 @@ PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
 
 
 	sqlmatriz(1)= " SELECT f.*,fs.cobrado as cobradotot,fs.saldof as saldoftot,ifnull(fc.idcuotafc,0) as idcuotafc,ifnull(fc.cuota,0) as cuota,fc.importe as importecta, "
-	sqlmatriz(2)= " fc.cobrado as cobradocta,fc.saldof as saldofcta,ft.fechavenc as fecvencta,c.comprobante as nomcomp " 
+	sqlmatriz(2)= " fc.cobrado as cobradocta,fc.saldof as saldofcta,ft.fechavenc as fecvencta,c.comprobante as nomcomp, pv.puntov " 
 	sqlmatriz(3)= " FROM r_facturasaldo fs left join r_facturasctasaldo  fc on fs.idfactura = fc.idfactura left join facturas f on fs.idfactura = f.idfactura  "
-	sqlmatriz(4)= " left join facturascta ft on fc.idcuotafc = ft.idcuotafc left join comprobantes c on f.idcomproba = c.idcomproba " 
+	sqlmatriz(4)= " left join puntosventa pv on f.pventa = pv.pventa left join facturascta ft on fc.idcuotafc = ft.idcuotafc left join comprobantes c on f.idcomproba = c.idcomproba " 
 	sqlmatriz(5)=" where f.fecha >= '"+ALLTRIM(p_fechaIni) + "' and f.fecha <='" +ALLTRIM(p_fechaFin)+"' and ((fs.saldof > 0 and fc.saldof >0) or (fs.saldof > 0 and fc.idcuotafc is null)) "
 	
 	verror=sqlrun(pv_coneccion,"factctaade_sql")

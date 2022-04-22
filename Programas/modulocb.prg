@@ -113,9 +113,10 @@ FUNCTION ImportarComprobantes
 		v_eservicio		= ALLTRIM(cbasociada_sql.eservicio)
 		v_ecuenta		= ALLTRIM(cbasociada_sql.ecuenta)
 		v_edescrip		= ALLTRIM(cbasociada_sql.edescrip)
+		v_edescripen	= ALLTRIM(cbasociada_sql.edescripen)		
 				
 		v_sentenciaCrea1 = "create table "+ALLTRIM(p_tablaComprobantes)+ " (ident I, narchivo C(100), lote I, eperiodo C(20), esecuencia C(10), comproba C(100),idcomp I, total1 Y, vence1 C(8),total2 Y, vence2 C(8), total3 Y, vence3 C(8), bc C(254), "
-		v_sentenciaCrea2 = " eentidad I, eservicio I, ecuenta I, edescrip C(250))"
+		v_sentenciaCrea2 = " eentidad I, eservicio I, ecuenta I, edescrip C(250), edescripen C(250))"
 		v_sentenciaCrea = v_sentenciaCrea1 + v_sentenciaCrea2
 		&v_sentenciaCrea
 	
@@ -220,21 +221,24 @@ FUNCTION ImportarComprobantes
 							** Código de Cuenta  **
 							ALINES(ARR_ecuenta,v_ecuenta,'-')
 							COD_ecuenta = SUBSTR(v_linea,VAL(ARR_ecuenta(1)),VAL(ARR_ecuenta(2)))
-							
-							
-							** Descripción de entidad **
+
+							** Descripción de comprobante**
 							ALINES(ARR_edescrip,v_edescrip,'-')
 							COD_edescrip = SUBSTR(v_linea,VAL(ARR_edescrip(1)),VAL(ARR_edescrip(2)))
+							
+							** Descripción de entidad**
+							ALINES(ARR_edescripen,v_edescripen,'-')
+							COD_edescripen = SUBSTR(v_linea,VAL(ARR_edescripen(1)),VAL(ARR_edescripen(2)))
 							
 							
 							
 							v_lote = 0
 							v_comprobante = ""
 																									
-							v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaComprobantes)+ " (ident, narchivo, lote, eperiodo, esecuencia, comproba,idcomp, total1, vence1,total2, vence2, total3, vence3, bc,eentidad,eservicio,ecuenta,edescrip) "
+							v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaComprobantes)+ " (ident, narchivo, lote, eperiodo, esecuencia, comproba,idcomp, total1, vence1,total2, vence2, total3, vence3, bc,eentidad,eservicio,ecuenta,edescrip, edescripen) "
 							v_sentenciaIns2 = " values ("+ALLTRIM(STR(p_idcbasociada))+",'"+ALLTRIM(v_nombArchivoEnv)+"',"+ALLTRIM(STR(v_lote))+",'"+ALLTRIM(COD_eperiodo)+"','"+ALLTRIM(COD_eesecuencia)+"','"+ALLTRIM(v_comprobante)+"',"+ALLTRIM(STR(NUM_ebcidcomp))+","
 							v_sentenciaIns3 = ALLTRIM(STR(NUM_ebctotal1,13,2))+",'"+ALLTRIM(COD_ebcvence1)+"',"+ALLTRIM(STR(NUM_ebctotal2,13,2))+",'"+ALLTRIM(COD_ebcvence2)+"',"+ALLTRIM(STR(NUM_ebctotal3,13,2))+",'"+ALLTRIM(COD_ebcvence3)+"','"+alltrim(COD_ebc)+"',"
-							v_sentenciaIns4 = ALLTRIM(COD_eentidad)+","+ALLTRIM(COD_eservicio)+","+ALLTRIM(COD_ecuenta)+",'"+ALLTRIM(COD_edescrip)+"')"
+							v_sentenciaIns4 = ALLTRIM(COD_eentidad)+","+ALLTRIM(COD_eservicio)+","+ALLTRIM(COD_ecuenta)+",'"+ALLTRIM(COD_edescrip)+"','"+ALLTRIM(COD_edescripen)+"')"
 							
 
 							v_sentenciaIns = v_sentenciaIns1+v_sentenciaIns2+v_sentenciaIns3+v_sentenciaIns4
@@ -396,6 +400,84 @@ PARAMETERS p_codEnt,p_subCodEnt,p_idcomp,P_nombreTabla
 	RETURN v_encontrado
 
 ENDFUNC 
+
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/ Lista todos los comprobantes asociados a empresa,subcodigo y entidad
+** 	Funcion: listaCompESE
+* 	Parametros: 
+*		p_codEnt: Código asignado a la empresa asociada
+*		p_subCodEnt: Subcódigo asignado a la empresa asociada
+*		p_entidad: ID de la entidad asociada
+*		p_NombreTabla: Nombre de la tabla donde se van a devolver los datos de los comprobantes buscados
+*	Retorno: Retorna True si se encontró comprobantes, False en otro caso
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION listaCompESE
+PARAMETERS p_codEmp,p_subCodEmp,p_entidad,P_nombreTabla
+
+	v_encontrado = .F.
+
+	IF p_codEmp <= 0 AND p_subCodEmp <= 0 AND p_entidad <= 0 AND EMPTY(ALLTRIM(p_nombreTabla)) = .T.
+	
+		MESSAGEBOX("Uno de los parámetros es incorrecto", 0+16,"Error al buscar comprobante por código")
+		
+		RETURN .F.
+	
+	ENDIF 
+
+	** Genero el código para buscar en la visa de ultComprobante **
+	
+	v_codigoBusEmp = ALLTRIM(REPLICATE('0',4-LEN(ALLTRIM(str(p_codEmp))))+ALLTRIM(str(p_codEmp)))
+	v_codigoBusSub = ALLTRIM(REPLICATE('0',4-LEN(ALLTRIM(str(p_subCodEmp))))+ALLTRIM(str(p_subCodEmp)))
+	*v_codigoBusCom = ALLTRIM(REPLICATE('0',15-LEN(ALLTRIM(str(p_idcomp))))+ALLTRIM(str(p_idcomp)))
+	
+	v_codigoBusqueda = ALLTRIM(v_codigoBusEmp)+ALLTRIM(v_codigoBusSub)
+
+	* Me conecto a la base de datos
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,comprobante as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(2)=" from ultcbcomplote " 
+	sqlmatriz(3)=" where SUBSTR(codigo,1,8) ='"+ALLTRIM(v_codigoBusqueda)+"' and entidad = "+ALLTRIM(STR(p_entidad))
+
+	verror=sqlrun(vconeccionD,"comprobante_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		return	.F.
+	ELSE
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		SELECT comprobante_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			SELECT comprobante_sql
+			v_cantBusq = RECCOUNT()
+			
+			IF v_cantBusq > 0
+				SELECT * FROM comprobante_sql INTO TABLE &p_nombreTabla	
+				
+				v_encontrado = .T.
+				
+			ENDIF 
+		
+		ENDIF 
+
+				
+		ENDIF 
+
+
+
+	RETURN v_encontrado
+
+ENDFUNC 
+
 
 
 */------------------------------------------------------------------------------------------------------------
@@ -1621,33 +1703,62 @@ FUNCTION ExportarComprobantes
 				ENDIF
 				
 				
+				
+				
+				
 				*************************
-				** Descripción de la entidad **
+				** Descripción del comprobante **
 				*************************
-				v_entdescrip 	= &p_tablaComprobantes..nombre
+				v_compdescrip 	= &p_tablaComprobantes..comproba 
 				v_edescrip 	= ALLTRIM(cbcobrador_sql.edescrip)
 				
 				ALINES(ARR_edescrip,v_edescrip,'-')
 				v_tamedescrip = VAL(ARR_edescrip(2))
 		
 				
-				v_edescripstr = ALLTRIM(v_entdescrip)
+				v_ecompcripstr = ALLTRIM(v_compdescrip)
 					
 														
-				IF LEN(ALLTRIM(v_edescrip)) <= v_tamedescrip
-					v_edescripstr = REPLICATE(' ',v_tamedescrip- len(ALLTRIM(v_edescripstr)))+ALLTRIM(v_edescripstr)
+				IF LEN(ALLTRIM(v_ecompcripstr)) <= v_tamedescrip
+					v_ecompcripstr = REPLICATE(' ',v_tamedescrip- len(ALLTRIM(v_ecompcripstr)))+ALLTRIM(v_ecompcripstr)
 
-					v_linea = v_linea+v_edescripstr && Si está correcto: lo agrego a la linea
+					v_linea = v_linea+v_ecompcripstr&& Si está correcto: lo agrego a la linea
 					
 				ELSE
 					** Si tengo mas caractes lo trunco
-					v_edescripstr = SUBSTR(ALLTRIM(v_edescripstr),1,v_tamedescrip)
+					v_ecompcripstr= SUBSTR(ALLTRIM(v_ecompcripstr),1,v_tamedescrip)
 					
 					
-					v_linea = v_linea+ALLTRIM(v_edescripstr)
+					v_linea = v_linea+ALLTRIM(v_ecompcripstr)
 					
 				ENDIF
 				
+				*************************
+				** Descripción de la entidad **
+				*************************
+				v_entdescripen 	= &p_tablaComprobantes..nombre
+				v_edescripen 	= ALLTRIM(cbcobrador_sql.edescripen)
+				
+				ALINES(ARR_edescripen,v_edescripen,'-')
+				v_tamedescripen = VAL(ARR_edescripen(2))
+		
+				
+				v_edescripenstr = ALLTRIM(v_entdescripen)
+					
+														
+				IF LEN(ALLTRIM(v_edescripenstr)) <= v_tamedescripen
+					v_edescripenstr = REPLICATE(' ',v_tamedescripen- len(ALLTRIM(v_edescripenstr)))+ALLTRIM(v_edescripenstr)
+
+					v_linea = v_linea+v_edescripenstr && Si está correcto: lo agrego a la linea
+					
+				ELSE
+					** Si tengo mas caractes lo trunco
+					v_edescripenstr = SUBSTR(ALLTRIM(v_edescripenstr),1,v_tamedescripen)
+					
+					
+					v_linea = v_linea+ALLTRIM(v_edescripenstr)
+					
+				ENDIF
 							
 				FPUTS(v_adminArc,v_linea)
 
