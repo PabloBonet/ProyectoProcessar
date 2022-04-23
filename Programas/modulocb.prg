@@ -233,10 +233,10 @@ FUNCTION ImportarComprobantes
 							
 							
 							v_lote = 0
-							v_comprobante = ""
+							
 																									
-							v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaComprobantes)+ " (ident, narchivo, lote, eperiodo, esecuencia, comproba,idcomp, total1, vence1,total2, vence2, total3, vence3, bc,eentidad,eservicio,ecuenta,edescrip, edescripen) "
-							v_sentenciaIns2 = " values ("+ALLTRIM(STR(p_idcbasociada))+",'"+ALLTRIM(v_nombArchivoEnv)+"',"+ALLTRIM(STR(v_lote))+",'"+ALLTRIM(COD_eperiodo)+"','"+ALLTRIM(COD_eesecuencia)+"','"+ALLTRIM(v_comprobante)+"',"+ALLTRIM(STR(NUM_ebcidcomp))+","
+							v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaComprobantes)+ " (ident, narchivo, lote, eperiodo, esecuencia, idcomp, total1, vence1,total2, vence2, total3, vence3, bc,eentidad,eservicio,ecuenta,edescrip, edescripen) "
+							v_sentenciaIns2 = " values ("+ALLTRIM(STR(p_idcbasociada))+",'"+ALLTRIM(v_nombArchivoEnv)+"',"+ALLTRIM(STR(v_lote))+",'"+ALLTRIM(COD_eperiodo)+"','"+ALLTRIM(COD_eesecuencia)+"',"+ALLTRIM(STR(NUM_ebcidcomp))+","
 							v_sentenciaIns3 = ALLTRIM(STR(NUM_ebctotal1,13,2))+",'"+ALLTRIM(COD_ebcvence1)+"',"+ALLTRIM(STR(NUM_ebctotal2,13,2))+",'"+ALLTRIM(COD_ebcvence2)+"',"+ALLTRIM(STR(NUM_ebctotal3,13,2))+",'"+ALLTRIM(COD_ebcvence3)+"','"+alltrim(COD_ebc)+"',"
 							v_sentenciaIns4 = ALLTRIM(COD_eentidad)+","+ALLTRIM(COD_eservicio)+","+ALLTRIM(COD_ecuenta)+",'"+ALLTRIM(COD_edescrip)+"','"+ALLTRIM(COD_edescripen)+"')"
 							
@@ -285,7 +285,7 @@ PARAMETERS p_codBarra,P_nombreTabla
 	* Me conecto a la base de datos
 	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
 
-	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,comprobante as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,descrip as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
 	sqlmatriz(2)=" from ultcbcomplote " 
 	sqlmatriz(3)=" where bc ='"+ALLTRIM(p_codBarra)+"'"
 
@@ -361,7 +361,7 @@ PARAMETERS p_codEnt,p_subCodEnt,p_idcomp,P_nombreTabla
 	* Me conecto a la base de datos
 	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
 
-	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,comprobante as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,descrip as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
 	sqlmatriz(2)=" from ultcbcomplote " 
 	sqlmatriz(3)=" where codigo ='"+ALLTRIM(v_codigoBusqueda)+"'"
 
@@ -438,7 +438,7 @@ PARAMETERS p_codEmp,p_subCodEmp,p_entidad,P_nombreTabla
 	* Me conecto a la base de datos
 	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
 
-	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,comprobante as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,descrip as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
 	sqlmatriz(2)=" from ultcbcomplote " 
 	sqlmatriz(3)=" where SUBSTR(codigo,1,8) ='"+ALLTRIM(v_codigoBusqueda)+"' and entidad = "+ALLTRIM(STR(p_entidad))
 
@@ -2032,8 +2032,7 @@ FUNCTION ImportarCobros
 									
 									
 									
-									v_comprobante = ""
-																											
+																			
 									v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaCobros)+ " (ident, puntorec, secuencia, idcobro, fechaCobro, impCobro, recCobro, bc) "
 									v_sentenciaIns2 = " values ('"+ALLTRIM(COD_r0empresaid)+"','"+ALLTRIM(COD_r0puntorec)+"','"+ALLTRIM(COD_r0secuencia)+"',"+ALLTRIM(STR(NUM_r1idcobro))+",'"+ALLTRIM(STR_r1fechacobro)+"',"
 									v_sentenciaIns3 = ALLTRIM(STR(NUM_r1importe,14,2))+","+ALLTRIM(STR(NUM_r1recargo,14,2))+",'"+ALLTRIM(COD_r1bc)+"')"
