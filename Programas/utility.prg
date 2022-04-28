@@ -2004,11 +2004,11 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 				** Armo la cadena JSON  **
 				versionFCompro = ALLTRIM(STR(v_version))
 
-                fechaCompro = ALLTRIM(factu.fecha)
+                fechaCompro = SUBSTR(ALLTRIM(factu.fecha),1,4)+'-'+SUBSTR(ALLTRIM(factu.fecha),5,2)+'-'+SUBSTR(ALLTRIM(factu.fecha),7,2)
                 cuitE 		= ALLTRIM(v_cuitEmpSG)
 	
-                ptovta_fe   = ALLTRIM(v_puntoVta)
-                idtipocbte_fe = ALLTRIM(factu.tipcomAFIP)
+                ptovta_fe   = ALLTRIM(STR(VAL(v_puntoVta)))
+                idtipocbte_fe = ALLTRIM(STR(VAL(factu.tipcomAFIP)))
 	
 				numerostr  = ALLTRIM(STR(factu.numero))
                 imp_totstr = ALLTRIM(STR(ROUND(factu.total,2),13,2))
@@ -2028,6 +2028,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 				v_json	= ALLTRIM(ALLTRIM(v_json1)+ ALLTRIM(v_json2)+ ALLTRIM(v_json3))
 	
 			
+					
 				** Encripto la cadena JSON **
 				v_datosCodificados  = "" 
 				
@@ -2862,6 +2863,61 @@ PARAMETERS p_idvinculo
 ENDFUNC 
 
 
+* FUNCIÓN PARA IMPRIMIR PAGARES (COMPROBANTES DE LA TABLA pagares)
+* PARAMETROS: P_idpagare
+FUNCTION imprimirPagare
+PARAMETERS p_idpagare
+
+
+	v_idpagare = p_idpagare
+
+
+	IF v_idpagare > 0
+		
+
+	
+		*** Busco los datos del Pagare
+		
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+
+			sqlmatriz(1)=	" Select p.*, c.tipo, c.comprobante as nomcomp, pv.puntov "
+			sqlmatriz(2)=   " from pagares p " 
+			sqlmatriz(3)=	" left join comprobantes c on c.idcomproba = p.idcomproba "
+			sqlmatriz(4)=   " left join puntosventa pv on p.pventa = pv.pventa "
+			sqlmatriz(5)=	" where p.idpagare = "+ ALLTRIM(STR(v_idpagare))
+					
+			verror=sqlrun(vconeccionF,"pagares_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los Pagares",0+48+0,"Error")
+			ENDIF
+		
+	
+		SELECT * FROM pagares_sql INTO TABLE pagaresim
+		USE IN pagares_sql
+			
+		SELECT pagaresim
+		
+		IF NOT EOF()
+			SELECT pagaresim
+			v_idcomproba = pagaresim.idcomproba
+			
+			DO FORM reporteform WITH "pagaresim","pagarescr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar el Pagaré para imprimir",0+48+0,"Error al cargar Pagares")
+			RETURN 	
+		ENDIF 
+		USE IN pagaresim
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar el Pagare ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
 
 
 
