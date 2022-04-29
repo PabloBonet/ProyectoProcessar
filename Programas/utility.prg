@@ -1630,8 +1630,8 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 				
 *!*					v_observa	= respuestaComp.observa
 *!*					v_errores = respuestaComp.errores
-				v_observa	= STRTRAN(respuestaComp.observa,"'","")
-				v_errores = STRTRAN(respuestaComp.errores,"'","")
+				v_observa = ALLTRIM(SUBSTR(STRTRAN(respuestaComp.observa,"'","")+SPACE(250),1,250))
+				v_errores = ALLTRIM(SUBSTR(STRTRAN(respuestaComp.errores,"'","")+SPACE(250),1,250))
 				DIMENSION lamatriz(9,2)
 				
 				lamatriz(1,1)='idfe'
@@ -14988,4 +14988,64 @@ p_aliasretorno  = ""
 ENDFUNC 
 
 
+
+*-----------------------------------------------------------------------------------
+* Chequea si existe alguna Actualización Nueva para descargar por FTP 
+* Retorna 1 si existe actualización o 0 Si no existen versiones nuevas
+*-----------------------------------------------------------------------------------
+
+
+FUNCTION FUpdatesys
+
+	 p_updretorno  = 0
+	 IF !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'   ',1,3)=='S/A') AND !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'    ',1,3)=='N/A') AND !EMPTY(ALLTRIM(_SYSFTPUPDATE))  THEN 
+ 
+	  	oFTp = .NULL.
+	  	oFTP = CreateObject("CLASE_FTP")
+	  
+	  	IF Vartype(oFTP) == "O" THEN
+	  	
+	  	  =ALINES(ARRFTP,_SYSFTPUPDATE,1,';',' ')
+	  	
+	      oFTP.cServidorFTP   = ARRFTP(1)
+	      oFTP.cPuertoNro     = ARRFTP(2)
+	      oFTP.cNombreUsuario = ARRFTP(3)
+	      oFTP.cContrasena    = ARRFTP(4)
+	      oFTP.CONECTAR_SERVIDOR_FTP()
+
+		  IF Empty(oFTP.cMensajeError) THEN
+			      	
+					LOCAL lcNombreArchivoLocal, lcNombreArchivoRemoto
+					lcCarpetaRemota = IIF((EMPTY(ALLTRIM(ARRFTP(5))) OR ALLTRIM(ARRFTP(5))=='/'),'/','/'+ALLTRIM(ARRFTP(5))+'/') 
+					lcNombreArchivoRemoto = lcCarpetaRemota+STRTRAN(LOWER(ALLTRIM(JUSTFNAME(SYS(16,1)))),'.exe','ver.txt')
+					lcNombreArchivoLocal  = STRTRAN(LOWER(ALLTRIM(JUSTFNAME(SYS(16,1)))),'.exe','ver.000')
+					eje = "DELETE FILE '"+ STRTRAN(LOWER(ALLTRIM(JUSTFNAME(SYS(16,1)))),'.exe','ver.000')+"'"
+					&eje
+
+					 oFTP.RECIBIR_ARCHIVO_REMOTO(lcNombreArchivoRemoto, lcNombreArchivoLocal, .T.)     && .T. significa que ocurrirá un error si el archivo ya existe
+					 IF Empty(oFTp.cMensajeError) THEN
+
+							PUNTERO = FOPEN(lcNombreArchivoLocal,0)
+							IF PUNTERO > 0 THEN
+								n_version =  ALLTRIM(FGETS(PUNTERO))
+								IF !EMPTY(n_version) THEN 
+									IF  VAL(ALLTRIM(STRTRAN(n_version,'.','0'))) > VAL(ALLTRIM(STRTRAN(_SYSVERSION,'.','0'))) THEN 
+										p_updretorno= 1
+									ENDIF 
+								ENDIF 
+							ENDIF
+							=FCLOSE(PUNTERO)
+							PUNTERO = 0 
+					 ENDIF
+		   ENDIF
+		   oFTP.DESCONECTAR_SERVIDOR_FTP()
+	    	
+	  	ENDIF
+	 
+	 ENDIF 
+
+  	oFTp = .NULL.
+	RELEASE oFTp
+	RETURN p_updretorno
+ENDFUNC 
 

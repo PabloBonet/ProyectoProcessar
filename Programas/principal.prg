@@ -167,11 +167,11 @@ _SYSIP = IPADDRESS(1)
 _SYSHOST= IPADDRESS(2)
 
 
-I=1
-AUX = _SYSESTACION+"\"+ALLTRIM(STR(I))
+I= frandom()
+AUX = _SYSESTACION+"\"+ALLTRIM(I)
 DO WHILE DIRECTORY(AUX)
-	I = I+1
-	AUX = _SYSESTACION+"\"+ALLTRIM(STR(I))
+	I= frandom(5)
+	AUX = _SYSESTACION+"\"+ALLTRIM(I)
 ENDDO
 IF !DIRECTORY(AUX) then
 	MKDIR(AUX)
@@ -210,10 +210,13 @@ toolbarsys.dock(1)
 	DO FORM LOGIN TO LOGEO
 
 	IF LOGEO > 0 THEN 
-	    	KEYBOARD '{F10}'
+	  	KEYBOARD '{F10}'
 		toolbarsys.show 
 *!*			SET MESSAGE TO "Esta es la Barra"
 		=variables_sys(0)
+		IF fupdatesys() = 1 THEN 
+			DO FORM updatesys
+		ENDIF 
 		READ EVENTS
 	ELSE 
 	ENDIF 
@@ -222,7 +225,6 @@ toolbarsys.dock(1)
 CLEAR DLLS
 RELEASE ALL EXTENDED
 CLEAR ALL
-
 
 
 
