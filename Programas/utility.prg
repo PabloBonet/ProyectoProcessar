@@ -15000,12 +15000,19 @@ FUNCTION FUpdatesys
 	 p_updretorno  = 0
 	 IF !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'   ',1,3)=='S/A') AND !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'    ',1,3)=='N/A') AND !EMPTY(ALLTRIM(_SYSFTPUPDATE))  THEN 
  
+	  	  =ALINES(ARRFTP,_SYSFTPUPDATE,1,';',' ')
+		
+		IF ping(ALLTRIM(ARRFTP(1))) = .f. THEN 
+			RELEASE ARRFTP 
+			RETURN 0
+		ENDIF 
+		
 	  	oFTp = .NULL.
 	  	oFTP = CreateObject("CLASE_FTP")
 	  
 	  	IF Vartype(oFTP) == "O" THEN
 	  	
-	  	  =ALINES(ARRFTP,_SYSFTPUPDATE,1,';',' ')
+*	  	  =ALINES(ARRFTP,_SYSFTPUPDATE,1,';',' ')
 	  	
 	      oFTP.cServidorFTP   = ARRFTP(1)
 	      oFTP.cPuertoNro     = ARRFTP(2)
@@ -15049,3 +15056,34 @@ FUNCTION FUpdatesys
 	RETURN p_updretorno
 ENDFUNC 
 
+
+*******************************************
+** Ping, recibe como parametro un hosts y envia un ping para chequear que exista
+* devuelve .t. si responde, .f. si no responde el host
+*******************************************
+FUNCTION ping
+param tcServer
+    LOCAL llResult
+    tcServer = IIF( VARTYPE(tcServer)='C', ALLTRIM(tcServer), '')
+
+    if empty(tcServer)
+        return .f.
+    endif
+    DECLARE INTEGER WSACleanup IN ws2_32
+    DECLARE INTEGER gethostbyname IN ws2_32 STRING host
+    Declare Long inet_addr In wsock32 String cp
+    DECLARE INTEGER WSAStartup IN ws2_32 INTEGER wVerRq, STRING lpWSAData
+    Declare Long gethostbyaddr In wsock32 Long @addr, Long lenght, Long protocol
+
+    IF WSAStartup(0x202, Repli(Chr(0),512)) = 0
+        IF ISALPHA( LEFT(tcServer,1))
+               llResult= !(gethostbyname(tcServer) = 0)
+        ELSE
+              * Ip-adress to NETWORK BYTE ORDRER
+              ipAddress_n = inet_addr(alltrim(tcServer))
+              llResult= !(gethostbyaddr(ipAddress_n,4,2)=0)
+        ENDIF
+    ENDIF
+   = WSACleanup()
+
+RETURN llResult
