@@ -618,7 +618,7 @@ IF p_idcbcobrador  > 0
 	** Me conecto
 	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
 
-	sqlmatriz(1)="SELECT c.esecuencia as maxsec "
+	sqlmatriz(1)="SELECT MAX(c.esecuencia) as maxsec "
 	sqlmatriz(2)=" FROM cbcobrador c "
 	sqlmatriz(3)=" WHERE c.idcbcobra = "+ALLTRIM(STR(p_idcbcobrador))
 
@@ -645,6 +645,45 @@ ENDFUNC
 
 
 
+*/------------------------------------------------------------------------------------------------------------
+*/ 	Obtiene el Máximo valor de secuencia utilizada en la importación de comprobantes por el cobrador pasada como parámetro
+** 	Funcion: calculaSecueciaMaxCob
+* 	
+*	Retorno: Retorna el número de Secuencia Máxima. Retorna -1 en caso de error
+*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION calculaSecuenciaMaxImp
+PARAMETERS p_idcbasociada
+
+IF p_idcbasociada > 0
+	** Me conecto
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="SELECT ifnull(MAX(cast(esecuencia as UNSIGNED)),0) as maxsec "
+	sqlmatriz(2)=" FROM cbcomprobantes c "
+	sqlmatriz(3)=" WHERE c.idcbasoci = "+ALLTRIM(STR(p_idcbasociada))
+
+	verror=sqlrun(vconeccionD,"maxSecuencia_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Datos ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+	    RETURN -1
+	ENDIF 
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		v_maxsec = maxSecuencia_sql.maxsec
+	
+		v_maxsec = IIF(TYPE('v_maxsec')=='C', VAL(v_maxsec),v_maxsec)
+	 RETURN v_maxsec
+	 
+ELSE
+	RETURN  -1
+ENDIF 
+
+ENDFUNC 
 */------------------------------------------------------------------------------------------------------------
 */ 	Obtiene el Máximo valor de secuencia utilizada para los lotes de cobros
 ** 	Funcion: calculaLoteMax
@@ -678,6 +717,40 @@ FUNCTION calculaLoteMax
 
 ENDFUNC 
 
+
+
+*/------------------------------------------------------------------------------------------------------------
+*/ 	Obtiene el Máximo valor de lote de importación
+** 	Funcion: calculaLoteMaxImp
+* 	
+*	Retorno: Retorna el número de Lote Máximo. Retorna -1 en caso de error
+*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION calculaLoteMaxImp
+
+	** Me conecto
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="SELECT ifnull(max(lote),0) as maxlote "
+	sqlmatriz(2)=" FROM cbcomprobantes "
+
+	verror=sqlrun(vconeccionD,"maxLoteimp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Datos ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+	    RETURN -1
+	ENDIF 
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		v_maxLoteImp = maxLoteimp_sql.maxlote
+		v_maxLoteImp = IIF(TYPE('v_maxLoteImp')=='C', VAL(v_maxLoteImp),v_maxLoteImp)
+	 RETURN v_maxLoteImp
+	 
+
+ENDFUNC 
 
 
 
@@ -1736,7 +1809,7 @@ FUNCTION ExportarComprobantes
 				*************************
 				** Descripción de la entidad **
 				*************************
-				v_entdescripen 	= &p_tablaComprobantes..nombre
+				v_entdescripen 	= ALLTRIM(&p_tablaComprobantes..nombre)+" "+ALLTRIM(&p_tablaComprobantes..documento)
 				v_edescripen 	= ALLTRIM(cbcobrador_sql.edescripen)
 				
 				ALINES(ARR_edescripen,v_edescripen,'-')
@@ -1897,12 +1970,12 @@ FUNCTION ImportarCobros
 		v_ebceid 		= ALLTRIM(cbcobrador_sql.ebceid)
 		v_ebcsid		= ALLTRIM(cbcobrador_sql.ebcsid)
 		v_ebcidcomp 	= ALLTRIM(cbcobrador_sql.ebcidcomp)
-		v_ebctotal1 	= ALLTRIM(cbcobrador_sql.ebctotal1)
-		v_ebcvence1 	= ALLTRIM(cbcobrador_sql.ebcvence1)
-		v_ebctotal2 	= ALLTRIM(cbcobrador_sql.ebctotal2)
-		v_ebcvence2		= ALLTRIM(cbcobrador_sql.ebcvence2)
-		v_ebctotal3 	= ALLTRIM(cbcobrador_sql.ebctotal3)
-		v_ebcvence3 	= ALLTRIM(cbcobrador_sql.ebcvence3)
+		v_ebctotal1 	= ALLTRIM(cbcobrador_sql.etotal1)
+		v_ebcvence1 	= ALLTRIM(cbcobrador_sql.evence1)
+		v_ebctotal2 	= ALLTRIM(cbcobrador_sql.etotal2)
+		v_ebcvence2		= ALLTRIM(cbcobrador_sql.evence2)
+		v_ebctotal3 	= ALLTRIM(cbcobrador_sql.etotal3)
+		v_ebcvence3 	= ALLTRIM(cbcobrador_sql.evence3)
 		
 		** Información de archivo de retorno **
 		v_r0empresaid	= ALLTRIM(cbcobrador_sql.r0empresaid)
