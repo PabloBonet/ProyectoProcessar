@@ -15087,3 +15087,462 @@ param tcServer
    = WSACleanup()
 
 RETURN llResult
+
+**********************************************************************************
+
+
+
+*******************************************
+** Cumplimenta las OT Pendientes en una Nota de Pedido
+** Parámetros:
+*	cnp_idnp  : Nota de Pedido para la cual cancelar las OT
+*   cnp_tipo: Tipo de articulos a cumplir, puede ser sobre articulos o materiales
+*		 0 : Articulos, 1: Materiales , 2: Todos
+*******************************************
+FUNCTION FCumpleNP
+param cnp_idnp, cnp_tipo
+
+	cnp_condicion = " where ot.idnp = "+ALLTRIM(str(cnp_idnp))+" and p.pendiente > 0 "+IIF(cnp_tipo=0," and ot.idmate = 0 ","" )+IIF(cnp_tipo=1," and ot.idmate = 1 ","")
+
+	vconeccionNP = abreycierracon(0,_SYSSCHEMA)
+		
+	sqlmatriz(1)= " SELECT ot.idot, ot.articulo, ot.detalle, ot.idmate, ot.cantidad as cantiot,ot.cantidadfc, p.pendiente as pendiente,  "
+	sqlmatriz(2)= " np.puntov, np.numero as numeronp, np.entidad, np.nombre, np.fecha "
+	sqlmatriz(3)= " FROM ot left join otpendientes p on ot.idot = p.idot "
+	sqlmatriz(4)= " left join np on np.idnp = ot.idnp " +cnp_condicion 
+	verror=sqlrun(vconeccionNP ,"npcumplir_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de OT a Cancelar ... ",0+48+0,"Error")
+	    RETURN .F.
+	ENDIF
+	
+
+	sqlmatriz(1)=" SELECT c.idcomproba, a.pventa FROM comprobantes c "
+	sqlmatriz(2)=" LEFT JOIN compactiv a ON a.idcomproba = c.idcomproba "
+	sqlmatriz(4)=" WHERE c.tabla = 'cumplimentap' " 
+	verror=sqlrun(vconeccionNP ,"comprocump_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Comprobantes a Cumplir ... ",0+48+0,"Error")
+	    RETURN .F.
+	ENDIF	
+	
+
+	SELECT npcumplir_sql
+	GO TOP 	
+ 	IF EOF()
+		USE IN npcumplir_sql
+		USE IN comprocump_sql
+		RETURN .F.
+	ENDIF
+
+****************************************************************************
+	DIMENSION lamatriz1(10,2)
+	DIMENSION lamatriz2(7,2)
+
+
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+				
+	cnp_idcump		= 0
+	cnp_idcomproba	= comprocump_sql.idcomproba
+	cnp_pventa		= comprocump_sql.pventa
+	cnp_numero		= maxnumerocom(cnp_idcomproba,cnp_pventa ,1)
+	cnp_observa = ALLTRIM(npcumplir_sql.puntov)+'-'+STRTRAN(STR(npcumplir_sql.numeronp,8),' ','0')+'   '+ALLTRIM(STR(npcumplir_sql.entidad))+'-'+ALLTRIM(npcumplir_sql.nombre)+' '+ALLTRIM(npcumplir_sql.fecha)
+				
+	lamatriz1(1,1)='idcump'
+	lamatriz1(1,2)= ALLTRIM(STR(cnp_idcump))
+	lamatriz1(2,1)='idcomproba'
+	lamatriz1(2,2)= ALLTRIM(STR(cnp_idcomproba))
+	lamatriz1(3,1)='pventa'
+	lamatriz1(3,2)= ALLTRIM(STR(cnp_pventa))
+	lamatriz1(4,1)='fecha'
+	lamatriz1(4,2)="'"+DTOS(DATE())+"'"
+	lamatriz1(5,1)='responsab'
+	lamatriz1(5,2)="'"+ALLTRIM(_SYSUSUARIO)+"'"
+	lamatriz1(6,1)='observa1'
+	lamatriz1(6,2)="'"+cnp_observa+"'"
+	lamatriz1(7,1)='observa2'
+	lamatriz1(7,2)="''"
+	lamatriz1(8,1)='observa3'
+	lamatriz1(8,2)="''"
+	lamatriz1(9,1)='observa4'
+	lamatriz1(9,2)="''"
+	lamatriz1(10,1)='numero'
+	lamatriz1(10,2)=alltrim(STR(cnp_numero))
+
+
+	p_tabla     = 'cumplimentap'
+	p_matriz    = 'lamatriz1'
+	p_conexion  = vconeccionNP
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajuste)),0+48+0,"Error")
+	    RETURN .F. 
+	ENDIF  
+
+	sqlmatriz(1)=" select last_insert_id() as maxid "
+	verror=sqlrun(vconeccionNP,"ultimoId")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+		=abreycierracon(vconeccionNP,"")	
+		USE IN npcumplir_sql
+		USE IN comprocump_sql
+		RETURN .F.
+	ENDIF 
+	SELECT ultimoId
+	GO TOP 
+	v_idcompro_Ultimo = VAL(ultimoId.maxid)
+	USE IN ultimoId
+	cnp_idcump= v_idcompro_Ultimo
+				
+	SELECT 	npcumplir_sql
+	GO TOP 				
+	DO WHILE !EOF()
+
+			IF !EMPTY(npcumplir_sql.articulo) AND npcumplir_sql.pendiente > 0 THEN 
+
+				v_idcumph = 0						
+				lamatriz2(1,1)='idcumph'
+				lamatriz2(1,2)=ALLTRIM(STR(v_idcumph))
+				lamatriz2(2,1)='idcump'
+				lamatriz2(2,2)=ALLTRIM(STR(cnp_idcump))
+				lamatriz2(3,1)='articulo'
+				lamatriz2(3,2)="'"+ALLTRIM(npcumplir_sql.articulo)+"'"
+				lamatriz2(4,1)='detalle'
+				lamatriz2(4,2)="'"+alltrim(npcumplir_sql.detalle)+"'"
+				lamatriz2(5,1)='cantidad'
+				lamatriz2(5,2)=alltrim(STR(npcumplir_sql.pendiente,10,2))
+				lamatriz2(6,1)='cantidaduf'
+				lamatriz2(6,2)=alltrim(STR(npcumplir_sql.cantidadfc,10,2))
+				lamatriz2(7,1)='idot'
+				lamatriz2(7,2)=alltrim(STR(npcumplir_sql.idot,10,2))
+						
+				p_tabla     = 'cumplimentah'
+				p_matriz    = 'lamatriz2'
+				p_conexion  = vconeccionNP
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idcumph)),0+48+0,"Error")	
+				    RETURN .F.						 
+				ENDIF						
+					
+			ENDIF
+
+		SELECT npcumplir_sql
+		SKIP 
+	ENDDO 
+*****************************************************************************	
+
+USE IN npcumplir_sql
+USE IN comprocump_sql
+
+RELEASE lamatriz1
+RELEASE lamatriz2
+
+registrarEstado("cumplimentap","idcump",cnp_idcump,'I',"AUTORIZADO")
+					
+
+* me desconecto	
+=abreycierracon(vconeccionNP,"")
+
+RETURN .T.
+
+**********************************************************************************
+
+
+
+*******************************************
+** Inserta OT en una Nota de Pedido
+** Parámetros:
+*	ins_idnp   : Nota de Pedido a la cual insertar las OT
+*   ins_tabla: Tabla que contiene los articulos o materiales a insertar en a NP
+*		 Estructura : articulo c(20), idmate I, cantidad n(10,2)
+*******************************************
+FUNCTION FIinsertaOT
+PARAMETERS  ins_idnp, ins_tabla
+
+	IF !(TYPE("ins_tabla")="C") THEN 
+		ins_tabla= ""
+	ENDIF 
+	
+	IF EMPTY(ins_tabla) THEN 
+		RETURN .f.
+	ENDIF 
+
+	farchivo= ALLTRIM(ins_tabla)+".dbf"
+	IF file(farchivo) THEN 
+		IF !USED(ins_tabla) THEN 
+			USE &ins_tabla IN 0
+		ENDIF 	
+	ELSE 
+		RETURN .f.
+	ENDIF
+
+	SELECT &ins_tabla
+	GO TOP 
+	IF EOF() THEN 
+		USE IN &ins_tabla 
+		RETURN .f.
+	ENDIF 
+
+
+	vconeccionNP = abreycierracon(0,_SYSSCHEMA)
+		
+	sqlmatriz(1)= " SELECT * from np where idnp = "+ALLTRIM(str(ins_idnp))
+	verror=sqlrun(vconeccionNP ,"npreceptora_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de NP Receptora ... ",0+48+0,"Error")
+	    RETURN .f.
+	ENDIF
+
+	SELECT npreceptora_sql
+	GO TOP 	
+ 	IF EOF()
+		USE IN npreceptora_sql
+		USE IN &ins_tabla
+		= abreycierracon(vconeccionNP,"")
+		RETURN .f.
+	ENDIF
+
+	DIMENSION lamatriz2(19,2)
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+				
+	SELECT &ins_tabla 
+	GO TOP 				
+	DO WHILE !EOF()
+
+			IF !EMPTY(&ins_tabla..articulo) AND &ins_tabla..cantidad > 0 THEN 
+
+				
+				IF &ins_tabla..idmate = 0 THEN 
+					sqlmatriz(1)= " SELECT detalle, unidad  from  articulos where articulo = '"+ALLTRIM(&ins_tabla..articulo)+"'"
+				ELSE
+					sqlmatriz(1)= " SELECT detalle, unidad  from  otmateriales where codigomat = '"+ALLTRIM(&ins_tabla..articulo)+"' and idmate = "+ALLTRIM(str(&ins_tabla..idmate))
+				ENDIF 
+				verror=sqlrun(vconeccionNP ,"detalleot_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Detalle para la Ot... ",0+48+0,"Error")
+				    RETURN .f.
+				ENDIF
+				
+				SELECT detalleot_sql
+				GO TOP 
+				IF !EOF() THEN 
+
+					ins_id_ot = maxnumeroidx("idot","I","ot",1)
+					ins_idtipoot	= 1 
+					ins_articulo 	= &ins_tabla..articulo
+					ins_idmate		= &ins_tabla..idmate
+						
+					ins_detalle 	= detalleot_sql.detalle
+					ins_unidad 		= detalleot_sql.unidad
+					ins_unidadFC 	= detalleot_sql.unidad
+					ins_fechaentre	= DTOS(DATE())
+						
+					ins_cantidad 	= &ins_tabla..cantidad
+					ins_unitario 	= 0.00		
+					ins_observa		= "OT Insertada a petición"
+					ins_cantidadFC  = 0.00
+					ins_impuestos	= 0.00
+					ins_impuesto	= 0.00
+					ins_neto		= 0.00
+					ins_razonimp	= 0.00
+					ins_total		= 0.00
+					ins_idtiponpot  = IIF(&ins_tabla..idmate=0,1,2)
+						
+
+					ins_idimpuesto 	= 0
+					lamatriz2(1,1)='idnp'
+					lamatriz2(1,2)=ALLTRIM(STR(ins_idnp))
+					lamatriz2(2,1)='idot'
+					lamatriz2(2,2)=ALLTRIM(STR(ins_id_ot))
+					lamatriz2(3,1)='idtipoot'
+					lamatriz2(3,2)=ALLTRIM(STR(ins_idtipoot))
+					lamatriz2(4,1)='articulo'
+					lamatriz2(4,2)="'"+ALLTRIM(ins_articulo)+"'"
+					lamatriz2(5,1)='detalle'
+					lamatriz2(5,2)= "'"+ALLTRIM(ins_detalle)+"'"
+					lamatriz2(6,1)='cantidad'
+					lamatriz2(6,2)=ALLTRIM(STR(ins_cantidad,13,4))
+					lamatriz2(7,1)='unidad'
+					lamatriz2(7,2)="'"+alltrim(ins_unidad )+"'"
+					lamatriz2(8,1)='unitario'
+					lamatriz2(8,2)=ALLTRIM(STR(ins_unitario,13,4))
+					lamatriz2(9,1)='observa'
+					lamatriz2(9,2)="'"+ALLTRIM(ins_observa)+"'"
+					lamatriz2(10,1)='fechaentre'
+					lamatriz2(10,2)="'"+ALLTRIM(ins_fechaentre)+"'"
+					lamatriz2(11,1)='cantidadfc'
+					lamatriz2(11,2)=ALLTRIM(STR(ins_cantidadFC ,13,4))
+					lamatriz2(12,1)='unidadfc'
+					lamatriz2(12,2)="'"+ALLTRIM(ins_unidadFC )+"'"
+					lamatriz2(13,1)='impuestos'
+					lamatriz2(13,2)=ALLTRIM(STR(ins_impuestos,13,4))
+					lamatriz2(14,1)='total'
+					lamatriz2(14,2)=ALLTRIM(STR(ins_total,13,4))
+					lamatriz2(15,1)='impuesto'
+					lamatriz2(15,2)=ALLTRIM(STR(ins_idimpuesto))
+					lamatriz2(16,1)='razonimp'
+					lamatriz2(16,2)=ALLTRIM(STR(ins_razonImp,13,4))
+					lamatriz2(17,1)='neto'
+					lamatriz2(17,2)=ALLTRIM(STR(ins_neto,13,4))
+					lamatriz2(18,1)='idmate'
+					lamatriz2(18,2)=ALLTRIM(STR(ins_idmate))
+					lamatriz2(19,1)='idtiponp'
+					lamatriz2(19,2)=ALLTRIM(STR(ins_idtiponpot))
+
+					p_tabla     = 'ot'
+					p_matriz    = 'lamatriz2'
+					p_conexion  = vconeccionNP
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(ins_idnp)),0+48+0,"Error")
+					    RETURN .f.
+					ENDIF
+						
+				ENDIF 					
+				USE IN detalleot_sql
+			ENDIF
+
+		SELECT &ins_tabla 
+		SKIP 
+	ENDDO 
+	
+*****************************************************************************	
+USE IN npreceptora_sql
+USE IN &ins_tabla 
+RELEASE lamatriz2
+
+
+* me desconecto	
+=abreycierracon(vconeccionNP,"")
+
+RETURN .T.
+
+**********************************************************************************
+
+*******************************************
+** Vincula la OT del Módulo de Ordenes de Trabajo con las Notas de Pedidos de Clientes
+** Parametros:
+** 				pv_idot = idot de la orden de trabajo de Producción
+**				pv_idnp = idnp de la Nota de Pedido a Vincular con la OT
+** 				pv_operacion=  1: Vincula la OT con la Nota de Pedido -  2: Cumple los materiales de la NP asociada a la OT
+*******************************************
+FUNCTION FVinculaOTNP
+PARAMETERS  pv_idot, pv_idnp, pv_operacion 
+
+IF pv_operacion = 1 THEN 	&& Vinculacion OT con NP
+
+	* Chequeo que ya no existe vínculo entre OT y NP, ambocs no tienen que tener vínculos ya ingresados
+	vconeccionON = abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)= " SELECT * from otnp where idot = "+ALLTRIM(str(pv_idot))+" or idnp = "+ALLTRIM(str(pv_idnp))
+	verror=sqlrun(vconeccionON ,"chkotnp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de OTNP ... ",0+48+0,"Error")
+	    RETURN 
+	ENDIF
+
+	SELECT chkotnp_sql
+	GO TOP 	
+ 	IF !EOF()
+		MESSAGEBOX("No se Puede Realizar el Vínculo, Los Registros ya tienen Vínculos Establecidos...")
+		USE IN chkotnp_sql
+		= abreycierracon(vconeccionON,"")
+		RETURN .f. 
+	ENDIF
+
+
+	* Verifico si la OT tiene Materiales para Vincular con las Notas de Pedidos, si no los tiene No vincula
+	sqlmatriz(1)= " SELECT d.codigomat as articulo, d.idmate, d.cantidad  from otdetaot d "
+	sqlmatriz(2)= " left join otmateriales m on m.idmate = d.idmate "
+	sqlmatriz(3)= " where d.idot = "+ALLTRIM(str(pv_idot))+" and m.idtipomate = 1 and m.ctrlstock = 'S' "
+	verror=sqlrun(vconeccionON ,"chkmate_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de otdetaot ... ",0+48+0,"Error")
+	    RETURN .f.
+	ENDIF
+
+	SELECT chkmate_sql
+	GO TOP 	
+ 	IF EOF()
+		MESSAGEBOX("No se Puede Realizar el Vínculo, No Hay Materiales en la Orden de Trabajo ...")
+		USE IN chkmate_sql
+		= abreycierracon(vconeccionON,"")
+		RETURN .f.
+	ENDIF
+	
+	* Continuo con la Vinculación porque ambos OT Y NP no tienen vínculos establecidos, y la OT Tiene Materiales Cargados
+	
+	SELECT * FROM chkmate_sql INTO TABLE materialesot
+	SELECT materialesot
+	ALTER table materialesot alter COLUMN articulo c(20)
+	ALTER table materialesot alter COLUMN idmate   i
+	ALTER table materialesot alter COLUMN cantidad n(10,2)
+	
+	USE IN chkmate_sql
+	USE IN materialesot 
+
+	*- Inserto el registro de vinculo en la tabla OTNP
+	DIMENSION lamatriz1(4,2)
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+	
+	v_idotnp = 0						
+	lamatriz1(1,1)='idotnp'
+	lamatriz1(1,2)=ALLTRIM(STR(v_idotnp))
+	lamatriz1(2,1)='idot'
+	lamatriz1(2,2)=ALLTRIM(STR(pv_idot))
+	lamatriz1(3,1)='idnp'
+	lamatriz1(3,2)=ALLTRIM(STR(pv_idnp))
+	lamatriz1(4,1)='fecha'
+	lamatriz1(4,2)="'"+alltrim(DTOS(DATE()))+"'"
+						
+	p_tabla     = 'otnp'
+	p_matriz    = 'lamatriz1'
+	p_conexion  = vconeccionON 
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idotnp)),0+48+0,"Error")	
+	    RETURN 	.T.					 
+	ENDIF						
+	=abreycierracon(vconeccionON,"")
+	*- Fin de la Insercion
+	
+	*- Cumplir los Materiales Existentes en la Nota de Pedido para Cancelar el Pendiente
+	=FCumpleNP(pv_idnp,1)
+
+	*- Agrega los Materiales de la OT a la Nota de Pedido
+	=FIinsertaOT (pv_idnp, "materialesot" )
+
+
+ELSE 						&& Cierre y Finalización de OT, Cumple los materiales de la NP
+
+	* Chequeo que ya no existea vínculo entre OT y NP, ambos no tienen que tener vínculos ya ingresados
+	vconeccionON = abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)= " SELECT * from otnp where idot = "+ALLTRIM(str(pv_idot))
+	verror=sqlrun(vconeccionON ,"chkotnp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de OTNP ... ",0+48+0,"Error")
+	    RETURN .f.
+	ENDIF
+
+	SELECT chkotnp_sql
+	GO TOP 	
+ 	IF EOF()  && no Hago nada , no hay vínculos de OT con ninguna Nota de Pedido
+		USE IN chkotnp_sql
+		= abreycierracon(vconeccionON,"")
+		RETURN .t.
+	ENDIF
+	=abreycierracon(vconeccionON,"")
+	
+	*- Debo Cumplir los Materiales de la Nota de Pedido Asociada
+	vp_idnp = chkotnp_sql.idnp 
+	USE IN chkotnp_sql 
+	=FCumpleNP(vp_idnp,1)
+
+ENDIF 
+
+RETURN .t. 
+
