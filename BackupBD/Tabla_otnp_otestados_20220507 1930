@@ -1,0 +1,82 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processard
+--
+
+CREATE DATABASE IF NOT EXISTS processard;
+USE processard;
+
+--
+-- Definition of table `otestados`
+--
+
+DROP TABLE IF EXISTS `otestados`;
+CREATE TABLE `otestados` (
+  `idestado` int(10) unsigned NOT NULL,
+  `detalle` char(50) NOT NULL,
+  `stock` char(1) NOT NULL,
+  `cumplenp` char(1) NOT NULL DEFAULT 'N',
+  PRIMARY KEY (`idestado`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `otestados`
+--
+
+/*!40000 ALTER TABLE `otestados` DISABLE KEYS */;
+INSERT INTO `otestados` (`idestado`,`detalle`,`stock`,`cumplenp`) VALUES 
+ (1,'INICIADO','S','N'),
+ (2,'EN PRODUCCION','S','N'),
+ (3,'FINALIZADO','N','S'),
+ (4,'COLOCADO','N','N');
+/*!40000 ALTER TABLE `otestados` ENABLE KEYS */;
+
+
+--
+-- Definition of table `otnp`
+--
+
+DROP TABLE IF EXISTS `otnp`;
+CREATE TABLE `otnp` (
+  `idotnp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idot` int(10) unsigned NOT NULL,
+  `idnp` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`idotnp`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `otnp`
+--
+
+/*!40000 ALTER TABLE `otnp` DISABLE KEYS */;
+INSERT INTO `otnp` (`idotnp`,`idot`,`idnp`,`fecha`,`timestamp`) VALUES 
+ (2,2,37,'20220506','2022-05-06 22:54:03');
+/*!40000 ALTER TABLE `otnp` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
