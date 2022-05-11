@@ -2359,13 +2359,14 @@ PARAMETERS p_idnp
 		
 
 			sqlmatriz(1)=" Select f.*,d.*,c.*,v.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit, "
-			sqlmatriz(2)=" com.comprobante as nomcomp from np f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(2)=" com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump from np f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 			sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
 			sqlmatriz(4)="  left join ot d on f.idnp = d.idnp "
 			sqlmatriz(5)=" left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva"
-			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(7)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(8)=" where f.idnp = "+ ALLTRIM(STR(v_idnp))
+			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor "
+			sqlmatriz(7)=" left join r_otpendientes r on r.idot = d.idot "
+			sqlmatriz(8)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(9)=" where f.idnp = "+ ALLTRIM(STR(v_idnp))
 			
 					
 			verror=sqlrun(vconeccionF,"np_det_sql")
