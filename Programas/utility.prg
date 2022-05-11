@@ -4804,13 +4804,17 @@ ENDFUNC
 * Retorna un string conteniendo una descripcion del comprobante
 * que permite identificarlo univocamente. 
 * Parametros: 1-tabla
-*			  2-nombre del indice
+*			  2-nombre del indice, Si indice está vacio lo obtiene
 *			  3-Valor del indice
 */-------------------------------------------------------------
 FUNCTION fdescribecompro
 PARAMETERS par_tabla,par_nomindice,par_valindice
 
 	v_retornod = ""
+
+	IF EMPTY(par_nomindice) THEN 
+		par_nomindice = obtenerCampoIndice(ALLTRIM(par_tabla))
+	ENDIF 
 
 	vconeccionFD = abreycierracon(0,_SYSSCHEMA)
 	
@@ -11814,17 +11818,23 @@ PARAMETERS pl_tablaeti
 *!*						APPEND FROM articulosleidos 
 			*		COUNT FOR idletique = thisform.tb_idletique.Value AND !DELETED() TO vcvalidas 
 					GO TOP 
+					
+					USE IN articulosleidos_sql 
+					SELECT seleccetiquetas
+					APPEND FROM articulosleidos
+					USE IN articulosleidos
+				
+				
 				ENDIF 
 				
 			***********************************************************************************************
 
 ****************************
 				USE IN etiquetasleidas_sql 
-				USE IN articulosleidos_sql 
-				SELECT seleccetiquetas
-				APPEND FROM articulosleidos
+*!*					SELECT seleccetiquetas
+*!*					APPEND FROM articulosleidos
 				USE IN seleccetiquetas
-				USE IN articulosleidos
+*!*					USE IN articulosleidos
 				cretorno = "seleccetiquetas"
 				
 			ENDIF 
@@ -14916,9 +14926,10 @@ PARAMETERS p_tablacomp, p_idcomp
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de Datos Anexos",0+48+0,"Error")
 		ENDIF
-	   
+
 	   =abreycierracon(vconeccionF,"")	
 	
+		vdescribecomp=fdescribecompro(p_tablacomp,"",p_idcomp)
 	
 		
 		SELECT datosanexo_sql 
@@ -14935,6 +14946,9 @@ PARAMETERS p_tablacomp, p_idcomp
 		USE IN datosanexo_sql
 			
 		SELECT anexoimpr
+		ALTER table anexoimpr ADD COLUMN describecm c(200)
+		REPLACE ALL describecm WITH vdescribecomp 
+		GO TOP 
 		
 		IF NOT EOF()
 			
@@ -15102,7 +15116,7 @@ RETURN llResult
 FUNCTION FCumpleNP
 param cnp_idnp, cnp_tipo
 
-	cnp_condicion = " where ot.idnp = "+ALLTRIM(str(cnp_idnp))+" and p.pendiente > 0 "+IIF(cnp_tipo=0," and ot.idmate = 0 ","" )+IIF(cnp_tipo=1," and ot.idmate = 1 ","")
+	cnp_condicion = " where ot.idnp = "+ALLTRIM(str(cnp_idnp))+" and p.pendiente > 0 "+IIF(cnp_tipo=0," and ot.idmate = 0 ","" )+IIF(cnp_tipo=1," and ot.idmate > 0 ","")
 
 	vconeccionNP = abreycierracon(0,_SYSSCHEMA)
 		
