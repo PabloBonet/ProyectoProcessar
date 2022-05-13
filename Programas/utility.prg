@@ -2391,7 +2391,22 @@ PARAMETERS p_idnp
 *!*				ENDIF
 		
 
-		SELECT * FROM np_det_sql INTO TABLE .\np_impr
+		SELECT *, SPACE(200) as otvincula FROM np_det_sql INTO TABLE .\np_impr
+
+		sqlmatriz(1)=" Select n.idot, o.fechaot, o.descriptot, p.entidad, p.nombre from otnp n left join otordentra o on o.idot = n.idot left join otpedido p on p.idpedido = o.idpedido "
+		sqlmatriz(2)=" where n.idnp = "+ ALLTRIM(STR(v_idnp))
+		verror=sqlrun(vconeccionF,"otvin_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+		ENDIF 
+
+		v_otvincula = ""
+		SELECT otvin_sql
+		GO TOP 
+		IF !EOF() THEN 
+			v_otvincula = "O.T. Nro. "+ALLTRIM(STR(otvin_sql.idot))+'  F.'+SUBSTR(otvin_sql.fechaot,7,2)+'/'+SUBSTR(otvin_sql.fechaot,5,2)+'/'+SUBSTR(otvin_sql.fechaot,1,4)+'   '+STR(otvin_sql.entidad,6)+'-'+ALLTRIM(otvin_sql.nombre)+'  - '+ALLTRIM(otvin_sql.descriptot)
+		ENDIF 
+		USE IN otvin_sql 
 		
 			
 		SELECT np_impr
@@ -2402,7 +2417,7 @@ PARAMETERS p_idnp
 			
 			SELECT np_impr
 			GO TOP 
-			replace ALL imprMonto WITH v_imprimeMonto
+			replace ALL imprMonto WITH v_imprimeMonto, otvincula WITH v_otvincula
 			
 			SELECT np_impr
 			GO TOP 
