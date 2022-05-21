@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Nuevo ticket desde {SITE_URL}</title>
+        <style>
+            body,td,th{
+                color:#333;
+                font-family:Arial, Helvetica, sans-serif;
+                font-size:12px;
+            }
+            body {
+                background-color:#eee;
+            }
+            a {
+                color:#8f9322;
+            }
+            h2 {
+                color:#FFF;
+                margin:5px 0 0;
+            }
+        </style>
+    </head>
+
+    <body>
+        <table width="500" border="1" cellpadding="10" cellspacing="0" bgcolor="#FFFFFF" bordercolor="#cccccc">
+            <tr>
+                <td bgcolor="#8f9322" align="center">
+                    <h2>Nuevo ticket de soporte desde {SITE_URL}</h2>
+                </td>
+            </tr>
+            <tr>
+                <td><table width="100%" border="0" cellspacing="0" cellpadding="5" bordercolor="#CCCCCC">
+                        <tr>
+                            <td width="30%" align="right"><strong>Sector:</strong></td>
+                            <td>{SECTOR}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Prioridad:</strong></td>
+                            <td>{PRIORIDAD}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Fecha:</strong></td>
+                            <td>{FECHA}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Nombre y Apellido:</strong></td>
+                            <td>{NOMBRE}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Email:</strong></td>
+                            <td><a href="mailto:{EMAIL}">{EMAIL}</a></td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right" valign="top"><strong>Asunto:</strong></td>
+                            <td>{ASUNTO}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right" valign="top"><strong>Archivo adjunto:</strong></td>
+                            <td><a href="{ADJUNTO}" target="_blank">{ADJUNTO}</a></td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right" valign="top"><strong>Mensaje:</strong></td>
+                            <td>{MENSAJE}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

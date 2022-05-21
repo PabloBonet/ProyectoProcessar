@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine on
+RewriteCond %{SERVER_PORT} !^443$
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+
+    RewriteRule  ^(.*)process-sortable.php$		$1process-sortable.php [QSA,L]
+    RewriteRule  ^(.*)process-sortable2.php$		$1process-sortable2.php [QSA,L]
+
+    RewriteRule  ^(.*)pictures_upload.php$		$1pictures_upload.php [QSA,L]
+    RewriteRule  ^(.*)pictures_ajax.php$		$1pictures_ajax.php [QSA,L]
+    RewriteRule  ^(.*)ticket-status.php$		$1ticket-status.php [QSA,L]
+    RewriteRule  ^(.*)search_localidades.php$		$1search_localidades.php [QSA,L]
+
+    RewriteRule  ^(.*)$		index.php?url=$1 [QSA,L]
+
+</IfModule>

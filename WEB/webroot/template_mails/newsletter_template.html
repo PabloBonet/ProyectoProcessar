@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Nuevo usuario de newsletter - {SITE_URL}</title>
+        <style>
+            body,td,th{
+                color:#333;
+                font-family:Arial, Helvetica, sans-serif;
+                font-size:12px;
+            }
+            body {
+                background-color:#eee;
+            }
+            a {
+                color:#FF9000;
+            }
+            h2 {
+                color:#FFF;
+                margin:5px 0 0;
+            }
+        </style>
+    </head>
+
+    <body>
+        <table width="500" border="1" cellpadding="10" cellspacing="0" bgcolor="#FFFFFF" bordercolor="#cccccc">
+            <tr>
+                <td bgcolor="#666" align="center">
+                    <h2>Nuevo usuario de newsletter - {SITE_URL}</h2>
+                </td>
+            </tr>
+            <tr>
+                <td><table width="100%" border="0" cellspacing="0" cellpadding="5" bordercolor="#CCCCCC">
+                        <tr>
+                            <td width="30%" align="right"><strong>Fecha:</strong></td>
+                            <td>{FECHA}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Nombre:</strong></td>
+                            <td>{NOMBRE}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Email:</strong></td>
+                            <td><a href="mailto:{EMAIL}">{EMAIL}</a></td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>IP:</strong></td>
+                            <td>{IP}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" bgcolor="#666"><div align="center">Mensaje desde <br />
+                            <a href="{SITE_URL}">{SITE_URL}</a></div></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

@@ -1,0 +1,53 @@
+@charset "utf-8";
+/* CSS Document */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400&family=Raleway:ital,wght@0,600;1,600&display=swap');
+
+body, td, th {
+    font-family: "Open Sans", sans-serif,"undotum";
+    color: #666;
+    background: #fff none;
+    font-size: 16px;
+    line-height: 22px;
+}
+a {
+    color: #0e625f;
+    text-decoration: underline
+}
+a:visited {
+    color: #8d6811;
+}
+a:hover {
+    text-decoration: none;
+    color: #118d89
+}
+a img{
+    border:0
+}
+h1,h2,h3 {font-size: 1.375em; font-family: 'Raleway', sans-serif; font-weight: 600; margin: 5px 0;}
+h2{font-size: 1.125em;}
+h3{font-size: 1em;}
+.title{
+    border-bottom: 5px solid #155e5c;
+    background-color: #1b7875;
+    color: #fff;
+    font-size: 1.275em;
+    font-weight: 600;
+    padding: 8px 10px;
+    margin: 10px 0;
+    font-style: italic
+}
+cite { color: #999;  font-size: 0.750em;}
+
+
+.float-left {float:left}
+.float-right {float:right}
+.clear {clear:both}
+p{padding-bottom: 0.7em;
+    margin: 0;}
+span.bold{font-weight: bold}
+span.italic{font-style: italic}
+span.underline{text-decoration: underline}
+p.left {text-align: left}
+p.right {text-align: right}
+p.full {text-align: justify}
+

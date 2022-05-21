@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Contacto desde {SITE_URL}</title>
+        <style>
+            body,td,th{
+                color:#333;
+                font-family:Arial, Helvetica, sans-serif;
+                font-size:12px;
+            }
+            body {
+                background-color:#eee;
+            }
+            a {
+                color:#0e625f;
+            }
+            h2 {
+                color:#FFF;
+                margin:5px 0 0;
+            }
+        </style>
+    </head>
+
+    <body>
+        <table width="500" border="1" cellpadding="10" cellspacing="0" bgcolor="#FFFFFF" bordercolor="#cccccc">
+            <tr>
+                <td bgcolor="#1b7875" align="center">
+                    <h2>Nuevo contacto desde {SITE_URL}</h2>
+                </td>
+            </tr>
+            <tr>
+                <td><table width="100%" border="0" cellspacing="0" cellpadding="10" bordercolor="#CCCCCC">
+                        <tr>
+                            <td width="30%" align="right"><strong>Fecha:&nbsp;</strong></td>
+                            <td>{FECHA}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Nombre:&nbsp;</strong></td>
+                            <td>{NOMBRE}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>IP:&nbsp;</strong></td>
+                            <td><a href="https://www.ip-tracker.org/locator/ip-lookup.php?ip={IP}">{IP}</a></td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Ciudad:&nbsp;</strong></td>
+                            <td>{CIUDAD}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Tel&eacute;fono:&nbsp;</strong></td>
+                            <td>{TELEFONO}</td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right"><strong>Email:&nbsp;</strong></td>
+                            <td><a href="mailto:{EMAIL}">{EMAIL}</a></td>
+                        </tr>
+                        <tr>
+                            <td width="30%" align="right" valign="top"><strong>Mensaje:&nbsp;</strong></td>
+                            <td>{MENSAJE}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

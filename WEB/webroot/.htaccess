@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine on
+
+    ErrorDocument 404 /errores/noencontrado.php
+    ErrorDocument 500 /errores/noencontrado.php
+
+</IfModule>

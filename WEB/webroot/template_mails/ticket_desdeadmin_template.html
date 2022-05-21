@@ -1,0 +1,19 @@
+<div style="line-height: 20px; font-family: 'Arial'; font-size: 14px; margin: 20px">
+    <img src="https://procesasr.com.ar/img/logo-processar.png" alt="PROCESSAR SOPORTE" width="200"/><br/><br/>
+    Estimado <strong>{NOMBRE}</strong>:<br/>
+    Se ha generado un nuevo ticket de soporte <strong>#{TICKETID}</strong>.<br/>
+    <div style="border:1px dotted #999; padding: 0 10px 10px; margin: 10px 0">
+        <p><strong>Asunto:</strong> {ASUNTO}</p>
+        <p><strong>{SECTOR}/{ADMIN}</strong> dijo:</p>
+        <p>{MENSAJE}<br/></p><br/>
+        <p><strong>Prioridad:</strong> {PRIORIDAD}</p>
+
+        <!-- START BLOCK : adjunto -->
+        Con el siguiente archivo adjunto: <a href="{ADJUNTO}" target="_blank">{ADJUNTO}</a><br/>
+        <!-- END BLOCK : adjunto --> 
+    </div>
+    .................................................................................<br/>
+    <div style="font-size: 14px">Fecha: {FECHA}</div>
+    <p>Puede seguir su ticket desde su area de usuario: </p>
+    <a href="https://www.processar.com.ar/usuarios" target="_blank">www.processar.com.ar/usuarios</a>
+</div>

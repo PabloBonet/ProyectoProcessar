@@ -590,6 +590,8 @@ ENDFUNC
 FUNCTION seticonos
 	PARAMETERS p_nombre, par_objeto, par_arreglo
 	
+	
+	
 	USE .\seticonos IN 0
 	SELECT * FROM seticonos INTO CURSOR setico WHERE ALLTRIM(nombre) == ALLTRIM(p_nombre)
 	SELECT setico
@@ -2375,20 +2377,6 @@ PARAMETERS p_idnp
 			ENDIF
 		
 	
-*!*			
-*!*			*** Busco los datos de los impuestos
-*!*				vconeccionF=abreycierracon(0,_SYSSCHEMA)	
-*!*			
-*!*				sqlmatriz(1)="Select fi.detalle as detaIMP, fi.neto as netoIMP, fi.razon as razonIMP, fi.importe as importeIMP, ai.tipo as tipoIMP "
-*!*				sqlmatriz(2)=" from facturasimp fi" 
-*!*				sqlmatriz(3)=" left join impuestos i on fi.impuesto = i.impuesto "
-*!*				sqlmatriz(4)=" left join afipimpuestos ai on i.idafipimp = ai.idafipimp "
-*!*				sqlmatriz(5)=" where fi.idfactura = "+ ALLTRIM(STR(v_idfactura))
-
-*!*				verror=sqlrun(vconeccionF,"impuestos_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
-*!*				ENDIF
 		
 
 		SELECT *, SPACE(200) as otvincula FROM np_det_sql INTO TABLE .\np_impr
@@ -15576,3 +15564,269 @@ ENDIF
 
 RETURN .t. 
 
+
+
+
+*******************************************
+** Carga un Comprobante de Transferencia de Etiquetas entre depósitos
+** Recibe las etiquetas y el deposito de origen y destino, chequea que estén
+** en origen y transfiere solo las que están en deposito de origen o no ingresadas
+** Parámetros:
+*	trp_iddepoo : Id del depósito de origen
+*   trp_iddepod : Id del depósito de destino
+*	trp_tablaeti: Tabla con las etiquetas a transferir
+*   trp_fecha   : Fecha para la Transferencia
+*  Retorna el Numero de Transferencia de Etiqueta o 0 si no la pudo hacer
+*******************************************
+FUNCTION FTranfiereEti
+param trp_iddepoo, trp_iddepod, trp_tablaeti, trp_fecha
+
+	IF !(TYPE("trp_tablaeti")="C") THEN 
+		trp_tablaeti= ""
+	ENDIF 
+	
+	IF EMPTY(trp_tablaeti) THEN 
+		RETURN 0
+	ENDIF 
+
+	farchivo= ALLTRIM(trp_tablaeti)+".dbf"
+	IF file(farchivo) THEN 
+		IF !USED(trp_tablaeti) THEN 
+			USE &trp_tablaeti IN 0
+		ENDIF 	
+	ELSE 
+		RETURN 0
+	ENDIF
+
+	SELECT &trp_tablaeti
+	GO TOP 
+	IF EOF() THEN 
+		USE IN &trp_tablaeti 
+		RETURN 0
+	ENDIF 
+
+
+	* me conecto a la base de datos
+	vconeccionTR=abreycierracon(0,_SYSSCHEMA)	
+
+	IF trp_iddepoo > 0 THEN 
+		sqlmatriz(1)=" select * from ultmoveti where depositod = "+str(trp_iddepoo)
+	ELSE 
+		sqlmatriz(1)=" select * from ultmoveti "	
+	ENDIF 
+	verror=sqlrun(vconeccionTR,"ultmoveti_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error al Los Ultimos movimientos de Etiquetas ",0+48+0,"Error")
+	    RETURN 0
+	ENDIF
+
+	IF trp_iddepoo > 0 THEN 
+		SELECT etiqueta FROM &trp_tablaeti INTO TABLE etiquetasTR WHERE etiqueta 	 in ( SELECT etiqueta FROM ultmoveti_sql  )
+	ELSE
+		SELECT etiqueta FROM &trp_tablaeti INTO TABLE etiquetasTR WHERE etiqueta NOT in ( SELECT etiqueta FROM ultmoveti_sql )	
+	ENDIF 
+	USE IN &trp_tablaeti
+	USE IN ultmoveti_sql 
+
+	SELECT etiquetasTR
+	GO TOP 
+	IF EOF () THEN && NO HAY Etiquetas para Transferir		
+		USE IN etiquetasTR
+		=abreycierracon(vconeccionTR,"")	
+		RETURN 0
+	ENDIF 
+
+	sqlmatriz(1)=" SELECT c.idcomproba, a.pventa FROM comprobantes c "
+	sqlmatriz(2)=" LEFT JOIN compactiv a ON a.idcomproba = c.idcomproba "
+	sqlmatriz(4)=" WHERE c.tabla = 'transfeti' " 
+	verror=sqlrun(vconeccionTR ,"comprocump_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Comprobantes a Cumplir ... ",0+48+0,"Error")
+	    RETURN .F.
+	ENDIF	
+	
+	SELECT comprocump_sql
+	GO TOP 
+	IF EOF () THEN && NO HAY Etiquetas para Transferir		
+		USE IN comprocump_sql
+		USE IN etiquetasTR
+		=abreycierracon(vconeccionTR,"")	
+		RETURN 0
+	ENDIF 
+
+****************************************************************************
+	trp_idcomproba	= comprocump_sql.idcomproba
+	trp_pventa		= comprocump_sql.pventa
+	trp_numero		= maxnumerocom(trp_idcomproba,trp_pventa ,1)
+	USE IN comprocump_sql 
+
+	DIMENSION lamatriz1(10,2)
+	DIMENSION lamatriz2(3,2)
+	v_errores = .F.
+	
+
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+	
+	v_idtraeti 	= 0	
+	v_depositoo	=  trp_iddepoo
+	v_depositod =  trp_iddepod
+
+	v_numero = trp_numero
+	v_fecha  = trp_fecha
+	v_hora = TIME()
+	v_observa = "Transferencia Automática"
+	v_pventa  = trp_pventa
+	v_usuario = _SYSUSUARIO
+
+	lamatriz1(1,1)='idtraeti'
+	lamatriz1(1,2)= ALLTRIM(STR(v_idtraeti))
+	lamatriz1(2,1)='depositoo'
+	lamatriz1(2,2)= ALLTRIM(STR(v_depositoo))
+	lamatriz1(3,1)='depositod'
+	lamatriz1(3,2)= ALLTRIM(STR(v_depositod))
+	lamatriz1(4,1)='numero'
+	lamatriz1(4,2)= ALLTRIM(STR(v_numero))
+	lamatriz1(5,1)='fecha'
+	lamatriz1(5,2)="'"+ALLTRIM(v_fecha)+"'"
+	lamatriz1(6,1)='hora'
+	lamatriz1(6,2)="'"+ALLTRIM(v_hora)+"'"
+	lamatriz1(7,1)='observa'
+	lamatriz1(7,2)="'"+ALLTRIM(v_observa)+"'"
+	lamatriz1(8,1)='idcomproba'
+	lamatriz1(8,2)=ALLTRIM(STR(trp_idcomproba))
+	lamatriz1(9,1)='pventa'
+	lamatriz1(9,2)=ALLTRIM(STR(trp_pventa))
+	lamatriz1(10,1)='usuario'
+	lamatriz1(10,2)="'"+ALLTRIM(v_usuario)+"'"
+
+	p_tabla     = 'transfeti'
+	p_matriz    = 'lamatriz1'
+	p_conexion  = vconeccionTR
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idtraeti)),0+48+0,"Error")
+	    v_errores = .T.
+	    RETURN 
+	ENDIF  
+
+	*** Ultimo ID registrado ***
+	sqlmatriz(1)="SELECT last_insert_id() as maxid "
+	verror=sqlrun(vconeccionF,"tranmax_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo ID de cajaie",0+48+0,"Error")
+	     v_errores = .T.
+	     RETURN 0
+	ENDIF 
+	SELECT tranmax_sql
+	GO TOP 
+	v_idtraeti = VAL(tranmax_sql.maxid)
+	USE IN tranmax_sql
+	
+	*** INSERTO detalle ***			
+
+	IF v_errores = .F.
+
+		SELECT etiquetasTR
+		GO TOP 
+
+		DO WHILE NOT EOF()
+			IF etiquetasTR.etiqueta > 0
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+
+				v_idtraetih = 0
+				v_etiqueta = etiquetasTR.etiqueta
+				
+				lamatriz2(1,1)='idtraetih'
+				lamatriz2(1,2)=ALLTRIM(STR(v_idtraetih))
+				lamatriz2(2,1)='etiqueta'
+				lamatriz2(2,2)=ALLTRIM(STR(v_etiqueta))
+				lamatriz2(3,1)='idtraeti'
+				lamatriz2(3,2)=ALLTRIM(STR(v_idtraeti))
+
+				p_tabla     = 'transfetih'
+				p_matriz    = 'lamatriz2'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajusteh )),0+48+0,"Error")
+							  
+				ENDIF						
+				
+			ENDIF
+
+			SELECT etiquetasTR
+			SKIP 1
+		ENDDO	
+
+		*** REGISTRO estado activo ***
+		IF  v_errores = .T.
+			registrarEstado("transfeti","idtraeti",v_idtraeti,"I","ANULADO")	
+		ELSE
+			registrarEstado("transfeti","idtraeti",v_idtraeti,"I","ACTIVO")	
+		ENDIF 
+
+	ENDIF 
+	SELECT etiquetasTR
+	USE IN etiquetasTR
+	
+	RELEASE lamatriz1
+	RELEASE lamatriz2
+
+	* me desconecto	
+	=abreycierracon(vconeccionTR,"")
+
+RETURN v_idtraeti
+
+
+
+
+
+
+*******************************************
+** Selecciona las Etiquetas de Un Ajuste de Stock para Transferirla segun los movimientos de Depósitos
+** Parámetros:
+*	pa_idajuste: Id del Ajuste de Stock
+*  Retorna el id del movimiento de transferencia realizado o 0 si no lo pudo hacer
+*******************************************
+FUNCTION FMueveEtiAjusteST
+PARAMETERS pa_idajuste
+	*** Si Generó Etiquetas y las Ingreso a depósito, debo generar una transferencia de estas hacia el deposito ingresado
+
+	* me conecto a la base de datos
+	vconeccionAJ=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)=" select e.etiqueta, h.deposito, t.ie , p.fecha, ifnull(u.depositoo,0) as ultdepoo, ifnull(u.depositod,0) as ultdepod from ajustestocke e left join ajustestockh h on h.idajusteh = e.idajusteh  left join tipomstock t on t.idtipomov = h.idtipomov "
+	sqlmatriz(2)=" left join ajustestockp p on p.idajuste = h.idajuste left join ultmoveti u on u.etiqueta = e.etiqueta "
+	sqlmatriz(3)=" where h.idajuste = "+STR(pa_idajuste)
+	verror=sqlrun(vconeccionF,"etique_tran_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Etiquetas para Transferir",0+48+0,"Error")
+		=abreycierracon(vconeccionAJ,"")
+		RETURN 0	
+	ENDIF 
+	=abreycierracon(vconeccionAJ,"")
+	SELECT etique_tran_sql
+	GO TOP 
+	v_retoidtran = 0
+	IF !EOF() THEN 
+		SELECT etiqueta, IIF(upper(ie) = 'I',0,deposito) as depositoo, IIF(upper(ie) = 'I',deposito,0) as depositod, fecha, ultdepoo, ultdepod  FROM etique_tran_sql  INTO TABLE etiquetran
+		ALTER table etiquetran alter COLUMN ultdepoo i
+		ALTER table etiquetran alter COLUMN ultdepod i		
+		vt_iddepoo = etiquetran.ultdepod
+		vt_iddepod = etiquetran.depositod
+		vt_tablaeti = 'etiquetran'
+		vt_fecha 	= etiquetran.fecha 
+		USE IN etiquetran 
+		v_retoidtran = FTranfiereEti (vt_iddepoo, vt_iddepod, vt_tablaeti, vt_fecha )
+	
+	ELSE 
+	
+		USE IN etique_tran_sql 
+		RETURN 0
+		
+	ENDIF 
+	USE IN etique_tran_sql 
+	RETURN v_retoidtran
+ENDFUNC 
