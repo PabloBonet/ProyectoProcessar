@@ -15830,3 +15830,484 @@ PARAMETERS pa_idajuste
 	USE IN etique_tran_sql 
 	RETURN v_retoidtran
 ENDFUNC 
+
+
+
+
+*******************************************
+** Chequea que se puedan Generar Comprobantes Asociados para el Comprobante pasado como parametros 
+** Parámetros:
+*	cm_idcomprobao: Id del Comprobante Guardado a partir del cual se generará el Comprobante Relacionado
+*   cm_id: id del comprobante origen 
+*   Observacion : El comprobante Asociado se obtiene de la variable _SYSCMPASOC
+*******************************************
+FUNCTION FGeneraAsoc
+PARAMETERS cp_idcomprobao, cp_id
+
+	IF EMPTY(_SYSCMPASOC) OR SUBSTR((_SYSCMPASOC+' '),1,1)='N' THEN 
+		RETURN ""
+	ENDIF 
+	nFilas = ALINES(ArrCompro, _syscmpasoc , ";")
+	IF nFilas = 0 THEN 
+		RETURN "" 
+	ENDIF 
+	
+	v_retornacompro = ""
+	FOR iarr =1 TO nfilas 
+		v_idc1 = INT(VAL(SUBSTR(ArrCompro(iarr ),1,(ATC('-',arrCompro(iarr ))-1))))
+		v_idc2 = INT(VAL(SUBSTR(ArrCompro(iarr ),(ATC('-',arrCompro(iarr ))+1))))
+			
+		IF cp_idcomprobao = v_idc1 THEN && tiene comprobante asociado
+			IF v_idc2 > 0 THEN 
+			** Genera el Comprobante Asociado **
+				v_idcmpge = 0 
+				v_idcmpge = FGeneraCmpAsoc (cp_idcomprobao, cp_id, v_idc2) && Llama a la Generación del Comprobante Asociado
+				IF v_idcmpge > 0 THEN 
+						v_retornacompro = ALLTRIM(v_retornacompro)+ALLTRIM(STR(v_idc2))+'-'+ALLTRIM(STR(v_idcmpge))+';'
+				ENDIF 
+			
+			ENDIF 
+		ENDIF 
+	
+	ENDFOR 
+	
+	IF !EMPTY(v_retornacompro) THEN 
+		v_retornacompro= SUBSTR(v_retornacompro,1,LEN(v_retornacompro)-1)
+	ENDIF 
+	RETURN v_retornacompro 
+ENDFUNC 
+
+
+
+*******************************************
+** Genera Comprobantes Asociados a partir de uno dado
+** Parámetros:
+*	cm_idcomprobao: Id del Comprobante Guardado a partir del cual se generará el Comprobante Relacionado
+*   cm_id: id del comprobante origen 
+*	cm_idcomprobad: Id del Comprobante que Generará 
+*   Observacion : El comprobante Asociado se obtiene de la variable _SYSCMPASOC
+*******************************************
+FUNCTION FGeneraCmpAsoc
+PARAMETERS cmp_idcomprobao, cmp_id, cmp_idcomprobad
+
+
+	* me conecto a la base de datos
+	vconeccionCM=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)=" select tabla, idcomproba from comprobantes "
+	sqlmatriz(3)=" where idcomproba = "+STR(cmp_idcomprobao)+" or idcomproba = "+STR(cmp_idcomprobad)
+	verror=sqlrun(vconeccionCM,"comprobantes_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Comprobantes ",0+48+0,"Error")
+		=abreycierracon(vconeccionCM,"")
+		RETURN 0	
+	ENDIF 
+
+	SELECT comprobantes_sql 
+	GO TOP 
+	IF EOF() THEN 
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Comprobantes ",0+48+0,"Error")
+		USE IN comprobantes_sql
+		=abreycierracon(vconeccionCM,"")
+		RETURN 0
+	ENDIF 
+	
+	GO TOP 
+	LOCATE FOR idcomproba = cmp_idcomprobad 
+	IF !found() THEN 
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Comprobante a Generar ",0+48+0,"Error")
+		USE IN comprobantes_sql
+		=abreycierracon(vconeccionCM,"")
+		RETURN 0
+	ELSE
+		v_tablad = ALLTRIM(comprobantes_sql.tabla)
+	ENDIF 
+	
+	GO TOP 
+	LOCATE FOR idcomproba = cmp_idcomprobao 
+	IF !found() THEN 
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Comprobante a Origen ",0+48+0,"Error")
+		USE IN comprobantes_sql
+		=abreycierracon(vconeccionCM,"")
+		RETURN 0
+	ELSE 
+		v_tablao = ALLTRIM(comprobantes_sql.tabla)
+	ENDIF 
+	
+	USE IN comprobantes_sql
+
+	v_nomindice = obtenerCampoIndice(ALLTRIM(v_tablao))
+
+	sqlmatriz(1)=" select t.*, pv.puntov as pvta from  "+ALLTRIM(v_tablao)+" t "
+	sqlmatriz(2)=" left join puntosventa pv on pv.pventa = t.pventa "
+	sqlmatriz(3)=" where t.idcomproba = "+STR(cmp_idcomprobao)+" and  t."+ALLTRIM(v_nomindice)+" = "+STR(cmp_id)
+	verror=sqlrun(vconeccionCM,"comprorigen_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Comprobante origen ...",0+48+0,"Error")
+		=abreycierracon(vconeccionCM,"")
+		RETURN 0	
+	ENDIF 
+
+	=abreycierracon(vconeccionCM,"")
+
+	v_idregretorno = 0	
+	
+	** Si llegó hasta aqui es porque el Comprobante de Origen y el comprobante de destino existen
+	DO CASE && Considero solo los casos de comprobantes Asociados Factibles
+	
+		CASE ALLTRIM(v_tablao)='facturas' AND ALLTRIM(v_tablad)='remitos' && genera un remito a partir de una factura 
+
+***************************** GENERACION DE REMITOS A PARTIR DE FACTURAS *************************************
+
+			v_idremito = maxnumeroidx("idremito","I","remitos",1)
+
+			IF v_idremito <= 0
+				MESSAGEBOX("No se pudo recuperar el ultimo indice del remito",0+16,"Error")
+				RETURN 0
+			ENDIF 
+
+			v_idcom  = STR(cmp_idcomprobad)
+			v_pventa = comprorigen_sql.pventa
+			v_tipo   = comprorigen_sql.tipo
+			v_numero = maxnumerocom(VAL(v_idcom),v_pventa ,1)
+			v_fecha  = comprorigen_sql.fecha 
+			
+
+			*** Me conecto a la base de datos
+			vconeccionCM=abreycierracon(0,_SYSSCHEMA)	
+
+			sqlmatriz(1)="SELECT idremito FROM remitos WHERE idremito = " + ALLTRIM(STR(v_idremito))
+			verror=sqlrun(vconeccionCM,"controlF")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del código : "+ STR(v_idremito),0+48+0,"Error")
+			*** me desconecto	
+				=abreycierracon(vconeccionCM,"")
+			    RETURN 
+			ENDIF 
+
+			SELECT controlF
+			GO TOP 
+			IF EOF() AND RECNO()=1 THEN 
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+			ELSE
+				MESSAGEBOX("Ya existe un comprobante con el indice establecido",0+48+256,"No se puede cargar el comprobante")
+			*** me desconecto	
+				=abreycierracon(vconeccionCM,"")
+				RETURN 0
+			ENDIF 
+
+
+			*** Carga de campos en la matriz  ***
+
+			v_entidad 	= comprorigen_sql.entidad
+			v_servicio 	= comprorigen_sql.servicio
+			v_cuenta 	= comprorigen_sql.cuenta
+
+			v_apellido 	= comprorigen_sql.apellido
+			v_nombre 	= comprorigen_sql.nombre
+			v_direccion = comprorigen_sql.direccion 
+			v_localidad = comprorigen_sql.localidad
+			v_iva 		= comprorigen_sql.iva
+			v_cuit 		= comprorigen_sql.cuit
+			v_docTIpo 	= comprorigen_sql.tipodoc
+			v_dni 		= comprorigen_sql.dni
+			v_telefono 	= comprorigen_sql.telefono
+			v_cp 		= comprorigen_sql.cp
+			v_fax 		= comprorigen_sql.fax
+			v_email 	= comprorigen_sql.email
+			v_zona = ""
+			v_ruta1 = 0
+			v_folio1 = 0
+			v_ruta2 = 0
+			v_folio2 = 0
+
+			v_dirEntrega 		= comprorigen_sql.direntrega
+			v_transporte 		= comprorigen_sql.transporte
+			v_nombreTransporte 	= comprorigen_sql.nomtransp
+
+			v_stock = 'N'
+			v_tipoOp= 0
+			v_neto = 0
+			v_descuento = 0
+			v_recargo = 0
+			v_operaExenta = ""
+			v_anulado = "N"
+
+			v_fechavenc1 = ""
+			v_fechavenc2 = ""
+			v_fechavenc3 = ""
+			v_fechaDescuento = ""
+			v_proxvenc = ""
+			v_confirmada = ""
+			v_astoConta = 0
+			v_deuda_cta = 0
+			v_cespcae = ""
+			v_caecespVen = ""
+
+			v_vendedor = comprorigen_sql.vendedor
+			v_idperiodo = 0
+			v_observa1 = 'Ref.: '+ALLTRIM(comprorigen_sql.tipo)+' '+alltrim(comprorigen_sql.pvta)+'-'+STRTRAN(STR(comprorigen_sql.numero,8),' ','0')+' '+ALLTRIM(comprorigen_sql.observa1)
+			v_observa2 = comprorigen_sql.observa2
+			v_observa3 = comprorigen_sql.observa3
+			v_observa4 = comprorigen_sql.observa4
+				
+			*** GUARDA DATOS DE CABECERA DEL REMITO
+			DIMENSION lamatrizCM1(43,2)
+			DIMENSION lamatrizCM2(18,2)
+
+			lamatrizCM1(1,1)='idremito'
+			lamatrizCM1(1,2)= ALLTRIM(STR(v_idremito))
+			lamatrizCM1(2,1)='idcomproba'
+			lamatrizCM1(2,2)=ALLTRIM(v_idcom)
+			lamatrizCM1(3,1)='pventa'
+			lamatrizCM1(3,2)= ALLTRIM(STR(v_pventa))
+			lamatrizCM1(4,1)='numero'
+			lamatrizCM1(4,2)=ALLTRIM(STR(v_numero))
+			lamatrizCM1(5,1)='tipo'
+			lamatrizCM1(5,2)="'"+ALLTRIM(v_tipo)+"'"
+			lamatrizCM1(6,1)='fecha'
+			lamatrizCM1(6,2)="'"+v_fecha+"'"
+			lamatrizCM1(7,1)='entidad'
+			lamatrizCM1(7,2)=ALLTRIM(STR(v_entidad))
+			lamatrizCM1(8,1)='servicio'
+			lamatrizCM1(8,2)= ALLTRIM(STR(v_servicio))
+			lamatrizCM1(9,1)='cuenta'
+			lamatrizCM1(9,2)= ALLTRIM(STR(v_cuenta))
+			lamatrizCM1(10,1)='apellido'
+			lamatrizCM1(10,2)= "'"+ALLTRIM(v_apellido)+"'"
+			lamatrizCM1(11,1)='nombre'
+			lamatrizCM1(11,2)= "'"+ALLTRIM(v_nombre)+"'"
+			lamatrizCM1(12,1)='direccion'
+			lamatrizCM1(12,2)= "'"+ALLTRIM(v_direccion)+"'"
+			lamatrizCM1(13,1)='localidad'
+			lamatrizCM1(13,2)= "'"+ALLTRIM(v_localidad)+"'"
+			lamatrizCM1(14,1)='iva'
+			lamatrizCM1(14,2)= ALLTRIM(STR(v_iva))
+			lamatrizCM1(15,1)='cuit'
+			lamatrizCM1(15,2)= "'"+ALLTRIM(v_cuit)+"'"
+			lamatrizCM1(16,1)='tipodoc'
+			lamatrizCM1(16,2)= "'"+ALLTRIM(v_docTIpo)+"'"
+			lamatrizCM1(17,1)='dni'
+			lamatrizCM1(17,2)= ALLTRIM(STR(v_dni))
+			lamatrizCM1(18,1)='telefono'
+			lamatrizCM1(18,2)= "'"+ALLTRIM(v_telefono)+"'"
+			lamatrizCM1(19,1)='cp'
+			lamatrizCM1(19,2)= "'"+ALLTRIM(v_cp)+"'"
+			lamatrizCM1(20,1)='fax'
+			lamatrizCM1(20,2)= "'"+ALLTRIM(v_fax)+"'"
+			lamatrizCM1(21,1)='email' 
+			lamatrizCM1(21,2)= "'"+ALLTRIM(v_email)+"'"
+			lamatrizCM1(22,1)='transporte'
+			lamatrizCM1(22,2)= ALLTRIM(STR(v_transporte))
+			lamatrizCM1(23,1)='nomtransp'
+			lamatrizCM1(23,2)= "'"+ALLTRIM(v_nombreTransporte)+"'"
+			lamatrizCM1(24,1)='direntrega'
+			lamatrizCM1(24,2)= "'"+ALLTRIM(v_dirEntrega)+"'"
+			lamatrizCM1(25,1)='stock'
+			lamatrizCM1(25,2)= "'"+ALLTRIM(v_stock)+"'"
+			lamatrizCM1(26,1)='idtipoopera'
+			lamatrizCM1(26,2)= ALLTRIM(STR(v_tipoOp))
+			lamatrizCM1(27,1)='neto'
+			lamatrizCM1(27,2)= ALLTRIM(STR(v_neto,13,4))
+			lamatrizCM1(28,1)='subtotal'
+			lamatrizCM1(28,2)= "0"
+			lamatrizCM1(29,1)='recargo'
+			lamatrizCM1(29,2)= "0"
+			lamatrizCM1(30,1)='operexenta'
+			lamatrizCM1(30,2)= "'"+ALLTRIM(v_operaExenta)+"'"
+			lamatrizCM1(31,1)='anulado'
+			lamatrizCM1(31,2)= "'"+ALLTRIM(v_anulado)+"'"
+			lamatrizCM1(32,1)='observa1'
+			lamatrizCM1(32,2)= "'"+ALLTRIM(v_observa1)+"'"
+			lamatrizCM1(33,1)='observa2'
+			lamatrizCM1(33,2)= "'"+ALLTRIM(v_observa2)+"'"
+			lamatrizCM1(34,1)='observa3'
+			lamatrizCM1(34,2)= "'"+ALLTRIM(v_observa3)+"'"
+			lamatrizCM1(35,1)='observa4'
+			lamatrizCM1(35,2)= "'"+ALLTRIM(v_observa4)+"'"
+			lamatrizCM1(36,1)='ruta1'
+			lamatrizCM1(36,2)= ALLTRIM(STR(v_ruta1))
+			lamatrizCM1(37,1)='folio1'
+			lamatrizCM1(37,2)= ALLTRIM(STR(v_folio1))
+			lamatrizCM1(38,1)='ruta2'
+			lamatrizCM1(38,2)= ALLTRIM(STR(v_ruta2))
+			lamatrizCM1(39,1)='folio2'
+			lamatrizCM1(39,2)= ALLTRIM(STR(v_folio2))
+			lamatrizCM1(40,1)='astoconta'
+			lamatrizCM1(40,2)= ALLTRIM(STR(v_astoConta))
+			lamatrizCM1(41,1)='cespcae'
+			lamatrizCM1(41,2)= "'"+ALLTRIM(v_cespcae)+"'"
+			lamatrizCM1(42,1)='caecespven'
+			lamatrizCM1(42,2)= "'"+ALLTRIM(v_caecespVen)+"'"
+			lamatrizCM1(43,1)='vendedor'
+			lamatrizCM1(43,2)= ALLTRIM(STR(v_vendedor))
+
+
+			p_tabla     = 'remitos'
+			p_matriz    = 'lamatrizCM1'
+			p_conexion  = vconeccionCM
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+			    RETURN 
+			ENDIF  
+
+			
+			**** Ahora agrego el detalle del Remito a partir del detalle de la factura ****
+			
+			sqlmatriz(1)=" select * from  detafactu "
+			sqlmatriz(2)=" where   "+ALLTRIM(v_nomindice)+" = "+STR(cmp_id)
+			verror=sqlrun(vconeccionCM,"detaorigen_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Detalle del Comprobante de Origen ...",0+48+0,"Error")
+				=abreycierracon(vconeccionCM,"")
+				RETURN 0	
+			ENDIF 
+			
+			
+			SELECT detaorigen_sql 
+			
+			DO WHILE NOT EOF()
+			
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					
+					v_idremitoh = maxnumeroidx("idremitoh","I","remitosh",1)
+
+					v_articulo 		= detaorigen_sql.articulo
+					v_idconcepto 	= detaorigen_sql.idconcepto
+					v_servicio 		= detaorigen_sql.servicio
+					v_cantidad 		= detaorigen_sql.cantidad
+					v_unidad 		= detaorigen_sql.unidad
+					v_cantidadFC 	= detaorigen_sql.cantidadFc
+					v_unidadFC 		= detaorigen_sql.unidadFc
+					v_detalle 		= detaorigen_sql.detalle
+					v_unitario 		= detaorigen_sql.unitario
+					v_impuesto 		= 0.00
+					v_totalArt 		= 0.00
+					v_codigoCta 	= ""
+					v_nombreCta 	= ""
+					v_padron 		= 0
+					v_netoArt 		= 0.00
+					v_idimpuesto	= 0
+					v_razonImpuesto = 0
+
+					lamatrizCM2(1,1)='idremito'
+					lamatrizCM2(1,2)= ALLTRIM(STR(v_idremito))	
+					lamatrizCM2(2,1)='idremitoh'
+					lamatrizCM2(2,2)= ALLTRIM(STR(v_idremitoh))
+					lamatrizCM2(3,1)='articulo'
+					lamatrizCM2(3,2)= "'"+ALLTRIM(v_articulo)+"'"
+					lamatrizCM2(4,1)='idconcepto'
+					lamatrizCM2(4,2)= ALLTRIM(STR(v_idconcepto))
+					lamatrizCM2(5,1)='servicio'
+					lamatrizCM2(5,2)= ALLTRIM(STR(v_servicio))
+					lamatrizCM2(6,1)='cantidad'
+					lamatrizCM2(6,2)= ALLTRIM(STR(v_cantidad))
+					lamatrizCM2(7,1)='unidad'
+					lamatrizCM2(7,2)= "'"+ALLTRIM(v_unidad)+"'"
+					lamatrizCM2(8,1)='cantidadfc'
+					lamatrizCM2(8,2)= ALLTRIM(str(v_cantidadFC,13,4))
+					lamatrizCM2(9,1)='unidadfc'
+					lamatrizCM2(9,2)= "'"+ALLTRIM(v_unidadFC)+"'"
+					lamatrizCM2(10,1)='detalle'
+					lamatrizCM2(10,2)= "'"+ALLTRIM(v_detalle)+"'"
+					lamatrizCM2(11,1)='unitario'
+					lamatrizCM2(11,2)= ALLTRIM(STR(v_unitario,13,4))
+					lamatrizCM2(12,1)='impuestos'
+					lamatrizCM2(12,2)= ALLTRIM(STR(v_impuesto,13,4))
+					lamatrizCM2(13,1)='total'
+					lamatrizCM2(13,2)= ALLTRIM(STR(v_totalArt,13,4))
+					lamatrizCM2(14,1)='codigocta'
+					lamatrizCM2(14,2)= "'"+ALLTRIM(v_codigoCta)+"'"
+					lamatrizCM2(15,1)='nombrecta'
+					lamatrizCM2(15,2)= "'"+ALLTRIM(v_nombreCta)+"'"
+					lamatrizCM2(16,1)='padron' 
+					lamatrizCM2(16,2)= ALLTRIM(STR(v_padron))
+					lamatrizCM2(17,1)='impuesto'
+					lamatrizCM2(17,2)= ALLTRIM(STR(v_idimpuesto))
+					lamatrizCM2(18,1)='razonimp'
+					lamatrizCM2(18,2)= ALLTRIM(STR(v_razonImpuesto,13,4))
+					
+
+					p_tabla     = 'remitosh'
+					p_matriz    = 'lamatrizCM2'
+					p_conexion  = vconeccionCM
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en Carga de Detalle en Remitos ",0+48+0,"Error")
+					ENDIF						
+					
+				SELECT detaorigen_sql
+				SKIP 1
+			ENDDO	
+
+			
+			USE IN detaorigen_sql 
+			USE IN comprorigen_sql
+
+			registrarEstado("remitos","idremito",v_idremito,'I',"AUTORIZADO")
+
+			guardaCajaRecaH (VAL(v_idcom), v_idremito)
+			*** Registro la relación de los comprobantes- En caso que tenga ***
+			DIMENSION lamatrizli(5,2)
+			v_idlinkcomp = 0 	
+			v_idregistroa	= cmp_id
+			v_idcomprobaa	= cmp_idcomprobao
+			v_idregistrob 	= v_idremito
+			v_idcomprobab	= cmp_idcomprobad
+				
+				
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+				
+			lamatrizli(1,1)='idlinkcomp'
+			lamatrizli(1,2)= ALLTRIM(STR(v_idlinkcomp))
+			lamatrizli(2,1)= 'idregistroa'
+			lamatrizli(2,2)= ALLTRIM(STR(v_idregistroa))
+			lamatrizli(3,1)= 'idcomprobaa'
+			lamatrizli(3,2)= ALLTRIM(STR(v_idcomprobaa))
+			lamatrizli(4,1)= 'idregistrob'
+			lamatrizli(4,2)= ALLTRIM(STR(v_idregistrob))
+			lamatrizli(5,1)= 'idcomprobab'
+			lamatrizli(5,2)= ALLTRIM(STR(v_idcomprobab))
+
+			p_tabla     = 'linkcompro'
+			p_matriz    = 'lamatrizli'
+			p_conexion  = vconeccionCM
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+			ENDIF			
+
+			
+			RELEASE lamatrizli
+			RELEASE lamatrizCM1
+			RELEASE lamatrizCM2	
+			
+			*** Cierro la conexion
+			=abreycierracon(vconeccionCM,"")
+	
+			** GENERO EL ASIENTO PARA EL REMITO			
+			v_cargo = ContabilizaCompro('remitos', v_idregistrob, 0,0)
+			
+			sino = MESSAGEBOX("¿Desea imprimir el Remito Asociado ?",4+32,"Imprimir Remito")
+			IF sino = 6
+				*SI
+				=imprimirRemito(v_idregistrob,.f.)
+
+			ENDIF 
+			 v_idregretorno = v_idregistrob 
+			 
+************************ FIN DE GENERACION DE REMITOS A PARTIR DE FACTURAS ***************************************			
+******************************************************************************************************************
+
+		OTHERWISE
+		    MESSAGEBOX("No se Puede Generar el Comprobante Solicitado ...",0+48+0,"Error")
+		    RETURN 0
+	ENDCASE 
+	
+
+	RETURN v_idregretorno 
+ENDFUNC 
