@@ -2355,29 +2355,26 @@ PARAMETERS p_idnp
 			v_imprimeMonto	= 0
 		ENDIF 
 		
-		*** Busco los datos de la factura y el detalle
+		*** Busco los datos de la np y el detalle
 		
-			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
 
-			sqlmatriz(1)=" Select f.*,d.*,c.*,v.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit, "
-			sqlmatriz(2)=" com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump from np f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
-			sqlmatriz(4)="  left join ot d on f.idnp = d.idnp "
-			sqlmatriz(5)=" left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva"
-			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor "
-			sqlmatriz(7)=" left join r_otpendientes r on r.idot = d.idot "
-			sqlmatriz(8)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(9)=" where f.idnp = "+ ALLTRIM(STR(v_idnp))
+		sqlmatriz(1)=" Select f.*,d.*,c.*,v.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit,e.direccion, "
+		sqlmatriz(2)=" com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump from np f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+		sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+		sqlmatriz(4)="  left join ot d on f.idnp = d.idnp "
+		sqlmatriz(5)=" left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva"
+		sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor "
+		sqlmatriz(7)=" left join r_otpendientes r on r.idot = d.idot "
+		sqlmatriz(8)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+		sqlmatriz(9)=" where f.idnp = "+ ALLTRIM(STR(v_idnp))
 			
 					
-			verror=sqlrun(vconeccionF,"np_det_sql")
-			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la NP",0+48+0,"Error")
-			ENDIF
-		
-	
-		
+		verror=sqlrun(vconeccionF,"np_det_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la NP",0+48+0,"Error")
+		ENDIF
 
 		SELECT *, SPACE(200) as otvincula FROM np_det_sql INTO TABLE .\np_impr
 
@@ -2396,6 +2393,9 @@ PARAMETERS p_idnp
 		ENDIF 
 		USE IN otvin_sql 
 		
+		
+		
+		
 			
 		SELECT np_impr
 		
@@ -2410,19 +2410,61 @@ PARAMETERS p_idnp
 			SELECT np_impr
 			GO TOP 
 			
-			
-			v_idcomproba = np_impr.idcomproba
+			v_idcomproba 	= np_impr.idcomproba
 			v_tipoCompAfip	= ALLTRIM(np_impr.tipcomAFIP)
-	
-			
 			v_codBarra		= ""
 			v_codBarraD 	= ""
 			v_electronica	= .F.
 			v_cuitEmpresa	= _SYSCUIT
+			v_entidad		= np_impr.entidad
+			
+			*********************************************
+			** Obtengo los datos anexos a la Nota de Pedido y el cliente si los hubiere 
+			** agrega los datos extra y anexos de la entidad y la nota de pedido a la impresion
+			************************************************************
+			*Anexo Entidades
+			sqlmatriz(1)=" select concat(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor, concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+			sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'entidades' and r.idregistro = "+ ALLTRIM(STR(v_entidad))
+			verror=sqlrun(vconeccionF,"entidadextra_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+			ENDIF 		
+			
+			*Anexo NP
+			sqlmatriz(1)=" select CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor , concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+			sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'np' and r.idregistro = "+ ALLTRIM(STR(v_idnp))
+			verror=sqlrun(vconeccionF,"npextra_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+			ENDIF 		
+			
+			SELECT entidadextra_sql
+			GO TOP 
+			IF EOF() THEN 
+				CREATE TABLE entidadex ( propiedad c(50), valor m , tabla c(15)) 
+			ELSE
+				SELECT propiedad , valor , tabla FROM entidadextra_sql INTO TABLE .\entidadex ORDER BY propiedad 
+				ALTER table entidadex alter COLUMN valor m
+			ENDIF 
+			USE IN entidadextra_sql
 			
 
-			DO FORM reporteform WITH "np_impr","npcr",v_idcomproba
+			SELECT npextra_sql
+			GO TOP 
+			IF EOF() THEN 
+				CREATE TABLE npex ( propiedad c(50), valor m , tabla c(15)) 
+			ELSE
+				SELECT propiedad , valor , tabla FROM npextra_sql INTO TABLE .\npex ORDER BY propiedad 
+				ALTER table npex alter COLUMN valor m
+			ENDIF 
+			USE IN npextra_sql 
+
+
+
+			DO FORM reporteform WITH "np_impr;entidadex;npex","npcr;entidadexcr;npexcr",v_idcomproba
 			
+			=abreycierracon(vconeccionF,"")	
+
 			* Impresion de Datos Anexos si los hubiere
 			=ImprimirDetalleAnexo ('np', v_idnp)
 		
@@ -3718,7 +3760,7 @@ PARAMETERS pvar_paramrepo, pvar_tablarepo
 			*** Si el parametro es un NUMERO, el nùmero es el idComproba
 
 
-			sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet from comprorepo co "
+			sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet, r.copias from comprorepo co "
 			sqlmatriz(2)=" left join reportesimp r on co.idreporte = r.idreporte "
 			sqlmatriz(3)=" where co.predeterminado = 'S' and co.idcomproba = "+ALLTRIM(STR(v_paramRepo))
 			verror=sqlrun(vconeccion,"repos_sql")
@@ -3731,7 +3773,7 @@ PARAMETERS pvar_paramrepo, pvar_tablarepo
 			IF TYPE("v_paramRepo") = "C"
 			*** Si el paràmetro es un CARACTER, se corresponde con el nombre del formulario y metodo
 
-				sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet from comprorepo co "
+				sqlmatriz(1)="select r.idreporte, r.nombre, r.descripcion as descrip, co.predeterminado as predet, r.copias from comprorepo co "
 				sqlmatriz(2)=" left join reportesimp r on co.idreporte = r.idreporte "
 				sqlmatriz(3)=" where  co.predeterminado = 'S' and co.codigoImpre= '"+ALLTRIM(LOWER(v_paramRepo))+"'"
 				
@@ -3791,12 +3833,12 @@ PARAMETERS pvar_paramrepo, pvar_tablarepo
 		IF v_cantRegistros = 1
 
 			 *** No tiene que seleccionar reportes, imprime con el que tiene predeterminado
-			pvar_retorno = ALLTRIM(STR(repos_sql.idreporte))+";" + ALLTRIM(repos_sql.nombre)
+			pvar_retorno = ALLTRIM(STR(repos_sql.idreporte))+";" + ALLTRIM(repos_sql.nombre) + ";" + ALLTRIM(repos_sql.copias)+ ";"
 			
 		ELSE
 			IF v_cantRegistros > 1
 				DO FORM selectreporte WITH v_paramRepo TO  pvar_retorno					
-				
+
 			ELSE
 				MESSAGEBOX("No existe un tipo de reporte para el parametro",0+48+0,"Error al obtener el nombre del reporte")
 			ENDIF 
@@ -3869,8 +3911,8 @@ PARAMETERS pr_claverepo
 		max_idreportea = maximosid_sql.maxidra + 1
 		USE IN maximosid_sql 
 		
-		verror=SQLEXEC(vconeccionF," insert into reportesimp (idreportea, idreporte, nombre, descripcion, fechahora, tamanio, reporte ) "+ ;
-									" values ("+alltrim(STR(max_idreportea))+","+alltrim(str(max_idreporte))+",'"+alltrim(v_nombrerepo)+"',"+"'','"+alltrim(v_fechahora)+"',"+alltrim(STR(v_tamanio))+",'"+v_reporte_ins+"')" ;
+		verror=SQLEXEC(vconeccionF," insert into reportesimp (idreportea, idreporte, nombre, descripcion, fechahora, tamanio, reporte,copias ) "+ ;
+									" values ("+alltrim(STR(max_idreportea))+","+alltrim(str(max_idreporte))+",'"+alltrim(v_nombrerepo)+"',"+"'','"+alltrim(v_fechahora)+"',"+alltrim(STR(v_tamanio))+",'"+v_reporte_ins+"','')" ;
 									,"reporte_in")
 		IF verror < 0
 			MESSAGEBOX("No se puede incertar el reporte Seleccionado ",0+16,"Advertencia")
@@ -16311,3 +16353,47 @@ PARAMETERS cmp_idcomprobao, cmp_id, cmp_idcomprobad
 
 	RETURN v_idregretorno 
 ENDFUNC 
+
+
+
+
+*******************************************
+** Chequea la Tabla pasada como parámetro tenga etiquetas de datos Anexos, si hay solicita los datos para el id pasado como parametro
+*	pm_tabla: Tabla para la solicitud de datos Anexos
+*   pm_id: Id de la tabla para Asociar los datos anexos
+*******************************************
+FUNCTION FNDatosAnexos
+PARAMETERS pm_tabla, pm_id
+
+	*** Me conecto a la base de datos
+	vconeccionFND=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="SELECT * FROM reldatosextra WHERE tabla = '"+ALLTRIM(pm_tabla)+"' LIMIT 1"
+	verror=sqlrun(vconeccionFND,"controlF")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de RelDatosExtras ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionFND,"")
+	    RETURN .F.
+	ENDIF 
+
+	SELECT controlF
+	GO TOP 
+	IF EOF() THEN 
+		USE IN controlF
+		=abreycierracon(vconeccionFND,"")
+		RETURN .F.
+	ENDIF 
+
+	USE IN controlF
+	IF MESSAGEBOX("Desea Agregar Datos Anexos al Registro Ingresado ?",4+32,"Datos Anexos")=7 THEN 
+		=abreycierracon(vconeccionFND,"")
+		RETURN .F. 
+	ENDIF 
+	=abreycierracon(vconeccionFND,"")
+
+	DO FORM datosextras WITH pm_id, pm_tabla TO v_retDatos
+
+	RETURN .T.
+ENDFUNC 
+
