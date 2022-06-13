@@ -2344,16 +2344,16 @@ PARAMETERS p_idnp
 	IF v_idnp  > 0
 		
 
-		v_imprimeMonto = 0		
-		sino = MESSAGEBOX("¿Desea imprimir la NP con montos?",4+48+256,"Imprimir montos")
+*		v_imprimeMonto = 0		
+*		sino = MESSAGEBOX("¿Desea imprimir la NP con montos?",4+48+256,"Imprimir montos")
 
-		IF sino = 6
+*		IF sino = 6
 			v_imprimeMonto	= 1
 		
-		ELSE
+*		ELSE
 		
-			v_imprimeMonto	= 0
-		ENDIF 
+*			v_imprimeMonto	= 0
+*		ENDIF 
 		
 		*** Busco los datos de la np y el detalle
 		
@@ -4421,6 +4421,8 @@ FUNCTION SetearIndice
 PARAMETERS pa_tabla, pa_tablaorden, pa_campobus, pa_valorbus, pa_camporet, pa_tag
 
 	var_indice = ALLTRIM(BUSCAVALORDB(pa_tablaorden,pa_campobus,pa_valorbus, pa_camporet,1))
+	MESSAGEBOX(var_indice)
+	
 	IF !isnull(var_indice)  THEN 
 		SELECT &pa_tabla
 		SET SAFETY OFF 
@@ -6940,7 +6942,7 @@ FUNCTION cambiaEstadoRec
 	p_tabla		= 'reclamoe'
 	p_incre		= 1
 	
-	v_idreclamoe	= maxnumeroidx (p_campoidx, p_tipo, p_tabla, p_incre)
+	v_idreclamoe	= 0 &&maxnumeroidx (p_campoidx, p_tipo, p_tabla, p_incre)
 	
 	IF v_idreclamoe <= 0 
 		** Error al obtner el max idreclamoe 
@@ -6989,17 +6991,24 @@ FUNCTION cambiaEstadoRec
 	
 		sqlmatriz(1)=" insert into reclamoe  "
 		sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idreclamoe))+","+ALLTRIM(STR(v_idreclamop))+","+ALLTRIM(STR(v_idestado))+","+ALLTRIM(STR(v_idsector))+",'"+ALLTRIM(v_fecha)+"')"
-
-
 		verror=sqlrun(vconeccionM,"ins_reclamoe_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
-		    		
 			** me desconecto
 			=abreycierracon(vconeccionM,"")
-	
 		    RETURN .F.
 		ENDIF 
+
+		sqlmatriz(1)="SELECT last_insert_id() as maxid "
+		verror=sqlrun(vconeccionM,"max_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo ID ",0+48+0,"Error")
+		    v_errores = .T.
+		ENDIF 
+		SELECT max_sql
+		GO TOP 
+		v_idreclamoe = VAL(max_sql.maxid)
+		USE IN max_sql 
 
 		
 		IF v_idreclamop > 0 AND v_idreclamoe > 0
@@ -7069,37 +7078,30 @@ FUNCTION cambiaEstadoRec
 			p_incre		= 1
 		
 		
-			v_idrecnov	= maxnumeroidx(p_campoidx, p_tipo, p_tabla, p_incre)
-			
-			
+			v_idrecnov	= 0 && maxnumeroidx(p_campoidx, p_tipo, p_tabla, p_incre)
 
-		vconeccionM = abreycierracon(0,_SYSSCHEMA)
+		    vconeccionM = abreycierracon(0,_SYSSCHEMA)
 			
 			v_fechaHora		= DATETIME()
 			v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
 			v_fechaStr		= ALLTRIM(TTOC(DATETIME()))
 			v_usuario		= _SYSUSUARIO
-			
 			v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
-			
 			v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
-					
 			
-			sqlmatriz(1)=" insert into recnovedad "
-			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"')"
+			sqlmatriz(1)=" insert into recnovedad (idrecnov, idreclamop, fecha, novedades, usuario, timestamp) "
+			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"',CURRENT_TIMESTAMP)"
 
 
 			verror=sqlrun(vconeccionM,"ins_recnovedad_sql")
 			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error al registrar la novedad del reclamo ",0+48+0,"Error")
-			    		
+			    MESSAGEBOX("Ha Ocurrido un Error al registrar la novedad del reclamo ",0+48+0,"Error")			    		
 				** me desconecto
 				=abreycierracon(vconeccionM,"")
-				
 			    RETURN .F.
 			ENDIF 
 		
-	
+
 		
 		ENDIF 
 	
@@ -7946,7 +7948,7 @@ FUNCTION cambiaEstadoRec
 
 	
 		
-	vconeccionM = abreycierracon(0,_SYSSCHEMA)
+	    vconeccionM = abreycierracon(0,_SYSSCHEMA)
 
 		sqlmatriz(1)=" insert into reclamoe  "
 		sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idreclamoe))+","+ALLTRIM(STR(v_idreclamop))+","+ALLTRIM(STR(v_idestado))+","+ALLTRIM(STR(v_idsector))+",'"+ALLTRIM(v_fecha)+"')"
@@ -8034,7 +8036,7 @@ FUNCTION cambiaEstadoRec
 			
 			
 		
-	vconeccionM = abreycierracon(0,_SYSSCHEMA)
+			vconeccionM = abreycierracon(0,_SYSSCHEMA)
 			
 			v_fechaHora		= DATETIME()
 			v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
@@ -8045,9 +8047,8 @@ FUNCTION cambiaEstadoRec
 			
 			v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
 					
-			
-			sqlmatriz(1)=" insert into recnovedad "
-			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"')"
+			sqlmatriz(1)=" insert into recnovedad (idrecnov, idreclamop, fecha, novedades, usuario, timestamp) "
+			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"',CURRENT_TIMESTAMP)"
 
 
 			verror=sqlrun(vconeccionM,"ins_recnovedad_sql")
@@ -11457,7 +11458,6 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 		par_etiqueimp = "printetique"
 	ENDIF 
 
-	
 	eje = " USE "+par_etiqueimp+" in 0 "
 	&eje 
 	SELECT &par_etiqueimp
@@ -11471,7 +11471,6 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 	ENDDO 
 	USE IN &par_etiqueimp 
 	vimp_etiquetas= SUBSTR(vimp_etiquetas,2)
-
 
 	sqlmatriz(1)= " SELECT * from etiquetas where etiqueta in ( "+vimp_etiquetas+" ) " 
 	sqlmatriz(2)= " order by tabla, detalle, etiqueta "
@@ -11489,7 +11488,6 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 	
 	=abreycierracon(vconeccionF,"")
 
-
 	SELECT &narchivo
 	IF par_BCQR = 'QR' THEN 
 		PRIVATE poFbc
@@ -11499,7 +11497,7 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 		poFbc.nCorrectionLevel = 0 && Medium 15%
 	ENDIF 
 	
-	
+
 	DO WHILE !EOF()
 		
 ********************************************************************************************
@@ -11509,7 +11507,6 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 		v_etiquetaqr 	= "*"+ALLTRIM(STR(&narchivo..etiqueta))+"*"
 		v_codigoqr		= "*/"+IIF(&narchivo..idregistro <> 0,"//"+ALLTRIM(STR(&narchivo..idregistro)),IIF(EMPTY(ALLTRIM(&narchivo..articulo))=.t.,"/"+ALLTRIM(&narchivo..codigo),ALLTRIM(&narchivo..articulo)))+"*"
 		replace cb1 WITH v_etiquetaqr, cb2 WITH v_codigoqr 
-
 
 		IF par_BCQR = 'QR' THEN 	&& Armo la cadena a codificar en el código QR **
 
@@ -11535,13 +11532,16 @@ PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
 		SELECT &narchivo
 		SKIP 
 	ENDDO 
-		
+
 	RELEASE poFbc
 
 	SELECT &narchivo 
 	GO TOP 
+	
 	DO FORM reporteform WITH narchivo,narchivo+"cr","printetiquetas"+par_BCQR
 	USE IN &narchivo	
+	
+
 	
 RETURN 
 ENDFUNC 
@@ -16362,7 +16362,7 @@ ENDFUNC
 *	pm_tabla: Tabla para la solicitud de datos Anexos
 *   pm_id: Id de la tabla para Asociar los datos anexos
 *******************************************
-FUNCTION FNDatosAnexos
+FUNCTION FNDatosExtras
 PARAMETERS pm_tabla, pm_id
 
 	*** Me conecto a la base de datos
