@@ -1361,7 +1361,7 @@ FUNCTION CargaCablemodem
 		RETURN p_func 
 	ENDIF 
 */**************************************************************
-	IF p_func = 1 then && 1- Carga de Archivo de Telefonía -
+	IF p_func = 1 then && 1- Carga de Archivo de Cablemodems  -
 		p_archivo = alltrim(p_archivo)
 		if !file(p_archivo) THEN
 			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
@@ -1415,7 +1415,7 @@ FUNCTION CargaCablemodem
 		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
 		&eje
 
-		DIMENSION lamatriz(32,2)
+		DIMENSION lamatriz(33,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
@@ -1456,36 +1456,38 @@ FUNCTION CargaCablemodem
 			lamatriz(16,2) = "'"+ALLTRIM(cablemodems.campo18)+"'"
 			lamatriz(17,1) = 'fcreacion'
 			lamatriz(17,2) = "'"+ALLTRIM(cablemodems.campo19)+"'"
-			lamatriz(18,1) = 'ipstats'
-			lamatriz(18,2) = "'"+ALLTRIM(cablemodems.campo22)+"'"
-			lamatriz(19,1) = 'ipcm'
-			lamatriz(19,2) = "'"+ALLTRIM(cablemodems.campo23)+"'"
-			lamatriz(20,1) = 'ipcpe'
-			lamatriz(20,2) = "'"+ALLTRIM(cablemodems.campo24)+"'"
-			lamatriz(21,1) = 'ipmta'
-			lamatriz(21,2) = "'"+ALLTRIM(cablemodems.campo25)+"'"
-			lamatriz(22,1) = 'nodo'
-			lamatriz(22,2) = "'"+ALLTRIM(cablemodems.campo26)+"'"
-			lamatriz(23,1) = 'modelocm'
-			lamatriz(23,2) = "'"+ALLTRIM(cablemodems.campo27)+"'"
-			lamatriz(24,1) = 'gestionid'
-			lamatriz(24,2) = "'"+ALLTRIM(cablemodems.campo29)+"'"
-			lamatriz(25,1) = 'emailcli'
-			lamatriz(25,2) = "'"+ALLTRIM(cablemodems.campo30)+"'"
-			lamatriz(26,1) = 'direccli'
-			lamatriz(26,2) = "'"+ALLTRIM(cablemodems.campo31)+"'"
-			lamatriz(27,1) = 'ciudadcli'
-			lamatriz(27,2) = "'"+ALLTRIM(cablemodems.campo32)+"'"
-			lamatriz(28,1) = 'telefono'
-			lamatriz(28,2) = "'"+ALLTRIM(cablemodems.campo33)+"'"
-			lamatriz(29,1) = 'downidx'
-			lamatriz(29,2) = "'"+ALLTRIM(cablemodems.campo34)+"'"
-			lamatriz(30,1) = 'upidx'
-			lamatriz(30,2) = "'"+ALLTRIM(cablemodems.campo35)+"'"
-			lamatriz(31,1) = 'idcablem'
-			lamatriz(31,2) = '0'
-			lamatriz(32,1) = 'idimportap'
-			lamatriz(32,2) =  alltrim(STR(p_idimportap))
+			lamatriz(18,1) = 'etiqueta'
+			lamatriz(18,2) = "'"+ALLTRIM(cablemodems.campo20)+"'"
+			lamatriz(19,1) = 'ipstats'
+			lamatriz(19,2) = "'"+ALLTRIM(cablemodems.campo22)+"'"
+			lamatriz(20,1) = 'ipcm'
+			lamatriz(20,2) = "'"+ALLTRIM(cablemodems.campo23)+"'"
+			lamatriz(21,1) = 'ipcpe'
+			lamatriz(21,2) = "'"+ALLTRIM(cablemodems.campo24)+"'"
+			lamatriz(22,1) = 'ipmta'
+			lamatriz(22,2) = "'"+ALLTRIM(cablemodems.campo25)+"'"
+			lamatriz(23,1) = 'nodo'
+			lamatriz(23,2) = "'"+ALLTRIM(cablemodems.campo26)+"'"
+			lamatriz(24,1) = 'modelocm'
+			lamatriz(24,2) = "'"+ALLTRIM(cablemodems.campo27)+"'"
+			lamatriz(25,1) = 'gestionid'
+			lamatriz(25,2) = "'"+ALLTRIM(cablemodems.campo29)+"'"
+			lamatriz(26,1) = 'emailcli'
+			lamatriz(26,2) = "'"+ALLTRIM(cablemodems.campo30)+"'"
+			lamatriz(27,1) = 'direccli'
+			lamatriz(27,2) = "'"+ALLTRIM(cablemodems.campo31)+"'"
+			lamatriz(28,1) = 'ciudadcli'
+			lamatriz(28,2) = "'"+ALLTRIM(cablemodems.campo32)+"'"
+			lamatriz(29,1) = 'telefono'
+			lamatriz(29,2) = "'"+ALLTRIM(cablemodems.campo33)+"'"
+			lamatriz(30,1) = 'downidx'
+			lamatriz(30,2) = "'"+ALLTRIM(cablemodems.campo34)+"'"
+			lamatriz(31,1) = 'upidx'
+			lamatriz(31,2) = "'"+ALLTRIM(cablemodems.campo35)+"'"
+			lamatriz(32,1) = 'idcablem'
+			lamatriz(32,2) = '0'
+			lamatriz(33,1) = 'idimportap'
+			lamatriz(33,2) =  alltrim(STR(p_idimportap))
 
 			p_tabla     = 'cablemodems'
 			p_matriz    = 'lamatriz'
@@ -1500,9 +1502,12 @@ FUNCTION CargaCablemodem
 	
 */*/*/*/*/*/
 	=abreycierracon(vconeccionF,"")	
+	=FEtiquetasCM(p_idimportap)
+	 
 	ENDIF 	&& 1- Carga de Archivo de Telefonía -
 */**************************************************************
 */**************************************************************
+
 */ && 2- Visualiza Datos de Telefonía 
 
 	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
@@ -5080,3 +5085,96 @@ ENDFUNC
 
 
 *******************************************************
+FUNCTION FEtiquetasCM
+PARAMETERS p_idimportap
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="  select *  from localidades where TRIM(localidad) = '"+ALLTRIM(_syslocalidad)+"'"
+	verror=sqlrun(vconeccionF,"locali_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la seleccion de datos de Localidades... ",0+48+0,"Error")
+	    RETURN 
+	ENDIF
+	v_nomlocalidad = locali_sql.nombre
+	USE IN locali_sql
+
+	sqlmatriz(1)="  select *  from cablemodems where TRIM(UPPER(ciudadin)) = '"+ALLTRIM(v_nomlocalidad)+"' and idimportap = "+STR(p_idimportap)+" and TRIM(lcase(bocanumero)) not in (select TRIM(lcase(detalleb)) as bocaservicio from etiquetas ) "
+	verror=sqlrun(vconeccionF,"cablem_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la seleccion de datos de Cablemodems... ",0+48+0,"Error")
+	    RETURN 
+	ENDIF
+	SELECT cablem_sql
+	GO top
+	IF !EOF() THEN 
+		IF MESSAGEBOX("Existen Cablemodems en el FlowDat sin Etiquetar..."+CHR(13)+" Desea generar las Etiquetas Correspondientes",4+48,"Error de Búsqueda") = 6 THEN 
+			
+
+		* Busco el Codigo de Articulo para registrar las etiquetas de Cablemodems
+			oeObj			= CREATEOBJECT('oeclass')		
+			v_codTab	=  oeObj.getCodigoOp("CABLEMODEM GENERICO") && Obtengo: CODIGO_TABLA. El caracter '_' es el de separación
+			v_nPos 		= AT('_',v_codTab) &&Retorna la posición donde aparece el caracter de separacion utilizado (_)
+			v_codigo	= SUBSTR(v_codTab,1,v_nPos-1) && Retorna el código
+			v_tabla		= SUBSTR(v_codTab,v_nPos+1)	&& Retorna el resto de la cadena, que corresponde a la tabla
+			
+			
+			*** Busco el impuesto para el articulo o concepto a agregar ***
+			
+			DO CASE
+			CASE ALLTRIM(v_tabla) = "articulos"
+				sqlmatriz(1)="SELECT articulo, detalle FROM articulos  WHERE  articulo = '"+ALLTRIM(v_codigo)+"'"
+			OTHERWISE
+				MESSAGEBOX("No se reconoce la operación especial que intenta agregar",0+48+0,"Error al obtener el impuesto")
+				RETURN 
+
+			ENDCASE
+			verror=sqlrun(vconeccionF,"oeImp")
+			IF verror=.f.
+				MESSAGEBOX("Error al obtener el Impuesto para la Operación Especial",0+48+0,"Error")
+				* me desconecto
+				=abreycierracon(vconeccionF,"")
+				RETURN 
+			ENDIF 
+			
+			
+			SELECT oeImp
+			GO TOP 
+			vcmarticulo = ""
+			vcmdetalle  = ""
+			vcmdetalleb = ""
+			IF !EOF() THEN 
+				vcmarticulo = ALLTRIM(v_codigo)
+				vcmdetalle  = ALLTRIM(oeImp.detalle)
+			ENDIF 
+			USE IN oeImp
+			RELEASE oeObj
+			
+			
+*********************************************************************************
+************************ GENERO LAS ETIQUETAS QUE NECESITO ***********************
+			SELECT cablem_sql
+			v_eti_generadaINI="" 
+			v_eti_generadaFIN=""
+			DO WHILE !EOF() then 
+				
+				vcmdetalleb = cablem_sql.bocanumero
+				ret=GeneraEtiquetas ("articulos",vcmarticulo, ALLTRIM(vcmarticulo)+"-"+ALLTRIM(vcmdetalle), 1, ALLTRIM(vcmdetalleb))
+				v_eti_generadaINI = IIF(EMPTY(v_eti_generadaINI),IIF(EMPTY(ret),"",SUBSTR(ret,1,ATC(';',ret)-1)),v_eti_generadaINI)
+				v_eti_generadaFIN = IIF(EMPTY(ret),"",SUBSTR(ret,ATC(';',ret)+1))
+					
+				SELECT cablem_sql
+				SKIP 
+			ENDDO 
+
+			IF !EMPTY(v_eti_generadaINI) AND !EMPTY(v_eti_generadaFIN) THEN 
+				MESSAGEBOX("Etiquetas Generadas: "+ALLTRIM(v_eti_generadaINI)+" a "+ALLTRIM(v_eti_generadaFIN)+" ",0+64,"Etiquetas " )					
+			ENDIF 
+
+*********************************************************************************
+*********************************************************************************		
+		ENDIF 
+	ENDIF 	
+	USE IN cablem_sql
+	=abreycierracon(vconeccionF,"")	
+	
+ENDFUNC 

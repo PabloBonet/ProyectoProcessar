@@ -2376,7 +2376,7 @@ PARAMETERS p_idnp
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la NP",0+48+0,"Error")
 		ENDIF
 
-		SELECT *, SPACE(200) as otvincula FROM np_det_sql INTO TABLE .\np_impr
+		SELECT *, SPACE(200) as otvincula FROM np_det_sql INTO TABLE .\np_impr  WHERE imprimir = 'S'
 
 		sqlmatriz(1)=" Select n.idot, o.fechaot, o.descriptot, p.entidad, p.nombre from otnp n left join otordentra o on o.idot = n.idot left join otpedido p on p.idpedido = o.idpedido "
 		sqlmatriz(2)=" where n.idnp = "+ ALLTRIM(STR(v_idnp))
@@ -2478,6 +2478,147 @@ PARAMETERS p_idnp
 
 	ELSE
 		MESSAGEBOX("NO se pudo recuperar la NP ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
+
+
+* FUNCIÓN PARA IMPRIMIR UN PRESUPUESTO (COMPROBANTES DE LA TABLA PRESUPU)
+* PARAMETROS: P_IDPRESUPU
+FUNCTION imprimirPresu
+PARAMETERS p_idpresupu
+
+
+	v_idpresupu = p_idpresupu
+
+
+	IF v_idpresupu > 0
+		
+		v_imprimeMonto	= 1
+		
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+
+		sqlmatriz(1)=" Select f.*,d.*,c.*,v.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit,e.direccion, "
+		sqlmatriz(2)=" com.comprobante as nomcomp,0 as cantcump from presupu f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+		sqlmatriz(3)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+		sqlmatriz(4)=" left join presupuh d on f.idpresupu = d.idpresupu "
+		sqlmatriz(5)=" left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva"
+		sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor "
+		sqlmatriz(7)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+		sqlmatriz(8)=" where f.idpresupu = "+ ALLTRIM(STR(v_idpresupu))
+			
+					
+		verror=sqlrun(vconeccionF,"np_det_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la NP",0+48+0,"Error")
+		ENDIF
+
+		SELECT *, SPACE(200) as otvincula FROM np_det_sql INTO TABLE .\presupu_impr WHERE imprimir = 'S'
+
+		sqlmatriz(1)=" Select n.idpresupu, o.fechaot, o.descriptot, p.entidad, p.nombre from otpresupu n left join otordentra o on o.idot = n.idot left join otpedido p on p.idpedido = o.idpedido "
+		sqlmatriz(2)=" where n.idpresupu = "+ ALLTRIM(STR(v_idpresupu))
+		verror=sqlrun(vconeccionF,"otvin_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+		ENDIF 
+
+		v_otvincula = ""
+		SELECT otvin_sql
+		GO TOP 
+		IF !EOF() THEN 
+			v_otvincula = "O.T. Nro. "+ALLTRIM(STR(otvin_sql.idot))+'  F.'+SUBSTR(otvin_sql.fechaot,7,2)+'/'+SUBSTR(otvin_sql.fechaot,5,2)+'/'+SUBSTR(otvin_sql.fechaot,1,4)+'   '+STR(otvin_sql.entidad,6)+'-'+ALLTRIM(otvin_sql.nombre)+'  - '+ALLTRIM(otvin_sql.descriptot)
+		ENDIF 
+		USE IN otvin_sql 
+		
+		
+		
+		
+			
+		SELECT presupu_impr
+		
+		IF NOT EOF()
+			SELECT presupu_impr
+			ALTER table presupu_impr ADD COLUMN imprMonto I
+			
+			SELECT presupu_impr
+			GO TOP 
+			replace ALL imprMonto WITH v_imprimeMonto, otvincula WITH v_otvincula
+			
+			SELECT presupu_impr
+			GO TOP 
+			
+			v_idcomproba 	= presupu_impr.idcomproba
+			v_tipoCompAfip	= ALLTRIM(presupu_impr.tipcomAFIP)
+			v_codBarra		= ""
+			v_codBarraD 	= ""
+			v_electronica	= .F.
+			v_cuitEmpresa	= _SYSCUIT
+			v_entidad		= presupu_impr.entidad
+			
+			*********************************************
+			** Obtengo los datos anexos al Presupuesto y el cliente si los hubiere 
+			** agrega los datos extra y anexos de la entidad y la nota de pedido a la impresion
+			************************************************************
+			*Anexo Entidades
+			sqlmatriz(1)=" select concat(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor, concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+			sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'entidades' and r.idregistro = "+ ALLTRIM(STR(v_entidad))
+			verror=sqlrun(vconeccionF,"entidadextra_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+			ENDIF 		
+			
+			*Anexo NP
+			sqlmatriz(1)=" select CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor , concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+			sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'presupu' and r.idregistro = "+ ALLTRIM(STR(v_idpresupu))
+			verror=sqlrun(vconeccionF,"npextra_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+			ENDIF 		
+			
+			SELECT entidadextra_sql
+			GO TOP 
+			IF EOF() THEN 
+				CREATE TABLE entidadex ( propiedad c(50), valor m , tabla c(15)) 
+			ELSE
+				SELECT propiedad , valor , tabla FROM entidadextra_sql INTO TABLE .\entidadex ORDER BY propiedad 
+				ALTER table entidadex alter COLUMN valor m
+			ENDIF 
+			USE IN entidadextra_sql
+			
+
+			SELECT npextra_sql
+			GO TOP 
+			IF EOF() THEN 
+				CREATE TABLE presupuex ( propiedad c(50), valor m , tabla c(15)) 
+			ELSE
+				SELECT propiedad , valor , tabla FROM npextra_sql INTO TABLE .\npex ORDER BY propiedad 
+				ALTER table presupuex alter COLUMN valor m
+			ENDIF 
+			USE IN npextra_sql 
+
+
+
+			DO FORM reporteform WITH "presupu_impr;entidadex;presupuex","npcr;entidadexcr;npexcr",v_idcomproba
+			
+			=abreycierracon(vconeccionF,"")	
+
+			* Impresion de Datos Anexos si los hubiere
+			=ImprimirDetalleAnexo ('presupu', v_idpresupu)
+		
+			
+		ELSE
+			MESSAGEBOX("Error al cargar la NP  para imprimir",0+48+0,"Error al cargar la NP")
+			RETURN 	
+		ENDIF 
+		
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar El Presupuesto ID <= 0",0+16,"Error al imprimir")
 		RETURN 
 
 	ENDIF 
@@ -11324,7 +11465,7 @@ ENDFUNC
 *- formato : DDDDDDDDDD;DDDDDDDDDD
 *-----------------------------------------------------------------------------------------
 FUNCTION GeneraEtiquetas
-PARAMETERS pge_tabla, pge_id, pge_detalle, pge_cantidad
+PARAMETERS pge_tabla, pge_id, pge_detalle, pge_cantidad, pge_detalleb
 
 
 	v_nomIndice	 = obtenerCampoIndice(ALLTRIM(pge_tabla))
@@ -11335,6 +11476,13 @@ PARAMETERS pge_tabla, pge_id, pge_detalle, pge_cantidad
 	ELSE
 		pge_idc = ALLTRIM(STR(pge_id))
 	ENDIF 
+
+	IF TYPE("pge_detalleb") ='C' THEN 
+		vardetalleb = "'"+ALLTRIM(pge_detalleb)+"'"
+	ELSE
+		vardetalleb = "''"
+	ENDIF 
+
 
 	vconeccionF = abreycierracon(0,_SYSSCHEMA)
 
@@ -11374,7 +11522,7 @@ PARAMETERS pge_tabla, pge_id, pge_detalle, pge_cantidad
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
 					
-		DIMENSION lamatriz3(8,2)
+		DIMENSION lamatriz3(9,2)
 					
 		lamatriz3(1,1)='etiqueta'
 		lamatriz3(1,2)=ALLTRIM(STR(v_etiqueta))
@@ -11392,6 +11540,8 @@ PARAMETERS pge_tabla, pge_id, pge_detalle, pge_cantidad
 		lamatriz3(7,2)=varidregistro 
 		lamatriz3(8,1)='detalle'
 		lamatriz3(8,2)=vardetalle 
+		lamatriz3(9,1)='detalleb'
+		lamatriz3(9,2)=vardetalleb 
 					
 
 		p_tabla     = 'etiquetas'
