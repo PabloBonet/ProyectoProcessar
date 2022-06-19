@@ -2595,7 +2595,7 @@ PARAMETERS p_idpresupu
 			IF EOF() THEN 
 				CREATE TABLE presupuex ( propiedad c(50), valor m , tabla c(15)) 
 			ELSE
-				SELECT propiedad , valor , tabla FROM npextra_sql INTO TABLE .\npex ORDER BY propiedad 
+				SELECT propiedad , valor , tabla FROM npextra_sql INTO TABLE .\presupuex ORDER BY propiedad 
 				ALTER table presupuex alter COLUMN valor m
 			ENDIF 
 			USE IN npextra_sql 
@@ -16546,4 +16546,394 @@ PARAMETERS pm_tabla, pm_id
 
 	RETURN .T.
 ENDFUNC 
+
+
+
+
+
+****************************************************************************************************************
+*** Generación de una Nota de Pedido a partir de un Presupuesto *********************************************
+***
+*** PARAMETRO: 
+*** pp_idpresupu : ID del presupuesto para el cual se realizará la nota de pedido anexa
+*** retorna el idnp: de la nota de pedido generada, si no lo genera retorna 0
+************************************************************************************************************
+FUNCTION FNPresupuToNP
+PARAMETERS pp_idpresupu
+
+	rt_idnp = 0 
+	v_tmp = frandom()
+	
+	**** 1.- Obtengo los Datos del Presupuesto para generar la NP
+	*** Me conecto a la base de datos
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)="SELECT * FROM presupu WHERE idpresupu = " + ALLTRIM(STR(pp_idpresupu))
+	verror=sqlrun(vconeccionF,"presupu_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del PRESUPUESTO : "+ STR(pp_idpresupu),0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 	rt_idnp  
+	ENDIF 
+	SELECT presupu_sql
+	GO TOP 
+	IF EOF() THEN 
+		USE IN presupu_sql
+		=abreycierracon(vconeccionF,"")
+		RETURN rt_idnp 
+	ENDIF 
+	
+	
+	sqlmatriz(1)=" SELECT c.idcomproba, a.pventa FROM comprobantes c "
+	sqlmatriz(2)=" LEFT JOIN compactiv a ON a.idcomproba = c.idcomproba "
+	sqlmatriz(4)=" WHERE c.tabla = 'np' " 
+	verror=sqlrun(vconeccionF,"compronp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Comprobantes de NP ... ",0+48+0,"Error")
+	    RETURN rt_idnp
+	ENDIF	
+
+
+	sqlmatriz(1)=" SELECT * FROM linkcompro c where idcomprobaa = "+ALLTRIM(STR(compronp_sql.idcomproba))+" and idcomprobab = " +ALLTRIM(STR(presupu_sql.idcomproba))+" and idregistrob = " +ALLTRIM(STR(pp_idpresupu))
+	verror=sqlrun(vconeccionF,"presuasocia_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Comprobantes de NP ... ",0+48+0,"Error")
+	    RETURN .F.
+	ENDIF	
+	SELECT presuasocia_sql
+	GO TOP 
+	IF !EOF() THEN 
+		IF MESSAGEBOX("Ya Existe una Nota de Pedido Asociada a Este Presupuesto...,"+CHR(13)+"Desea Generar una Nota de Pedido Nueva de todas formas...? ",4+32,"Nota de Pedido Asociada ") = 7 THEN
+			USE IN compronp_sql
+			USE IN presuasocia_sql
+			USE IN presupu_sql
+			=abreycierracon(vconeccionF,"")
+			RETURN rt_idnp 
+		ENDIF 
+	ENDIF 
+	USE IN presuasocia_sql 
+
+		
+
+
+	sqlmatriz(1)="SELECT * FROM presupuh WHERE idpresupu = " + ALLTRIM(STR(pp_idpresupu))
+	verror=sqlrun(vconeccionF,"presupuh_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del DETALLE DEL PRESUPUESTO : "+ STR(pp_idpresupu),0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN rt_idnp 
+	ENDIF 
+	
+	sqlmatriz(1) = " SELECT a.* from datosextra a left join reldatosextra r on a.iddatosex = r.iddatosex "
+	sqlmatriz(2) = " where r.idregistro = "+ALLTRIM(STR(pp_idpresupu)) + " and r.tabla = 'presupu'"
+	verror=sqlrun(vconeccionF,"datosextra_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de DatosExtras ",0+48+0,"Error")
+	    RETURN rt_idnp 
+	ENDIF 
+	
+	sqlmatriz(1) = " SELECT iddatoan, fecha, detalle, numero, importe, tabla, id from datosanexo "
+	sqlmatriz(2) = " where id = "+ALLTRIM(STR(pp_idpresupu)) + " and tabla = 'presupu'"
+	verror=sqlrun(vconeccionF,"datosanexo_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de DatosAnexos ",0+48+0,"Error")
+	    RETURN rt_idnp 
+	ENDIF 
+
+
+
+	*** Grabo en NP y sus Tablas Asociadas de acuerdo al Presupuesto	
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+
+	SELECT presupu_sql
+	GO TOP 
+	IF !EOF() THEN && Si existe el Presupuesto entonces Genero la Nota de Pedido
+	
+		** Grabo la Cabecera de la Nota de Pedido **
+			
+		v_idnp = 0
+		v_idnp = maxnumeroidx("idnp","I","np",1)
+		IF v_idnp <= 0
+			MESSAGEBOX("No se pudo recuperar el ultimo indice de la NP",0+16,"Error")
+			RETURN rt_idnp 
+		ENDIF 
+				
+		cnp_idcomproba	= compronp_sql.idcomproba
+		cnp_pventa		= presupu_sql.pventa
+		cnp_numero		= maxnumerocom(cnp_idcomproba,presupu_sql.pventa,1)
+		cnp_observa 	= "Presupuesto: X "+ALLTRIM(presupu_sql.puntov)+'-'+STRTRAN(STR(presupu_sql.numero,8),' ','0')+'   '+ALLTRIM(STR(presupu_sql.entidad))+'-'+ALLTRIM(presupu_sql.nombre)+' '+ALLTRIM(presupu_sql.fecha)
+
+		DIMENSION lamatriz1(16,2)
+		DIMENSION lamatriz2(20,2)
+					
+		lamatriz1(1,1)='idnp'
+		lamatriz1(1,2)= ALLTRIM(STR(v_idnp))
+		lamatriz1(2,1)='puntov'
+		lamatriz1(2,2)="'"+ALLTRIM(presupu_sql.puntov)+"'"
+		lamatriz1(3,1)='numero'
+		lamatriz1(3,2)= ALLTRIM(STR(cnp_numero))
+		lamatriz1(4,1)='fecha'
+		lamatriz1(4,2)= "'"+ALLTRIM(DTOS(DATE()))+"'"
+		lamatriz1(5,1)='hora'
+		lamatriz1(5,2)= "'"+ALLTRIM(SUBSTR(TTOC(DATETIME(),3),12,9))+"'"
+		lamatriz1(6,1)='usuario'
+		lamatriz1(6,2)="'"+ALLTRIM(_SYSUSUARIO)+"'"
+		lamatriz1(7,1)='vendedor'
+		lamatriz1(7,2)= ALLTRIM(STR(presupu_sql.vendedor))
+		lamatriz1(8,1)='transporte'
+		lamatriz1(8,2)= ALLTRIM(STR(presupu_sql.transporte))
+		lamatriz1(9,1)='nombretran'
+		lamatriz1(9,2)="'"+ALLTRIM(presupu_sql.nombretran)+"'"
+		lamatriz1(10,1)='entidad'
+		lamatriz1(10,2)=ALLTRIM(STR(presupu_sql.entidad))
+		lamatriz1(11,1)='nombre'
+		lamatriz1(11,2)="'"+alltrim(presupu_sql.nombre)+"'"
+		lamatriz1(12,1)='observa'
+		lamatriz1(12,2)="'"+ALLTRIM(presupu_sql.observa)+cnp_observa+"'"
+		lamatriz1(13,1)='idtiponp'
+		lamatriz1(13,2)= ALLTRIM(STR(presupu_sql.idtiponp))
+		lamatriz1(14,1)='idcomproba'
+		lamatriz1(14,2)=ALLTRIM(STR(cnp_idcomproba))
+		lamatriz1(15,1)='pventa'
+		lamatriz1(15,2)=ALLTRIM(STR(presupu_sql.pventa))
+		lamatriz1(16,1)='fechaentre'
+		lamatriz1(16,2)= "'"+ALLTRIM(presupu_sql.fechaentre)+"'"
+
+		p_tabla     = 'np'
+		p_matriz    = 'lamatriz1'
+		p_conexion  = vconeccionF
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+STR(cnp_numero),0+48+0,"Error")
+		ENDIF  	
+		RELEASE lamatriz1
+		
+
+		** Grabo el Detalle de la Nota de Pedido a partir de presupuh **
+
+		SELECT presupuh_sql
+		GO TOP 
+
+		DO WHILE NOT EOF()
+				
+
+			v_id_ot = maxnumeroidx("idot","I","ot",1)
+			v_idtipoot		= presupuh_sql.idtipoot
+			v_articulo 		= presupuh_sql.articulo
+			v_detalle 		= presupuh_sql.detalle
+			v_cantidad 		= presupuh_sql.cantidad
+			v_unidad 		= presupuh_sql.unidad
+			v_unitario 		= presupuh_sql.unitario		
+			v_observa		= presupuh_sql.observa
+			v_fechaentre 	= presupuh_sql.fechaentre
+			v_cantidadFC 	= presupuh_sql.cantidadFc
+			v_unidadFC 	 	= presupuh_sql.unidadFc
+			v_impuestos	 	= presupuh_sql.impuestos
+			v_impuesto	 	= presupuh_sql.impuesto
+			v_neto		 	= presupuh_sql.neto
+			v_razonimp	 	= presupuh_sql.razonimp
+			v_total		 	= presupuh_sql.total
+			v_idmate	 	= presupuh_sql.idmate
+			v_idtiponpot 	= presupuh_sql.idtiponp
+			v_impr		 	= presupuh_sql.imprimir
+
+			lamatriz2(1,1)='idnp'
+			lamatriz2(1,2)=ALLTRIM(STR(v_idnp))
+			lamatriz2(2,1)='idot'
+			lamatriz2(2,2)=ALLTRIM(STR(v_id_ot))
+			lamatriz2(3,1)='idtipoot'
+			lamatriz2(3,2)=ALLTRIM(STR(v_idtipoot))
+			lamatriz2(4,1)='articulo'
+			lamatriz2(4,2)="'"+ALLTRIM(v_articulo)+"'"
+			lamatriz2(5,1)='detalle'
+			lamatriz2(5,2)= "'"+ALLTRIM(v_detalle)+"'"
+			lamatriz2(6,1)='cantidad'
+			lamatriz2(6,2)=ALLTRIM(STR(v_cantidad,13,4))
+			lamatriz2(7,1)='unidad'
+			lamatriz2(7,2)="'"+alltrim(v_unidad )+"'"
+			lamatriz2(8,1)='unitario'
+			lamatriz2(8,2)=ALLTRIM(STR(v_unitario,13,4))
+			lamatriz2(9,1)='observa'
+			lamatriz2(9,2)="'"+ALLTRIM(v_observa)+"'"
+			lamatriz2(10,1)='fechaentre'
+			lamatriz2(10,2)="'"+ALLTRIM(v_fechaentre)+"'"
+			lamatriz2(11,1)='cantidadfc'
+			lamatriz2(11,2)=ALLTRIM(STR(v_cantidadFC ,13,4))
+			lamatriz2(12,1)='unidadfc'
+			lamatriz2(12,2)="'"+ALLTRIM(v_unidadFC )+"'"
+			lamatriz2(13,1)='impuestos'
+			lamatriz2(13,2)=ALLTRIM(STR(v_impuestos,13,4))
+			lamatriz2(14,1)='total'
+			lamatriz2(14,2)=ALLTRIM(STR(v_total,13,4))
+			lamatriz2(15,1)='impuesto'
+			lamatriz2(15,2)=ALLTRIM(STR(v_impuesto))
+			lamatriz2(16,1)='razonimp'
+			lamatriz2(16,2)=ALLTRIM(STR(v_razonimp,13,4))
+			lamatriz2(17,1)='neto'
+			lamatriz2(17,2)=ALLTRIM(STR(v_neto,13,4))
+			lamatriz2(18,1)='idmate'
+			lamatriz2(18,2)=ALLTRIM(STR(v_idmate))
+			lamatriz2(19,1)='idtiponp'
+			lamatriz2(19,2)=ALLTRIM(STR(v_idtiponpot))
+			lamatriz2(20,1)='imprimir'
+			lamatriz2(20,2)="'"+ALLTRIM(v_impr)+"'"
+
+			p_tabla     = 'ot'
+			p_matriz    = 'lamatriz2'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+			ENDIF						
+			
+			
+			SELECT presupuh_sql
+			SKIP 1
+		ENDDO	
+		RELEASE lamatriz2
+
+
+
+		*** Registro la relación de los comprobantes- En caso que tenga ***
+		DIMENSION lamatrizli(5,2)
+
+		v_idlinkcomp	= maxnumeroidx("idlinkcomp","I","linkcompro",1)
+		v_idregistroa	= v_idnp
+		v_idcomprobaa	= cnp_idcomproba
+		v_idregistrob 	= presupu_sql.idpresupu
+		v_idcomprobab	= presupu_sql.idcomproba
+			
+		lamatrizli(1,1)='idlinkcomp'
+		lamatrizli(1,2)= ALLTRIM(STR(v_idlinkcomp))
+		lamatrizli(2,1)= 'idregistroa'
+		lamatrizli(2,2)= ALLTRIM(STR(v_idregistroa))
+		lamatrizli(3,1)= 'idcomprobaa'
+		lamatrizli(3,2)= ALLTRIM(STR(v_idcomprobaa))
+		lamatrizli(4,1)= 'idregistrob'
+		lamatrizli(4,2)= ALLTRIM(STR(v_idregistrob))
+		lamatrizli(5,1)= 'idcomprobab'
+		lamatrizli(5,2)= ALLTRIM(STR(v_idcomprobab))
+
+		p_tabla     = 'linkcompro'
+		p_matriz    = 'lamatrizli'
+		p_conexion  = vconeccionF
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+		ENDIF			
+		RELEASE lamatrizli
+		
+		*******************************************************************
+		********
+		*** GUARDA LOS DATOS ANEXOS SI ES QUE SE CARGARON **
+		vanexosnp = "anexosnp"+v_tmp 
+		SELECT * FROM datosanexo_sql INTO TABLE &vanexosnp
+		SELECT &vanexosnp
+		replace ALL iddatoan WITH 0, tabla WITH 'np'
+		USE IN &vanexosnp
+		=ActuDatosAnexos(vanexosnp,v_idnp)
+		
+
+		*** GUARDA LOS DATO EXTRAS DEL PRESUPUESTO EN LA NP SI LOS TUVIERA **************
+		SELECT * FROM datosextra_sql INTO TABLE cantDatos
+		DIMENSION lamatriz(4,2)
+		DIMENSION lamatriz2(4,2)
+		SELECT cantDatos
+		GO top
+		DO WHILE !EOF()
+
+			v_iddatosex		= 0
+			v_propiedad		= ALLTRIM(cantDatos.propiedad)
+			v_valor			= cantDatos.valor
+			v_imprimir		= cantDatos.imprimir
+				
+			lamatriz(1,1)='iddatosex'
+			lamatriz(1,2)=ALLTRIM(STR(v_iddatosex))
+			lamatriz(2,1)='propiedad'
+			lamatriz(2,2)="'"+ALLTRIM(v_propiedad)+"'"
+			lamatriz(3,1)='valor'
+			lamatriz(3,2)="'"+ALLTRIM(v_valor)+"'"
+			lamatriz(4,1)='imprimir'
+			lamatriz(4,2)="'"+ALLTRIM(v_imprimir)+"'"
+							
+			p_tabla     = 'datosextra'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionF	
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en Ingreso de Datos Extras",0+48+0,"Error")
+			    v_huboErrores	= .T.		    
+			    RETURN 
+			ENDIF  
+
+			IF v_iddatosex = 0 THEN && Se Insertó uno nuevo 
+				sqlmatriz(1)=" select last_insert_id() as maxid "
+				verror=sqlrun(vconeccionF,"ultimoId")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+				    RETURN 
+				ENDIF 
+				SELECT ultimoId
+				GO TOP 
+				v_iddatosex_Ultimo = VAL(ultimoId.maxid)
+				USE IN ultimoId
+				
+				v_idreldex	= 0
+				
+				*** Inserto en la tabla de de lararchivo
+				
+				lamatriz2(1,1)='idreldex'
+				lamatriz2(1,2)=ALLTRIM(STR(v_idreldex))
+				lamatriz2(2,1)='iddatosex'
+				lamatriz2(2,2)=ALLTRIM(STR(v_iddatosex_Ultimo))
+				lamatriz2(3,1)='idregistro'
+				lamatriz2(3,2)=ALLTRIM(STR(v_idnp))
+				lamatriz2(4,1)='tabla'
+				lamatriz2(4,2)="'np'"
+
+				p_tabla     = 'reldatosextra'
+				p_matriz    = 'lamatriz2'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en tabla reldatosextra ",0+48+0,"Error")
+				    RETURN 
+				ENDIF  
+			
+			ENDIF 
+
+			SELECT cantDatos
+			SKIP 
+		ENDDO 
+		USE IN cantDatos
+		RELEASE lamatriz
+		RELEASE lamatriz2
+
+
+		
+		*********************************************************
+		*** REGISTRO estado activo ***
+		registrarEstado("np","idnp",v_idnp,"I","ACTIVO")
+			
+		*** ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO  ***
+		guardaCajaRecaH (cnp_idcomproba, v_idnp)
+		
+		rt_idnp = v_idnp
+	
+	ENDIF
+	
+	USE IN presupu_sql
+	USE IN presupuh_sql
+	USE IN datosextra_sql
+	USE IN datosanexo_sql 
+	=abreycierracon(vconeccionF,"")	
+	
+	IF rt_idnp > 0 THEN 
+		IF MESSAGEBOX("¿Desea Imprimir la Nota de Pedido Generada ?",4+32,"Imprimir Nota de Pedido") = 6 THEN 
+			=imprimirNP(rt_idnp)
+		ENDIF 
+	ENDIF 
+
+RETURN rt_idnp 
+
+
 
