@@ -175,7 +175,7 @@ namespace ModuloAFIP
 
             try
             {
-                if (strServicioAfip == "ClienteLoginCms_CS.ar.gov.afip.servicios1.Service")
+                if (strServicioAfip == "ClienteLoginCms_CS.ar.gov.afip.servicios1")
                 {
                     _produccion = true;
                     _servicioProduccion = new ClienteLoginCms_CS.ar.gov.afip.servicios1.Service();
@@ -802,7 +802,7 @@ namespace ModuloAFIP
                         aiva.Id = a.ID;
                         aiva.BaseImp = Math.Round(a.BaseImp, 2);    //CONTROLAR SI ESTO ESTÁ BIEN, COMPARANDOLO CON EL MODULO DEL AFIP HECHO
                         aiva.Importe = Math.Round(a.Importe, 2);
-
+                     
 
                         if (aiva.Id > 0 && aiva.BaseImp > 0 && aiva.Importe > 0)
                         {
@@ -884,15 +884,16 @@ namespace ModuloAFIP
                 }
 
 
-
-
-
                 List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest> listaDetalle = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest>();
 
                 listaDetalle.Add(detReq);
                 ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest[] arrayDetalle = listaDetalle.ToArray();
                 reqAut.FeDetReq = arrayDetalle;
+
+              
+                reqAut = CorregirImpuestos(reqAut);
                
+
             }
             catch (Exception e)
             {
@@ -1156,7 +1157,7 @@ namespace ModuloAFIP
                 ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAEDetRequest[] arrayDetalle = listaDetalle.ToArray();
                 reqAut.FeDetReq = arrayDetalle;
 
-
+                reqAut = CorregirImpuestos(reqAut);
             }
             catch (Exception e)
             {
@@ -1221,6 +1222,7 @@ namespace ModuloAFIP
                                 autorizacionPro.Cuit = cuitLong;
                                 autorizacionPro.Sign = ticketAcceso.Sign;
                                 autorizacionPro.Token = ticketAcceso.Token;
+                               
                             }
                             else
                             {
@@ -1236,6 +1238,8 @@ namespace ModuloAFIP
                             {
                                 if (comprobante.CAE == "" && comprobante.FechaVtoCAE == "" && comprobante.Resultado != "A")
                                 {
+
+                                   
                                     //Autorizar
                                     ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAEResponse respuesta = _servicioProduccion.FECAESolicitar(autorizacionPro, reqAut);
 
@@ -1259,7 +1263,7 @@ namespace ModuloAFIP
                         {
                             string inf;
 
-                            inf = "Error al autorizar el comprobante por ID. " + e.Message + "\n";
+                            inf = "Error al autorizar el comprobante por ID. " + e.Message + "\n"+e.StackTrace + "\n" + e.TargetSite + "\n";
 
                             //Escribo en el archivo
 
@@ -1564,10 +1568,186 @@ namespace ModuloAFIP
             return comprobante;
         }
 
+/// <summary>
+/// Función para corregir impuestos de iva
+/// </summary>
+/// <param name="reqAut">Requerimiento del afip a corregir</param>
+/// <returns>Retorna el requerimiento corregido</returns>
+        private ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAERequest CorregirImpuestos(ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAERequest reqAut)
+        {
+
+            double totalIva = reqAut.FeDetReq.First().ImpIVA;
+            double totalNeto = reqAut.FeDetReq.First().ImpNeto;
+            double totalOpEx = reqAut.FeDetReq.First().ImpOpEx;
+            double total = reqAut.FeDetReq.First().ImpTotal;
+            double totalCon = reqAut.FeDetReq.First().ImpTotConc;
+            double totalImpTrib = reqAut.FeDetReq.First().ImpTrib;
+            ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva[] listaIva = reqAut.FeDetReq.First().Iva;
+
+            double nuevoTotalIVA = 0.00;
+
+            double nuevoNetoIVA = 0.00;
+            // Corrijo los valores de impuestos
+            foreach (ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva i in listaIva)
+            {
+                
+                double baseImp = i.BaseImp;
+                int id = i.Id;
+                double importe = i.Importe;
+               
+                double razon = ObtenerRazonImpuesto(id);
+                
+                razon = razon / 100.00;
+
+               
+                if (razon >= 0)
+                {
+                  
+
+                    double totalImpuesto = baseImp + importe;
+                   
+                    double nuevoNeto = Math.Round((totalImpuesto / (1 + razon)), 2);
+                    double nuevoImpuesto = Math.Round((totalImpuesto - nuevoNeto), 2);
+
+                    i.BaseImp = nuevoNeto;
+                    i.Importe = nuevoImpuesto;
+                                       
+
+                    nuevoTotalIVA += nuevoImpuesto;
+                    nuevoNetoIVA += nuevoNeto;
+
+                }
+
+            }
+
+
+            // Corrijo totales
+            reqAut.FeDetReq.First().ImpIVA = Math.Round(nuevoTotalIVA, 2);
+            reqAut.FeDetReq.First().ImpNeto = Math.Round(nuevoNetoIVA, 2);
+
+            double nuevoTotal = (reqAut.FeDetReq.First().ImpIVA) + (reqAut.FeDetReq.First().ImpNeto) + (reqAut.FeDetReq.First().ImpOpEx) + (reqAut.FeDetReq.First().ImpTotConc) + (reqAut.FeDetReq.First().ImpTrib);
+            reqAut.FeDetReq.First().ImpTotal = Math.Round(nuevoTotal,2);
+
+            return reqAut;
+        }
+
+
+
+        /// <summary>
+        /// Función para corregir impuestos de iva
+        /// </summary>
+        /// <param name="reqAut">Requerimiento del afip a corregir</param>
+        /// <returns>Retorna el requerimiento corregido</returns>
+        private ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAERequest CorregirImpuestos(ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAERequest reqAut)
+        {
+
+            double totalIva = reqAut.FeDetReq.First().ImpIVA;
+            double totalNeto = reqAut.FeDetReq.First().ImpNeto;
+            double totalOpEx = reqAut.FeDetReq.First().ImpOpEx;
+            double total = reqAut.FeDetReq.First().ImpTotal;
+            double totalCon = reqAut.FeDetReq.First().ImpTotConc;
+            double totalImpTrib = reqAut.FeDetReq.First().ImpTrib;
+            ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva[] listaIva = reqAut.FeDetReq.First().Iva;
+
+
+            double nuevoTotalIVA = 0.00;
+
+            double nuevoNetoIVA = 0.00;
+            // Corrijo los valores de impuestos
+            foreach (ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva i in listaIva)
+            {
+
+                double baseImp = i.BaseImp;
+                int id = i.Id;
+                double importe = i.Importe;
+
+                double razon = ObtenerRazonImpuesto(id);
+
+                razon = razon / 100.00;
+
+
+                if (razon >= 0)
+                {
+
+
+                    double totalImpuesto = baseImp + importe;
+
+                    double nuevoNeto = Math.Round((totalImpuesto / (1 + razon)), 2);
+                    double nuevoImpuesto = Math.Round((totalImpuesto - nuevoNeto), 2);
+
+                    i.BaseImp = nuevoNeto;
+                    i.Importe = nuevoImpuesto;
+
+
+                    nuevoTotalIVA += nuevoImpuesto;
+                    nuevoNetoIVA += nuevoNeto;
+
+                }
+
+            }
+
+
+            // Corrijo totales
+            reqAut.FeDetReq.First().ImpIVA = Math.Round(nuevoTotalIVA, 2);
+            reqAut.FeDetReq.First().ImpNeto = Math.Round(nuevoNetoIVA, 2);
+
+            double nuevoTotal = (reqAut.FeDetReq.First().ImpIVA) + (reqAut.FeDetReq.First().ImpNeto) + (reqAut.FeDetReq.First().ImpOpEx) + (reqAut.FeDetReq.First().ImpTotConc) + (reqAut.FeDetReq.First().ImpTrib);
+            reqAut.FeDetReq.First().ImpTotal = Math.Round(nuevoTotal, 2);
+
+            return reqAut;
+        }
+
+        /// <summary>
+        /// Obtiene la razón del impuesto cuyo ID es pasado como parámetro
+        /// </summary>
+        /// <param name="idImpuesto">ID del impuesto</param>
+        /// <returns>Retorna razón del impuesto</returns>
+        private double ObtenerRazonImpuesto(int idImpuesto)
+        {
+            double razon = 0.00;
+            switch (idImpuesto)
+            {
+                case 1:
+                    razon = 0.00;
+                    return 0.00;
+                    break;
+                case 2:
+                    razon = 0.00d;
+                    return 0.00;
+                    break;
+                case 3:
+                    razon = 0.00;
+                    return 0.00;
+                    break;
+                case 4:
+                    razon = 10.50;
+                    return 10.50;
+                    break;
+                case 5:
+                    razon = 21.00;
+                    return 21.00;
+                    break;
+                case 6:
+                    razon = 27.00;
+                    return 27.00;
+                    break;
+                default:
+                    razon = -1;
+                    return -1;
+                    break;
+            }
+            return razon;
+        }
+
+
+    }
+
+
+       
         #endregion
 
         #endregion
 
 
     }
-}
+

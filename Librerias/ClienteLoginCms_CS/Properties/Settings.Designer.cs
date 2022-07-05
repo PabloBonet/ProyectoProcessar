@@ -61,5 +61,25 @@ namespace ClienteLoginCms_CS.Properties {
                 return ((string)(this["ClienteLoginCms_CS_ar_gov_afip_servicios1_Service"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.WebServiceUrl)]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://awshomo.afip.gov.ar/sr-padron/webservices/personaServiceA5")]
+        public string ClienteLoginCms_CS_ar_gov_afip_personawshomo_PersonaServiceA5 {
+            get {
+                return ((string)(this["ClienteLoginCms_CS_ar_gov_afip_personawshomo_PersonaServiceA5"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.WebServiceUrl)]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://aws.afip.gov.ar/sr-padron/webservices/personaServiceA5")]
+        public string ClienteLoginCms_CS_ar_gov_afip_personaws_PersonaServiceA5 {
+            get {
+                return ((string)(this["ClienteLoginCms_CS_ar_gov_afip_personaws_PersonaServiceA5"]));
+            }
+        }
     }
 }

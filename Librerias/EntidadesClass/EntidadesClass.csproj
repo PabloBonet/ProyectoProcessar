@@ -59,6 +59,7 @@
     <Compile Include="CompAsociadoClass.cs" />
     <Compile Include="ComprobanteClass.cs" />
     <Compile Include="OpcionalComprobanteClass.cs" />
+    <Compile Include="PersonaClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TributoComprobanteClass.cs" />
   </ItemGroup>

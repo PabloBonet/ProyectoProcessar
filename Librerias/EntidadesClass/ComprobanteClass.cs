@@ -639,7 +639,75 @@ namespace EntidadesClass
         {
             bool retorno = false;
 
+            if (respuestaAfip != null)
+            {
+                ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAECabResponse cabecera = respuestaAfip.FeCabResp;
+                ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAEDetResponse detalle = respuestaAfip.FeDetResp.First(); //Siempre hay un comprobante en el detalle
 
+
+                // Cargo Lista de errores si es que tiene
+                _erroresAFIP = new List<string>();
+                if (respuestaAfip.Errors != null)
+                {
+                    foreach (ClienteLoginCms_CS.ar.gov.afip.servicios1.Err e in respuestaAfip.Errors)
+                    {
+                        string error = e.Code.ToString() + ";" + e.Msg;
+                        _erroresAFIP.Add(error);
+                    }
+                }
+
+                // Cargo Lista de eventos si es que tiene
+                _eventosAFIP = new List<string>();
+                if (respuestaAfip.Events != null)
+                {
+                    foreach (ClienteLoginCms_CS.ar.gov.afip.servicios1.Evt e in respuestaAfip.Events)
+                    {
+                        string evento = e.Code.ToString() + ";" + e.Msg;
+                        _eventosAFIP.Add(evento);
+                    }
+                }
+
+
+                // Cargo Lista de observaciones si es que tiene
+                _observacionesAFIP = new List<string>();
+                if (detalle.Observaciones != null)
+                {
+                    foreach (ClienteLoginCms_CS.ar.gov.afip.servicios1.Obs e in detalle.Observaciones)
+                    {
+                        string observacion = e.Code.ToString() + ";" + e.Msg;
+                        _observacionesAFIP.Add(observacion);
+                    }
+                }
+
+                if (cabecera.Resultado != "R") //Aprobado o Parcial
+                {
+                    if (detalle.Resultado == "A") // Aprobado
+                    {
+                        _resultado = detalle.Resultado;
+                        _cae = detalle.CAE;
+                        _fechaVtoCae = detalle.CAEFchVto;
+                        _nroComprobante = detalle.CbteDesde;
+
+                    }
+                    else //Rechazado
+                    {
+                        _resultado = detalle.Resultado;
+                        _cae = "";
+                        _fechaVtoCae = "";
+
+                    }
+
+                }
+                else //Rechazado
+                {
+                    _resultado = cabecera.Resultado;
+                    _cae = "";
+                    _fechaVtoCae = "";
+                }
+
+            }
+
+            retorno = true;
             return retorno;
         }
 
