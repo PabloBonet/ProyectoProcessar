@@ -16946,7 +16946,6 @@ FUNCTION obtenerContribuyente
 PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 
 	v_retorno = .F.
-	MESSAGEBOX("obtenerContribuyente")
 
 	TRY 
 
@@ -17059,11 +17058,8 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 
 
 			v_ubicacionXML = _SYSESTACION+"\"+"contrib_"+ALLTRIM(v_cuitSinGuiones)+".xml"
-			MESSAGEBOX(v_ubicacionXML)
+			
 			v_respuesta = objModuloAFIP.obtenerContribuyente(v_ubicacionXML,v_cuitSinGuiones)
-
-
-			MESSAGEBOX(v_respuesta)
 
 			IF v_respuesta =  .T.
 				ALLTRIM(p_tablaRetorno)
@@ -17700,8 +17696,7 @@ PARAMETERS pIdregistro
 		    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar linkcompro",0+48+0,"Error")
 			
 		ENDIF 
-	
-						
+							
 		*Registracion Contable del la Transferencia	
 		pan_idregistro = pIdregistro
 
@@ -17727,5 +17722,140 @@ ENDFUNC
 ************ FIN FUNCION ANULAR TRANSFERENCIAS *********************************
 
 
+**** FUNCION PARA CARGAR UNA LOCALIDAD POR NOMBRE DE LOCALIDAD, PROVINCIA y CP ****
+** PARAMETROS:
+* p_nomloc: Nombre de la localidad que se va a crear
+* p_cp: Codigo postal de la localidad que se va a crear
+* p_nomProv: Nombre de la provincia correspondiente
+* p_nomPais: Pais de la localidad, en caso de no recibir un pais toma por defecto 'ARGENTINA'
+** RETORNO: Retorna el numero de localidad, cero en caso de ocurrir un error
+
+FUNCTION cargarLocalidad
+PARAMETERS p_nomLoc, p_cp, p_nomProv, p_nomPais
+
+	IF TYPE('p_nomPais') <> 'C'
+		p_nomPais = "ARGENTINA"
+	ENDIF 
+	* Me conecto a la base de datos *
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+	sqlmatriz(1)=" Select l.localidad, l.nombre as nomLoc, l.cp, pr.provincia, pr.nombre as nomProv, pa.pais, pa.nombre as nomPais "
+	sqlmatriz(2)=" from paises pa left join provincias pr on pa.pais = pr.pais left join localidades l  on pr.provincia = l.provincia "
+	sqlmatriz(3)=" where pa.nombre = '"+ALLTRIM(p_nomPais)+"' and pr.nombre = '"+ALLTRIM(p_nomProv) + "' and l.nombre = '"+ALLTRIM(p_nomLoc)+"'"
+
+	verror=sqlrun(vconeccionF,"localidad_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la comprobanción de la localidad ",0+48+0,"Error")
+	    
+	    RETURN 0
+	ENDIF 
+
+	SELECT localidad_sql
+	GO TOP 
+	IF NOT EOF()
+	
+		
+		** Existe la localidad **
+		MESSAGEBOX("La localidad que intenta ingresar ya se encuentra cargada",0+48+0,"Cargar localidad")
+		
+		v_idloc = localidad_sql.localidad
+	
+		* me desconecto	
+			=abreycierracon(vconeccionF,"")
+		RETURN v_idloc	
+			
+	ELSE
+		** No existe la localidad, la puedo cargar **
+		sqlmatriz(1)=" Select pr.provincia, pr.nombre as nomProv, pa.pais, pa.nombre as nomPais "
+		sqlmatriz(2)=" from paises pa left join provincias pr on pa.pais = pr.pais "
+		sqlmatriz(3)=" where pa.nombre = '"+ALLTRIM(p_nomPais)+"' and pr.nombre = '"+ALLTRIM(p_nomProv)+"'"
+
+		verror=sqlrun(vconeccionF,"provPais_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la información de la Provincia-Pais",0+48+0,"Error")
+		    * me desconecto	
+			=abreycierracon(vconeccionF,"")
+		    RETURN 0
+		ENDIF 
+		
+		SELECT provPais_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			*** Existe la provincia y el pais -> Creo la localidad **
+						
+			SELECT provPais_sql
+			v_provincia = provPais_sql.provincia
+			
+			sqlmatriz(1)="SELECT MAX(CAST(localidad as unsigned)) AS maxi FROM localidades  "
+			verror=sqlrun(vconeccionF,"maximo")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo código de Localidades ",0+48+0,"Error")
+			    * me desconecto	
+					=abreycierracon(vconeccionF,"")
+				RETURN 0
+			ENDIF 
+
+			*v_cod_loc  = INT(VAL(localidades.localidad))
+
+			v_maximo = INT(VAL(maximo.maxi))
+
+
+			SELECT maximo
+			GO TOP 
+			IF EOF() AND RECNO()=1 THEN 
+				v_cod_loc = 1
+			ELSE
+				v_cod_loc = v_maximo + 1
+			ENDIF 
+			USE IN maximo
+			
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+							
+			DIMENSION lamatriz(4,2)
+			
+			lamatriz(1,1) = 'localidad'
+			lamatriz(1,2) = "'"+ALLTRIM(STR(v_cod_loc))+"'"
+			lamatriz(2,1) = 'nombre'
+			lamatriz(2,2) = "'"+ALLTRIM(v_nomLoc)+"'"
+			lamatriz(3,1) = 'cp'
+			lamatriz(3,2) = "'"+ALLTRIM(v_cp)+"'"
+			lamatriz(4,1) = 'provincia'
+			lamatriz(4,2) = "'"+ALLTRIM(v_provincia)+"'"
+
+			p_tabla     = 'localidades'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de la Localidad "+ALLTRIM(v_cod_loc)+"-"+;
+			                ALLTRIM(thisform.tb_nombre.value),0+48+0,"Error")
+			            * me desconecto	
+			=abreycierracon(vconeccionF,"")    
+			    RETURN v_cod_loc
+			ENDIF 
+			* me desconecto	
+			=abreycierracon(vconeccionF,"")
+		
+			RETURN v_cod_loc
+		ELSE
+			MESSAGEBOX("NO se encuentra la provincia, debe cargar la provincia correspondiente",0+16+0,"Error")
+			* me desconecto	
+			=abreycierracon(vconeccionF,"")
+		
+			RETURN 0
+			
+		ENDIF 
+		
+		
+	
+	ENDIF 
+
+			
+			
+			
+
+ENDFUNC 
 
 
