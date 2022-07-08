@@ -397,8 +397,37 @@ namespace ModuloAFIP
                 {
                     ClienteLoginCms_CS.ar.gov.afip.personaws.personaReturn contribuyente = obtenerContribuyentePro(ticket, cuitContrib);
 
-                     contribuyente.ToString();
+                 
+                    string contribstr = "";
 
+
+                    XmlSerializer serializer = new XmlSerializer(typeof(ClienteLoginCms_CS.ar.gov.afip.personaws.personaReturn));
+                    using (var sww = new StringWriter())
+                    {
+                        using (XmlWriter writer = XmlWriter.Create(sww))
+                        {
+                            serializer.Serialize(writer, contribuyente);
+                            contribstr = sww.ToString(); // Your XML
+                        }
+                    }
+
+
+
+
+                    //   UtilClass.EscribirArchivoLog(contribxml, _strLog);
+
+                    XmlDocument contribXML = new XmlDocument();
+                    if (contribstr != null && contribstr.Length > 0)
+                    {
+                        contribXML.LoadXml(contribstr);
+
+                        contribXML.Save(ubicacionComp);
+                        r = true;
+                    }
+                    else
+                    {
+                        r = false;
+                    }
 
                     //apellido = contribuyente.datosGenerales.apellido;
                     //contribuyente.datosGenerales.caracterizacion;
@@ -411,7 +440,7 @@ namespace ModuloAFIP
                     //contribuyente.datosGenerales.domicilioFiscal.localidad;
                     //contribuyente.datosGenerales.domicilioFiscal.tipoDatoAdicional;
                     //contribuyente.datosGenerales.domicilioFiscal.tipoDomicilio;
-                    
+
 
                 }
                 else

@@ -630,7 +630,7 @@ v_toolperfil = var_perfil
 RELEASE toolbarmenu 
 PUBLIC  toolbarmenu
 toolbarmenu = CREATEOBJECT('toolbarmenu')
-toolbarmenu.dock(0)
+toolbarmenu.dock(1)
 toolbarmenu.show 
 toolbarmenu.tag = var_perfil
 
@@ -17036,24 +17036,6 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 		ENDTRY	
 							
 							
-						
-*!*			*** Armo el archivo XML para mandarlo a autorizar ***
-
-*!*				v_ubicacionXML = armarComprobanteXML(v_idcomprobante)
-
-*!*			*** Mando a autorizar el comprobante pasandole la ubicación del archivo  y el ID ***
-
-*!*				v_respuesta = objModuloAFIP.AutorizarComp(v_ubicacionXML,v_idComprobante)
-*!*					
-*!*						
-*!*				v_observaciones = objModuloAFIP.Observaciones
-
-*!*					
-*!*				IF EMPTY(v_observaciones) = .F.
-*!*					IF p_nomsg = .f. THEN 
-*!*						MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))				
-*!*					ENDIF 
-*!*				ENDIF 
 		v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(p_cuitContrib,'-',''))
 
 
@@ -17061,15 +17043,15 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 			
 			v_respuesta = objModuloAFIP.obtenerContribuyente(v_ubicacionXML,v_cuitSinGuiones)
 
+					
+
 			IF v_respuesta =  .T.
-				ALLTRIM(p_tablaRetorno)
-				
-				
+								
 				** Creo la tabla para retonar los datos del contribuyente **
     
 				
 				v_sentencia1 = " CREATE TABLE "+ ALLTRIM(p_tablaRetorno)+" FREE (apellido C(100), nombre C(100),cp C(50), "
-				v_sentencia2 = " nomprov C(20), direccion C(200), nomLoc C(200),tipoDoc C(20), documento C(20)) "
+				v_sentencia2 = " nomprov C(20), direccion C(200), nomLoc C(200),tipoDoc C(20), documento C(20),razonSoc C(100), iva I) "
 
 				v_sentencia = v_sentencia1 + v_sentencia2
 				&v_sentencia 
@@ -17087,9 +17069,43 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 
 				oDocumento = CREATEOBJECT("msxml.domdocument")
 				oDocumento.Load(v_ubicacionXML)
+				v_tamError = oDocumento.getElementsByTagName("error").length
+				IF v_tamError > 0
+					** Si existe un error o un problema con el contribuyente lo muestra y retorna Falso
+					v_error = oDocumento.getElementsByTagName("error").item(0).text
+					
+					MESSAGEBOX(ALLTRIM(v_error),0+16+0,"Error al obtener el contribuyente")
+					RETURN .F.
+							
+				ENDIF 
 				
-				v_apellido =	oDocumento.getElementsByTagName("apellido").item(0).text
-				v_nombre =	oDocumento.getElementsByTagName("nombre").item(0).text
+				** Controlo Tipo de persona 
+				
+				v_tipoPersona = oDocumento.getElementsByTagName("tipoPersona").item(0).text
+				v_nombre = ""
+				v_apellido = ""
+				v_razonSoc = ""
+				
+				DO CASE
+				CASE ALLTRIM(v_tipoPersona) = "FISICA"
+					v_apellido =	oDocumento.getElementsByTagName("apellido").item(0).text
+					v_nombre =	oDocumento.getElementsByTagName("nombre").item(0).text
+				CASE ALLTRIM(v_tipoPersona) = "JURIDICA"
+					v_razonSoc = oDocumento.getElementsByTagName("razonSocial").item(0).text
+				OTHERWISE
+				
+					v_tamApellidos = oDocumento.getElementsByTagName("apellido").length
+					
+					IF v_tamApellidos > 0
+						v_apellido =	oDocumento.getElementsByTagName("apellido").item(0).text
+						v_nombre =	oDocumento.getElementsByTagName("nombre").item(0).text
+					ELSE
+						v_razonSoc = oDocumento.getElementsByTagName("razonSocial").item(0).text
+					ENDIF 
+
+				ENDCASE
+				
+			
 				v_codPostal =	oDocumento.getElementsByTagName("codPostal").item(0).text
 				v_nomProv =	oDocumento.getElementsByTagName("descripcionProvincia").item(0).text
 				v_direccion =	oDocumento.getElementsByTagName("direccion").item(0).text
@@ -17101,8 +17117,66 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 				
 				v_documento = IIF(TYPE('v_documento')='N',STR(v_documento),v_documento )
 				
+				v_cantImpuesto = oDocumento.getElementsByTagName("idImpuesto").length
+				v_idimpuesto = ""
+			
+				IF v_cantImpuesto > 0
+					
+					FOR i = 0 TO (v_cantImpuesto -1)
+					
+						IF i = 0
+							v_idimpuesto = ALLTRIM(oDocumento.getElementsByTagName("idImpuesto").item(i).text)
+						ELSE
+							v_idimpuesto = v_idimpuesto +","+ALLTRIM(oDocumento.getElementsByTagName("idImpuesto").item(i).text)
+						ENDIF 
+											
+					ENDFOR 
+
+					
+					*v_idimpuesto = IIF(TYPE('v_idimpuesto')='C',VAL(v_idimpuesto),v_idimpuesto)
+				ELSE
+					v_idimpuesto = "0"
+				ENDIF 
+				
+				
+				
+				
+				* Me conecto a la BD
+				vconimp = abreycierracon(0,_SYSSCHEMA)
+
+				*sqlmatriz(1)=" select * from condfiscal where afipimpu = "+ALLTRIM(STR(v_idimpuesto))
+				sqlmatriz(1)=" select * from condfiscal where afipimpu in ("+ALLTRIM(v_idimpuesto)+")"
+
+				verror=sqlrun(vconimp,"impuestoAfip_Sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los tipos de Impuestos ",0+48+0,"Error")
+				ENDIF 
+
+				SELECT  impuestoAfip_Sql
+				GO TOP 
+				
+				IF NOT EOF()
+					
+					v_iva = impuestoAFIP_sql.iva
+				ELSE
+					v_iva = 0 
+					
+				ENDIF 
+
+
+				* Me desconecto de la BD
+				abreycierracon(vconimp,"")
+				
+				*** -1: CONSUMIDOR FINAL
+				***  0: EXENTO?
+				*** 20: MONOTRIBUTO
+				*** 30: IVA
+				
+				
+				
+				
 				v_sentIns1 = "INSERT INTO "+ALLTRIM(p_tablaRetorno)+ " VALUES ('"+ALLTRIM(v_apellido)+"','"+ALLTRIM(v_nombre)+"','"+ALLTRIM(v_codPostal)+"',"
-				v_sentIns2 = "'"+ALLTRIM(v_nomProv)+"','"+ALLTRIM(v_direccion)+"','"+ALLTRIM(v_nomLoc)+"','"+ALLTRIM(v_tipoDoc)+"','"+ALLTRIM(v_documento)+"')"
+				v_sentIns2 = "'"+ALLTRIM(v_nomProv)+"','"+ALLTRIM(v_direccion)+"','"+ALLTRIM(v_nomLoc)+"','"+ALLTRIM(v_tipoDoc)+"','"+ALLTRIM(v_documento)+"','"+alltrim(v_razonSoc)+"',"+ALLTRIM(STR(v_iva))+")"
 				
 
 				v_sentIns = v_sentIns1 + v_sentIns2
