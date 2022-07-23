@@ -186,11 +186,13 @@ ON SHUTDOWN DO CERRAR_TODO
   
 toolbarsys.dock(1)
 
-
 =settoolbarsys()
 =disabletoolbar()
 =actutoolbarsys('_screen')
 
+* Oculto, si necesito habilitarlo por variable luego 
+* Se agregará una variable de control 
+*!*	toolbarsys.hide 
 
 *!*	Local loDLL
 *!*	   loDLL = CreateObject("importarobj.importaobj")
@@ -211,7 +213,8 @@ toolbarsys.dock(1)
 
 	IF LOGEO > 0 THEN 
 	  	KEYBOARD '{F10}'
-		toolbarsys.show 
+*		toolbarsys.show 
+		toolbarsys.hide 
 *!*			SET MESSAGE TO "Esta es la Barra"
 		=variables_sys(0)
 		IF fupdatesys() = 1 THEN 

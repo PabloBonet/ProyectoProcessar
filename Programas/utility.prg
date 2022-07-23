@@ -507,6 +507,12 @@ ENDFUNC
 * FUNCION DE SETEO DE LA BARRA DE HERRAMIENTAS
 FUNCTION actutoolbarsys 
 PARAMETERS p_form
+
+	** agregado para deshabilitar la barra de herramientas por cada formulario
+	** si se necesita agregar se habilitará con variables de entorno	
+	toolbarsys.hide 
+	RETURN 
+	********************************************
 	
 	= disabletoolbar()
 	
@@ -900,6 +906,7 @@ LOCAL varb_retorno
 
 	IF TYPE('b_valoridx') = 'C' THEN 
 		b_valoridx_C = "'"+b_valoridx+"'"
+		b_campoidx	= "trim("+ALLTRIM(b_campoidx)+")"
 	ELSE
 		b_valoridx_C = STR(b_valoridx,10,2)
 	ENDIF 
@@ -8773,11 +8780,13 @@ ELSE
 	USE 
 	SELECT maximosql
 	USE 
-	
+
+
 ENDIF 
 
 
 IF vtmp_recalcular = .t. THEN 
+
 
 	WAIT windows "Calculando Listas de Precios... Aguarde..." NOWAIT 
 
@@ -8834,6 +8843,7 @@ IF vtmp_recalcular = .t. THEN
 			MESSAGEBOX("No se puede obtener  Articulos ",0+16,"Advertencia")
 			RETURN 
 		ENDIF 
+
 		sqlmatriz(1)="select * from listapreciop   " 
 		verror=sqlrun(vconeccionF,fvlistapreciop_sql)
 		IF verror=.f.
@@ -8875,15 +8885,16 @@ IF vtmp_recalcular = .t. THEN
 		 	FROM &fvlistaprecioh_sql l ;
 			LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
 			LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
-			LEFT JOIN &fvarticulosimp_sql i  ON l.articulo = i.articulo ;
+			LEFT JOIN &fvarticulosimp_sql i  ON ALLTRIM(l.articulo) == ALLTRIM(i.articulo) ;
 			INTO TABLE &fvlistasart 
+			
 
 		SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
 			a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.detalinea, a.idsublinea, a.sublinea, a.ctrlstock, a.ocultar, ;
 			a.stockmin, a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
 			a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,a.fechaact   ;
 			FROM &fvarticulos_sql a ;
-			LEFT JOIN &fvarticulosimp_sql i  ON a.articulo = i.articulo ;
+			LEFT JOIN &fvarticulosimp_sql i  ON ALLTRIM(a.articulo) == ALLTRIM(i.articulo) ;
 			INTO TABLE &fvarticulos
 
 		SELECT &fvlistasart
