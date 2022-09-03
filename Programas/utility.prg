@@ -8511,9 +8511,6 @@ ENDFUNC
 
 
 
-
-
-
 *** -----------------------------------------
 * Retorna Verdadero o Falso, si el reclamo pertenece al sector dado
 * Parametros: Reclamo, Sector
@@ -17941,11 +17938,151 @@ PARAMETERS p_nomLoc, p_cp, p_nomProv, p_nomPais
 		
 	
 	ENDIF 
-
-			
-			
-			
+		
 
 ENDFUNC 
 
 
+
+***
+*** Genera / Regenera las Tablas de Resultados relacionadas con las Vistas
+***
+FUNCTION GenerarTablasR
+	
+	WAIT windows "Aguarde... Regenerando Tablas..." NOWAIT  
+	
+	* Me conecto a la base de datos *
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+	
+	sqlmatriz(1)=" call p_creartablasr_() "
+	verror=sqlrun(vconeccionF,"Tablas_R")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Generacion de las Tablas de Resultado ",0+48+0,"Error")
+	    RETURN 0
+	ENDIF 
+	* me desconecto	
+	=abreycierracon(vconeccionF,"")
+
+	WAIT CLEAR 	
+	** Existe la localidad **
+	MESSAGEBOX("Se han Regenerado las Tablas de Resultados de las Vistas... ",0+48+0,"Generar/Regenerar Tablas Resultados")
+
+ENDFUNC 
+
+
+*- Tipo de funciones de búsquedas de Datos en Esquemas Asociados
+*----------------------------------------------------------------
+** Obtiene el Stock de Artículos de las bases de Datos asociadas
+* * retorna una tabla con el stock de artículos en los esquemas asociados
+*----------------------------------------------------------------
+
+FUNCTION Aso_StockArt
+	valias = ALIAS()
+	
+	v_stockreto = 'stockreto'+frandom()
+	
+	* Me conecto a la base de datos *
+	vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+	* Obtengo los datos de los esquemas asociados
+	sqlmatriz(1)=" select * from dbasociada "
+	verror=sqlrun(vconeccionA,"dbasociada_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error al Obtener los esquemas asociados ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionA,"")
+		SELECT &valias
+	    RETURN ""
+	ENDIF 
+	
+	SELECT dbasociada_sql
+	GO TOP 
+	IF EOF() THEN 
+		USE IN dbasociada_sql
+		* me desconecto	
+		=abreycierracon(vconeccionA,"")
+		SELECT &valias
+		RETURN ""
+	ENDIF 
+	* me desconecto	
+	=abreycierracon(vconeccionA,"")
+
+	* Arranco a recorrer los esquemas asociados y traerme los stock de cada uno
+	* Guardo el esquema en el que estoy trabajando 
+	CREATE TABLE stockreto (articulo c(20), stocktot y)
+	
+	vs_db_sysbgproce = _SYSBGPROCE 
+	_SYSBBPROCE = 0 && detiene la ejecucion de procesos de Relojes en Segundo Plano
+	vs_db_server = _SYSMYSQL_SERVER
+	vs_db_user   = _SYSMYSQL_USER	
+	vs_db_pass   = _SYSMYSQL_PASS  
+	vs_db_port   = _SYSMYSQL_PORT  
+	vs_db_schema = _SYSSCHEMA    
+	vs_db_descrip= _SYSDESCRIP  
+
+	SELECT dbasociada_sql 
+	GO TOP 
+	DO WHILE !EOF()
+
+		_SYSMYSQL_SERVER = ALLTRIM(dbasociada_sql.host) 
+		_SYSMYSQL_USER	 = ALLTRIM(dbasociada_sql.usuario)   	
+		_SYSMYSQL_PASS 	 = ALLTRIM(dbasociada_sql.password)
+		_SYSMYSQL_PORT 	 = ALLTRIM(dbasociada_sql.port)
+		_SYSSCHEMA    	 = ALLTRIM(dbasociada_sql.schemma)
+		_SYSDESCRIP  	 = ALLTRIM(dbasociada_sql.descrip)
+
+		* Me conecto a la base de datos *
+		vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+
+		sqlmatriz(1)=" select * from r_articulostock "
+		verror=sqlrun(vconeccionA,"r_articulostock_asql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al Obtener el Stock en Esquemas Asociados ",0+48+0,"Error")
+			* me desconecto	
+
+			_SYSMYSQL_SERVER = vs_db_server 
+			_SYSMYSQL_USER	 = vs_db_user   	
+			_SYSMYSQL_PASS 	 = vs_db_pass   
+			_SYSMYSQL_PORT 	 = vs_db_port   
+			_SYSSCHEMA    	 = vs_db_schema 
+			_SYSDESCRIP  	 = vs_db_descrip
+			_SYSBGPROCE 	 = vs_db_sysbgproce
+			=abreycierracon(vconeccionA,"")
+			USE IN dbasociada_sql
+			
+			SELECT &valias
+		    RETURN ""
+		ENDIF 		
+		SELECT * FROM r_articulostock_asql INTO TABLE r_articulostocksql
+	
+		SELECT stockreto
+		APPEND FROM .\r_articulostocksql
+		USE IN r_articulostocksql
+		USE IN r_articulostock_asql
+
+		* me desconecto	
+		=abreycierracon(vconeccionA,"")
+		
+		SELECT dbasociada_sql
+		SKIP 	
+	ENDDO 
+
+	
+	SET ENGINEBEHAVIOR 70
+	SELECT articulo, SUM(stocktot) as stock FROM stockreto INTO TABLE &v_stockreto GROUP BY articulo 
+	SET ENGINEBEHAVIOR 90
+	
+	USE IN stockreto
+	USE IN &v_stockreto
+	USE IN dbasociada_sql
+
+	_SYSMYSQL_SERVER = vs_db_server 
+	_SYSMYSQL_USER	 = vs_db_user   	
+	_SYSMYSQL_PASS 	 = vs_db_pass   
+	_SYSMYSQL_PORT 	 = vs_db_port   
+	_SYSSCHEMA    	 = vs_db_schema 
+	_SYSDESCRIP  	 = vs_db_descrip
+	_SYSBGPROCE 	 = vs_db_sysbgproce
+
+	SELECT &valias
+	RETURN v_stockreto 
+ENDFUNC 
