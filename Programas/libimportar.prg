@@ -1241,8 +1241,8 @@ FUNCTION CargaMServicios
 			=abreycierracon(vconeccionF,"")	
 		ENDIF
 		SELECT bocaserv_sql
-		SELECT *, 100000000.000 as manterior, 100000000.000 as mactual, 100000000.000 as consumo, 100000000 as idimportap  FROM bocaserv_sql INTO TABLE mservicios
-		replace ALL manterior WITH 0, mactual WITH 0, consumo WITH 0, idimportap WITH p_idimportap
+		SELECT *, 100000000.000 as manterior, 100000000.000 as mactual,100000000.000 as consextra, 100000000.000 as consumo, 100000000 as idimportap  FROM bocaserv_sql INTO TABLE mservicios
+		replace ALL manterior WITH 0, mactual WITH 0, consumo WITH 0, idimportap WITH p_idimportap, consextra WITH 0
 		
 		*/------------------------------------------------------------------------------------
 
@@ -1263,7 +1263,7 @@ FUNCTION CargaMServicios
 		ENDIF 
 		
 	
-		sqlmatriz(1)=" select bocanumero, manterior, mactual, consumo, idimportap "
+		sqlmatriz(1)=" select bocanumero, manterior, mactual, consextra, consumo, idimportap "
 		sqlmatriz(4)=" from mservicios where idimportap = "+ALLTRIM(STR(vmaxidimpo))
 		verror=sqlrun(vconeccionF,"mserviant_sql")
 		IF verror=.f.  
@@ -1289,7 +1289,7 @@ FUNCTION CargaMServicios
 		replace ALL manterior WITH mserviant.mactual, mactual WITH mserviant.mactual 
 		
 
-		DIMENSION lamatriz(7,2)
+		DIMENSION lamatriz(8,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
@@ -1304,14 +1304,16 @@ FUNCTION CargaMServicios
 			lamatriz(2,2) = "'"+alltrim(str(mservicios.manterior,12,4))+"'"
 			lamatriz(3,1) = 'mactual'
 			lamatriz(3,2) = "'"+alltrim(str(mservicios.mactual,12,4))+"'"
-			lamatriz(4,1) = 'consumo'
-			lamatriz(4,2) = alltrim(str(mservicios.consumo,12,4))
-			lamatriz(5,1) = 'idmservi'
-			lamatriz(5,2) = '0'
-			lamatriz(6,1) = 'idimportap'
-			lamatriz(6,2) = alltrim(STR(p_idimportap))
-			lamatriz(7,1) = 'idbocaser'
-			lamatriz(7,2) = alltrim(str(mservicios.idbocaser))
+			lamatriz(4,1) = 'consextra'
+			lamatriz(4,2) = alltrim(str(mservicios.consextra,12,4))
+			lamatriz(5,1) = 'consumo'
+			lamatriz(5,2) = alltrim(str(mservicios.consumo,12,4))
+			lamatriz(6,1) = 'idmservi'
+			lamatriz(6,2) = '0'
+			lamatriz(7,1) = 'idimportap'
+			lamatriz(7,2) = alltrim(STR(p_idimportap))
+			lamatriz(8,1) = 'idbocaser'
+			lamatriz(8,2) = alltrim(str(mservicios.idbocaser))
 
 			p_tabla     = 'mservicios'
 			p_matriz    = 'lamatriz'
