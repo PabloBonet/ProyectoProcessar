@@ -3005,6 +3005,68 @@ PARAMETERS p_idcump
 ENDFUNC 
 
 
+* FUNCIÓN PARA IMPRIMIR UN COmprobante de CumpleOC (COMPROBANTES DE LA TABLA cumplimentaoc)
+* PARAMETROS: P_IDCUMPOC
+FUNCTION imprimirCumpleOC
+PARAMETERS p_idcumpoc
+
+
+	v_idcumpoc = p_idcumpoc
+
+
+	IF v_idcumpoc > 0
+		
+
+	
+		*** Busco los datos de la cumplimentación y el detalle
+		
+			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+
+			sqlmatriz(1)=	" Select p.idcumpoc,p.idcomproba,pv.puntov, p.numero, p.pventa, p.fecha, p.observa1, p.observa2, p.observa3, p.observa4, p.responsab, "
+			sqlmatriz(2)= 	" h.articulo, h.detalle, h.cantidad, h.cantidaduf,h.idcumpocd, h.idocd ,c.tipo,c.comprobante as nomcomp, a.unidad, ifnull(f.unidadf,a.unidad) as unidadf, f.base "
+			sqlmatriz(3)=   " from cumplimentaoc p " 
+			sqlmatriz(4)= 	" left join cumplimentaocd h on h.idcumpoc = p.idcumpoc "
+			sqlmatriz(5)=	" left join comprobantes c on c.idcomproba = p.idcomproba "
+			sqlmatriz(6)=   " left join puntosventa pv on p.pventa = pv.pventa "
+			sqlmatriz(7)=   " left join articulos a on a.articulo=h.articulo "
+			sqlmatriz(8)=	" left join articulosf f on a.articulo = f.articulo "
+			sqlmatriz(9)=	" where p.idcumpoc = "+ ALLTRIM(STR(v_idcumpoc))
+			 
+					
+			verror=sqlrun(vconeccionF,"cump_imp_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la Cumplimentación",0+48+0,"Error")
+			ENDIF
+		
+	
+		SELECT * FROM cump_imp_sql INTO TABLE cumpoc_impr
+		
+			
+		SELECT cumpoc_impr
+		
+		IF NOT EOF()
+			SELECT cumpoc_impr
+			v_idcomproba = cumpoc_impr.idcomproba
+			
+			DO FORM reporteform WITH "cumpoc_impr","cumpoccr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar la Cumplimentación para imprimir",0+48+0,"Error al cargar la Cumplimentación")
+			RETURN 	
+		ENDIF 
+		
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar la Cumplimentación ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
+
+
 * FUNCIÓN PARA IMPRIMIR UN COmprobante de Vinculos (COMPROBANTES DE LA TABLA vinculocomp)
 * PARAMETROS: P_idvinculo
 FUNCTION imprimirVinculoComp
@@ -3117,6 +3179,153 @@ PARAMETERS p_idpagare
 	ENDIF 
 
 ENDFUNC 
+
+
+* FUNCIÓN PARA IMPRIMIR UNA ORDEN DE COMPRA (COMPROBANTES DE LA TABLA OC)
+* PARAMETROS: P_IDOC
+FUNCTION imprimirOC
+PARAMETERS p_idoc
+
+
+	v_idoc = p_idoc
+
+
+	IF v_idoc  > 0
+		
+
+		v_imprimeMonto	= 1
+		
+		
+		*** Busco los datos de la oc y el detalle
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+
+		sqlmatriz(1)=" Select f.*,d.*,c.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit,e.direccion, "
+		sqlmatriz(2)=" e.telefono, e.email, com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump "
+		sqlmatriz(3)=" from oc f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+		sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+		sqlmatriz(5)="  left join ocd d on f.idoc = d.idoc "
+		sqlmatriz(6)=" left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva"
+		sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor "
+		sqlmatriz(8)=" left join r_ocdpendientes r on r.idocd = d.idocd "
+		sqlmatriz(9)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+		sqlmatriz(10)=" where f.idoc = "+ ALLTRIM(STR(v_idoc))
+			
+					
+		verror=sqlrun(vconeccionF,"oc_det_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la NP",0+48+0,"Error")
+		ENDIF
+
+		SELECT *, SPACE(200) as otvincula FROM oc_det_sql INTO TABLE .\oc_impr  WHERE imprimir = 'S'
+
+*!*			sqlmatriz(1)=" Select n.idocd, o.fechaot, o.descriptot, p.entidad, p.nombre from otnp n left join otordentra o on o.idot = n.idot left join otpedido p on p.idpedido = o.idpedido "
+*!*			sqlmatriz(2)=" where n.idnp = "+ ALLTRIM(STR(v_idnp))
+*!*			verror=sqlrun(vconeccionF,"otvin_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+*!*			ENDIF 
+
+*!*			v_otvincula = ""
+*!*			SELECT otvin_sql
+*!*			GO TOP 
+*!*			IF !EOF() THEN 
+*!*				v_otvincula = "O.T. Nro. "+ALLTRIM(STR(otvin_sql.idot))+'  F.'+SUBSTR(otvin_sql.fechaot,7,2)+'/'+SUBSTR(otvin_sql.fechaot,5,2)+'/'+SUBSTR(otvin_sql.fechaot,1,4)+'   '+STR(otvin_sql.entidad,6)+'-'+ALLTRIM(otvin_sql.nombre)+'  - '+ALLTRIM(otvin_sql.descriptot)
+*!*			ENDIF 
+*!*			USE IN otvin_sql 
+		
+		
+		
+		
+			
+		SELECT oc_impr
+		
+		IF NOT EOF()
+			SELECT oc_impr
+			ALTER table oc_impr ADD COLUMN imprMonto I
+			
+			SELECT oc_impr
+			GO TOP 
+			replace ALL imprMonto WITH v_imprimeMonto
+			
+			SELECT oc_impr
+			GO TOP 
+			
+			v_idcomproba 	= oc_impr.idcomproba
+			v_tipoCompAfip	= ALLTRIM(oc_impr.tipcomAFIP)
+			v_codBarra		= ""
+			v_codBarraD 	= ""
+			v_electronica	= .F.
+			v_cuitEmpresa	= _SYSCUIT
+			v_entidad		= oc_impr.entidad
+			
+			*********************************************
+			** Obtengo los datos anexos a la Nota de Pedido y el cliente si los hubiere 
+			** agrega los datos extra y anexos de la entidad y la nota de pedido a la impresion
+			************************************************************
+			*Anexo Entidades
+			sqlmatriz(1)=" select concat(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor, concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+			sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'entidades' and r.idregistro = "+ ALLTRIM(STR(v_entidad))
+			verror=sqlrun(vconeccionF,"entidadextra_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+			ENDIF 		
+			
+			*Anexo OC
+			sqlmatriz(1)=" select CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor , concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+			sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'oc' and r.idregistro = "+ ALLTRIM(STR(v_idoc))
+			verror=sqlrun(vconeccionF,"ocextra_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+			ENDIF 		
+			
+			SELECT entidadextra_sql
+			GO TOP 
+			IF EOF() THEN 
+				CREATE TABLE entidadex ( propiedad c(50), valor m , tabla c(15)) 
+			ELSE
+				SELECT propiedad , valor , tabla FROM entidadextra_sql INTO TABLE .\entidadex ORDER BY propiedad 
+				ALTER table entidadex alter COLUMN valor m
+			ENDIF 
+			USE IN entidadextra_sql
+			
+
+			SELECT ocextra_sql
+			GO TOP 
+			IF EOF() THEN 
+				CREATE TABLE ocex ( propiedad c(50), valor m , tabla c(15)) 
+			ELSE
+				SELECT propiedad , valor , tabla FROM ocextra_sql INTO TABLE .\ocex ORDER BY propiedad 
+				ALTER table ocex alter COLUMN valor m
+			ENDIF 
+			USE IN ocextra_sql 
+
+
+
+			DO FORM reporteform WITH "oc_impr;entidadex;ocex","occr;entidadexcr;ocexcr",v_idcomproba
+			
+			=abreycierracon(vconeccionF,"")	
+
+			* Impresion de Datos Anexos si los hubiere
+			=ImprimirDetalleAnexo ('oc', v_idoc)
+		
+			
+		ELSE
+			MESSAGEBOX("Error al cargar la OC  para imprimir",0+48+0,"Error al cargar la NP")
+			RETURN 	
+		ENDIF 
+		
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar la OC ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
+
 
 
 
@@ -12271,6 +12480,7 @@ ENDFUNC
 FUNCTION PreciosArticulo
 PARAMETERS  pv_articulos
 
+
 	pv_articulos = STRTRAN(STRTRAN(STRTRAN(pv_articulos,"´","'"),"(","'"),")","'")
 	* controlo si ya se genero la lista de precios actual, sino la genero
 	pvtmp = frandom()
@@ -12288,6 +12498,7 @@ PARAMETERS  pv_articulos
 		SELECT &vprecioartib
 		USE 
 	ENDIF 
+
 
 	*** obtengo los precios del articulo pasado como parametro en las distintas listas de precios
 	IF !USED('syslistaprea') THEN 
@@ -12317,6 +12528,7 @@ PARAMETERS  pv_articulos
 		FROM syslistapreb b LEFT JOIN syslistaprea a ON  a.idlista = b.idlista INTO TABLE &vprecioartib WHERE b.idlista in ( SELECT idlista FROM &vprecioartia ) ;
 		AND b.habilitado = 'S' AND ALLTRIM(a.articulo) in ( SELECT ALLTRIM(articulo) FROM &vprecioartia ) ORDER BY  b.idlista , b.cuotas
 
+
 	SET ENGINEBEHAVIOR 90
 
 
@@ -12327,6 +12539,7 @@ PARAMETERS  pv_articulos
 	INDEX on idlistah TAG idlistah
 	replace ALL pventa WITH ( pventaa * (1+razon/100) ) , impuestos WITH ( impuestosa * (1+razon/100) ), ;
 			 pventatot WITH ( pventatota * (1+razon/100)), entrega WITH 0, impcuota WITH (( pventatota * (1+razon/100))/ cuotas )
+	
 	
 	INDEX on STR(idlista)+STR(cuotas)+STR(idfinancia)+articulo TAG indice1 
 		
@@ -12343,8 +12556,10 @@ PARAMETERS  pv_articulos
 	ENDIF
 	=abreycierracon(vconeccionD ,"")	
 
+
 	SELECT * FROM depostock_sql INTO TABLE &vprecioartid  ORDER BY articulo , deposito
 	SELECT &vprecioartid
+	ALTER TABLE &vprecioartid alter articulo c(20)
 	INDEX on ALLTRIM(articulo) TAG articulo 
 	
 	USE IN depostock_sql			 
@@ -18086,3 +18301,14 @@ FUNCTION Aso_StockArt
 	SELECT &valias
 	RETURN v_stockreto 
 ENDFUNC 
+
+
+
+
+
+
+
+
+
+
+
