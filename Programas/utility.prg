@@ -7666,7 +7666,7 @@ PARAMETERS par_asiento
 			lamatriz(11,1)='nombrecta'
 			lamatriz(11,2)="'"+ALLTRIM(tmpasientoin.nombrecta)+"'"
 			lamatriz(12,1)='detaasiento'
-			lamatriz(12,2)="'Registro Automático de Asientos'"
+			lamatriz(12,2)="''"
 			lamatriz(13,1)='idtipoasi'
 			lamatriz(13,2)=STR(tmpasientoin.idtipoasi)
 			lamatriz(14,1)='idastomode'
