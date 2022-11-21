@@ -4734,13 +4734,18 @@ ENDFUNC
 * Parametros: p_Tabla: Nombre de la tabla consultada
 * 			  p_tipo: indica si quiere que retorne el tipo de campo del indice .f. = no retorna, .t.= retorna tipo "C" o "I"
 *				 	  concatenado al nombre de campo serparado por ";"
+*			  p_cone: si recibe la conexion, entonces no cierra ni abre, usa la conexion recibida
 * Retorno: Retorna el nombre del campo indice de la tabla consultada
 *---------------------------------------------------------------
 FUNCTION obtenerCampoIndice
-PARAMETERS p_tabla, p_tipo
+PARAMETERS p_tabla, p_tipo, p_cone
 
-	
-	vconeccionF = abreycierracon(0,_SYSSCHEMA)
+
+	IF TYPE("p_cone") = 'N' THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionF = p_cone
+	ELSE 
+		vconeccionF = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 	
 
 		v_tabla = p_tabla
 		
@@ -4753,9 +4758,10 @@ PARAMETERS p_tabla, p_tipo
 		SELECT columnas_sql
 
 	
-	* me desconecto	
-	=abreycierracon(vconeccionF,"")
-
+	IF !(TYPE("p_cone") = 'N')  THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		* me desconecto	
+		=abreycierracon(vconeccionF,"")
+	ENDIF 
 
 	SELECT field as campo, key as clave, type as tipo FROM  columnas_sql WHERE key = "PRI" INTO TABLE columnas
 	
