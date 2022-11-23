@@ -4781,6 +4781,7 @@ ENDFUNC
 
 
 
+
 *+ Funcion para el seteo de indices en tablas locales
 * recibe como parametros una tabla a ordenar , una tabla con los indices y el valor que debe
 * seleccionar para crear el indice. 
@@ -18313,7 +18314,266 @@ ENDFUNC
 
 
 
+****************************************************************
+*** FUNCIÓN PARA EL CALCULO DE RETENCIONES A APLICAR ***
+****************************************************************
+** PARÁMETROS: 	P_entidad: id de la entidad a retener
+*				P_fecha: Fecha para el cálculo de la rentención
+*				p_nomTabRes: Nombre de la tabla donde se va a entregar el resultado, la cual incluye: idimpuret,netoTotal,importeARetener,totpagosmes,totRetenmes )
+*				P_importe: Importe Total, del cuál se va a calcular las retenciones. en caso de no pasar parámetro se pedirá en la pantalla
+*La función recibe los parámetros indicados y va a determinar si se va a aplicar retenciones a la entidad, y cuanto retener por cada retención
+****************************************************************
+** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
+****************************************************************
 
+FUNCTION retenciones
+PARAMETERS p_entidad, P_fecha, p_nomTabRes,P_importe
+*PARAMETERS p_entidad, P_importe,P_fecha, p_nomTabRes
+
+v_retorno = .F.
+v_importeTot = 0.00
+
+
+MESSAGEBOX("Retenciones")
+****************************************************************
+** 1- Verificar Si la empresa es agente de retenciones, se debe activar la variable _SYSAGENTERET = ‘S’
+****************************************************************
+
+ IF ALLTRIM(_SYSAGENTERET) = 'S'
+ 
+ 	IF TYPE('p_importe') = 'N'
+ 		v_importeTot = p_importe
+ 	ELSE
+ 		v_importeTot = 0.00
+ 	ENDIF 
+ 	****************************************************************
+	** 2- Verificar si a la entidad le corresponde retenciones. Ver en las retenciones asociadas a la entidad en la tabla: entidadret
+	****************************************************************
+		* Me conecto a la base de datos *
+		vconeccion=abreycierracon(0,_SYSSCHEMA)	
+
+		 
+		sqlmatriz(1)=" select e.identret,e.entidad,e.idimpuret,e.enconvenio, i.detalle,i.razonin,i.baseimpon, i.idtipopago, i.funcion, i.razonnin "
+		sqlmatriz(2)=" from entidadret e left join impuretencion i on e.idimpuret = i.idimpuret "
+		sqlmatriz(3)=" where e.entidad = "+ALLTRIM(STR(p_entidad))
+		verror=sqlrun(vconeccion,"entidadret_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al Obtener las retenciones asociadas a la entidad",0+48+0,"Error")
+			* me desconecto	
+
+			=abreycierracon(vconeccion,"")
+			
+			RETURN .F.
+		ENDIF
+		
+		 		
+		SELECT * FROM entidadret_sql INTO TABLE &p_nomTabRes
+		
+		SELECT &p_nomTabRes
+		GO TOP 
+		
+		IF NOT EOF()	
+			SELECT &p_nomTabRes
+			ALTER table &p_nomTabRes ADD COLUMN impTot Y
+			ALTER table &p_nomTabRes ADD COLUMN impARet Y
+			ALTER table &p_nomTabRes ADD COLUMN totapagmes Y
+			ALTER table &p_nomTabRes ADD COLUMN totretmes Y
+			ALTER table &p_nomTabRes ADD COLUMN sel I
+			ALTER table &p_nomTabRes ADD sujarete Y
+			
+			SELECT &p_nomTabRes
+			GO TOP 
+			
+			replace ALL impTot WITH v_importeTot, impAret WITH 0.00, totAPagMes WITH 0.00, totRetMes WITH 0.00, sel WITH 0, sujarete WITH 0.00
+			
+		ELSE
+			RETURN .T.
+		endif
+	
+
+*!*		 v_sentenciaCrea = "create table "+ALLTRIM(p_nomTabRes)+" (idimpuret I,importeTot Y,impARet Y,totpagmes Y,totRetmes)"
+*!*		 &v_sentenciaCrea
+*!*		 
+*!*		SELECT entidadret_sql
+*!*		GO TOP 
+*!*		
+*!*		DO WHILE NOT EOF()
+*!*			
+*!*			v_idimpuret = entidadret_sql.idimpuret
+*!*				
+*!*			
+*!*			INSERT INTO &p_nomTabRes VALUES (v_idimpuret,v_importeTot,0.00,0.00,0.00)
+*!*			
+*!*			SELECT entidadret_sql
+*!*			
+*!*			SKIP 1
+
+*!*		ENDDO
+		USE IN entidadret_sql
+
+
+		* me desconecto	
+		=abreycierracon(vconeccion,"")
+		
+		
+		
+	****************************************************************	
+	** 3- En caso de que le corresponda retenciones, abrir una ventana con las retenciones asociadas, pidiendo ingresar el monto total y una lista para poder elegir las retenciones que quiera aplicar
+	****************************************************************
+
+ 	DO FORM selectretenciones WITH v_importeTot ,p_nomTabRes TO v_retorno
+		
+ 	
+ 	IF v_retorno = .T.
+ 	
+	
+ 		SELECT &p_nomtabres
+ 		GO TOP 
+ 		 		
+ 	ELSE
+ 		MESSAGEBOX("Hubo un problema al intentar aplicar retenciones",0+48+0,"Aplicar retenciones")
+ 		RETURN .F.
+ 	ENDIF 
+
+	
+ ELSE
+ 	RETURN .T.
+ ENDIF 
+
+ 
+ 
+RETURN v_retorno
+
+ENDFUNC 
+
+
+
+****************************************************************
+*** FUNCIÓN PARA GENERAR UN COMPROBANTE DE RETENCIÓN SEGÚN LA TABLA ***
+****************************************************************
+** PARÁMETROS: 	p_nomTablaret: Nombre de la tabla donde están los datos para generar el comprobante y en la cuál se retornan los datos restantes
+* La función recibe el nombre de una tabla, la cuál tiene el siguiente formato: (idreten I, pventa I, idcomproba I, numero I, fecha C(8), entidad I, idimpuret I, importe Y, sujarete Y)
+* Donde (idreten, idcomproba, numero) estarán en CERO cuando se esté generando el comprobante. Al Retornar True la función previamente completa los datos faltantes
+****************************************************************
+** RETORNO: Retorna True si se generó correctamente, completando previamente los datos de idreten, idcomproba, numero
+****************************************************************
+
+FUNCTION generarCompRetencion
+PARAMETERS p_nomTablaret
+
+	v_retorno = .F.
+
+
+	if USED(p_nomTablaret) = .F.
+	
+		MESSAGEBOX("No se encuentra la tabla temporal con los datos de la retención a generar", 0+16+0,"Error al generar el comprobante de retención")
+		RETURN .F.
+	ENDIF 
+	
+	comproObjtmp		= CREATEOBJECT('comprobantesClass')
+	
+	
+	SELECT &p_nomTablaRet
+	GO TOP 
+	
+	DO WHILE NOT EOF()
+			
+		v_idretenr = &p_nomTablaRet..idreten
+	
+		IF v_idretenr = 0
+	
+
+			v_pventar = &p_nomTablaRet..pventa
+			v_idcomprobar =  comproObjtmp.getidcomprobante("RETENCION")
+		
+			*v_numero  = &p_nomTablaRet..numero
+			v_numeror = maxnumerocom(v_idcomprobar,v_pventar,1) + 1
+
+			v_fechar = &p_nomTablaRet..fecha
+			v_entidadr = &p_nomTablaRet..entidad
+			v_idimpuretr  = &p_nomTablaRet..idimpuret
+			v_importer  = &p_nomTablaRet..importe
+			v_sujareter = &p_nomTablaRet..sujarete
+			
+			* Me conecto a la base de datos *
+				vconeccion=abreycierracon(0,_SYSSCHEMA)	
+
+					
+				
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+							
+			DIMENSION lamatrizr(9,2)
+			
+			lamatrizr(1,1) = 'idreten'
+			lamatrizr(1,2) = "0"
+			lamatrizr(2,1) = 'pventa'
+			lamatrizr(2,2) = ALLTRIM(STR(v_pventar))
+			lamatrizr(3,1) = 'idcomproba'
+			lamatrizr(3,2) = ALLTRIM(STR(v_idcomprobar))
+			lamatrizr(4,1) = 'numero'
+			lamatrizr(4,2) = ALLTRIM(STR(v_numeror))
+			lamatrizr(5,1) = 'fecha'
+			lamatrizr(5,2) = "'"+ALLTRIM(v_fechar)+"'"
+			lamatrizr(6,1) = 'entidad'
+			lamatrizr(6,2) = ALLTRIM(STR(v_entidadr))
+			lamatrizr(7,1) = 'idimpuret'
+			lamatrizr(7,2) = ALLTRIM(STR(v_idimpuretr))
+			lamatrizr(8,1) = 'importe'
+			lamatrizr(8,2) = ALLTRIM(STR(v_importer,13,2))
+			lamatrizr(9,1) = 'sujarete'
+			lamatrizr(9,2) = ALLTRIM(STR(v_sujareter,13,2))
+			
+
+			p_tabla     = 'retenciones'
+			p_matriz    = 'lamatrizr'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de la Localidad "+ALLTRIM(v_cod_loc)+"-"+;
+			                ALLTRIM(thisform.tb_nombre.value),0+48+0,"Error")
+			            * me desconecto	
+				=abreycierracon(vconeccionF,"")    
+			    RETURN v_cod_loc
+			ENDIF 
+			
+			
+			
+			sqlmatriz(1)=" select last_insert_id() as maxid "
+			verror=sqlrun(vconeccionF,"ultimoId")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+				=abreycierracon(vconeccionF,"")	
+			    RETURN v_idcomproreret
+			ENDIF 
+			SELECT ultimoId
+			GO TOP 
+			v_idcompro_Ultimo = VAL(ultimoId.maxid)
+			USE IN ultimoId
+
+			v_idretenr = v_idcompro_Ultimo
+			
+			SELECT &p_nomTablaRet
+			replace idreten WITH v_idretenr, idcomproba WITH v_idcomprobar, numero WITH v_numeror
+		
+				
+			* me desconecto	
+			=abreycierracon(vconeccionF,"")
+			
+			
+			ENDIF 
+		
+		SELECT &p_nomTablaRet
+		SKIP 1 
+
+	ENDDO
+
+
+	v_retorno = .T.
+	
+
+	RETURN v_retorno
+ENDFUNC 
 
 
 
