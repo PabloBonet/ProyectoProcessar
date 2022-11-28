@@ -1205,224 +1205,6 @@ ENDFUNC
 
 ENDFUNC 
 
-*!*		
-*!*	* FUNCION QUE PERMITE LA CARGA DEL COMPROBANTE AL SERVICIO LOCAL, PARA LUEGO SER AUTORIZADA
-*!*	* PARAMETROS: p_idFactura, ID DEL COMPROBANTE A AUTORIZAR
-*!*	FUNCTION cargarCompFE
-*!*	PARAMETERS p_idFactura
-
-
-*!*		v_servicioCargado = .F.
-*!*		v_compCargado = .F.
-*!*		TRY 
-*!*		
-*!*			v_servicioCargado = loBasicHttpBinding_IServicio.servicioIniciado()
-*!*			
-*!*			IF v_servicioCargado  = .t.
-
-*!*				v_idfactura = p_idFactura
-*!*				
-*!*				**** CARGA COMPROBANTE ***
-
-*!*				vconeccionF=abreycierracon(0,_SYSSCHEMA)	
-*!*				
-
-
-*!*				sqlmatriz(1)="Select f.*, a.codigo as codAfip, p.puntov from facturas f left join comprobantes c on f.idcomproba = c.idcomproba "
-*!*				sqlmatriz(2)=" left join tipocompro tc on  c.idtipocompro = tc.idtipocompro left join afipcompro a on  tc.idafipcom = a.idafipcom "
-*!*				sqlmatriz(3)=" left join puntosventa p on f.pventa = p.pventa "
-*!*				sqlmatriz(4)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
-
-*!*				verror=sqlrun(vconeccionF,"factu_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la factura a cargar ",0+48+0,"Error")
-*!*				    *thisform.comprobantecargado = .f.
-*!*				    v_compCargado = .F.
-*!*				ENDIF 
-
-*!*				*** Cargo IMpuestos del comprobante agrupados por tipo de impuesto
-*!*				sqlmatriz(1)="Select fi.*,a.codigo as codigoAfip, a.tipo as tipoAfip, a.detalle as detAfip from  facturasimp fi left join impuestos i on fi.impuesto = i.impuesto "
-*!*				sqlmatriz(2)=" left join afipimpuestos a on i.idafipimp = a.idafipimp " 
-*!*				sqlmatriz(3)=" where fi.idfactura = "+ ALLTRIM(STR(v_idfactura))
-
-*!*				verror=sqlrun(vconeccionF,"factImp_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los impuestos de las facturas ",0+48+0,"Error")
-*!*				    *thisform.comprobantecargado = .f.
-*!*				    v_compCargado = .F.
-*!*				ENDIF 
-
-
-*!*			
-*!*				
-*!*				SELECT factu_sql
-
-*!*				
-*!*				
-*!*				v_idComprobante = factu_sql.idfactura
-*!*				*id o tipo?
-*!*				v_tipoComprobante = VAL(factu_sql.codAfip)
-*!*				
-
-*!*				v_tipoDocCliente= factu_sql.tipodoc
-*!*				v_nroDocCliente	= factu_sql.cuit
-*!*				
-*!*				
-*!*				v_fechaComprobante = factu_sql.fecha
-*!*				v_importeNeto = factu_sql.neto
-*!*				
-*!*				*** OPERACION EXCENTA???
-*!*				v_importeOpEx = 0
-*!*				*Tratamiento de impuestos
-*!*				IF factu_sql.operexenta = "S"
-*!*					v_importeOpEx = 0
-*!*				ELSE
-*!*				
-*!*				ENDIF 
-*!*				
-
-
-*!*		SET ENGINEBEHAVIOR 70  &&habilitará el comportamiento de Visual FoxPro 7. 
-*!*			SELECT *, SUM(importe) as impTot, SUM(neto) as netoTot FROM factImp_sql GROUP BY impuesto  INTO TABLE .\factImp
-*!*				
-*!*				 
-*!*				 
-*!*		SET ENGINEBEHAVIOR 90  &&habilitará el comportamiento de Visual FoxPro 9. 
-*!*				
-*!*				v_importeTotalComp = factu_sql.total
-*!*				v_idMoneda = "PES"
-*!*				v_cotizacionMoneda = 1
-*!*			*Concepto se refiere a:
-*!*			*1- Productos
-*!*			*2- Servicios
-*!*			*3- Productos y servicios
-*!*				v_concepto = _SYSCONCEPTOAFIP
-*!*				v_ptoVta = factu_sql.puntov 
-
-*!*				v_1 =	loBasicHttpBinding_IServicio.setIDComprobante(v_idComprobante)
-
-*!*				v_2=	loBasicHttpBinding_IServicio.setTipoComprobante(v_tipoComprobante)
-
-*!*				v_3=	loBasicHttpBinding_IServicio.setDocTipoClienteComprobante(v_tipoDocCliente)
-
-*!*				v_4=		loBasicHttpBinding_IServicio.setNroDocClienteComprobante(ALLTRIM(v_nroDocCliente))
-
-*!*				v_5=		loBasicHttpBinding_IServicio.setFechaComprobante(ALLTRIM(v_fechaComprobante))
-*!*					
-*!*				 
-*!*				
-*!*				v_totalIVA = 0
-*!*				v_totalTributo = 0
-*!*				SELECT factImp
-*!*				GO TOP
-*!*				DO WHILE  NOT EOF()
-*!*					
-*!*					v_impuesto = factImp.impuesto
-*!*					v_detalle  = factImp.detalle
-*!*	*!*					v_importe  = factImp.importe
-*!*	*!*					v_neto	   = factImp.neto
-*!*					v_importe	= factImp.impTot
-*!*					v_neto		= factImp.netoTot
-*!*					v_codAfip  = VAL(ALLTRIM(factImp.codigoafip))
-*!*					v_tipoAfip = factImp.tipoAfip
-*!*					v_detAfip  = factImp.detAfip
-
-*!*					DO case
-*!*					
-*!*						CASE v_tipoAfip = "IVA"
-
-*!*							resp = loBasicHttpBinding_IServicio.agregarAlicIva(v_codAfip,v_neto,v_importe)
-*!*						
-*!*							IF resp = .F.
-*!*								MESSAGEBOX("Error al cargar alicuota IVA",0+48+0,"Error")
-*!*							
-*!*							ELSE
-*!*								v_totalIVA = v_totalIVA + v_importe
-*!*						
-*!*							ENDIF 
-*!*							
-*!*							
-*!*						CASE v_tipoAfip = "TRIBUTO"
-*!*						**REVISAR ALICUOTA (0) EN TRIBUTO 
-
-*!*							resp = loBasicHttpBinding_IServicio.agregarTributo(v_codAfip, 0, v_neto, v_detAfip, v_importe)
-*!*						
-*!*							IF resp = .F.
-*!*								MESSAGEBOX("Error al cargar el TRIBUTO",0+48+0,"Error")
-*!*							
-*!*							ELSE
-*!*								v_totalTributo = v_totalTributo + v_importe
-*!*						
-*!*							ENDIF 
-*!*						
-*!*					
-*!*					ENDCASE 
-*!*					
-*!*					
-*!*				
-*!*					SELECT factImp
-*!*					SKIP 1
-*!*				ENDDO  
-
-*!*					v_importeTributo = v_totalTributo
-*!*					v_importeIva = v_totalIVA
-
-*!*						v_6=		loBasicHttpBinding_IServicio.setImporteNetoComprobante(v_importeNeto)
-
-*!*				v_7=		loBasicHttpBinding_IServicio.setImporteOpExComprobante(v_importeOpEx)
-
-*!*				v_8=		loBasicHttpBinding_IServicio.setImporteTributoComprobante(v_importeTributo)
-
-*!*				v_9=		loBasicHttpBinding_IServicio.setImporteIvaComprobante(v_importeIva)
-
-*!*				v_10 = 		loBasicHttpBinding_IServicio.setImporteTotalComprobante(v_importeTotalComp)
-*!*				
-
-*!*				v_11=		loBasicHttpBinding_IServicio.setIDMonedaComprobante(ALLTRIM(v_idMoneda))
-
-*!*				v_12=		loBasicHttpBinding_IServicio.setCotizacionMonedaComprobante(v_cotizacionMoneda)
-
-*!*				v_13=		loBasicHttpBinding_IServicio.setConceptoComprobante(v_concepto)
-
-*!*				v_14 =			loBasicHttpBinding_IServicio.setPtoVtaComprobante(v_ptoVta)
-
-*!*				v_estadoComp =	loBasicHttpBinding_IServicio.comprobanteCargado()
-*!*				
-*!*						
-*!*				
-*!*				IF v_estadoComp = .T.
-*!*				
-*!*					v_compCargado =.T.
-*!*				ELSE
-*!*				
-*!*				    v_compCargado =	.F.
-
-*!*				ENDIF 
-
-*!*			ELSE
-*!*				  MESSAGEBOX("El servicio de autorización no está Iniciado",0+48+0,"Error")
-
-*!*				    v_compCargado = .F.
-*!*			ENDIF 
-*!*		CATCH TO loException
-*!*			lcErrorMsg="Error: "+TRANSFORM(loException.Errorno)+" - "+loException.Message
-*!*			DO CASE
-*!*				CASE VARTYPE(loBasicHttpBinding_IServicio)#"O"
-*!*					* Handle SOAP error connecting to web service
-*!*				CASE !EMPTY(loBasicHttpBinding_IServicio.FaultCode)
-*!*					* Handle SOAP error calling method
-*!*					lcErrorMsg=lcErrorMsg+CHR(13)+loBasicHttpBinding_IServicio.Detail
-*!*				OTHERWISE
-*!*					* Handle other error
-*!*				ENDCASE
-*!*				* Use for debugging purposes
-*!*				MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
-*!*				v_compCargado = .F.
-*!*			FINALLY
-*!*		ENDTRY
-*!*		RETURN v_compCargado
-*!*	ENDFUNC  
-*!*	 
 
 
 
@@ -4781,7 +4563,6 @@ ENDFUNC
 
 
 
-
 *+ Funcion para el seteo de indices en tablas locales
 * recibe como parametros una tabla a ordenar , una tabla con los indices y el valor que debe
 * seleccionar para crear el indice. 
@@ -4800,16 +4581,12 @@ PARAMETERS pa_tabla, pa_tablaorden, pa_campobus, pa_valorbus, pa_camporet, pa_ta
 	RETURN ""
 ENDFUNC 
 
-*---------------------------------------------------------------
-
-* LLama al Menu de Configuracion para Setearlo pasando como parametros
-
-* los datos del Esquema seleccionado en el Sistema Seleccionado
-
-*---------------------------------------------------------------
 
 FUNCTION ejecutarexe
-
+*#/---------------------------------------------------------------
+* LLama al Menu de Configuracion para Setearlo pasando como parametros
+* los datos del Esquema seleccionado en el Sistema Seleccionado
+*#/---------------------------------------------------------------
 PARAMETERS param_path ,param_executa
 
  
@@ -4851,7 +4628,8 @@ ENDFUNC
 
 
 
-*/-------------------------------------------------------------
+FUNCTION setidxgrilla
+*#/-------------------------------------------------------------
 * Setea los indices en las grillas pasadas como parametros
 * Recibe como parametros la Grilla con todo el nombre gerarquico 
 * es decir el formulario y la grilla.
@@ -4860,8 +4638,7 @@ ENDFUNC
 * para luego continuar con el orden.
 * Para el Orden del Indice Ascentente o Descendente , la grilla debe tener seteado en 
 * el campo StatusBarText= "A" = "ASCENDING" u "D" = "DESCENDING"
-*/-------------------------------------------------------------
-FUNCTION setidxgrilla
+*#/-------------------------------------------------------------
 PARAMETERS p_grilla, p_columna, p_header 
 v_grilla_tabla 			= p_grilla+".recordsource"
 v_grilla_tag 			= p_grilla+".tag"
@@ -4917,12 +4694,14 @@ EJE = IIF(!EMPTY(&v_grilla_tag),"INDEX ON  ALLTRIM(SUBSTR("+&v_grilla_tag+"+SPAC
 RETURN 
 
 ENDFUNC 
-*/-------------------------------------------------------------
+
+
+FUNCTION seteagrilla
+*#/-------------------------------------------------------------
 * Seteo de las Grillas de
 * Recibe como parametros, el cursor, el nombre de la grilla
 * un arreglo con las columnas a a colocar en la grilla
-*/-------------------------------------------------------------
-FUNCTION seteagrilla
+*#/-------------------------------------------------------------
 PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 
 	vcan_column = ALEN(&p_matcolumn,1)
@@ -4976,13 +4755,13 @@ RETURN
 
 ENDFUNC 
 
-*/*****************************************************
+FUNCTION fcodentidad
+*#/*****************************************************
 */ Toma en caracteres separados por puntos el valor de codigo
 */ y lo divide de acuerdo al codigo de ENTIDAD-SERVICIO-SUBCODIGO
 */ recibe caracteres y devuelve en valor numerico de acuerdo
 */ al parametro solicitado 1-ENTIDAD  2-SERVICIO  3-SUBCODIGO
-*/******************************************************
-FUNCTION fcodentidad
+*#/******************************************************
 PARAMETERS pcodenti, pcual
 varretorno = 0
 ALINES(ccodarray,pcodenti,1,".",'-')
@@ -5011,7 +4790,8 @@ RETURN varretorno
 
 
 
-*/-------------------------------------------------------------
+FUNCTION consultalocprovpais
+*#/-------------------------------------------------------------
 * Retorna una cadena de caracteres con la localidad
 * Con el siguiente formato: <Localidad> [(<Cod_postal)] [- <Provincia>] [- <Pais>]
 * Parametros: 
@@ -5020,8 +4800,7 @@ RETURN varretorno
 *	p_conProv B:		Booleano indicando si se muestra o no la provincia
 *	p_conPais B:		Booleano indicando si se muestra o no el país
 *	
-*/-------------------------------------------------------------
-FUNCTION consultalocprovpais
+*#/-------------------------------------------------------------
 PARAMETERS p_idlocalidad,p_conCod, p_conProv, p_conPais
 
 		v_idlocalidad	= p_idlocalidad
@@ -5084,15 +4863,15 @@ PARAMETERS p_idlocalidad,p_conCod, p_conProv, p_conPais
 ENDFUNC 
 
 
-*/-------------------------------------------------------------
+FUNCTION calculaDigitoVerif
+*#/-------------------------------------------------------------
 * Retorna una cadena de caracteres con agregando al final el digito verificador a la cadena pasada como parámetro
 * Con el siguiente formato: CCCCCCCCCCCTTTPPPPAAAAAAAAAAAAAAVVVVVVVVD
 * Donde: C: CUIT_EMISOR; T: TIPO_COMPROBANTE; P: PUNTO_VENTA; A: CAE; V: FECHA_VTO; D: DIGITO_VERIFICADOR
 * Parametros: 
 *	p_codigoI: 	Cadena a calcular el digito verificador
 * Retorno: Cadena con digito verificador	
-*/-------------------------------------------------------------
-FUNCTION calculaDigitoVerif
+*#/-------------------------------------------------------------
 PARAMETERS p_codigo
 
 	v_codigo	= ALLTRIM(p_codigo)
@@ -5164,13 +4943,13 @@ RETURN RETORNA
 
 
 
-*/-------------------------------------------------------------
+FUNCTION fejercicioplan
+*#/-------------------------------------------------------------
 * Retorna el id del dejercicio economico y el id del Plan de Cuentas
 * de acuerdo al ejercicio seleccionado segun la fecha ingresada
 * Parametros: 1-Fecha a considerar
 *			  2-Condicion devuelta : 0=Devuelve el idejercicio, 1= Devuelve el idplan
-*/-------------------------------------------------------------
-FUNCTION fejercicioplan
+*#/-------------------------------------------------------------
 PARAMETERS p_fecha,p_devuelve
 
 	IF TYPE('p_fecha')= 'D' THEN 
@@ -5216,14 +4995,14 @@ PARAMETERS p_fecha,p_devuelve
 ENDFUNC 
 
 
-*/-------------------------------------------------------------
+FUNCTION fdescribecompro
+*#/-------------------------------------------------------------
 * Retorna un string conteniendo una descripcion del comprobante
 * que permite identificarlo univocamente. 
 * Parametros: 1-tabla
 *			  2-nombre del indice, Si indice está vacio lo obtiene
 *			  3-Valor del indice
-*/-------------------------------------------------------------
-FUNCTION fdescribecompro
+*#/-------------------------------------------------------------
 PARAMETERS par_tabla,par_nomindice,par_valindice
 
 	v_retornod = ""
@@ -6439,7 +6218,8 @@ ENDIF
 ENDFUNC 
 
 
-*///////////////////////////////////////////////////////////////
+FUNCTION GenAstoContable
+*#///////////////////////////////////////////////////////////////
 **********************************************************************
 ** Funcion que devuelve el asiento modelo armado a partir de un 
 ** codigo o modelo de asiento**
@@ -6448,8 +6228,7 @@ ENDFUNC
 ** estructura devuelta .dbf o .txt 
 **		idastomode i, codigocta c(30), debe y, haber y, tabla c(30), 
 **      registro i ,fecha c(8), idfiltro i, idtipoasi i, idastoe i, idpland, codigo c(22)
-*///////////////////////////////////////////////////////////////
-FUNCTION GenAstoContable
+*#///////////////////////////////////////////////////////////////
 PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par_idastoe, par_tablaret
 
 	IF TYPE("par_idfiltro") = 'L' THEN
@@ -6867,13 +6646,12 @@ SELECT * FROM tablacampo INTO TABLE tablacampo00
 	
 ENDFUNC 
 
-*////////////////////////////////////////////////////
-** Función que devuelve verdadero o falso segun sea
-*/ segun sea que el indice del registro  pasado como parámetro pertenezca o no al grupo asociado a la cuenta
-*/ contable que se debiera utilizar en el asiento modelo.
-*/**********************************************************
-
 FUNCTION GrupoCuentaContable 
+*#////////////////////////////////////////////////////
+* Función que devuelve verdadero o falso segun sea
+* segun sea que el indice del registro  pasado como parámetro pertenezca o no al grupo asociado a la cuenta
+* contable que se debiera utilizar en el asiento modelo.
+*#/**********************************************************
 PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 	vpertenece = .f. 
 	
@@ -6933,12 +6711,11 @@ PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 ENDFUNC 
 
 
-*//////////////////////////////////////
+FUNCTION FiltroAstoModelo 
+*#//////////////////////////////////////
 */ Determina el Filtro y Modelo de Asiento a aplicar en funcion
 */ del filtrado que aplica al comprobante recibido como parametros
-*//////////////////////////////////////
-
-FUNCTION FiltroAstoModelo 
+*#//////////////////////////////////////
 PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
 	
 	pf_campoid = getIdTabla(pf_tabla) && Obtengo el nombre del campo indice de la tabla
@@ -7592,12 +7369,12 @@ ENDFUNC
 
 
 
-***//////////////////////////////////////////////////////////////////
+FUNCTION IncerAstoContable
+*#/**//////////////////////////////////////////////////////////////////
 ** Función de incersion de asientos a partir de un txt con el asiento con el modelo de asiento y el comprobante asociado
 ** La funcion controla que el asiento balancee y que las cuentas se correspondan con el 
 ** Plan de Cuentas Actual
-****////////////////////////////////////////////////////////////////
-FUNCTION IncerAstoContable
+*#/***////////////////////////////////////////////////////////////////
 PARAMETERS par_asiento
 
 	varastovalido = ""
@@ -8948,12 +8725,14 @@ ENDFUNC
 
 
 	
-*/****
+	
+	
+FUNCTION GetListasPrecios	
+*#/****
 * Obtiene todas las listas de precios con los Precios Actualizados 
 * La lista 0 corresponde a la basica de articulos sin Calculo de Costos
 * Recibe como parametro el nombre de la tabla en la cual retornará las listas y la condicion fiscal (por defecto es la 1)
-***********************************************************************
-FUNCTION GetListasPrecios	
+*#/**********************************************************************
 PARAMETERS p_nombrearchivo, p_condfis
 
 
@@ -9239,13 +9018,13 @@ IF FILE(archi) THEN
 ENDIF 
 RETURN ""
 
-*** Función que arma el comprobante en un archivo XML**
-* Busca en la Base de Datos los datos de la factura según el ID pasado como parámetro, 
-* Utiliza la función CURSORTOXML, el formato del nombre xml es: 'factura_<idFactura>', donde <idFactura> es el ID en la tabla facturas
-** Recibe como parámetro el IDFactura
 
 
 FUNCTION armarComprobanteXML
+*#/*** Función que arma el comprobante en un archivo XML**
+* Busca en la Base de Datos los datos de la factura según el ID pasado como parámetro, 
+* Utiliza la función CURSORTOXML, el formato del nombre xml es: 'factura_<idFactura>', donde <idFactura> es el ID en la tabla facturas
+*#/** Recibe como parámetro el IDFactura
 PARAMETERS p_idFactura
 
 
@@ -9479,12 +9258,11 @@ PARAMETERS p_idFactura
 ENDFUNC 
 
 
-*** Función que los comprobantes asociados en un archivo XML**
+FUNCTION armarCompAsociadosFacXML
+*#/*** Función que los comprobantes asociados en un archivo XML**
 * Busca en la Base de Datos los datos del comprobante asociados al comprobate de la tabla Facturas cuyo ID es pasado como parámetro, 
 * Utiliza la función CURSORTOXML, el formato del nombre xml es: 'asociados_factura_<idFactura>', donde <idFactura> es el ID en la tabla facturas
-** Recibe como parámetro el IDFactura
-
-FUNCTION armarCompAsociadosFacXML
+*#/** Recibe como parámetro el IDFactura
 PARAMETERS p_idregistro,p_idcomproba
 
 
@@ -10101,7 +9879,11 @@ PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movim
 
 ENDFUNC 
 
-*/ Contabilizacion de Operaciones
+
+
+
+FUNCTION ContabilizaMov
+*#/ Contabilizacion de Operaciones
 * Recibe como parametros la tabla, el Idregistro y la conexion, 
 * Verifica que el registro de la tabla pasada ya no esté contabilizado , si es asi no contabiliza, 
 * de otra manera genera y graba el asiento.
@@ -10109,10 +9891,8 @@ ENDFUNC
 * 		   : 0 SI NO GENERO EL ASIENTO 
 *		   : -1 SI NO LO GENERÓ Y EL OPERADOR DEBIERA INGRESARLO, esto se controla con una variable publica : _SYSMCONTABLE de seteo 
 *			que indica si el operador debe ingresar o no los asientos al no encontrar un modelo adecuado
-*          : -2 NO Generó el Asiento porque no está habilitado el Módulo Contable
-
-FUNCTION ContabilizaMov
-	PARAMETERS pcont_tabla, pcont_id, pcont_conex
+*#/*          : -2 NO Generó el Asiento porque no está habilitado el Módulo Contable
+PARAMETERS pcont_tabla, pcont_id, pcont_conex
 	
 	ret_idasiento = 0
 	
@@ -11265,6 +11045,7 @@ ENDFUNC
 FUNCTION CreditoLimiteE
 PARAMETERS  para_entidad, para_monto
 
+	_SQLENTIDAD = para_entidad
 	vconeccionCR = abreycierracon(0,_SYSSCHEMA)
 
 	sqlmatriz(1)=" SELECT * FROM tipocompro where detalle like 'RECIBO%' LIMIT 1 "
@@ -11279,7 +11060,7 @@ PARAMETERS  para_entidad, para_monto
 
 
 	sqlmatriz(1)=" SELECT cc.entidad, (sum(ifnull("+ALLTRIM(STR(v_signosaldo))+"*cr.importe,0)) + cc.saldo) as credito "
-	sqlmatriz(2)=" FROM ctactesaldo cc left join entidadescr cr on cc.entidad = cr.entidad  " 
+	sqlmatriz(2)=" FROM ctactesaldo1 cc left join entidadescr cr on cc.entidad = cr.entidad  " 
 	sqlmatriz(4)=" WHERE  cc.entidad = "+ALLTRIM(STR(para_entidad))
   
 	verror=sqlrun(vconeccionCR ,"credito_sql")
@@ -13715,17 +13496,20 @@ PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe
 		*Registracion Contable del Vinculo de Comprobantes	
 		v_cargo = ContabilizaCompro('vinculocomp', v_idvinculo , vconeccionVi, v_importe)
 			
-		sino = MESSAGEBOX("¿Desea imprimir el Comprobante de Vínculación-Desvinculación?",4+32,"Imprimir")
+		IF TYPE("_SYSIMPVINC")='C' THEN 	
+			IF ALLTRIM(_SYSIMPVINC) = 'S' THEN 	
+				sino = MESSAGEBOX("¿Desea imprimir el Comprobante de Vínculación-Desvinculación?",4+32,"Imprimir")
+				IF sino = 6
+					*SI
+					imprimirVinculoComp(v_idvinculo)
+				ENDIF 
+		  	ENDIF 
+		ELSE 
+			sino = MESSAGEBOX("¿Desea imprimir el Comprobante de Vínculación-Desvinculación?",4+32,"Imprimir")
 			IF sino = 6
-				*SI
 				imprimirVinculoComp(v_idvinculo)
-
-			ELSE
-				*NO
-			
 			ENDIF 
-	  
-	  	
+	  	ENDIF 
 	  	
 		=abreycierracon(vconeccionVi ,"")	
 		RETURN .t. 
@@ -18166,11 +17950,11 @@ ENDFUNC
 
 
 
-***
-*** Genera / Regenera las Tablas de Resultados relacionadas con las Vistas
-***
+
 FUNCTION GenerarTablasR
-	
+*#/**
+*** Genera / Regenera las Tablas de Resultados relacionadas con las Vistas
+*#/**	
 	WAIT windows "Aguarde... Regenerando Tablas..." NOWAIT  
 	
 	* Me conecto a la base de datos *
@@ -18192,13 +17976,14 @@ FUNCTION GenerarTablasR
 ENDFUNC 
 
 
-*- Tipo de funciones de búsquedas de Datos en Esquemas Asociados
+
+FUNCTION Aso_StockArt
+*#/- Tipo de funciones de búsquedas de Datos en Esquemas Asociados
 *----------------------------------------------------------------
 ** Obtiene el Stock de Artículos de las bases de Datos asociadas
 * * retorna una tabla con el stock de artículos en los esquemas asociados
-*----------------------------------------------------------------
+*#/----------------------------------------------------------------
 
-FUNCTION Aso_StockArt
 	valias = ALIAS()
 	
 	v_stockreto = 'stockreto'+frandom()
@@ -18313,268 +18098,477 @@ ENDFUNC
 
 
 
+FUNCTION SaldosEntidad
+PARAMETERS p_Enti, p_tablareto, p_cone
+*/
+*---------------------------------------------------------------
+* Función para obtener los Comprobantes con Saldo Disponibles de una Entidad, a favor o en Contra
+* Parametros: p_Entidad: Entidad para el Calculo del Saldo disponible
+* 			  p_tablaret: Nombre de la tabla temporaria en la cual se retornaran los comprobantes con saldos a favor o en contra
+*			  p_cone: si recibe la conexion, entonces no cierra ni abre, usa la conexion recibida
+* Retorno: Retona una Tabla con los comprobantes con saldos, Facturas, recibos y NC con saldo a favor o en Contra de la entidad
+*---------------------------------------------------------------
+*/
+	IF !(TYPE("p_tablareto") = 'C') THEN 
+		RETURN ""
+	ENDIF 
 
-****************************************************************
-*** FUNCIÓN PARA EL CALCULO DE RETENCIONES A APLICAR ***
-****************************************************************
-** PARÁMETROS: 	P_entidad: id de la entidad a retener
-*				P_fecha: Fecha para el cálculo de la rentención
-*				p_nomTabRes: Nombre de la tabla donde se va a entregar el resultado, la cual incluye: idimpuret,netoTotal,importeARetener,totpagosmes,totRetenmes )
-*				P_importe: Importe Total, del cuál se va a calcular las retenciones. en caso de no pasar parámetro se pedirá en la pantalla
-*La función recibe los parámetros indicados y va a determinar si se va a aplicar retenciones a la entidad, y cuanto retener por cada retención
-****************************************************************
-** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
-****************************************************************
-
-FUNCTION retenciones
-PARAMETERS p_entidad, P_fecha, p_nomTabRes,P_importe
-*PARAMETERS p_entidad, P_importe,P_fecha, p_nomTabRes
-
-v_retorno = .F.
-v_importeTot = 0.00
+*!*		eje = " DELETE FILE "+ALLTRIM(p_tablareto)+".dbf"
+*!*		&eje 
+*!*		EJE = " CREATE TABLE "+p_tablareto+" ( idregistro i, idcomproba, fecha c(8), tabla c(100), saldo y, opera i  ) "
+*!*		&EJE
+	v_cerrar = .t.
+	IF TYPE("p_cone") = 'N'  THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		IF p_cone > 0 THEN 
+			vconeccionFv = p_cone
+			v_cerrar = .f.
+		ELSE 
+			vconeccionFv = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 
+	ELSE 
+		vconeccionFv = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 	
 
 
-MESSAGEBOX("Retenciones")
-****************************************************************
-** 1- Verificar Si la empresa es agente de retenciones, se debe activar la variable _SYSAGENTERET = ‘S’
-****************************************************************
-
- IF ALLTRIM(_SYSAGENTERET) = 'S'
- 
- 	IF TYPE('p_importe') = 'N'
- 		v_importeTot = p_importe
- 	ELSE
- 		v_importeTot = 0.00
- 	ENDIF 
- 	****************************************************************
-	** 2- Verificar si a la entidad le corresponde retenciones. Ver en las retenciones asociadas a la entidad en la tabla: entidadret
-	****************************************************************
-		* Me conecto a la base de datos *
-		vconeccion=abreycierracon(0,_SYSSCHEMA)	
-
-		 
-		sqlmatriz(1)=" select e.identret,e.entidad,e.idimpuret,e.enconvenio, i.detalle,i.razonin,i.baseimpon, i.idtipopago, i.funcion, i.razonnin "
-		sqlmatriz(2)=" from entidadret e left join impuretencion i on e.idimpuret = i.idimpuret "
-		sqlmatriz(3)=" where e.entidad = "+ALLTRIM(STR(p_entidad))
-		verror=sqlrun(vconeccion,"entidadret_sql")
-		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un Error al Obtener las retenciones asociadas a la entidad",0+48+0,"Error")
-			* me desconecto	
-
-			=abreycierracon(vconeccion,"")
-			
-			RETURN .F.
-		ENDIF
-		
-		 		
-		SELECT * FROM entidadret_sql INTO TABLE &p_nomTabRes
-		
-		SELECT &p_nomTabRes
-		GO TOP 
-		
-		IF NOT EOF()	
-			SELECT &p_nomTabRes
-			ALTER table &p_nomTabRes ADD COLUMN impTot Y
-			ALTER table &p_nomTabRes ADD COLUMN impARet Y
-			ALTER table &p_nomTabRes ADD COLUMN totapagmes Y
-			ALTER table &p_nomTabRes ADD COLUMN totretmes Y
-			ALTER table &p_nomTabRes ADD COLUMN sel I
-			ALTER table &p_nomTabRes ADD sujarete Y
-			
-			SELECT &p_nomTabRes
-			GO TOP 
-			
-			replace ALL impTot WITH v_importeTot, impAret WITH 0.00, totAPagMes WITH 0.00, totRetMes WITH 0.00, sel WITH 0, sujarete WITH 0.00
-			
-		ELSE
-			RETURN .T.
-		endif
+	sqlmatriz(1)= " select f.idfactura as idregistro, f.idcomproba, f.fecha,  c.tabla, r.saldof as saldo , t.opera from r_facturasaldo r "
+	sqlmatriz(2)= " left join facturas f on f.idfactura = r.idfactura "
+	sqlmatriz(3)= " left join comprobantes c on f.idcomproba = c.idcomproba "
+	sqlmatriz(4)= " left join tipocompro t on t.idtipocompro = c.idtipocompro "
+	sqlmatriz(5)= " where f.entidad = "+STR(p_Enti)+" and r.saldof > 0  "
 	
-
-*!*		 v_sentenciaCrea = "create table "+ALLTRIM(p_nomTabRes)+" (idimpuret I,importeTot Y,impARet Y,totpagmes Y,totRetmes)"
-*!*		 &v_sentenciaCrea
-*!*		 
-*!*		SELECT entidadret_sql
-*!*		GO TOP 
-*!*		
-*!*		DO WHILE NOT EOF()
-*!*			
-*!*			v_idimpuret = entidadret_sql.idimpuret
-*!*				
-*!*			
-*!*			INSERT INTO &p_nomTabRes VALUES (v_idimpuret,v_importeTot,0.00,0.00,0.00)
-*!*			
-*!*			SELECT entidadret_sql
-*!*			
-*!*			SKIP 1
-
-*!*		ENDDO
-		USE IN entidadret_sql
-
-
+	sqlmatriz(6)= " union ( select re.idrecibo as idregistro, re.idcomproba, re.fecha, c.tabla, r.saldo as saldo , t.opera from r_recibossaldo r "
+	sqlmatriz(7)= " left join recibos re on re.idrecibo = r.idrecibo "
+	sqlmatriz(8)= " left join comprobantes c on re.idcomproba = c.idcomproba "
+	sqlmatriz(9)= " left join tipocompro t on t.idtipocompro = c.idtipocompro "
+	sqlmatriz(10)= " where re.entidad = "+STR(p_Enti)+" and r.saldo > 0 ) "
+	
+	verror=sqlrun(vconeccionFv,"saldos_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error al Obtener el Stock en Esquemas Asociados ",0+48+0,"Error")
 		* me desconecto	
-		=abreycierracon(vconeccion,"")
-		
-		
-		
-	****************************************************************	
-	** 3- En caso de que le corresponda retenciones, abrir una ventana con las retenciones asociadas, pidiendo ingresar el monto total y una lista para poder elegir las retenciones que quiera aplicar
-	****************************************************************
-
- 	DO FORM selectretenciones WITH v_importeTot ,p_nomTabRes TO v_retorno
-		
- 	
- 	IF v_retorno = .T.
- 	
-	
- 		SELECT &p_nomtabres
- 		GO TOP 
- 		 		
- 	ELSE
- 		MESSAGEBOX("Hubo un problema al intentar aplicar retenciones",0+48+0,"Aplicar retenciones")
- 		RETURN .F.
- 	ENDIF 
-
-	
- ELSE
- 	RETURN .T.
- ENDIF 
-
- 
- 
-RETURN v_retorno
-
-ENDFUNC 
-
-
-
-****************************************************************
-*** FUNCIÓN PARA GENERAR UN COMPROBANTE DE RETENCIÓN SEGÚN LA TABLA ***
-****************************************************************
-** PARÁMETROS: 	p_nomTablaret: Nombre de la tabla donde están los datos para generar el comprobante y en la cuál se retornan los datos restantes
-* La función recibe el nombre de una tabla, la cuál tiene el siguiente formato: (idreten I, pventa I, idcomproba I, numero I, fecha C(8), entidad I, idimpuret I, importe Y, sujarete Y)
-* Donde (idreten, idcomproba, numero) estarán en CERO cuando se esté generando el comprobante. Al Retornar True la función previamente completa los datos faltantes
-****************************************************************
-** RETORNO: Retorna True si se generó correctamente, completando previamente los datos de idreten, idcomproba, numero
-****************************************************************
-
-FUNCTION generarCompRetencion
-PARAMETERS p_nomTablaret
-
-	v_retorno = .F.
-
-
-	if USED(p_nomTablaret) = .F.
-	
-		MESSAGEBOX("No se encuentra la tabla temporal con los datos de la retención a generar", 0+16+0,"Error al generar el comprobante de retención")
-		RETURN .F.
 	ENDIF 
 	
-	comproObjtmp		= CREATEOBJECT('comprobantesClass')
+	SELECT * FROM saldos_sql INTO TABLE &p_tablareto
 	
+	USE IN saldos_sql
+	SELECT &p_tablareto
+	ALTER table &p_tablareto alter COLUMN idregistro i
+	ALTER table &p_tablareto alter COLUMN idcomproba i
+	ALTER table &p_tablareto alter COLUMN fecha c(8)
+	ALTER table &p_tablareto alter COLUMN tabla c(50)
+	ALTER table &p_tablareto alter COLUMN saldo y
+	ALTER table &p_tablareto alter COLUMN opera  i
 	
-	SELECT &p_nomTablaRet
-	GO TOP 
+	USE IN &p_tablareto
 	
-	DO WHILE NOT EOF()
-			
-		v_idretenr = &p_nomTablaRet..idreten
-	
-		IF v_idretenr = 0
-	
+	IF v_cerrar = .t.  THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		* me desconecto	
+		=abreycierracon(vconeccionFv,"")
+	ENDIF 
 
-			v_pventar = &p_nomTablaRet..pventa
-			v_idcomprobar =  comproObjtmp.getidcomprobante("RETENCION")
-		
-			*v_numero  = &p_nomTablaRet..numero
-			v_numeror = maxnumerocom(v_idcomprobar,v_pventar,1) + 1
-
-			v_fechar = &p_nomTablaRet..fecha
-			v_entidadr = &p_nomTablaRet..entidad
-			v_idimpuretr  = &p_nomTablaRet..idimpuret
-			v_importer  = &p_nomTablaRet..importe
-			v_sujareter = &p_nomTablaRet..sujarete
-			
-			* Me conecto a la base de datos *
-				vconeccion=abreycierracon(0,_SYSSCHEMA)	
-
-					
-				
-			p_tipoope     = 'I'
-			p_condicion   = ''
-			v_titulo      = " EL ALTA "
-							
-			DIMENSION lamatrizr(9,2)
-			
-			lamatrizr(1,1) = 'idreten'
-			lamatrizr(1,2) = "0"
-			lamatrizr(2,1) = 'pventa'
-			lamatrizr(2,2) = ALLTRIM(STR(v_pventar))
-			lamatrizr(3,1) = 'idcomproba'
-			lamatrizr(3,2) = ALLTRIM(STR(v_idcomprobar))
-			lamatrizr(4,1) = 'numero'
-			lamatrizr(4,2) = ALLTRIM(STR(v_numeror))
-			lamatrizr(5,1) = 'fecha'
-			lamatrizr(5,2) = "'"+ALLTRIM(v_fechar)+"'"
-			lamatrizr(6,1) = 'entidad'
-			lamatrizr(6,2) = ALLTRIM(STR(v_entidadr))
-			lamatrizr(7,1) = 'idimpuret'
-			lamatrizr(7,2) = ALLTRIM(STR(v_idimpuretr))
-			lamatrizr(8,1) = 'importe'
-			lamatrizr(8,2) = ALLTRIM(STR(v_importer,13,2))
-			lamatrizr(9,1) = 'sujarete'
-			lamatrizr(9,2) = ALLTRIM(STR(v_sujareter,13,2))
-			
-
-			p_tabla     = 'retenciones'
-			p_matriz    = 'lamatrizr'
-			p_conexion  = vconeccionF
-			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de la Localidad "+ALLTRIM(v_cod_loc)+"-"+;
-			                ALLTRIM(thisform.tb_nombre.value),0+48+0,"Error")
-			            * me desconecto	
-				=abreycierracon(vconeccionF,"")    
-			    RETURN v_cod_loc
-			ENDIF 
-			
-			
-			
-			sqlmatriz(1)=" select last_insert_id() as maxid "
-			verror=sqlrun(vconeccionF,"ultimoId")
-			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
-				=abreycierracon(vconeccionF,"")	
-			    RETURN v_idcomproreret
-			ENDIF 
-			SELECT ultimoId
-			GO TOP 
-			v_idcompro_Ultimo = VAL(ultimoId.maxid)
-			USE IN ultimoId
-
-			v_idretenr = v_idcompro_Ultimo
-			
-			SELECT &p_nomTablaRet
-			replace idreten WITH v_idretenr, idcomproba WITH v_idcomprobar, numero WITH v_numeror
-		
-				
-			* me desconecto	
-			=abreycierracon(vconeccionF,"")
-			
-			
-			ENDIF 
-		
-		SELECT &p_nomTablaRet
-		SKIP 1 
-
-	ENDDO
-
-
-	v_retorno = .T.
-	
-
-	RETURN v_retorno
+	RETURN p_tablareto
 ENDFUNC 
 
 
 
 
+
+
+FUNCTION BuscaFunciones
+PARAMETERS P_libreriasprg
+*/ ------------------------------
+*Busca Funciones y arma un listado de todas las funciones definidas en los .prg
+*/--------------------------------
+	v_defa = SYS(5)+'\' 
+	SET DEFAULT TO &v_defa
+
+	v_prgpath = ALLTRIM(GETDIR())
+
+	IF EMPTY(v_prgpath) THEN 
+		SET DEFAULT TO &_SYSESTACION 
+		RETURN "" 
+	ELSE
+		SET default TO &v_prgpath 
+	ENDIF 
+	v_retorno = ALLTRIM(v_prgpath)+'ProcessarPFN.txt'
+
+	IF FILE('ProcessarPFN.txt') THEN 
+		DELETE FILE 'ProcessarPFN.txt' 
+	ENDIF 
+	v_NombreArchi="ProcessarPFN.txt"		
+	H=FCREATE(v_NombreArchi,0)
+	IF H < 0 THEN 
+		MESSAGEBOX("No se pudo CREAR el Archivo de Listado de Funciones ",0+48+0,"Error") 
+		RETURN 
+	ENDIF 
+	
+	ADIR (arrayprg,"*.prg")
+	v_filas=ALEN(arrayprg,1)
+	FOR i = 1 TO v_filas 
+		v_libreria = ALLTRIM(UPPER(arrayprg(i,1)))
+		IF ATC(ALLTRIM(UPPER(arrayprg(i,1))),ALLTRIM(UPPER(P_libreriasprg)))>0 THEN 
+
+			PUNTERO = FOPEN(ALLTRIM(UPPER(arrayprg(i,1))),0)
+			v_comentario = .f.
+			v_comentlinea = 0
+			IF PUNTERO > 0 THEN
+				DO WHILE !FEOF(PUNTERO) 
+					v_LineaLeida = ALLTRIM(FGETS(PUNTERO))
+					IF SUBSTR((ALLTRIM(v_lineaLeida)+'   '),1,3)='*#/' THEN 
+						v_comentario = !v_comentario
+						v_comentlinea = 0
+					ENDIF 
+					IF SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'        '),1,8)="FUNCTION" OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'         '),1,9)="PROCEDURE" OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'         '),1,9)="PARAMET" OR v_comentario ;
+						OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'   '),1,3)="*#/" THEN 
+						IF SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'        '),1,8)="FUNCTION" OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'         '),1,9)="PROCEDURE"  OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'         '),1,7)="PARAMET" THEN 
+						ENDIF 
+						IF v_comentario = .t. OR SUBSTR(ALLTRIM(v_LineaLeida)+'   ',1,3)="*#/" THEN  
+							vpyc = ';;'
+						ELSE
+							vpyc = ';'
+						ENDIF 
+						IF v_comentario = .f. THEN 
+							=FPUTS(H,ALLTRIM(v_libreria)+vpyc+v_LineaLeida)
+						ENDIF 
+						IF v_comentario = .t. AND v_comentlinea <= 30 THEN 
+							=FPUTS(H,ALLTRIM(v_libreria)+vpyc+v_LineaLeida)
+							v_comentlinea = v_comentlinea + 1
+						ENDIF 
+					ENDIF
+				ENDDO
+				=FCLOSE(PUNTERO)
+			ENDIF
+			
+		ENDIF 
+	ENDFOR 
+	
+	=FCLOSE(H)
+
+
+	SET DEFAULT TO &_SYSESTACION 
+
+	RETURN v_retorno 
+ENDFUNC 
+
+
+
+
+
+FUNCTION AplicarCreditos
+PARAMETERS pac_idfactura, pac_credito
+*/ ------------------------------
+* Aplica a la cuota 0 de la factura Seleccionada si la hubiere el crédito
+* disponible en la cuenta, la cuenta de la entidad la busca a partir de la
+* Factura que recibe como parámetro. El Crédito a aplicar lo recibe como parámetro
+* Busca los comprobantes de Recibos o Notas de Credito con Saldo disponible y 
+* Los aplica a partir de la fecha mas vieja en adelante hasta agotar el saldo
+* o cancelar el crédito recibido como parámetro
+* Realiza los vinculos con los comprobantes
+*/--------------------------------
+
+	* Me conecto a la base de datos *
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+	* Obtengo la Entidad de la Factura para calculo de crédito disponible
+		
+	sqlmatriz(1)= " SELECT f.entidad, f.idfactura, f.idcomproba, ifnull(sf.saldof,0.00) as saldof , "
+	sqlmatriz(2)= " ifnull(c.idcuotafc,0) as idcuotafc,ifnull(c.cuota,0) as cuota, "
+	sqlmatriz(3)= " ifnull(sc.saldof,0.00) as saldoc FROM processarmkfc.facturas f "
+	sqlmatriz(4)= "	left join processarmkfc.facturascta c on f.idfactura = c.idfactura "
+	sqlmatriz(5)= "	left join processarmkfc.r_facturasaldo sf on sf.idfactura = f.idfactura "
+	sqlmatriz(6)= "	left join processarmkfc.r_facturasctasaldo sc on sc.idcuotafc = c.idcuotafc "
+	sqlmatriz(7)= "	where f.idfactura = "+ALLTRIM(STR(pac_idfactura))+"  and ifnull(sf.saldof,0.00) > 0 and "
+	sqlmatriz(8)= "	(ifnull(c.idcuotafc,0.00) = 0 or ifnull(sc.saldof,0.00) > 0)  order by c.cuota "
+ 	
+	verror=sqlrun(vconeccionF,"FacturaAp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Entidad para Aplicar el Crédito ",0+48+0,"Error")
+	    RETURN 0
+	ENDIF 
+	
+	* me desconecto	
+	=abreycierracon(vconeccionF,"")
+	
+	SELECT * FROM facturaAp_sql INTO TABLE facturaap
+	SELECT facturaap_sql 
+	USE IN FacturaAp_sql 
+	SELECT Facturaap
+	ALTER table Facturaap alter COLUMN idcuotafc i
+	ALTER table Facturaap alter COLUMN cuota 	 i
+	ALTER table Facturaap add COLUMN   aplicado  y
+	
+	vtabCredito=SaldosEntidad (Facturaap.entidad,"CreEntidad",vconeccionF)
+	IF EMPTY(ALLTRIM(vtabCredito)) THEN 
+		SELECT Facturaap
+		USE IN Facturaap
+		RETURN 
+	ENDIF 
+
+	USE CreEntidad IN 0
+	SELECT *, 0.00 as aplicado FROM creentidad INTO TABLE CreditoEntidad WHERE opera < 0
+	SELECT CreEntidad
+	USE IN CreEntidad
+	
+	SELECT CreditoEntidad
+	
+	*creo una tabla temporaria para cargar las imputaciones de cobros
+	CREATE TABLE cobrosaplicar (idcomproba i, idregipago i, idcomprobf i ,idfactura i, idcuotafc i, imputado y )
+	
+	* Recorro las cuotas o solo la factura para aplicar hasta el crédito pasado como monto a aplicar
+	SELECT Facturaap
+	GO TOP 
+	v_terminarfa = .f. 
+	v_pac_credito = pac_credito
+	
+	DO WHILE (v_pac_credito > 0) AND !v_terminarfa AND  !EOF() && Recorro todas las cuotas de las facturas adeudadas
+		
+		va_idcomprof	= facturaap.idcomproba
+		va_idfactura 	= facturaap.idfactura
+		va_idcuotafc	= facturaap.idcuotafc
+		v_terminarcr = .f.
+		
+		SELECT CreditoEntidad
+		GO TOP 
+		DO WHILE (v_pac_credito > 0) AND !v_terminarcr and !EOF() && Recorro todos los comprobantes con crédito para aplicar
+		
+			va_idcomproba = CreditoEntidad.idcomproba
+			va_idregipago = CreditoEntidad.idregistro
+			va_aplicado	  = CreditoEntidad.aplicado
+			v_deudaap	  = IIF(va_idcuotafc = 0, Facturaap.saldof,Facturaap.saldoc)-Facturaap.aplicado && Saldo adeudado en la Factura o cuota a cancelar
+			v_saldocr	  = CreditoEntidad.saldo-CreditoEntidad.aplicado
+	
+			IF v_saldocr > 0 THEN 		&& si el comprobante tiene saldo para aplicar entonces trata de aplicarlo
+				IF v_deudaap > 0 THEN && Aca tengo saldo disponible y deuda para aplicar 
+					
+					DO CASE 
+						CASE v_deudaap >= v_saldocr && deuda en comprobante >= Saldo disponible para aplicar
+							va_imputado = IIF(v_saldocr<=v_pac_credito,v_saldocr,v_pac_credito) && Aplica todo el saldo disponible en el comprobante o el limite de credito
+							
+						CASE v_deudaap < v_saldocr && deuda en comprobante < Saldo disponible para aplicar
+							va_imputado = IIF(v_deudaap<=v_pac_credito,v_deudaap,v_pac_credito) && Cancela toda la deuda del comprobante o el limite de credito
+					ENDCASE 
+				ELSE	&& la factura a cancelar ya se ha cancelado totalmente
+					va_imputado = 0 
+				ENDIF 
+				
+			ELSE	&& no hay credito en el comprobante para aplicarlo
+				va_imputado = 0
+			ENDIF
+			
+			IF va_imputado > 0 THEN 			 
+				SELECT cobrosaplicar
+												
+				INSERT INTO cobrosaplicar VALUES ( va_idcomproba, va_idregipago, va_idcomprof, va_idfactura, va_idcuotafc, va_imputado )
+				v_pac_credito = v_pac_credito - va_imputado && descuento del credito disponible lo que voy imputando
+				SELECT CreditoEntidad
+				replace aplicado WITH aplicado + va_imputado
+				SELECT facturaap
+				replace aplicado WITH aplicado + va_imputado
+								
+			ENDIF 
+			
+			SELECT CreditoEntidad
+			IF (CreditoEntidad.saldo - CreditoEntidad.aplicado) <= 0 THEN 
+				v_terminarcr = .t. 
+			ENDIF  
+			SKIP
+	
+		ENDDO 
+		
+		SELECT Facturaap
+*!*			IF (IIF(va_idcuotafc = 0, Facturaap.saldof,Facturaap.saldoc)-Facturaap.aplicado) <= 0 THEN 
+*!*				v_terminarfa = .t. 
+*!*			ENDIF  
+
+		SKIP 	
+	ENDDO 
+
+	SELECT facturaap
+	USE 
+	SELECT CreditoEntidad
+	USE 
+	SELECT cobrosaplicar
+	v_canreg = RECCOUNT()
+	USE 
+	IF v_canreg > 0 THEN && si hay cobros para aplicar ejecuto la aplicacion de creditos
+		=GAplicaCobro("cobrosaplicar")
+	ENDIF 
+ENDFUNC 
+
+
+
+
+
+FUNCTION GAplicaCobro
+PARAMETERS pga_tablacobros, p_cone
+*#/---
+* Guarda las Aplicaciones de Recibos o Notas de Crédito a deudas de Facturas}
+* pgu_tablacobros: Tabla con los cobros a aplicar
+* p_cone : Conexión en caso de que esté abierta
+* Recibe como parametro una tabla con todos los campos de la tabla cobros para guardarlos 
+* Una Conexion que si no se indica entonces se abre dentro de la función
+* en la tabla cobros. Guarda y genera el comprobante de vinculos de comprobantes.
+* La tabla recibida puede tener n aplicaciones para insertar.
+* Generará una aplicación para cada registro recibido
+* Formato de la tabla a recibir : .DBF ( idcomproba i, idfactura i, idregipago i, idcuotafc i, imputado y )
+*#/---
+
+	v_cerrarcone = .t.
+	IF TYPE("p_cone") = 'N'  THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		IF p_cone > 0 THEN 
+			vconeccionAP = p_cone
+			v_cerrarcone = .f.
+		ELSE 
+			vconeccionAP = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 
+	ELSE 
+		vconeccionAP = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 	
+
+	USE &pga_tablacobros IN 0
+
+
+	TipoCompGAObj 	= CREATEOBJECT('tiposcomproclass')	
+	v_idNCA			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO A")
+	v_idNCB			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO B")
+	v_idNCC			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO C")
+	RELEASE TipoCompGAObj 
+	
+	
+	SELECT &pga_tablacobros
+	GO TOP 
+	DO WHILE !EOF()
+	
+
+		sqlmatriz(1)= " SELECT c.idcomproba, t.idtipocompro FROM comprobantes c "
+		sqlmatriz(2)=" left join tipocompro t on t.idtipocompro = c.idtipocompro "
+		sqlmatriz(3)=" where c.idcomproba = "+STR(&pga_tablacobros..idcomproba)
+
+		verror=sqlrun(vconeccionAP,"TipoComprobante_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Entidad para Aplicar el Crédito ",0+48+0,"Error")
+		    RETURN 0
+		ENDIF 
+		v_idtipocompro= tipocomprobante_sql.idtipocompro
+		USE IN tipocomprobante_sql
+		SELECT  &pga_tablacobros
+
+
+	*** Registro el cobro para cancelar la factura / ND
+		DIMENSION lamatriz(8,2)
+
+		v_idcobro = maxnumeroidx("idcobro", "I", "cobros",1)
+
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		p_tabla     = 'cobros'
+		p_matriz    = 'lamatriz'
+		p_conexion  = vconeccionAP
+
+		v_cobro_idcomproba	= &pga_tablacobros..idcomproba
+		v_cobro_idfactura	= &pga_tablacobros..idfactura
+		v_cobro_recargo		= 0.00
+		v_cobro_idregipago	= &pga_tablacobros..idregipago
+		v_cobro_idcuotafc	= &pga_tablacobros..idcuotafc
+		v_cobro_imputado	= &pga_tablacobros..imputado
+		v_cobro_saldof 		= 0
+			
+		lamatriz(1,1)='idcobro'
+		lamatriz(1,2)=ALLTRIM(STR(v_idcobro))
+		lamatriz(2,1)='idcomproba'
+		lamatriz(2,2)=ALLTRIM(STR(v_cobro_idcomproba))
+		lamatriz(3,1)='idfactura'
+		lamatriz(3,2)= ALLTRIM(STR(v_cobro_idfactura))
+		lamatriz(4,1)='recargo'
+		lamatriz(4,2)=ALLTRIM(STR(v_cobro_recargo,13,4))
+		lamatriz(5,1)='idregipago'
+		lamatriz(5,2)=ALLTRIM(STR(v_cobro_idregipago))
+		lamatriz(6,1)='idcuotafc'
+		lamatriz(6,2)=ALLTRIM(STR(v_cobro_idcuotafc))
+		lamatriz(7,1)='imputado'
+		lamatriz(7,2)=ALLTRIM(STR(v_cobro_imputado,13,4))
+		lamatriz(8,1)='saldof'
+		lamatriz(8,2)=ALLTRIM(STR(v_cobro_saldof,13,4))				
+		
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")		
+			* me desconecto	
+				=abreycierracon(vconeccionAP,"")
+		    RETURN 
+		ENDIF 
+
+		TipoCompGAObj 	= CREATEOBJECT('tiposcomproclass')	
+		v_idNCA			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO A")
+		v_idNCB			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO B")
+		v_idNCC			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO C")
+		RELEASE TipoCompGAObj 
+			
+		IF (v_idtipocompro = v_idNCA OR v_idtipocompro = v_idNCB OR v_idtipocompro = v_idNCC) THEN 
+			
+			 
+			*** Registro el cobro para cancelar la NC si corresponde 
+				
+				DIMENSION lamatriz(8,2)
+
+				v_idcobro = maxnumeroidx("idcobro", "I", "cobros",1)
+
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+				p_tabla     = 'cobros'
+				p_matriz    = 'lamatriz'
+				p_conexion  = vconeccionAP
+
+
+				v_cobro_idcomproba	= &pga_tablacobros..idcomprobf
+				v_cobro_idfactura	= &pga_tablacobros..idregipago
+				v_cobro_recargo		= 0
+				v_cobro_idregipago	= &pga_tablacobros..idfactura
+				v_cobro_idcuotafc	= 0
+				v_cobro_imputado	= &pga_tablacobros..imputado
+				v_cobro_saldof 		= 0.00
+
+				lamatriz(1,1)='idcobro'
+				lamatriz(1,2)=ALLTRIM(STR(v_idcobro))
+				lamatriz(2,1)='idcomproba'
+				lamatriz(2,2)=ALLTRIM(STR(v_cobro_idcomproba))
+				lamatriz(3,1)='idfactura'
+				lamatriz(3,2)= ALLTRIM(STR(v_cobro_idfactura))
+				lamatriz(4,1)='recargo'
+				lamatriz(4,2)=ALLTRIM(STR(v_cobro_recargo,13,4))
+				lamatriz(5,1)='idregipago'
+				lamatriz(5,2)=ALLTRIM(STR(v_cobro_idregipago))
+				lamatriz(6,1)='idcuotafc'
+				lamatriz(6,2)=ALLTRIM(STR(v_cobro_idcuotafc))
+				lamatriz(7,1)='imputado'
+				lamatriz(7,2)=ALLTRIM(STR(v_cobro_imputado,13,4))
+				lamatriz(8,1)='saldof'
+				lamatriz(8,2)=ALLTRIM(STR(v_cobro_saldof,13,4))		
+						
+			
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+				    			* me desconecto	
+					=abreycierracon(vconeccionAP,"")
+
+				    RETURN 
+				ENDIF 
+
+			ENDIF 
+			
+			
+			
+		* Creo el Comprobante de registro de vinculos 
+
+		reto=VinculoComp('V',&pga_tablacobros..idcomproba,&pga_tablacobros..idregipago, &pga_tablacobros..idfactura,&pga_tablacobros..imputado)
+		
+		SELECT &pga_tablacobros
+		SKIP 
+	ENDDO 
+	USE IN &pga_tablacobros
+	IF v_cerrarcone = .t.  THEN 		
+		=abreycierracon(vconeccionAP,"")
+	ENDIF 
+
+ENDFUNC 

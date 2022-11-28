@@ -1,29 +1,31 @@
 */ PARAMETROS
 *--------------
-*/ Todas las funciones de la libreria reciben 3 parametros
-*/ 		P_idimportap : indice de la tabla importadatosp para localizar el registro que tiene los parametros de ejecución
-*/ 		P_archivo	 : Si la funcion se utiliza para importar datos, en este vendrá el archivo que se importará
-*/ 		P_func		 : Este parametro le indica a la funcion si se debe grabar , eliminar, chequear, etc 
-*/
-*/ RETORNOS de las funciones en la librería
-*/ -----------------------------------------
-*/ Variables que indican el comportamiento de la funcion para comunicar resultados 
-*/ Es necesario para saber si la función se ejecuto correctamente o se produjeron errores
+* Todas las funciones de la libreria reciben 3 parametros
+* 		P_idimportap : indice de la tabla importadatosp para localizar el registro que tiene los parametros de ejecución
+* 		P_archivo	 : Si la funcion se utiliza para importar datos, en este vendrá el archivo que se importará
+* 		P_func		 : Este parametro le indica a la funcion si se debe grabar , eliminar, chequear, etc 
+*
+* RETORNOS de las funciones en la librería
+* -----------------------------------------
+* Variables que indican el comportamiento de la funcion para comunicar resultados 
+* Es necesario para saber si la función se ejecuto correctamente o se produjeron errores
 
-*/ valor a devolver:
-*/   'CHECK'   =  9 : Indica que solo se realiza un chequeo de la existencia de la funcion - retorna 9 si la funcion existe
-*/	 'MUESTRA' =  2 : Muestra los registros Importados
-*/	 'GUARDO'  =  1 : Indica que si se realizó una grabación, esta efectivamente se realizó .
-*/   'NEUTRO'  =  0 : La función no reporto errores y el resultado no afecta en nada la ejecucion de instrucciones siguientes
-*/   'ELIMINO' = -1 : Indica si se pudo eliminar los registros en caso de solicitar la baja
-*/   'ERROR'   = -9 : Indica que la funcion reportó un error en la ejecución 
-*/ IMPORTANTE: Todas las funciones deben ser realizadas teniendo en cuenta al menos los parametros de ingreso y retorno 
-*/ 				Explicados arriba
-*/------------------------------------------------------------------------------------------------------------
+* valor a devolver:
+*   'CHECK'   =  9 : Indica que solo se realiza un chequeo de la existencia de la funcion - retorna 9 si la funcion existe
+*	 'MUESTRA' =  2 : Muestra los registros Importados
+*	 'GUARDO'  =  1 : Indica que si se realizó una grabación, esta efectivamente se realizó .
+*   'NEUTRO'  =  0 : La función no reporto errores y el resultado no afecta en nada la ejecucion de instrucciones siguientes
+*   'ELIMINO' = -1 : Indica si se pudo eliminar los registros en caso de solicitar la baja
+*   'ERROR'   = -9 : Indica que la funcion reportó un error en la ejecución 
+* IMPORTANTE: Todas las funciones deben ser realizadas teniendo en cuenta al menos los parametros de ingreso y retorno 
+* 				Explicados arriba
+*------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
 
-* Función para Intentos de ejecuciones de funciones, devuelve .F. Falso si la función no existe o da error 
 FUNCTION chkfunction
+*/ 
+*Función para Intentos de ejecuciones de funciones, devuelve .F. Falso si la función no existe o da error 
+*/
 	LPARAMETERS pfuncion
 	ON ERROR vfnvalida=.f. 
 	vfnvalida = .t. 
@@ -33,8 +35,10 @@ FUNCTION chkfunction
 	RETURN vfnvalida
 ENDFUNC 
 
-* Funcion para Visualizacion de los datos de la importación Seleccionada, Recibe como parametro el "idimportap"
 FUNCTION Fconsutablas
+*/
+* Funcion para Visualizacion de los datos de la importación Seleccionada, Recibe como parametro el "idimportap"
+*/
 	PARAMETERS paraidimportap, paraformulario, paramodifica
 		IF TYPE('paraformulario')<>'C' THEN 
 			paraformulario = 'consultatablas'
@@ -701,6 +705,12 @@ FUNCTION CargaClaro
 */**************************************************************
 */**************************************************************
 	IF p_func = 1 then && 1- Carga de Archivo de CLARO -
+		
+		IF EMPTY(ALLTRIM(p_archivo)) OR ALLTRIM(p_archivo)="Seleccione Archivo ..." THEN 
+			=CargaClaro(0,"",3)
+			p_archivo = _SYSESTACION+"\claroexpo.dbf"
+		ENDIF 
+			
 		p_archivo = alltrim(p_archivo)
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		sqlmatriz(1)=" select * from factclaro where idimportap ="+STR(p_idimportap)
@@ -764,6 +774,7 @@ FUNCTION CargaClaro
 
 		ENDIF 
 		USE IN claropmax_sql
+
 	
 		SELECT claro_sql
 		GO TOP 
@@ -832,6 +843,7 @@ FUNCTION CargaClaro
 						impeq n(13,2), peq n(13,2), teq n(13,2), ;
 						varios n(13,2), pvarios n(13,2), tvarios n(13,2), tclaro n(13,2), ;
 						total n(13,2), nroreg i, periodo i, anio i, zona i, idregistro i)	
+
 			SELECT claro00		
 			APPEND FROM &lcPath 
 			
@@ -1039,6 +1051,7 @@ FUNCTION CargaClaro
 		
 		SELECT claro
 		GO TOP 
+
 		
 		DO WHILE !EOF()
 			lamatriz(1,1) = 'bocanumero'		
@@ -1151,6 +1164,39 @@ FUNCTION CargaClaro
 	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
 		=fconsutablas(p_idimportap,'consultaclaro',.T.)
 	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+*/ && 3- Exporta los datos de mediciones de la ultima facturación
+	IF p_func = 3 THEN && Exporta los datos de la ultima facturacion a una tabla .dbf
+
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		sqlmatriz(1)=" select MAX(idimportap) as idimportap from factclaro "
+		verror=sqlrun(vconeccionF,"maxclaro_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la seleccion del Maximo idimportap ... ",0+48+0,"Error")
+			=abreycierracon(vconeccionF,"")	
+		    RETURN 0
+		ENDIF
+		v_ultidimportap = maxclaro_sql.idimportap
+		USE IN maxclaro_sql
+		
+		sqlmatriz(1)=" select * from factclaro where idimportap ="+STR(v_ultidimportap)
+		verror=sqlrun(vconeccionF,"claroexpo_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la seleccion de datos de Claro... ",0+48+0,"Error")
+			=abreycierracon(vconeccionF,"")	
+		    RETURN 0
+		ENDIF
+		=abreycierracon(vconeccionF,"")	
+
+
+		SELECT bocanumero as telefono, usuario , plan , abono , pabono , tabono , impserv , pserv , tserv , cargos , pcargos , tcargos , ;
+					minaire , minaireex , impaire , paire , taire , minldn , impldn , pldn , tldn , minldi , impldi , pldi , tldi , ;
+					minldim , impldim , pldim , tldim , datau , dataimp , pdata , tdata , impeq , peq , teq , ;
+					varios , pvarios , tvarios , tclaro, total  FROM claroexpo_sql INTO TABLE claroexpo 
+					
+		USE IN claroexpo_sql
+		USE IN claroexpo 
+	ENDIF && 2- Exporta los datos de mediciones de la ultima facturación
 */**************************************************************
 	lreto = p_func
 	RETURN lreto
