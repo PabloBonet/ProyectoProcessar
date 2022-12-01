@@ -1,5 +1,5 @@
 
-****************************************************************
+*#/****************************
 *** FUNCIÓN PARA EL CALCULO DEL MONTO A RETENER DE GANANCIAS ***
 ****************************************************************
 ** PARÁMETROS: 	P_idimpuret: id impuesto de retención
@@ -10,7 +10,7 @@
 * La función recibe los parametros indicados y en función de eso y las tablas de retenciones calcula cuanto debe retenerse para la entidad y el importe dado
 ****************************************************************
 ** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
-****************************************************************
+*#/****************************
 
 FUNCTION RET_GANANCIAS_IFN
 PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
@@ -440,7 +440,7 @@ ENDFUNC
 
 
 
-****************************************************************
+*#/****************************
 *** FUNCIÓN PARA EL CALCULO DEL MONTO A RETENER DE IIBB ***
 ****************************************************************
 ** PARÁMETROS: 	P_idimpuret: id impuesto de retención
@@ -450,7 +450,7 @@ ENDFUNC
 * La función recibe los parametros indicados y en función de eso y las tablas de retenciones calcula cuanto debe retenerse para la entidad y el importe dado
 ****************************************************************
 ** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
-****************************************************************
+*#/****************************
 
 FUNCTION RET_IIBB_IFN
 PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes

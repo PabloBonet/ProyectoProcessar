@@ -5130,32 +5130,110 @@ PARAMETERS p_idremito, p_esElectronica
 
 ENDFUNC 
 
+*#/****************************
+* FUNCIÓN PARA IMPRIMIR LOS COMPROBANTES DE RETENCIONES DADO UNA ORDEN DE PAGO
+* PARAMETROS: P_idpago: Recibe como parámetro el ID de la orden de pago
+* La función imprime los comprobantes de retención según los parametros
+*#/****************************
+FUNCTION imprimirRetenciones
+PARAMETERS P_idpago, p_conexion
+
+	vconeccionF= 0
+	IF TYPE('p_conexion') = 'L'
+	
+		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+	ELSE
+	
+		vconeccionF=P_conexion
+	ENDIF 
+
+		tipoComproObjtmp 	= CREATEOBJECT('tiposcomproclass')
+
+
+		v_idtipoCompRet = tipoComproObjtmp.getIdtipocompro("RETENCION")
+		
+		
+		sqlmatriz(1)= " select l.idlinkcomp, l.idcomprobaa as idcompag, l.idregistroa as idregpag, l.idcomprobab as idcompret, l.idregistrob as idregret "
+		sqlmatriz(2)= " from comprobantes c left join linkcompro l on c.idcomproba = l.idcomprobab "
+		sqlmatriz(3)=" where c.idtipocompro = "+ALLTRIM(STR(v_idtipoCompRet))+ " and l.idregistroa = " +ALLTRIM(STR(P_idpago))
+		
+			verror=sqlrun(vconeccionF,"retAimp_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de las retenciones a imprimir ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+			
+	
+		SELECT retAimp_sql
+		GO TOP 
+		
+		DO WHILE NOT EOF()
+		
+			
+			v_idretencion = retAimp_sql.idregret 
+			
+			
+			imprimirRetencion(v_idretencion)
+			
+			
+			SELECT retAimp_Sql
+			SKIP 1
+
+
+		ENDDO
+
+
+
+ENDFUNC 
+
+
 
 *#/****************************
 * FUNCIÓN PARA IMPRIMIR EL COMPROBANTE DE RENTECIÓN
 * PARAMETROS: P_idretencion: Recibe como parámetro el ID de la retención ha imprimir
-* La función Genera un comprobante de retención según los parametros
+* La función imprime un comprobante de retención según los parametros
 *#/****************************
 FUNCTION imprimirRetencion
-PARAMETERS p_idretencion
+PARAMETERS p_idretencion, p_conexion
+
+	vconeccionF= 0
+	IF TYPE('p_conexion') = 'L'
+	
+		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+	ELSE
+	
+		vconeccionF=P_conexion
+	ENDIF 
 
 
 	v_idreten  = p_idretencion
 	
 	IF v_idreten > 0
 		
-		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+		*vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
 		
 		*** Busco los datos del recibo
 					
-				
-		
-			sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, i.idimpuret, i.nombre,tp.detalle as tipopago, cb.codcuenta "
-			sqlmatriz(2)=" from retenciones r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba "
-			sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom " 
-			sqlmatriz(4)=" left join entidades e on r.entidad = e.entidad left join impuestosret i on r.idimpuret = i.idimpuret "
-*!*				sqlmatriz(5)=" left join tipopagos tp on dc.idtipopago = tp.idtipopago left join cajabancos cb on dc.idcuenta = cb.idcuenta "
-			sqlmatriz(6)=" where r.idreten = "+ ALLTRIM(STR(v_idreten))
+*!*					
+*!*			
+*!*				sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, i.idimpuret, i.nombre,tp.detalle as tipopago, cb.codcuenta "
+*!*				sqlmatriz(2)=" from retenciones r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba "
+*!*				sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom " 
+*!*				sqlmatriz(4)=" left join entidades e on r.entidad = e.entidad left join impuestosret i on r.idimpuret = i.idimpuret "
+*!*	*!*				sqlmatriz(5)=" left join tipopagos tp on dc.idtipopago = tp.idtipopago left join cajabancos cb on dc.idcuenta = cb.idcuenta "
+*!*				sqlmatriz(6)=" where r.idreten = "+ ALLTRIM(STR(v_idreten))
+
+
+
+
+		sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, ifnull(a.codigo,'') as tipcomafip, e.cuit, i.idimpuret, i.detalle as nomimp, p.idpago, l.idcomprobaa  as idcomppag"
+		sqlmatriz(2)=" from retenciones r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba "
+		sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom "
+		sqlmatriz(4)=" left join entidades e on r.entidad = e.entidad left join impuretencion i on r.idimpuret = i.idimpuret "
+		sqlmatriz(5)=" left join linkcompro l on r.idcomproba = l.idcomprobab and r.idreten = l.idregistrob left join pagosprov p on l.idregistroa = p.idpago "
+		sqlmatriz(6)=" where r.idreten = "+ ALLTRIM(STR(v_idreten))
+
+
 
 			verror=sqlrun(vconeccionF,"retenciones_sql")
 			IF verror=.f.  
@@ -5177,9 +5255,27 @@ PARAMETERS p_idretencion
 					
 			SELECT retenciones
 			GO TOP 
-			v_idcomproba = retenciones.idcomproba
+			v_idcomprobaret = retenciones.idcomproba
 			
-			DO FORM reporteform WITH "retenciones","retencionescr",v_idcomproba
+			v_idpago = retenciones.idpago
+			v_idcomprobapag = retenciones.idcomppag
+			*** Obtengo la orden de pago asociada junto con los comprobantes pagados ** 
+			
+			
+			sqlmatriz(1)= " select * from pagosprovfc pf left join factuprove f on pf.idfactprove = f.idfactprove and pf.idcomproba = f.idcomproba "
+			sqlmatriz(2)= " where pf.idpago = "+ALLTRIM(STR(v_idpago)) +" and pf.idcomproba = "+ALLTRIM(STR(v_idcomprobapag))
+			
+			verror=sqlrun(vconeccionF,"pagosprovfc_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la Retención",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+			
+			
+			SELECT * FROM pagosprovfc_sql INTO TABLE pagosprovfc
+			
+			
+			DO FORM reporteform WITH "retenciones;pagosprovfc","retencionescr;pagosprovfccr",v_idcomprobaret
 			
 		ELSE
 			MESSAGEBOX("Error al cargar la Retención para imprimir",0+48+0,"Error al cargar la Retención")
@@ -7754,6 +7850,8 @@ PARAMETERS p_idpagoProv
 		ENDIF 
 		
 		
+		
+	
 
 	ELSE
 		MESSAGEBOX("NO se pudo recuperar el pago con ID <= 0",0+16,"Error al imprimir")
