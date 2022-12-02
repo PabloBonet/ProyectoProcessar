@@ -5243,34 +5243,6 @@ PARAMETERS p_idretencion, p_conexion
 			SELECT * FROM retenciones_sql INTO TABLE retenciones
 			SELECT retenciones
 			GO TOP 
-			
-			*** Convierto el importe en letras ***
-			
-			ALTER table retenciones ADD COLUMN impstr C(250)
-			
-			SELECT retenciones
-			GO TOP 
-			
-			DO WHILE NOT EOF()
-			
-			
-				v_importe = retenciones.importe
-			
-				v_strImporte	= enletras (v_importe)
-			
-				SELECT retenciones
-				replace impstr WITH ALLTRIM(v_strImporte)
-			
-				SELECT retenciones 
-				
-				SKIP 1
-
-			ENDDO
-			
-			
-			SELECT retenciones
-			GO TOP 
-			
 			v_idcomprobaret = retenciones.idcomproba
 			DO FORM reporteform WITH "retenciones","retencionescr",v_idcomprobaret
 				

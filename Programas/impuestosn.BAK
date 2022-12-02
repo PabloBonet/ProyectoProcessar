@@ -406,9 +406,8 @@ SELECT totpagos
 				
 				v_idtipopago = impureten.idtipopago
 				v_descrip = ALLTRIM(impureten.detalle)+ " - " + ALLTRIM(impureten.descescala)
-				v_idafipesc = impureten.idafipesc
-				
-				INSERT INTO &p_nombretabRes (entidad, idimpuret,impTotal,impARet,baseimpo,razon,idtipopago,descrip,totpagomes,totretmes,sujarete,idafipesc) VALUES (v_entidad, v_idimpuret,v_impTotal,v_impARet,v_baseImponible,v_razon,v_idtipopago,v_descrip,v_totpagomes,v_totretmes,v_aretener,v_idafipesc)
+		
+				INSERT INTO &p_nombretabRes (entidad, idimpuret,impTotal,impARet,baseimpo,razon,idtipopago,descrip,totpagomes,totretmes,sujarete) VALUES (v_entidad, v_idimpuret,v_impTotal,v_impARet,v_baseImponible,v_razon,v_idtipopago,v_descrip,v_totpagomes,v_totretmes,v_aretener)
 
 			
 			
