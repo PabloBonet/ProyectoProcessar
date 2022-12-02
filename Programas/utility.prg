@@ -18284,10 +18284,6 @@ PARAMETERS p_Enti, p_tablareto, p_cone
 		RETURN ""
 	ENDIF 
 
-*!*		eje = " DELETE FILE "+ALLTRIM(p_tablareto)+".dbf"
-*!*		&eje 
-*!*		EJE = " CREATE TABLE "+p_tablareto+" ( idregistro i, idcomproba, fecha c(8), tabla c(100), saldo y, opera i  ) "
-*!*		&EJE
 	v_cerrar = .t.
 	IF TYPE("p_cone") = 'N'  THEN && Se le Paso la Conexion entonces no abre ni cierra 
 		IF p_cone > 0 THEN 
@@ -18301,17 +18297,23 @@ PARAMETERS p_Enti, p_tablareto, p_cone
 	ENDIF 	
 
 
-	sqlmatriz(1)= " select f.idfactura as idregistro, f.idcomproba, f.fecha,  c.tabla, r.saldof as saldo , t.opera from r_facturasaldo r "
-	sqlmatriz(2)= " left join facturas f on f.idfactura = r.idfactura "
-	sqlmatriz(3)= " left join comprobantes c on f.idcomproba = c.idcomproba "
-	sqlmatriz(4)= " left join tipocompro t on t.idtipocompro = c.idtipocompro "
-	sqlmatriz(5)= " where f.entidad = "+STR(p_Enti)+" and r.saldof > 0  "
+	sqlmatriz(1)= " select f.idfactura as idregistro, f.idcomproba, f.fecha,  c.tabla, r.saldof as saldo , t.opera, "
+	sqlmatriz(2)= " p.puntov, f.tipo, f.numero, f.entidad, f.apellido, f.nombre, f.total, c.comprobante as comproba "
+	sqlmatriz(3)= " from r_facturasaldo r "
+	sqlmatriz(4)= " left join facturas f on f.idfactura = r.idfactura "
+	sqlmatriz(5)= " left join comprobantes c on f.idcomproba = c.idcomproba "
+	sqlmatriz(6)= " left join tipocompro t on t.idtipocompro = c.idtipocompro "
+	sqlmatriz(7)= " left join puntosventa p on p.pventa = f.pventa "
+	sqlmatriz(8)= " where f.entidad = "+STR(p_Enti)+" and r.saldof > 0  "
 	
-	sqlmatriz(6)= " union ( select re.idrecibo as idregistro, re.idcomproba, re.fecha, c.tabla, r.saldo as saldo , t.opera from r_recibossaldo r "
-	sqlmatriz(7)= " left join recibos re on re.idrecibo = r.idrecibo "
-	sqlmatriz(8)= " left join comprobantes c on re.idcomproba = c.idcomproba "
-	sqlmatriz(9)= " left join tipocompro t on t.idtipocompro = c.idtipocompro "
-	sqlmatriz(10)= " where re.entidad = "+STR(p_Enti)+" and r.saldo > 0 ) "
+	sqlmatriz(9)= " union ( select re.idrecibo as idregistro, re.idcomproba, re.fecha, c.tabla, r.saldo as saldo , t.opera, "
+	sqlmatriz(10)= " p.puntov, 'X' as tipo, re.numero, re.entidad, re.apellido, re.nombre, re.importe as total, c.comprobante as comproba "
+	sqlmatriz(11)= " from r_recibossaldo r "
+	sqlmatriz(12)= " left join recibos re on re.idrecibo = r.idrecibo "
+	sqlmatriz(13)= " left join comprobantes c on re.idcomproba = c.idcomproba "
+	sqlmatriz(14)= " left join tipocompro t on t.idtipocompro = c.idtipocompro "
+	sqlmatriz(15)= " left join puntosventa p on p.pventa = re.pventa "
+	sqlmatriz(16)= " where re.entidad = "+STR(p_Enti)+" and r.saldo > 0 ) "
 	
 	verror=sqlrun(vconeccionFv,"saldos_sql")
 	IF verror=.f.  
@@ -18319,7 +18321,7 @@ PARAMETERS p_Enti, p_tablareto, p_cone
 		* me desconecto	
 	ENDIF 
 	
-	SELECT * FROM saldos_sql INTO TABLE &p_tablareto
+	SELECT * FROM saldos_sql INTO TABLE &p_tablareto ORDER BY fecha, numero 
 	
 	USE IN saldos_sql
 	SELECT &p_tablareto
@@ -18328,7 +18330,7 @@ PARAMETERS p_Enti, p_tablareto, p_cone
 	ALTER table &p_tablareto alter COLUMN fecha c(8)
 	ALTER table &p_tablareto alter COLUMN tabla c(50)
 	ALTER table &p_tablareto alter COLUMN saldo y
-	ALTER table &p_tablareto alter COLUMN opera  i
+	ALTER table &p_tablareto alter COLUMN opera i
 	
 	USE IN &p_tablareto
 	
