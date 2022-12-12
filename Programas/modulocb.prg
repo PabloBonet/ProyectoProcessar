@@ -5,17 +5,17 @@
 *********************************************************************
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION ImportarComprobantes
+	PARAMETERS p_idcbasociada, p_archivo,p_tablaComprobantes
+*#/----------------------------------------
 */ 	Importación de comprobantes desde archivo de intercambio (Archivo de envio .ENV)
 ** 	Funcion: ImportarComprobantes 
 * 	Parametros: 
 *		P_idcbasociada: ID de la entidad asociada (Emisor del archivo de envio .ENV)
 *		p_archivo: Path completo con el nombre del archivo .ENV
 *	Retorno: Retorna 1 si se importó correctamente, 0 en otro caso
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION ImportarComprobantes
-	PARAMETERS p_idcbasociada, p_archivo,p_tablaComprobantes
+*#/----------------------------------------
 
 		IF TYPE('p_idcbasociada') != 'N'
 			=messagebox("El ID de la entidad asociada no es válido",16,"Error al Importar comprobantes")
@@ -261,16 +261,16 @@ FUNCTION ImportarComprobantes
 
 ENDFUNC  
 
-*/------------------------------------------------------------------------------------------------------------
+FUNCTION buscarCompCB
+PARAMETERS p_codBarra,P_nombreTabla
+*#/----------------------------------------
 */ 	Busca un comprobante por el código de barra
 ** 	Funcion: buscaCompCB
 * 	Parametros: 
 *		p_codBarra: Código de barras para buscar el comprobante
 *		p_NombreTabla: Nombre de la tabla donde se van a devolver los datos del comprobante buscado
 *	Retorno: Retorna True si se encontró el comprobante, False en otro caso
-*/------------------------------------------------------------------------------------------------------------
-FUNCTION buscarCompCB
-PARAMETERS p_codBarra,P_nombreTabla
+*#/----------------------------------------
 
 	v_encontrado = .F.
 
@@ -327,7 +327,9 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+FUNCTION buscarCompESC
+PARAMETERS p_codEnt,p_subCodEnt,p_idcomp,P_nombreTabla
+*#/----------------------------------------
 */ 	Busca un comprobante por los codigos de empresa,subcodigo y idcomp
 ** 	Funcion: buscaCompESC
 * 	Parametros: 
@@ -336,9 +338,7 @@ ENDFUNC
 *		p_idcomp: ID del comprobante asociado a la entidad
 *		p_NombreTabla: Nombre de la tabla donde se van a devolver los datos del comprobante buscado
 *	Retorno: Retorna True si se encontró el comprobante, False en otro caso
-*/------------------------------------------------------------------------------------------------------------
-FUNCTION buscarCompESC
-PARAMETERS p_codEnt,p_subCodEnt,p_idcomp,P_nombreTabla
+*#/----------------------------------------
 
 	v_encontrado = .F.
 
@@ -404,7 +404,9 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+FUNCTION listaCompESE
+PARAMETERS p_codEmp,p_subCodEmp,p_entidad,P_nombreTabla
+*#/----------------------------------------
 */ Lista todos los comprobantes asociados a empresa,subcodigo y entidad
 ** 	Funcion: listaCompESE
 * 	Parametros: 
@@ -413,9 +415,7 @@ ENDFUNC
 *		p_entidad: ID de la entidad asociada
 *		p_NombreTabla: Nombre de la tabla donde se van a devolver los datos de los comprobantes buscados
 *	Retorno: Retorna True si se encontró comprobantes, False en otro caso
-*/------------------------------------------------------------------------------------------------------------
-FUNCTION listaCompESE
-PARAMETERS p_codEmp,p_subCodEmp,p_entidad,P_nombreTabla
+*#/----------------------------------------
 
 	v_encontrado = .F.
 
@@ -480,13 +480,13 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+FUNCTION obtenerMaxLoteCobro
+*#/----------------------------------------
 */ 	Obtiene el Lote de cobro máximo utilizado
 ** 	Funcion: obtenerMaxLoteCobro
 * 	
 *	Retorno: Retorna el Lote máximo, en caso de no haber lotes de cobranza retorna cero. Retorna -1 en caso de error
-*/------------------------------------------------------------------------------------------------------------
-FUNCTION obtenerMaxLoteCobro
+*#/----------------------------------------
 
 	v_loteMaxCobro = 0
 	
@@ -524,15 +524,15 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION calculaSecuenciaMax
+PARAMETERS p_idcbasociado
+*#/----------------------------------------
 */ 	Obtiene el Máximo valor de secuencia utilizada por la entidad pasada como parámetro
 ** 	Funcion: calculaSecueciaMax
 * 	
 *	Retorno: Retorna el número de Secuencia Máxima. Retorna -1 en caso de error
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION calculaSecuenciaMax
-PARAMETERS p_idcbasociado
+*#/----------------------------------------
 
 IF p_idcbasociado  > 0
 	** Me conecto
@@ -564,15 +564,15 @@ ENDIF
 ENDFUNC 
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION calculaSecMaxCobrador
+PARAMETERS p_idcobrador
+*#/----------------------------------------
 */ 	Obtiene el Máximo valor de secuencia utilizada por el cobrador pasado como parámetro
 ** 	Funcion: calculaSecueciaMaxCobrador
 * 	
 *	Retorno: Retorna el número de Secuencia Máxima. Retorna -1 en caso de error
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION calculaSecMaxCobrador
-PARAMETERS p_idcobrador
+*#/----------------------------------------
 
 IF p_idcobrador  > 0
 	** Me conecto
@@ -604,15 +604,15 @@ ENDIF
 ENDFUNC 
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION calculaSecuenciaMaxCob
+PARAMETERS p_idcbcobrador
+*#/----------------------------------------
 */ 	Obtiene el Máximo valor de secuencia utilizada por el cobrador pasada como parámetro
 ** 	Funcion: calculaSecueciaMaxCob
 * 	
 *	Retorno: Retorna el número de Secuencia Máxima. Retorna -1 en caso de error
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION calculaSecuenciaMaxCob
-PARAMETERS p_idcbcobrador
+*#/----------------------------------------
 
 IF p_idcbcobrador  > 0
 	** Me conecto
@@ -645,15 +645,15 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+FUNCTION calculaSecuenciaMaxImp
+PARAMETERS p_idcbasociada
+*#/----------------------------------------
 */ 	Obtiene el Máximo valor de secuencia utilizada en la importación de comprobantes por el cobrador pasada como parámetro
 ** 	Funcion: calculaSecueciaMaxCob
 * 	
 *	Retorno: Retorna el número de Secuencia Máxima. Retorna -1 en caso de error
-*/------------------------------------------------------------------------------------------------------------
+*#/----------------------------------------
 
-FUNCTION calculaSecuenciaMaxImp
-PARAMETERS p_idcbasociada
 
 IF p_idcbasociada > 0
 	** Me conecto
@@ -684,14 +684,16 @@ ELSE
 ENDIF 
 
 ENDFUNC 
-*/------------------------------------------------------------------------------------------------------------
+
+
+
+FUNCTION calculaLoteMax
+*#/----------------------------------------
 */ 	Obtiene el Máximo valor de secuencia utilizada para los lotes de cobros
 ** 	Funcion: calculaLoteMax
 * 	
 *	Retorno: Retorna el número de Secuencia Máxima. Retorna -1 en caso de error
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION calculaLoteMax
+*#/----------------------------------------
 
 	** Me conecto
 	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
@@ -719,14 +721,14 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION calculaLoteMaxImp
+*#/----------------------------------------
 */ 	Obtiene el Máximo valor de lote de importación
 ** 	Funcion: calculaLoteMaxImp
 * 	
 *	Retorno: Retorna el número de Lote Máximo. Retorna -1 en caso de error
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION calculaLoteMaxImp
+*#/----------------------------------------
 
 	** Me conecto
 	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
@@ -754,7 +756,10 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION ExportarCobro
+	PARAMETERS p_idcbasociada, p_archivo,p_tablaCobros
+*#/----------------------------------------
 */ 	Exportación de cobros al archivo de intercambio (Archivo de retorno .RET)
 ** 	Funcion: ExportarCobro
 * 	Parametros: 
@@ -762,10 +767,7 @@ ENDFUNC
 *		p_archivo: Path completo con el nombre del archivo .RET
 *		p_tablaCobros: tabla con los datos de los cobros a exportar
 *	Retorno: Retorna 1 si se exportó correctamente, 0 en otro caso
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION ExportarCobro
-	PARAMETERS p_idcbasociada, p_archivo,p_tablaCobros
+*#/----------------------------------------
 
 		IF TYPE('p_idcbasociada') != 'N'
 			=messagebox("El ID de la entidad asociada no es válido",16,"Error al Exportar los cobros")
@@ -1162,143 +1164,21 @@ ENDFUNC
 		
 		
 		
-*!*			
-*!*			
-*!*			
-*!*					
-*!*			v_sentenciaCrea = "create table "+ALLTRIM(p_tablaComprobantes)+ " (ident I, narchivo C(100), lote I, eperiodo C(20), esecuencia C(10), comproba C(100),idcomp I, total1 Y, vence1 C(8),total2 Y, vence2 C(8), total3 Y, vence3 C(8), bc C(254))"
-*!*			&v_sentenciaCrea
-*!*		
-*!*			** Recorro el archivo de envio, linea por linea **	
-*!*			DO WHILE NOT FEOF(v_punteroArcEnv) && Finaliza cuando encuentra una linea vacia
-*!*					v_linea = ALLTRIM(FGETS(v_punteroArcEnv))
-*!*			MESSAGEBOX(v_linea)			
-*!*					IF EMPTY(v_linea) = .F.
-*!*						v_tamLinea = LEN(v_linea)
-*!*																
-*!*						ALINES(v_longitud,v_elong,'-')
-*!*									
-*!*						v_tamCodigo = (VAL(v_longitud(2))) - (VAL(v_longitud(1))) + 1 
-*!*						
-*!*						IF v_tamCodigo > v_tamLinea && COMPRUEBO LONGITUD DEL CODIGO
-*!*						
-*!*							MESSAGEBOX("Codigo erroneo. La longitud del codigo ("+ALLTRIM(STR(v_tamCodigo))+") es mayor al del registro en el archivo ("+ALLTRIM(STR(v_tamlinea))+")")
-*!*							RETURN 0
-*!*							&& CODIGO ERRONEO
-*!*						ELSE
-*!*							&& CODIGO CORRECTO
-*!*													
-*!*							** Código Empresa/Ente **
-*!*							ALINES(ARR_eempresaid,v_eempresaid,'-')
-*!*							COD_eempresaid = SUBSTR(v_linea,VAL(ARR_eempresaid(1)),VAL(ARR_eempresaid(2)))
-*!*							
-*!*							** Código de secuencia de envío **
-*!*							ALINES(ARR_eesecuencia,v_eesecuencia,'-')
-*!*							COD_eesecuencia = SUBSTR(v_linea,VAL(ARR_eesecuencia(1)),VAL(ARR_eesecuencia(2)))
-*!*							
-*!*							IF ALLTRIM(v_empresaid) == ALLTRIM(COD_eempresaid) AND ALLTRIM(v_secArc) == ALLTRIM(COD_eesecuencia) 
-*!*								
-*!*								** Período de Facturación **
-*!*								ALINES(ARR_eperiodo,v_eperiodo,'-')
-*!*								COD_eperiodo = SUBSTR(v_linea,VAL(ARR_eperiodo(1)),VAL(ARR_eperiodo(2)))
-
-*!*								** Código de Barra Completo **
-*!*								ALINES(ARR_ebc,v_ebc,'-')
-*!*								COD_ebc = SUBSTR(v_linea,VAL(ARR_ebc(1)),VAL(ARR_ebc(2)))
-
-*!*								** Código de Entidad (en código de barra) **
-*!*								ALINES(ARR_ebceid,v_ebceid,'-')
-*!*								COD_ebceid = SUBSTR(v_linea,VAL(ARR_ebceid(1)),VAL(ARR_ebceid(2)))
-
-*!*								** Subcódigo de Entidad (en código de barra) **
-*!*								ALINES(ARR_ebcsid,v_ebcsid,'-')
-*!*								COD_ebcsid = SUBSTR(v_linea,VAL(ARR_ebcsid(1)),VAL(ARR_ebcsid(2)))
-*!*							
-*!*								** Código del comprobante (en código de barra) **
-*!*								ALINES(ARR_ebcidcomp,v_ebcidcomp,'-')
-*!*								COD_ebcidcomp = SUBSTR(v_linea,VAL(ARR_ebcidcomp(1)),VAL(ARR_ebcidcomp(2)))
-*!*								
-*!*								** Convierto el idcomprobante a numero **
-*!*								NUM_ebcidcomp = VAL(COD_ebcidcomp)
-*!*								** Fecha del primer vencimiento (en código de barra) **
-*!*								ALINES(ARR_ebcvence1,v_ebcvence1,'-')
-*!*								COD_ebcvence1 = SUBSTR(v_linea,VAL(ARR_ebcvence1(1)),VAL(ARR_ebcvence1(2)))
-*!*								
-*!*								** Importe del primer vencimiento (en código de barra) **
-*!*								ALINES(ARR_ebctotal1,v_ebctotal1,'-')
-*!*								COD_ebctotal1 = SUBSTR(v_linea,VAL(ARR_ebctotal1(1)),VAL(ARR_ebctotal1(2)))
-*!*															
-*!*								** Convierto COD_ebctotal1 a float **
-*!*								v_NUM_entt1 = VAL(COD_ebctotal1)
-*!*								NUM_ebctotal1 = (v_NUM_entt1/100)
-*!*								
-*!*								** Fecha del segundo vencimiento (en código de barra) **
-*!*								ALINES(ARR_ebcvence2,v_ebcvence2,'-')
-*!*								COD_ebcvence2 = SUBSTR(v_linea,VAL(ARR_ebcvence2(1)),VAL(ARR_ebcvence2(2)))
-*!*								
-*!*								** Importe del segundo vencimiento (en código de barra) **
-*!*								ALINES(ARR_ebctotal2,v_ebctotal2,'-')
-*!*								COD_ebctotal2 = SUBSTR(v_linea,VAL(ARR_ebctotal2(1)),VAL(ARR_ebctotal2(2)))
-*!*								
-*!*								** Convierto COD_ebctotal1 a float **
-*!*								v_NUM_entt2 = VAL(COD_ebctotal2)
-*!*								NUM_ebctotal2 = (v_NUM_entt2/100)
-*!*								
-*!*								** Fecha del tercer vencimiento (en código de barra) **
-*!*								ALINES(ARR_ebcvence3,v_ebcvence3,'-')
-*!*								COD_ebcvence3 = SUBSTR(v_linea,VAL(ARR_ebcvence3(1)),VAL(ARR_ebcvence3(2)))
-*!*								
-*!*								** Importe del tercer vencimiento (en código de barra) **
-*!*								ALINES(ARR_ebctotal3,v_ebctotal3,'-')
-*!*								COD_ebctotal3 = SUBSTR(v_linea,VAL(ARR_ebctotal3(1)),VAL(ARR_ebctotal3(2)))
-*!*								
-*!*								** Convierto COD_ebctotal1 a float **
-*!*								v_NUM_entt3 = VAL(COD_ebctotal3)
-*!*								NUM_ebctotal3 = (v_NUM_entt3/100)
-*!*								
-*!*								
-*!*								v_lote = 0
-*!*								v_comprobante = ""
-*!*																										
-*!*								v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaComprobantes)+ " (ident, narchivo, lote, eperiodo, esecuencia, comproba,idcomp, total1, vence1,total2, vence2, total3, vence3, bc) "
-*!*								v_sentenciaIns2 = " values ("+ALLTRIM(STR(p_idcbasociada))+",'"+ALLTRIM(v_nombArchivoEnv)+"',"+ALLTRIM(STR(v_lote))+",'"+ALLTRIM(COD_eperiodo)+"','"+ALLTRIM(COD_eesecuencia)+"','"+ALLTRIM(v_comprobante)+"',"+ALLTRIM(STR(NUM_ebcidcomp))+","
-*!*								v_sentenciaIns3 = ALLTRIM(STR(NUM_ebctotal1,13,2))+",'"+ALLTRIM(COD_ebcvence1)+"',"+ALLTRIM(STR(NUM_ebctotal2,13,2))+",'"+ALLTRIM(COD_ebcvence2)+"',"+ALLTRIM(STR(NUM_ebctotal3,13,2))+",'"+ALLTRIM(COD_ebcvence3)+"','"+alltrim(COD_ebc)+"')"
-*!*								
-
-*!*								v_sentenciaIns = v_sentenciaIns1+v_sentenciaIns2+v_sentenciaIns3
-*!*								
-*!*								&v_sentenciaIns
-*!*					
-*!*								
-*!*							ELSE
-*!*								** Código de empresa y secuencia no coincide con el codigo de la empresa y secuencia pasado en el registro del archivo **
-*!*						
-*!*							ENDIF 
-*!*											
-*!*						ENDIF 
-*!*					ENDIF 
-
-*!*				SKIP 1	
-*!*			ENDDO 
-*!*			FCLOSE(v_punteroArcEnv)
-*!*		RETURN 1
-
-*!*	ENDFUNC  
 
 
 
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION calculaSecueciaExpMax
+PARAMETERS p_idcbcobrador
+*#/----------------------------------------
 */ 	Obtiene el Máximo valor de secuencia utilizada por la empresa pasada como parámetro para exportar al modulo de cobro
 ** 	Funcion: calculaSecueciaExpMax
 * 	
 *	Retorno: Retorna el número de Secuencia Máxima. Retorna -1 en caso de error
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION calculaSecueciaExpMax
-PARAMETERS p_idcbcobrador
+*#/----------------------------------------
 
 IF p_idcbcobrador > 0
 	** Me conecto
@@ -1330,7 +1210,10 @@ ENDIF
 ENDFUNC 
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION ExportarComprobantes
+	PARAMETERS p_idcbcobra, p_archivo,p_tablaComprobantes
+*#/----------------------------------------
 */ 	Exportación de comprobantes a un archivo de intercambio (Archivo de envio .ENV)
 ** 	Funcion: ExportarComprobantes
 * 	Parametros: 
@@ -1338,10 +1221,7 @@ ENDFUNC
 *		p_archivo: Path completo con el nombre del archivo .ENV
 *		p_TablaComprobantes: Tabla donde están los compprobantes que se van a exportar
 *	Retorno: Retorna 1 si se exportó correctamente, 0 en otro caso
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION ExportarComprobantes
-	PARAMETERS p_idcbcobra, p_archivo,p_tablaComprobantes
+*#/----------------------------------------
 
 		IF TYPE('p_idcbcobra') != 'N'
 			=messagebox("El ID del cobrador no es válido",16,"Error al Exportar comprobantes")
@@ -1860,7 +1740,10 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION ImportarCobros
+	PARAMETERS p_idcbcobra, p_archivo,p_tablaCobros
+*#/----------------------------------------
 */ 	Importación de cobros desde archivo de intercambio (Archivo de retorno .RET)
 ** 	Funcion: ImportarCobros 
 * 	Parametros: 
@@ -1868,10 +1751,7 @@ ENDFUNC
 *		p_archivo: Path completo con el nombre del archivo .RET
 *		p_tablaCobros: Nombre de la tabla donde se van a cargar los cobros importados
 *	Retorno: Retorna 1 si se importó correctamente, 0 en otro caso
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION ImportarCobros
-	PARAMETERS p_idcbcobra, p_archivo,p_tablaCobros
+*#/----------------------------------------
 
 		** Validación de parámetros **
 		IF TYPE('p_idcbcobra') != 'N'
@@ -2199,7 +2079,10 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
+
+FUNCTION ImputarCobros
+	PARAMETERS p_tablacom, p_IDPvta, p_Idcomp
+*#/----------------------------------------
 */ 	Imputación de cobros a facturas.
 */ 		Se imputa el total cobrado sin recargo al saldo de la factura, en caso de tener recargo o que el cobro sea mayor al saldo se deja a cuenta el monto 
 ** 	Funcion: ImputarCobros
@@ -2208,10 +2091,7 @@ ENDFUNC
 *		p_IDPvta: ID del punto de venta que se va a utilizar en el comprobante de recibo, para elegir el ID por defecto no pasar los parámetros
 *		p_Idcomp: ID del comprobante del tipo recibo que se va a utilizar para los cobros, para elegir el ID por defecto no pasar los parámetros
 *	Retorno: Retorna 1 si se generaron correctamente los recibos, 0 en otro caso
-*/------------------------------------------------------------------------------------------------------------
-
-FUNCTION ImputarCobros
-	PARAMETERS p_tablacom, p_IDPvta, p_Idcomp
+*#/----------------------------------------
 	
 	
 	v_idpvta = 0

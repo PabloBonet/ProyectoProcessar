@@ -1,12 +1,14 @@
 ** Procedimientos y Funciones para Emision de Facturas Batch **
 
+
+FUNCTION GenerarFacturas
+PARAMETERS par_idperiodo
+*#/----------------------------------------
 */ Generacion de Facturas para un Período determinado
 */ Recibe como parametro el período para el cual se debe generar la Facturación 
 */ Obtiene los datos del servicio a facturar y los vencimientos del registro en "factulotes"
 */ Las entidades que deben facturarse se encuentran en "factulotese"
-
-FUNCTION GenerarFacturas
-PARAMETERS par_idperiodo
+*#/----------------------------------------
 	WAIT WINDOWS "Generando Facturación, Aguarde... " NOWAIT 
 
 	vartmp = frandom()
@@ -493,15 +495,19 @@ PARAMETERS par_idperiodo
 	GO TOP 
 	ALTER TABLE &vbocaserviciosftmp ADD manterior n(10,2)
 	ALTER table &vbocaserviciosftmp ADD mactual n(10,2)
+	ALTER table &vbocaserviciosftmp ADD consextra n(10,2)
 	ALTER table &vbocaserviciosftmp ADD consumo n(10,2)
-	
+	ALTER table &vbocaserviciosftmp ALTER COLUMN idcateser i
+
 	DO WHILE !EOF()
 		vmedidas = FPXMSERVICIO(PAR_idperiodo, &vbocaserviciosftmp..idbocaser, vconeFacturar)
-		vmedidas1 = VAL(SUBSTR(vmedidas,1,ATC(';',vmedidas,1)-1))
-		vmedidas2 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,1)+1,ATC(';',vmedidas,2)-1))
-		vmedidas3 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,2)+1))
+		vmedidas1 = VAL(SUBSTR(vmedidas,1,ATC(';',vmedidas,1)-1)) && manterior
+		vmedidas2 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,1)+1,ATC(';',vmedidas,2)-1)) && mactual
+		vmedidas3 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,2)+1,ATC(';',vmedidas,3)-1)) && consextra
+		vmedidas4 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,3)+1)) &&consumo
 		SELECT &vbocaserviciosftmp
-		replace &vbocaserviciosftmp..manterior WITH vmedidas1, &vbocaserviciosftmp..mactual WITH vmedidas2, &vbocaserviciosftmp..consumo WITH vmedidas3
+		replace &vbocaserviciosftmp..manterior WITH vmedidas1, &vbocaserviciosftmp..mactual WITH vmedidas2, ;
+				&vbocaserviciosftmp..consextra WITH vmedidas3, &vbocaserviciosftmp..consumo WITH vmedidas4
 		SKIP 
 	ENDDO 
 
@@ -568,12 +574,13 @@ ENDFUNC
 
 
 
+FUNCTION CargarFacturas 
+PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
+*#/----------------------------------------
 **/ Incerta las Facturas Generadas en la Base de Datos en 
 ** la tabla facturastmp, detafactutmp, facturasimptmp, facturasbsertmp
 ** Recibe como Parametro las Tablas de facturas, detalle, facturasimp
-**
-FUNCTION CargarFacturas 
-PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
+*#/----------------------------------------
 
 	IF pcone = 0 THEN 
 		vconeccionFa = abreycierracon(0,_SYSSCHEMA)	
@@ -820,7 +827,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 
 	SELECT &pbocaservi
 	GO TOP 
-	DIMENSION lamatriz4(15,2)
+	DIMENSION lamatriz4(17,2)
 	DO WHILE !EOF() 
 	
 		lamatriz4(1,1)='idfacbser'
@@ -851,8 +858,13 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		lamatriz4(13,2)= ALLTRIM(STR(&pbocaservi..manterior,12,2))
 		lamatriz4(14,1)= 'mactual'
 		lamatriz4(14,2)= ALLTRIM(STR(&pbocaservi..mactual,12,2))
-		lamatriz4(15,1)= 'consumo'
-		lamatriz4(15,2)= ALLTRIM(STR(&pbocaservi..consumo,12,2))
+		lamatriz4(15,1)= 'consextra'
+		lamatriz4(15,2)= ALLTRIM(STR(&pbocaservi..consextra,12,2))
+		lamatriz4(16,1)= 'consumo'
+		lamatriz4(16,2)= ALLTRIM(STR(&pbocaservi..consumo,12,2))
+		lamatriz4(17,1)= 'idcateser'
+		lamatriz4(17,2)= ALLTRIM(STR(&pbocaservi..idcateser))
+
 						
 		p_tabla     = 'facturasbsertmp'
 		p_matriz    = 'lamatriz4'
@@ -877,6 +889,9 @@ ENDFUNC
 
 
 	
+FUNCTION CtrlFcPeriodo
+PARAMETERS pa_idperiodo
+*#/----------------------------------------
 */** Controla la Facturación de un Perido para informar el Estado de la Misma. 
 */** Valores Retornados 
 */		0-No Se han Seleccionado Entidades a Facturar para el Periodo 		
@@ -884,9 +899,7 @@ ENDFUNC
 */ 		2-Generado y Pendiente de Confirmar (No pasado a Facturación)
 */ 		3-Generado y Confirmado, (Pasado a Facturacion)
 */		4-No existe el Lote a Facturar Solicitado
-*/**********************************************************
-FUNCTION CtrlFcPeriodo
-PARAMETERS pa_idperiodo
+*#/----------------------------------------
 	vretorno = 0
 	vconexx=abreycierracon(0,_SYSSCHEMA)	
 
@@ -960,13 +973,14 @@ ENDFUNC
 	
 	
 	
+FUNCTION ConfFcPeriodo
+PARAMETERS pcon_idperiodo
+*#/----------------------------------------
 */** Confirma el Período Facturado , pasa de la tabla de facturas tmporarias 
 */   a la tabla de facturas finales. 
 */  pasa 5 tablas : facturas -  detafactu - facturasimp - facturasbser - facturasd
 */
-*/**********************************************************
-FUNCTION ConfFcPeriodo
-PARAMETERS pcon_idperiodo
+*#/----------------------------------------
 	vretorno = 0
 	
 	* Calculo los valores para incertar los idregistros en facturacion 
@@ -1180,8 +1194,8 @@ PARAMETERS pcon_idperiodo
 	ENDIF 
 
 
-	sqlmatriz(1)=" insert into facturasbser ( idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consumo ) "
-	sqlmatriz(2)=" select 0 as idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consumo from bsertmpt  "
+	sqlmatriz(1)=" insert into facturasbser ( idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser ) "
+	sqlmatriz(2)=" select 0 as idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser from bsertmpt  "
 	verror=sqlrun(vcone,"selfcpt_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
@@ -1357,13 +1371,14 @@ ENDFUNC
 
 
 
+FUNCTION AutoFcPeriodo
+PARAMETERS paut_idperiodo
+*#/----------------------------------------
 */** Si los comprobantes del Perido pasado son Electrónicos
 */   Pide la Autorización al Afip para cada uno de los Comprobantes
 */   del Período pasado como parametro, siempre y cuando sean de un 
 */   Punto de Venta Electrónico
-*/**********************************************************
-FUNCTION AutoFcPeriodo
-PARAMETERS paut_idperiodo
+*#/----------------------------------------
 
 	vretorno = 0
 	vconectar=abreycierracon(0,_SYSSCHEMA)	

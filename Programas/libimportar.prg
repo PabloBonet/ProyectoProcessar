@@ -1,3 +1,4 @@
+*#/----------------------------------------
 */ PARAMETROS
 *--------------
 * Todas las funciones de la libreria reciben 3 parametros
@@ -20,12 +21,12 @@
 * IMPORTANTE: Todas las funciones deben ser realizadas teniendo en cuenta al menos los parametros de ingreso y retorno 
 * 				Explicados arriba
 *------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
+*#/----------------------------------------
 
 FUNCTION chkfunction
-*/ 
+*#/----------------------------------------
 *Función para Intentos de ejecuciones de funciones, devuelve .F. Falso si la función no existe o da error 
-*/
+*#/----------------------------------------
 	LPARAMETERS pfuncion
 	ON ERROR vfnvalida=.f. 
 	vfnvalida = .t. 
@@ -36,10 +37,10 @@ FUNCTION chkfunction
 ENDFUNC 
 
 FUNCTION Fconsutablas
-*/
-* Funcion para Visualizacion de los datos de la importación Seleccionada, Recibe como parametro el "idimportap"
-*/
 	PARAMETERS paraidimportap, paraformulario, paramodifica
+*#/----------------------------------------
+* Funcion para Visualizacion de los datos de la importación Seleccionada, Recibe como parametro el "idimportap"
+*#/----------------------------------------
 		IF TYPE('paraformulario')<>'C' THEN 
 			paraformulario = 'consultatablas'
 		ENDIF 
@@ -88,11 +89,11 @@ FUNCTION fdeltablas
 ENDFUNC 
 */------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de mediciones de la Central Telefónica Huawei
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaHuawei
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de mediciones de la Central Telefónica Huawei
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -241,16 +242,16 @@ ENDFUNC
 
 
 *******************************************************
-************************************
+FUNCTION HWDETBANDA
+PARAMETER CAMINO, p_valorpulso
+*#/----------------------------------------
 * GENERA UN ARCHIVO TEMPORAL EN EL CUAL APARECEN TODAS LAS LLAMADAS
 * REALIZADAS EN UN MES DETERMINADO EN LAS DISTINTAS BANDAS HORARIAS
 * EL ARCHIVO GENERADO SE LLAMA HWDETBANDA.DBF
 * RECIBE COMO PARAMETRO EL ARCHIVO DE ORIGEN Y EL VALOR DEL PULSO PARA TASAR
 * EJ: =HWDETBANDA("C:\COSEMAR\TELEFONO\ABONADOS\",0.049)
 * DEVUELVE EL NOMBRE DEL ARCHIVO SI TODO FUE CORRECTO, SINO DEVUELVE ""
-************************************
-FUNCTION HWDETBANDA
-PARAMETER CAMINO, p_valorpulso
+*#/----------------------------------------
 LOCAL v_hwdetbanda
 v_hwdetbanda ="HWDETBANDA.DBF"
 if file(".\HWDETBANDA.dbf") THEN
@@ -418,15 +419,15 @@ RETURN v_hwdetbanda
 
 ************************************************************
 ************************************************************
-************************************
+
+FUNCTION HWCDR
+PARAMETER CAMINO, P_IMP_PULSO 
+*#/----------------------------------------
 * GENERA UN ARCHIVO TEMPORAL EN EL CUAL ESTÁN TODAS LAS LLAMADAS
 * ESTAN TODAS LAS LLAMADAS DE TODOS LOS TELEFONOS INCLUIDOS EN 
 * EL ARCHIVO PASADO COMO PARAMETRO, CALULADO AL VALOR DEL PUSO PASADO
 * EJ: =HWCDR("C:\COSEMAR\TELEFONO\ABONADOS\ARCHIVO.TXT",0.049)
-************************************
-
-FUNCTION HWCDR
-PARAMETER CAMINO, P_IMP_PULSO 
+*#/----------------------------------------
 	SET DECIMALS TO 4
 	v_retorno = "HWCDR.DBF"
 	CAMINO = alltrim(CAMINO)
@@ -519,11 +520,11 @@ ENDFUNC
 
 */------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga Archivo CPP Calling Party Pay
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaCPP
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga Archivo CPP Calling Party Pay
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -688,11 +689,11 @@ ENDFUNC
 
 */------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga Archivo CLARO Telefonia Celular
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaClaro
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga Archivo CLARO Telefonia Celular
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -1210,11 +1211,11 @@ ENDFUNC
 
 */------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Mediciones de Consumo de Servicios Generales
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaMServicios
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Mediciones de Consumo de Servicios Generales
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -1394,11 +1395,11 @@ ENDFUNC
 
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Cablemodems FlowDat
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaCablemodem
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Cablemodems FlowDat
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -1577,11 +1578,11 @@ ENDFUNC
 
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Entidades
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaEntidades
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Entidades
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -1742,11 +1743,11 @@ ENDFUNC
 
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Sub-Entidades - Cuentas
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaSubEntidades
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Sub-Entidades - Cuentas
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -1817,7 +1818,7 @@ FUNCTION CargaSubEntidades
 		SELECT entidadeshcar
 
 		DIMENSION lamatriz(25,2)
-		DIMENSION lamatriz2(12,2)
+		DIMENSION lamatriz2(13,2)
 		
 		p_tipoope     = 'I'
 		p_condicion   = ''
@@ -1911,6 +1912,8 @@ FUNCTION CargaSubEntidades
 				lamatriz2(11,2) = "''"
 				lamatriz2(12,1) = 'idtiposer'
 				lamatriz2(12,2) = "1"
+				lamatriz2(13,1) = 'idcateser'
+				lamatriz2(13,2) = "1"
 				
 
 				p_tabla     = 'bocaservicios'
@@ -1952,11 +1955,12 @@ ENDFUNC
 
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Lineas
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaLineas
-	PARAMETERS p_idimportap, p_archivo, p_func
+PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Lineas
+*#/----------------------------------------
+
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -2098,11 +2102,11 @@ ENDFUNC
 
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Articulos con articulosimp,listaprecioh (solo para lista 1), articulospro
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaArticulos
-	PARAMETERS p_idimportap, p_archivo, p_func
+PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Articulos con articulosimp,listaprecioh (solo para lista 1), articulospro
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -2416,316 +2420,17 @@ FUNCTION CargaArticulos
 ENDFUNC  
 
 
-*!*	*/------------------------------------------------------------------------------------------------------------
-*!*	*/------------------------------------------------------------------------------------------------------------
-*!*	*/ Carga de Articulos con articulosimp,listaprecioh (solo para lista 1), articulospro
-*!*	*/------------------------------------------------------------------------------------------------------------
-*!*	FUNCTION CargaArticulos
-*!*		PARAMETERS p_idimportap, p_archivo, p_func
-*!*		IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
-*!*			RETURN p_func
-*!*		ENDIF 
-*!*	*/**************************************************************
 
-*!*		IF p_func = -1 THEN  &&  Eliminacion de Registros
-*!*	*!*			p_func = fdeltablas("cablemodems",p_idimportap)
-*!*	*!*			RETURN p_func 
-*!*		
-
-*!*		ENDIF 
-*!*	*/**************************************************************
-*!*		IF p_func = 1 then && 1- Carga de Archivo de Articulos -
-*!*			p_archivo = alltrim(p_archivo)
-*!*			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
-
-*!*			if file(".\articuloscar.dbf") THEN
-*!*				if used("articuloscar") then
-*!*					sele articuloscar
-*!*					use
-*!*				endif
-*!*				DELETE FILE .\articuloscar.dbf
-*!*			ENDIF
-*!*			
-*!*			if !file(p_archivo) THEN
-*!*				=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
-*!*				=abreycierracon(vconeccionF,"")	
-*!*				RETURN 0
-*!*			ENDIF
-
-*!*			CREATE TABLE .\articuloscar FREE (articulo C(50), detalle C(254), unidad C(200), abrevia C(50), codbarra C(100), costo n(13,4), linea C(20), ;
-*!*			ctrlstock C(1), observa C(254), ocultar C(1), stockmin N(13,4), desc1 N(13,4), desc2 N(13,4), desc3 N(13,4), desc4 N(13,4), desc5 N(13,4), moneda I, ;
-*!*			impuesto I, margen N(13,4),proveedor I,codigop C(50),idsublinea I)			
-*!*						
-*!*			SELECT articuloscar 
-*!*	*		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
-*!*	 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
-*!*			&eje
-
-*!*			GO TOP 
-*!*			
-*!*			IF NOT EOF()
-*!*			
-*!*				*** Borro las tablas que voy a ingresar ***
-*!*				
-*!*				*** Borro articulos ***
-*!*				sqlmatriz(1)="delete from articulos "
-*!*				verror=sqlrun(vconeccion,"NoUso")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulos ",0+48+0,"Eliminación de Registros")
-*!*				    RETURN -9
-*!*				ENDIF 
-*!*				
-*!*				*** Borro articulosimp ***
-*!*				sqlmatriz(1)="delete from articulosimp "
-*!*				verror=sqlrun(vconeccion,"NoUso")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulosimp ",0+48+0,"Eliminación de Registros")
-*!*				    RETURN -9
-*!*				ENDIF 
-*!*		
-*!*				*** Obtengo todas las condiciones Fiscales para Cargar los impuestos ***
-*!*				sqlmatriz(1)="select * from condfiscal "
-*!*				verror=sqlrun(vconeccion,"Cfiscal")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Obtencion de las Condiciones Fiscales ",0+48+0,"Eliminación de Registros")
-*!*				    RETURN -9
-*!*				ENDIF 
-*!*						
-*!*						
-*!*				*** Borro listaprecioh (lista 1) ***
-*!*				sqlmatriz(1)="delete from listaprecioh where idlista = 1 "
-*!*				verror=sqlrun(vconeccion,"NoUso")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
-*!*				    RETURN -9
-*!*				ENDIF
-*!*				
-*!*				*** Borro articulospro ***
-*!*				sqlmatriz(1)="delete from articulospro "
-*!*				verror=sqlrun(vconeccion,"NoUso")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla articulospro ",0+48+0,"Eliminación de Registros")
-*!*				    RETURN -9
-*!*				ENDIF 
-*!*				 
-*!*				
-*!*				v_maximoListah = 0
-*!*				*** Calulo el Maximo de listaprecioh ***
-*!*				sqlmatriz(1)="select MAX(idlistah) as maxi from listaprecioh  "
-*!*				verror=sqlrun(vconeccion,"maxLIstah")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh ",0+48+0,"Eliminación de Registros")
-*!*				    RETURN -9
-*!*				ELSE
-*!*					v_maximoListah = IIF(ISNULL(maxLIstah.maxi)=.T.,0,maxLIstah.maxi)
-*!*					v_maximoListah = v_maximoListah + 1
-*!*					** Modifico el indice idlistah para que tome el maximo valor como el indice autoincremental **
-*!*					sqlmatriz(1)="alter table listaprecioh auto_increment = "+ALLTRIM(STR(v_maximoListah ))
-*!*					verror=sqlrun(vconeccion,"modifauto")
-*!*					IF verror=.f.  
-*!*				    	MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Registros de la tabla listaprecioh(Error al modificar el autoincremental)",0+48+0,"Eliminación de Registros")
-*!*				    	RETURN -9
-*!*					ENDIF 
-*!*				ENDIF 
-*!*						
-*!*								
-*!*			ENDIF 
-*!*		
-*!*			
-
-*!*			v_idartimp = 0
-*!*			v_idartpro = 0
-*!*			*v_idlistah = v_maximoListah 
-*!*			v_fechaAct = ALLTRIM(DTOS(DATE()))
-
-*!*			DIMENSION lamatriz(18,2)
-*!*			DIMENSION lamatriz2(4,2)
-*!*			DIMENSION lamatriz3(6,2)
-*!*			DIMENSION lamatriz4(4,2)
-*!*			
-*!*			
-*!*			
-*!*			p_tipoope     = 'I'
-*!*			p_condicion   = ''
-*!*			v_titulo      = " EL ALTA "
-*!*			
-*!*			SELECT articuloscar 
-*!*			GO TOP 
-*!*			DO WHILE !EOF()
-*!*			
-*!*			*** Cargo el articulo en tabla articulos ***
-*!*				lamatriz(1,1) = 'articulo'
-*!*				lamatriz(1,2) = "'"+ALLTRIM(articuloscar.articulo)+"'"
-*!*				lamatriz(2,1) = 'detalle'
-*!*				lamatriz(2,2) = "'"+ALLTRIM(articuloscar.detalle)+"'"
-*!*				lamatriz(3,1) = 'unidad'
-*!*				lamatriz(3,2) = "'"+ALLTRIM(articuloscar.unidad)+"'"
-*!*				lamatriz(4,1) = 'abrevia'
-*!*				lamatriz(4,2) = "'"+ALLTRIM(articuloscar.abrevia)+"'"
-*!*				lamatriz(5,1) = 'codbarra'
-*!*				lamatriz(5,2) = "'"+ALLTRIM(articuloscar.codbarra)+"'"
-*!*				lamatriz(6,1) = 'costo'
-*!*				lamatriz(6,2) = ALLTRIM(STR(articuloscar.costo,13,2))
-*!*				lamatriz(7,1) = 'linea'
-*!*				lamatriz(7,2) = "'"+ALLTRIM(articuloscar.linea)+"'"
-*!*				lamatriz(8,1) = 'ctrlstock'
-*!*				lamatriz(8,2) = "'"+ALLTRIM(articuloscar.ctrlstock)+"'"
-*!*				lamatriz(9,1) = 'observa'
-*!*				lamatriz(9,2) = "'"+ALLTRIM(articuloscar.observa)+"'"
-*!*				lamatriz(10,1) = 'ocultar'
-*!*				lamatriz(10,2) = "'"+ALLTRIM(articuloscar.ocultar)+"'"
-*!*				lamatriz(11,1) = 'stockmin'
-*!*				lamatriz(11,2) = ALLTRIM(STR(articuloscar.stockmin))
-*!*				lamatriz(12,1) = 'desc1'
-*!*				lamatriz(12,2) = ALLTRIM(STR(articuloscar.desc1,13,2))
-*!*				lamatriz(13,1) = 'desc2'
-*!*				lamatriz(13,2) = ALLTRIM(STR(articuloscar.desc2,13,2))
-*!*				lamatriz(14,1) = 'desc3'
-*!*				lamatriz(14,2) = ALLTRIM(STR(articuloscar.desc3,13,2))
-*!*				lamatriz(15,1) = 'desc4'
-*!*				lamatriz(15,2) = ALLTRIM(STR(articuloscar.desc4,13,2))
-*!*				lamatriz(16,1) = 'desc5'
-*!*				lamatriz(16,2) = ALLTRIM(STR(articuloscar.desc5,13,2))
-*!*				lamatriz(17,1) = 'moneda'
-*!*				lamatriz(17,2) = ALLTRIM(STR(articuloscar.moneda))
-*!*				lamatriz(18,1) = 'idsublinea'
-*!*				lamatriz(18,2) = ALLTRIM(STR(articuloscar.idsublinea))
-
-*!*				p_tabla     = 'articulos'
-*!*				p_matriz    = 'lamatriz'
-*!*				p_conexion  = vconeccionF
-*!*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos ",0+48+0,"Error")
-*!*				ELSE
-*!*					 *** Guardo el historial del costo del articulo ***
-*!*	*				   guardaHistCostoArt(articuloscar.articulo, articuloscar.costo)
-*!*					 
-*!*					 
-*!*					 SELECT Cfiscal
-*!*					 GO TOP 
-*!*					 DO while !EOF()
-*!*					*** Cargo el el impuesto del articulo en tabla articulosimp ***
-*!*						p_tipoope     = 'I'
-*!*						p_condicion   = ''
-*!*						v_titulo      = " EL ALTA "
-*!*						
-*!*						v_idartimp = v_idartimp + 1
-*!*						lamatriz2(1,1)='idartimp'
-*!*						lamatriz2(1,2)= ALLTRIM(STR(v_idartimp))
-*!*						lamatriz2(2,1)='articulo'
-*!*						lamatriz2(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
-*!*						lamatriz2(3,1)='impuesto'
-*!*						lamatriz2(3,2)=ALLTRIM(STR(articuloscar.impuesto))
-*!*						lamatriz2(4,1)='iva'
-*!*						lamatriz2(4,2)=ALLTRIM(STR(cfiscal.iva))
-*!*			
-*!*			
-*!*						p_tabla     = 'articulosimp'
-*!*						p_matriz    = 'lamatriz2'
-*!*						p_conexion  = vconeccionF
-*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Impuestos ",0+48+0,"Error")
-*!*						
-*!*						ENDIF 
-*!*					
-*!*						SELECT cfiscal
-*!*						SKIP 
-*!*					ENDDO 
-*!*					
-*!*				*** Cargo el margen del articulo en tabla listaprecioh ***
-*!*						p_tipoope     = 'I'
-*!*						p_condicion   = ''
-*!*						v_titulo      = " EL ALTA "
-*!*						v_idlista	 = 1
-*!*						v_idlistah = 0
-*!*						v_fehcaAct 		= ALLTRIM(DTOS(DATE())+TIME())
-*!*								
-*!*						lamatriz3(1,1)='idlistah'
-*!*						lamatriz3(1,2)= ALLTRIM(STR(v_idlistah))
-*!*						lamatriz3(2,1)='idlista'
-*!*						lamatriz3(2,2)= ALLTRIM(STR(v_idlista))
-*!*						lamatriz3(3,1)='articulo'
-*!*						lamatriz3(3,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
-*!*						lamatriz3(4,1)='margen'
-*!*						lamatriz3(4,2)=ALLTRIM(STR(articuloscar.margen,13,4))
-*!*						lamatriz3(5,1)='fechaalta'
-*!*						lamatriz3(5,2)="'"+ALLTRIM(v_fechaAct)+"'"
-*!*						lamatriz3(6,1)='fechaact'
-*!*						lamatriz3(6,2)= "'"+ALLTRIM(v_fehcaAct)+"'"
-*!*			
-*!*			
-*!*						p_tabla     = 'listaprecioh'
-*!*						p_matriz    = 'lamatriz3'
-*!*						p_conexion  = vconeccionF
-*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lista de Precios ",0+48+0,"Error")
-*!*								
-*!*						ENDIF 
-*!*						
-*!*						
-*!*					*** Cargo el proveedor asociado al articulo y el codigo del proveedor en tabla articulosimp***
-*!*					IF articuloscar.proveedor > 0 THEN
-*!*					 
-*!*						p_tipoope     = 'I'
-*!*						p_condicion   = ''
-*!*						v_titulo      = " EL ALTA "
-*!*						
-*!*						v_idartpro = v_idartpro + 1
-*!*						lamatriz4(1,1)='idartpro'
-*!*						lamatriz4(1,2)= ALLTRIM(STR(v_idartpro))
-*!*						lamatriz4(2,1)='articulo'
-*!*						lamatriz4(2,2)="'"+ALLTRIM(articuloscar.articulo)+"'"
-*!*						lamatriz4(3,1)='entidad'
-*!*						lamatriz4(3,2)=ALLTRIM(STR(articuloscar.proveedor))
-*!*						lamatriz4(4,1)='codigop'
-*!*						lamatriz4(4,2)="'"+ALLTRIM(articuloscar.codigop)+"'"	
-*!*			
-*!*						p_tabla     = 'articulospro'
-*!*						p_matriz    = 'lamatriz4'
-*!*						p_conexion  = vconeccionF
-*!*						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos-Proveedor ",0+48+0,"Error")
-*!*						
-*!*						ENDIF 
-*!*						
-*!*					ENDIF 				
-*!*		
-*!*				ENDIF 
-*!*				
-*!*				SELECT articuloscar
-*!*				SKIP 					
-*!*			ENDDO 
-*!*	*/*/*/*/*/*/
-*!*			=abreycierracon(vconeccionF,"")	
-*!*			SELECT articuloscar
-*!*			USE IN articuloscar
-*!*			RELEASE lamatriz
-*!*			RELEASE lamatriz2
-*!*			RELEASE lamatriz3
-*!*			RELEASE lamatriz4
-*!*			MESSAGEBOX("Importación de Articulos Finalizada",0+64,"Importar  Articulos")
-
-*!*		ENDIF 	&& 1- Carga de Archivo de CPP -
-*!*	*/**************************************************************
-*!*	*/**************************************************************
-*!*	*!*	*/ && 2- Visualiza Datos de Claro
-*!*	*!*		IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
-*!*	*!*			=fconsutablas(p_idimportap,'articulos',.T.)
-*!*	*!*		ENDIF && 2- Visualiza Datos de CPP -
-*!*	*/**************************************************************
-*!*		lreto = p_func
-*!*		RETURN lreto
-*!*	ENDFUNC  
 
 
 *******************************************************
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Localidades
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaLocalidades
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Localidades
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -2875,11 +2580,11 @@ ENDFUNC
 *******************************************************
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Cuentas corrientes de clientes
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaCtaCteClientes
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Cuentas corrientes de clientes
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -3554,11 +3259,11 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
-*/ Agrega un Item especial al comprobante de la tabla facturas cuyo ID es pasado como parámetro
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION agregarItemEspecial
 PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
+*#/----------------------------------------
+*/ Agrega un Item especial al comprobante de la tabla facturas cuyo ID es pasado como parámetro
+*#/----------------------------------------
 
 	
 	IF p_cantidad = 0 OR p_unitario = 0
@@ -3804,11 +3509,11 @@ ENDFUNC
 
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaCtaCteProveedores
+PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
 */ Carga de Cuentas corrientes de Proveedores
-*/------------------------------------------------------------------------------------------------------------
-	FUNCTION CargaCtaCteProveedores
-	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -4284,11 +3989,11 @@ ENDFUNC
 
 
 
-*/------------------------------------------------------------------------------------------------------------
-*/ Agrega un Item especial al comprobante de la tabla facturas cuyo ID es pasado como parámetro
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION agregarItemEspecialPro
 PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
+*#/----------------------------------------
+*/ Agrega un Item especial al comprobante de la tabla facturas cuyo ID es pasado como parámetro
+*#/----------------------------------------
 
 	
 	IF p_cantidad = 0 OR p_unitario = 0
@@ -4529,11 +4234,11 @@ ENDFUNC
 *******************************************************
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Asientos Contables como Minutas
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaAsiContables
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Asientos Contables como Minutas
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -4750,11 +4455,11 @@ ENDFUNC
 *******************************************************
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
-*/ Carga de Plan de Cuentas 
-*/------------------------------------------------------------------------------------------------------------
 FUNCTION CargaPlanCuentas
 	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Plan de Cuentas 
+*#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -4923,13 +4628,14 @@ ENDFUNC
 *******************************************************
 
 */------------------------------------------------------------------------------------------------------------
-*/------------------------------------------------------------------------------------------------------------
+FUNCTION AsociarCablemodems
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
 */ Asociar Cablemodems con Cuentas de Clientes 
 */ Si p_archivo = '(ACTUALIZA)INTERNET' --> entonces actualiza el perfil con los datos de acuerdo al cablemodem y agrega 
 */ aquellos cablemodems que no están a los actuales 
-*/------------------------------------------------------------------------------------------------------------
-FUNCTION AsociarCablemodems
-	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
 	ENDIF 
@@ -4994,7 +4700,7 @@ FUNCTION AsociarCablemodems
 
 			SELECT cablemodems		
 			GO TOP 
-			DIMENSION lamatriz1(14,2)
+			DIMENSION lamatriz1(15,2)
 		
 			DO WHILE !EOF()
 
@@ -5070,6 +4776,8 @@ FUNCTION AsociarCablemodems
 						lamatriz1(13,2)= "0.00"
 						lamatriz1(14,1)='unidadref'
 						lamatriz1(14,2)= "'"+ALLTRIM(a_unidadref)+"'"
+						lamatriz1(15,1)='idcateser'
+						lamatriz1(15,2)= "1"
 				
 						p_tabla     = 'bocaservicios'
 						p_matriz    = 'lamatriz1'

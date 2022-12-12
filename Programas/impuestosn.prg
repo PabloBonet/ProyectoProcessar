@@ -1,4 +1,7 @@
 
+
+FUNCTION RET_GANANCIAS_IFN
+PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 *#/****************************
 *** FUNCIÓN PARA EL CALCULO DEL MONTO A RETENER DE GANANCIAS ***
 ****************************************************************
@@ -11,9 +14,6 @@
 ****************************************************************
 ** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
 *#/****************************
-
-FUNCTION RET_GANANCIAS_IFN
-PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 
 	v_divisorParaNeto = 1.21
 
@@ -441,6 +441,9 @@ ENDFUNC
 
 
 
+
+FUNCTION RET_IIBB_IFN
+PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 *#/****************************
 *** FUNCIÓN PARA EL CALCULO DEL MONTO A RETENER DE IIBB ***
 ****************************************************************
@@ -452,9 +455,6 @@ ENDFUNC
 ****************************************************************
 ** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
 *#/****************************
-
-FUNCTION RET_IIBB_IFN
-PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 
 
 ****** SI está en convenio se calcula sobre el total bruto. Si NO está en convenio se calcula sobre el neto

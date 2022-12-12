@@ -1,10 +1,11 @@
 */ PARAMETROS
 *--------------
 */------------------------------------------------------------------------------------------------------------
-*/---------------------------------------------------------------------------
-* Función Global Calculo de Porcentajes sobre Conceptos  .
 FUNCTION FPGPORCENT
 PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_conceptos, pper_I, pper_A
+*#/----------------------------------------
+* Función Global Calculo de Porcentajes sobre Conceptos  .
+*#/----------------------------------------
 
 	vcond = ""
 	IF !EMPTY(pper_A) THEN 
@@ -26,10 +27,11 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 ENDFUNC 
 
 
-*/---------------------------------------------------------------------------
-* Función Global Calculo de Porcentajes sobre Conceptos  .
 FUNCTION FPGCOMBO
 PARAMETERS pper_conexion ,pper_periodo, pper_identidadh,pper_iva, pper_cantidad, pper_identidadd, pper_conceptos
+*#/----------------------------------------
+* Función Global Calculo de Porcentajes sobre Conceptos  .
+*#/----------------------------------------
 
 
 	vcond = " in ('"+ALLTRIM(STRTRAN(STRTRAN(pper_conceptos,"=",''),",","','"))+"')"
@@ -89,9 +91,11 @@ ENDFUNC
 */------------------------------------------------------------------------------------------------------------
 */ FUNCIONES DE CONCEPTOS PARA CALCULO DE FACTURACION DE TELEFONIA FIJA 
 
-* Función para Cálculo de consumo de telefonía a partir de la medicion de Central Telefónica.
 FUNCTION FPTCONSUMO
 PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_cantidad, pper_unitario
+*#/----------------------------------------
+* Función para Cálculo de consumo de telefonía a partir de la medicion de Central Telefónica.
+*#/----------------------------------------
 
 	sqlmatriz(1)=" select * from factulotes  " 
 	sqlmatriz(4)=" where idperiodo ="+STR(pper_periodo)
@@ -155,9 +159,11 @@ ENDFUNC
 
 
 
-* Función para Cálculo de consumo de CPP .
 FUNCTION FPTCPP
 PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion
+*#/----------------------------------------
+* Función para Cálculo de consumo de CPP .
+*#/----------------------------------------
 
 	sqlmatriz(1)=" select * from factulotes  " 
 	sqlmatriz(4)=" where idperiodo ="+STR(pper_periodo)
@@ -207,9 +213,11 @@ ENDFUNC
 */------------------------------------------------------------------------------------------------------------
 */ FUNCIONES DE CONCEPTOS PARA CALCULO DE FACTURACION DE AGUA POTABLE
 
-* Función para Cálculo de Abono de Agua a partir de la medicion del Período.
 FUNCTION FPAABONO
 PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion
+*#/----------------------------------------
+* Función para Cálculo de Abono de Agua a partir de la medicion del Período.
+*#/----------------------------------------
 
 	sqlmatriz(1)=" select * from factulotes  " 
 	sqlmatriz(4)=" where idperiodo ="+STR(pper_periodo)
@@ -272,10 +280,11 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion
 ENDFUNC 
 
 
-*/-----------------------------------------------------------------------------------------------
-* Función para Cálculo de M3 Exedente de Agua Potable.
 FUNCTION FPAEXEDEM3
 PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
+*#/----------------------------------------
+* Función para Cálculo de M3 Exedente de Agua Potable.
+*#/----------------------------------------
 
 
 	sqlmatriz(1)=" select * from factulotes  " 
@@ -355,9 +364,11 @@ ENDFUNC
 */------------------------------------------------------------------------------------------------------------
 */ FUNCIONES DE CONCEPTOS PARA CALCULO DE FACTURACION DE ENERGIA ELECTRICA
 
-*** Función para Cálculo Abono Energia Electrica
 FUNCTION FPECONSUMO
 PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
+*#/----------------------------------------
+*** Función para Cálculo Abono Energia Electrica
+*#/----------------------------------------
 
 
 	sqlmatriz(1)=" select * from factulotes  " 
@@ -435,6 +446,9 @@ ENDFUNC
 */------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
 */------------------------------------------------------------------------------------------------------------
+FUNCTION FPTCELULAR
+PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
+*#/----------------------------------------
 */ FUNCIONES DE CONCEPTOS PARA CALCULO DE FACTURACION DE TELEFONIA CELULAR
 
 *** Función para Cálculo Abono y Cargos de la Telefonia Celular
@@ -449,8 +463,7 @@ ENDFUNC
 *** 8-Datos
 *** 9-Equipos
 *** 10-Varios
-FUNCTION FPTCELULAR
-PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
+*#/----------------------------------------
 
 	DO CASE 
 		CASE pper_c = 1
@@ -534,9 +547,11 @@ ENDFUNC
 */------------------------------------------------------------------------------------------------------------
 */ FUNCIONES DE OBTENCION DE VALORES DE MEDICIONES PARA UNA BOCA DE SERVICIO EN UN PERIODO DEL ARCHIVO MSERVICIOS
 
-*** Función de busqueda de Valores para una boca de servicio en un periodo dado
 FUNCTION FPXMSERVICIO
 PARAMETERS pper_periodo, pper_idbocaser, pper_conexion
+*#/----------------------------------------
+*** Función de busqueda de Valores para una boca de servicio en un periodo dado
+*#/----------------------------------------
 
 
 	sqlmatriz(1)=" select * from factulotes  " 
@@ -572,6 +587,7 @@ PARAMETERS pper_periodo, pper_idbocaser, pper_conexion
 
 	vmanterior = 0.00
 	vmactual = 0.00
+	vconsextra= 0.00
 	vconsumo  = 0.00
 	SELECT medicionescs
 	GO TOP 
@@ -579,10 +595,11 @@ PARAMETERS pper_periodo, pper_idbocaser, pper_conexion
 		vmanterior 	= medicionescs.manterior
 		vmactual 	= medicionescs.mactual
 		vconsumo  	= medicionescs.consumo
+		vconsextra	= medicionescs.consextra
 	ENDIF 
 	USE 	
 	
-	vreto = ALLTRIM(STR(vmanterior,12,2))+';'+ALLTRIM(STR(vmactual,12,2))+';'+ALLTRIM(STR(vconsumo,12,2))
+	vreto = ALLTRIM(STR(vmanterior,12,2))+';'+ALLTRIM(STR(vmactual,12,2))+';'+ALLTRIM(STR(vconsextra,12,2))+';'+ALLTRIM(STR(vconsumo,12,2))
 	
 	RETURN vreto
 	

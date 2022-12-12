@@ -95,50 +95,8 @@ FUNCTION CREACONFIG()
 		INSERT INTO config VALUES (v_charC)
 
 		USE 
-RETURN 
+	RETURN 
 
-
-
-*!*	*!*				v_charC=encripta(v_charC0,v_llave,.f.)+CHR(13)+CHR(10)
-*!*			IF FILE('config.cfg') THEN 
-*!*				DELETE FILE 'config.cfg' 
-*!*			ENDIF 
-*!*			v_NombreArchi="config.cfg"		
-*!*			H=FCREATE(v_NombreArchi,0)
-*!*			IF H < 0 THEN 
-*!*				MESSAGEBOX("No se pudo CREAR el Archivo de Configuración ",0+48+0,"Error") 
-*!*			ELSE
-*!*				v_llave = 'Processar'
-*!*				v_charC="PUBLIC _SYSMYSQL_SERVER, _SYSMYSQL_USER, _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "
-*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
-*!*				chars=fwrite(H,v_charC)
-
-*!*				v_charC="PUBLIC _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "
-*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
-*!*				chars=fwrite(H,v_charC)
-
-*!*				v_charC="_SYSMYSQL_SERVER = '"+ALLTRIM(pc_server)+"' "
-*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
-*!*				chars=FWRITE(H,v_charC)
-
-*!*				v_charC="_SYSMYSQL_USER   = '"+ALLTRIM(pc_usuario)+"' "
-*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
-*!*				chars=FWRITE(H,v_charC)
-*!*				v_charC="_SYSMYSQL_PASS   = '"+(ALLTRIM(pc_passw))+"' "
-*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
-*!*				chars=FWRITE(H,v_charC)
-*!*				v_charC="_SYSMYSQL_PORT   = '"+ALLTRIM(pc_puerto)+"' "
-*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
-*!*				chars=FWRITE(H,v_charC)
-*!*				v_charC="_SYSSCHEMA    	  = '"+ALLTRIM(pc_esquema)+"' "
-*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
-*!*				chars=FWRITE(H,v_charC)
-*!*				v_charC="_SYSDRVMYSQL     = '"+ALLTRIM(pc_driver)+"' "
-*!*				v_charC=encripta(v_charC,v_llave,.f.)+CHR(13)+CHR(10)
-*!*				chars=FWRITE(H,v_charC)
-*!*				FCLOSE(H)
-*!*			ENDIF 
-*!*		RETURN 
 ENDFUNC
 
 
@@ -147,6 +105,10 @@ ENDFUNC
 ************************************************************************************************************
 ********************************************************************************************************
 FUNCTION CIERRAAPP
+*#/----------------------------------------
+*** Función de Cierre del Sistema, Segun la variable _SYSPAPELERA = "S / N"
+*** Elimina o deja los archivos temporales generados durante la Ejecución del Sistema
+*#/----------------------------------------
 CLOSE ALL 
 CLOSE TABLES ALL 
 SET SAFETY OFF 
@@ -169,6 +131,10 @@ RETURN
 ********************************************************************************************************
 ********************************************************************************************************
 FUNCTION Valicuit (NRO_CUIT)
+*#/----------------------------------------
+*** Función Validación de Numero de CUIT, retorna verdadero o falso segun
+*** el cuit recibido como parametro sea valido
+*#/----------------------------------------
 
 IF NRO_CUIT='  -        - ' OR NRO_CUIT='             ' THEN 
 	RETURN .T.
@@ -215,6 +181,11 @@ ENDFUNC
 
 PROCEDURE enletras
 parameters enl_nume1
+*#/----------------------------------------
+*** Función de conversion de Numeros a Letras.
+*** Recibe un Numero y devuelve el mismo expresado en letras
+*#/----------------------------------------
+
 N=""
 N1="UN"
 N2="DOS"
@@ -342,6 +313,11 @@ return nump
 ********************************************************************************************************
 FUNCTION NOMBREMES
 PARAMETER NMES
+*#/----------------------------------------
+*** Conversión de numeros a mes del año, recibe como parametro
+*** el numero de mes (1-12) y devuelve el mes en letras (ENERO-DICIEMBRE)
+*#/----------------------------------------
+
 DO CASE
 	CASE NMES = 1
 		RETURN "Enero"
@@ -374,6 +350,11 @@ ENDCASE
 
 
 FUNCTION SETMASTERSCHEMA
+*#/----------------------------------------
+*** Función para Cambiar el esquema seteado en el sistema
+*** al esquema Maestros, es decir al equema de administración (admindb)
+*#/----------------------------------------
+
 	_SYSMYSQL_SERVER 	= _SYSMASTER_SERVER 
 	_SYSMYSQL_USER	 	= _SYSMASTER_USER   
 	_SYSMYSQL_PASS   	= _SYSMASTER_PASS   
@@ -385,9 +366,11 @@ ENDFUNC
 
 FUNCTION SETVARPUBLICAS  
 	PARAMETERS P_PREFIJO, P_TABLA
+*#/---------------------------
 	** OBTIENE LOS DATOS DE UNA TABLA Y GENERA VARIABLES PUBLICAS CON LOS CAMPOS Y SUS VALORES **
 	** RECIBE COMO PARAMETROS UNA CADENA PARA ANEXAR A LOS NOMBRES DE LOS CAMPOS PARA SU IDENTIFICACION **
 	** COMO VARIABLE PUBLICA GLOBAL **
+*#/---------------------
 	vconeccion=abreycierracon(0,_SYSSCHEMA)
 	sqlmatriz(1)=" select * from "+P_tabla 
 	verror=sqlrun(vconeccion,p_tabla)
@@ -409,7 +392,9 @@ ENDFUNC
 
 FUNCTION DEFVARPUBLICAS  
 	PARAMETERS p_tabla
+*#/---------------------------
 	** DEFINICION DE VARIABLES PUBLICAS DEL SISTEMA DESDE UNA TABLA DE MYSQL LLAMADA VARPUBLICAS EN EL SCHEMMA ADMINDB **
+*#/---------------------------
 	vconeccion=abreycierracon(0,_SYSSCHEMA)
 	sqlmatriz(1)=" select * from "+P_tabla 
 	verror=sqlrun(vconeccion,p_tabla)
@@ -452,6 +437,9 @@ ENDPROC
 
 
 PROCEDURE salirmenu 
+*#/---------------------------
+*** Consulta para salir de la ejecución del sistema
+*#/---------------------------
 	IF MESSAGEBOX("¿Está seguro que desea Salir?",36,'Salir del Sistema') = 6
 		CIERRAAPP()
     ENDIF
@@ -467,6 +455,9 @@ ENDFUNC
 ***********
 ********** BUSCO SETEO DE BOTONES DE TOOLBARSYS  E ICONOS ***
 FUNCTION settoolbarsys 
+*#/---------------------------
+*** Seteo de los Botones de la Barra de trabajo toolbarsys
+*#/---------------------------
 
 	vconeccion=abreycierracon(0,_SYSMASTER_SCHEMA)
 
@@ -504,9 +495,14 @@ FUNCTION settoolbarsys
 ENDFUNC 
 
 
-* FUNCION DE SETEO DE LA BARRA DE HERRAMIENTAS
 FUNCTION actutoolbarsys 
 PARAMETERS p_form
+*#/---------------------------
+* FUNCION DE SETEO DE LA BARRA DE HERRAMIENTAS
+*** Actualiza los botones de la barra de herramienta del sistema
+*** de acuerdo el formulario que llama el operador
+*** recibe como parametro el nombre del formulario
+*#/---------------------------
 
 	** agregado para deshabilitar la barra de herramientas por cada formulario
 	** si se necesita agregar se habilitará con variables de entorno	
@@ -564,6 +560,10 @@ PARAMETERS p_form
 ENDFUNC 
 
 FUNCTION disabletoolbar
+*#/---------------------------
+*** Deshabilita la barra de trabajo del sistema
+*#/---------------------------
+
 	FOR i = 1 TO toolbarsys.controlcount
 		eje = "toolbarsys.cmdbar_"+SUBSTR((STR(100+i,3)),2,2)+".visible = .f."
 		&eje
@@ -575,6 +575,11 @@ ENDFUNC
 
 FUNCTION validcmdtoolbar
 	PARAMETERS p_cmdbar 
+*#/---------------------------
+*** Función para ejecutar el comando asociado al botón 
+*** seleccionado en la barra de trabajo del sistema
+*#/---------------------------
+	
 	eje="varejecutar = toolbarsys."+p_cmdbar+".tag"
 	&eje 
 	IF !TYPE('_SCREEN.ActiveForm ')= 'U' THEN 
@@ -599,8 +604,11 @@ ENDFUNC
 *FUNCION DE SETEO DE ICONOS
 FUNCTION seticonos
 	PARAMETERS p_nombre, par_objeto, par_arreglo
-	
-	
+*#/---------------------------
+*** Función para el seteo dell icono y comentarios de los botones
+**  de comando de los formularios.
+** debe ser llamado en el evento init de cada boton a ser configurado
+*#/---------------------------
 	
 	USE .\seticonos IN 0
 	SELECT * FROM seticonos INTO CURSOR setico WHERE ALLTRIM(nombre) == ALLTRIM(p_nombre)
@@ -635,6 +643,12 @@ ENDFUNC
 
 FUNCTION settoolbarmenu
 PARAMETERS var_perfil
+*#/---------------------------
+*** Función de creación y seteo del Menu del sistema
+*** de acuerdo al perfil recibido como parámetro
+*** Reconfigura el menu en funcion del usuario y perfil asociado
+*#/---------------------------
+
 v_toolperfil = var_perfil
 
 RELEASE toolbarmenu 
@@ -711,9 +725,11 @@ USE
 ENDFUNC 
 
 
-*** COPIAR IMAGENES ***
 FUNCTION copyarchivo
 	PARAMETERS p_archivo, p_pathn
+*#/----------------------------------------
+*** COPIAR IMAGENES ***
+*#/----------------------------------------
 	
 	j = LEN(ALLTRIM(p_archivo))
 	LON = J
@@ -762,9 +778,11 @@ RETURN a_archivo
 ENDFUNC 
 
 
-**** COPIAR IMAGENES ****
 FUNCTION copyimg
 	PARAMETERS p_img, p_pathn, p_codigo
+*#/----------------------------------------
+**** COPIAR IMAGENES ****
+*#/----------------------------------------
 	
 	j = LEN(ALLTRIM(p_img))
 	LON = J
@@ -813,10 +831,14 @@ FUNCTION copyimg
 RETURN a_archivo
 ENDFUNC 
 
-*** COPIAR DOCUMENTOS ***
-** PARAMETROS: p_docu: Path completo del original; p_pathn: Nueva ubicación; p_codigo: código para diferenciar, p_viejo: Nombre del Archivo Original
+
+
 FUNCTION copydocu
 	PARAMETERS p_docu, p_pathn, p_codigo, p_viejo
+*#/----------------------------------------
+*** COPIAR DOCUMENTOS ***
+** PARAMETROS: p_docu: Path completo del original; p_pathn: Nueva ubicación; p_codigo: código para diferenciar, p_viejo: Nombre del Archivo Original
+*#/----------------------------------------
 	
 	j = LEN(ALLTRIM(p_docu))
 	LON = J
@@ -900,12 +922,14 @@ ENDFUNC
 
 
 
+FUNCTION BUSCAVALORDB
+PARAMETERS b_tabla, b_campoidx, b_valoridx, b_camporet, b_database
+*#/----------------------------------------
 ** FUNCION PARA BUSQUEDA DE VALORES EN TABLAS DE LA BASE DE DATOS **
 ** RECIBE COMO PARAMETROS LA TABLA EN LA QUE BUSCAR Y EL CAMPO Y VALOR BUSCADO
 ** DATO ACERCA DEL VALOR A RETORNAR
 ** EN CASO DE NO HALLAR EL VALOR RETORNA ".NULL."
-FUNCTION BUSCAVALORDB
-PARAMETERS b_tabla, b_campoidx, b_valoridx, b_camporet, b_database
+*#/----------------------------------------
 LOCAL varb_retorno 
 
 	IF TYPE('b_valoridx') = 'C' THEN 
@@ -943,15 +967,15 @@ ENDFUNC
 
 
 
-*----------------------------------------------------- 
+FUNCTION Edad(tdNac, tdHoy) 
+*#/----------------------------------------
 * FUNCTION Edad(tdNac, tdHoy) 
 *----------------------------------------------------- 
 * Calcula la edad pasando como parámetros: 
 * tdNac = Fecha de nacimiento 
 * tdHoy = Fecha a la cual se calcula la edad. 
 * Por defecto toma la fecha actual. 
-*----------------------------------------------------- 
-FUNCTION Edad(tdNac, tdHoy) 
+*#/----------------------------------------
 LOCAL lnAnio 
 IF EMPTY(tdHoy) 
 tdHoy = DATE() 
@@ -969,9 +993,11 @@ RETURN lnAnio
 ENDFUNC 
 
 
-** SETEO DE MATRIZ PARA EJECUCION DE FUNCIONES DE LOS BOTONES **
 FUNCTION seteoteclafn
 PARAMETERS p_matriz_p , p_opcion, p_objeto, p_teclafn
+*#/----------------------------------------
+** SETEO DE MATRIZ PARA EJECUCION DE FUNCIONES DE LOS BOTONES **
+*#/----------------------------------------
 	PRIVATE p_matriz 
 	p_matriz = p_matriz_p+"FN"
 	retorno =""
@@ -1044,11 +1070,15 @@ PARAMETERS p_matriz_p , p_opcion, p_objeto, p_teclafn
 	RETURN retorno 
 ENDFUNC 
 
+
+
+FUNCTION maxnumerocom
+PARAMETERS p_idcomproba, p_pventa, v_incre 
+*#/----------------------------------------
 * FUNCION PARA TRAER EL MAXIMO NUMERO DE UN COMPROBANTE
 * RECIBE COMO PARAMETROS EL ID DEL COMPROBANTE, EL PUNTO DE VENTA Y EL VALOR A INCREMENTAR EL NUMERO
 * DEVUELVE EL VALOR INCREMENTADO SEGUN EL PARAMETRO DE INCREMENTO RECIBIDO
-FUNCTION maxnumerocom
-PARAMETERS p_idcomproba, p_pventa, v_incre 
+*#/----------------------------------------
 
 	compruebaCajaReca()
 
@@ -1098,12 +1128,16 @@ RETURN v_maximo
 
 ENDFUNC
 
+
+
+FUNCTION maxnumeroidx
+PARAMETERS p_campoidx, p_tipo, p_tabla, v_incre , v_autoinc
+*#/----------------------------------------
 * FUNCION PARA TRAER EL MAXIMO ID O INDICE DE UNA TABLA
 * RECIBE COMO PARAMETROS EL CAMPO QUE CONTIENE EL ID O INDICE, EL TIPO DE CAMPO, LA TABLA Y EL VALOR A INCREMENTAR EL ID
 * DEVUELVE EL VALOR INCREMENTADO SEGUN EL PARAMETRO DE INCREMENTO RECIBIDO (SOLO SI ES NUMERO)
 * SI V_AUTOINC ES .T. significa que el campo indice es autoincremental en la bd Y DEBE devolver "0"
-FUNCTION maxnumeroidx
-PARAMETERS p_campoidx, p_tipo, p_tabla, v_incre , v_autoinc
+*#/----------------------------------------
 
 	v_tipoCampo = ""
 
@@ -1210,11 +1244,13 @@ ENDFUNC
 
 
 
+FUNCTION autorizarCompFE
+PARAMETERS p_idregistro, p_idcomproba, p_nomsg
+*#/----------------------------------------
 * FUNCIÓN PARA AUTORIZAR COMPROBANTES
 * PARAMETROS: P_IDCOMPROBANTE, ID DEL COMPROBANTE A AUTORIZAR
 * RETORNO: Retorna True si no hubo errores al intentar autorizar el comprobante (NO significa que se haya APROBADO), retorna False en caso que haya ocurrido un error en la autorización
-FUNCTION autorizarCompFE
-PARAMETERS p_idregistro, p_idcomproba, p_nomsg
+*#/----------------------------------------
 
 	v_idcomprobante= p_idregistro
 	v_autorizar = .F.
@@ -1569,12 +1605,16 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 
 	RETURN v_autorizar
 
-ENDFUNC  
+ENDFUNC
 
-* FUNCIÓN PARA IMPRIMIR UNA FACTURA (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
-* PARAMETROS: P_IDFACTURA, P_ESELECTRONICA
+  
+
 FUNCTION imprimirFactura
 PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UNA FACTURA (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
+* PARAMETROS: P_IDFACTURA, P_ESELECTRONICA
+*#/----------------------------------------
 
 
 	v_idfactura 	= p_idFactura
@@ -1664,10 +1704,12 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 
 		*** Busco los datos de las Bocas de Servicios asociadas 	
 			sqlmatriz(1)=" Select b.idfacbser, b.idfactura, b.bocanumero, b.ruta1, b.folio1, "
-			sqlmatriz(2)=" b.ruta2, b.folio2, b.direccion, b.idtiposer, b.valorref, b.unidadref, b.manterior, b.mactual, b.consumo, t.detalle as detatipo "
-			sqlmatriz(3)=" from facturasbser b " 
-			sqlmatriz(4)=" left join tiposervicio t on t.idtiposer = b.idtiposer "
-			sqlmatriz(5)=" where b.idfactura = "+ ALLTRIM(STR(v_idfactura))
+			sqlmatriz(2)=" b.ruta2, b.folio2, b.direccion, b.idtiposer, b.idcateser, b.valorref, b.unidadref, "
+			sqlmatriz(3)=" b.manterior, b.mactual, b.consextra, b.consumo, t.detalle as detatipo, c.detalle as detacate "
+			sqlmatriz(4)=" from facturasbser b " 
+			sqlmatriz(5)=" left join tiposervicio t on t.idtiposer = b.idtiposer "
+			sqlmatriz(6)=" left join cateservicio c on c.idcateser = b.idcateser "
+			sqlmatriz(7)=" where b.idfactura = "+ ALLTRIM(STR(v_idfactura))
 
 			verror=sqlrun(vconeccionF,"bocas_sql")
 			IF verror=.f.  
@@ -1882,10 +1924,12 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 ENDFUNC 
 
 
-* FUNCIÓN PARA IMPRIMIR RECIBO
-* PARAMETROS: P_IDRECIBO
 FUNCTION imprimirRecibo
 PARAMETERS p_idRecibo
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR RECIBO
+* PARAMETROS: P_IDRECIBO
+*#/----------------------------------------
 
 
 	v_idrecibo = p_idrecibo
@@ -2044,10 +2088,12 @@ ENDFUNC
 
 
 
-* FUNCIÓN PARA IMPRIMIR UN MOVIMIENTO DE STOCK DE MATERIALES
-* PARAMETROS: P_IDMOVISTOCK
 FUNCTION imprimirOtMoviStock
 PARAMETERS p_idMoviStockP
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UN MOVIMIENTO DE STOCK DE MATERIALES
+* PARAMETROS: P_IDMOVISTOCK
+*#/----------------------------------------
 
 
 	v_idmovip = p_idMoviStockP
@@ -2125,10 +2171,12 @@ PARAMETERS p_idMoviStockP
 ENDFUNC 
 
 
-* FUNCIÓN PARA IMPRIMIR UNA Nota de Pedido (COMPROBANTES DE LA TABLA NP)
-* PARAMETROS: P_IDNP
 FUNCTION imprimirNP
 PARAMETERS p_idnp
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UNA Nota de Pedido (COMPROBANTES DE LA TABLA NP)
+* PARAMETROS: P_IDNP
+*#/----------------------------------------
 
 
 	v_idnp = p_idnp
@@ -2279,10 +2327,12 @@ PARAMETERS p_idnp
 ENDFUNC 
 
 
-* FUNCIÓN PARA IMPRIMIR UN PRESUPUESTO (COMPROBANTES DE LA TABLA PRESUPU)
-* PARAMETROS: P_IDPRESUPU
 FUNCTION imprimirPresu
 PARAMETERS p_idpresupu
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UN PRESUPUESTO (COMPROBANTES DE LA TABLA PRESUPU)
+* PARAMETROS: P_IDPRESUPU
+*#/----------------------------------------
 
 
 	v_idpresupu = p_idpresupu
@@ -2420,10 +2470,12 @@ PARAMETERS p_idpresupu
 ENDFUNC 
 
 
-* FUNCIÓN PARA IMPRIMIR TRANSFERENCIA DE CAJAS
-* PARAMETROS: P_idcajamovip
 FUNCTION imprimirTransferenciaCaja
 PARAMETERS p_idcajamovip
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR TRANSFERENCIA DE CAJAS
+* PARAMETROS: P_idcajamovip
+*#/----------------------------------------
 
 	v_idcajamovip = p_idcajamovip
 	
@@ -2511,10 +2563,12 @@ ENDFUNC
 
 
 
-* FUNCIÓN PARA IMPRIMIR TRANSFERENCIA DE CAJAS
-* PARAMETROS: P_idcajamovip
 FUNCTION imprimirTransferenciaCta
 PARAMETERS p_idtransferencia
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR TRANSFERENCIA DE CAJAS
+* PARAMETROS: P_idcajamovip
+*#/----------------------------------------
 
 
 
@@ -2602,10 +2656,12 @@ ENDFUNC
 
 
 
-* FUNCIÓN PARA IMPRIMIR CAJA INGRESO / EGRESO
-* PARAMETROS: P_idcajaie
 FUNCTION imprimirCajaIE
 PARAMETERS p_idcajaie, P_opera_comp
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR CAJA INGRESO / EGRESO
+* PARAMETROS: P_idcajaie
+*#/----------------------------------------
 
 	v_idcajaie = p_idcajaie
 	v_opera_comp = P_opera_comp
@@ -2725,10 +2781,12 @@ ENDFUNC
 
 
 
-* FUNCIÓN PARA IMPRIMIR UN COmprobante de cumplimentacion (COMPROBANTES DE LA TABLA cumplimentap)
-* PARAMETROS: P_IDCUMP
 FUNCTION imprimirCumplimentacion
 PARAMETERS p_idcump
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UN COmprobante de cumplimentacion (COMPROBANTES DE LA TABLA cumplimentap)
+* PARAMETROS: P_IDCUMP
+*#/----------------------------------------
 
 
 	v_idcump = p_idcump
@@ -2787,10 +2845,12 @@ PARAMETERS p_idcump
 ENDFUNC 
 
 
-* FUNCIÓN PARA IMPRIMIR UN COmprobante de CumpleOC (COMPROBANTES DE LA TABLA cumplimentaoc)
-* PARAMETROS: P_IDCUMPOC
 FUNCTION imprimirCumpleOC
 PARAMETERS p_idcumpoc
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UN COmprobante de CumpleOC (COMPROBANTES DE LA TABLA cumplimentaoc)
+* PARAMETROS: P_IDCUMPOC
+*#/----------------------------------------
 
 
 	v_idcumpoc = p_idcumpoc
@@ -2849,10 +2909,12 @@ PARAMETERS p_idcumpoc
 ENDFUNC 
 
 
-* FUNCIÓN PARA IMPRIMIR UN COmprobante de Vinculos (COMPROBANTES DE LA TABLA vinculocomp)
-* PARAMETROS: P_idvinculo
 FUNCTION imprimirVinculoComp
 PARAMETERS p_idvinculo
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UN COmprobante de Vinculos (COMPROBANTES DE LA TABLA vinculocomp)
+* PARAMETROS: P_idvinculo
+*#/----------------------------------------
 
 
 	v_idvinculo = p_idvinculo
@@ -2906,10 +2968,12 @@ PARAMETERS p_idvinculo
 ENDFUNC 
 
 
-* FUNCIÓN PARA IMPRIMIR PAGARES (COMPROBANTES DE LA TABLA pagares)
-* PARAMETROS: P_idpagare
 FUNCTION imprimirPagare
 PARAMETERS p_idpagare
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR PAGARES (COMPROBANTES DE LA TABLA pagares)
+* PARAMETROS: P_idpagare
+*#/----------------------------------------
 
 
 	v_idpagare = p_idpagare
@@ -2963,10 +3027,14 @@ PARAMETERS p_idpagare
 ENDFUNC 
 
 
-* FUNCIÓN PARA IMPRIMIR UNA ORDEN DE COMPRA (COMPROBANTES DE LA TABLA OC)
-* PARAMETROS: P_IDOC
+
+
 FUNCTION imprimirOC
 PARAMETERS p_idoc
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UNA ORDEN DE COMPRA (COMPROBANTES DE LA TABLA OC)
+* PARAMETROS: P_IDOC
+*#/----------------------------------------
 
 
 	v_idoc = p_idoc
@@ -3113,8 +3181,9 @@ ENDFUNC
 
 
 FUNCTION compruebaCajaReca
-
+*#/----------------------------------------
 *** Controlo que se haya seleccionado una caja de recaudación 
+*#/----------------------------------------
 
 IF _SYSCAJARECA = 0 && No hay caja seleccionada, pide caja
 
@@ -3151,10 +3220,12 @@ ENDIF
 
 ENDFUNC 
 
-* ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO
-* PARAMETROS: P_idComp: id comprobante; P_idReg: ID del registro
 FUNCTION guardaCajaRecaH 
 PARAMETERS p_idComp, p_idReg, p_idCajaR
+*#/----------------------------------------
+* ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO
+* PARAMETROS: P_idComp: id comprobante; P_idReg: ID del registro
+*#/----------------------------------------
 				
 		v_idcajarecaudah = maxnumeroidx("idcajareh","I","cajarecaudah",1)
 
@@ -3215,9 +3286,11 @@ ENDFUNC
 
 
 
-*** Función que recibe un numero decimal y retorna el RGB equivalente, en una cadena de texto
 FUNCTION decimalARGB
 PARAMETERS p_numDecimal
+*#/----------------------------------------
+*** Función que recibe un numero decimal y retorna el RGB equivalente, en una cadena de texto
+*#/----------------------------------------
 
 v_num = p_numDecimal
 
@@ -3244,7 +3317,8 @@ ENDFUNC
 
 
 
-*---------------------------------------------
+FUNCTION Encripta(tcCadena, tcLlave, tlSinDesencripta)
+*#/----------------------------------------
 * Función que encripta una cadena
 * Parámetros:
 *    tcCadena - Cadena a encriptar
@@ -3254,8 +3328,7 @@ ENDFUNC
 *       desencriptar, ya que el mecanismo de encriptamiento utilizado
 *       produce perdida de informacion que impide la inversion del proceso
 * Retorno: Caracter (el doble de largo que el texto pasado)
-*---------------------------------------------
-FUNCTION Encripta(tcCadena, tcLlave, tlSinDesencripta)
+*#/----------------------------------------
  LOCAL lc, ln, lcRet
  LOCAL lnClaveMul, lnClaveXor
  IF EMPTY(tcLlave)
@@ -3279,14 +3352,16 @@ FUNCTION Encripta(tcCadena, tcLlave, tlSinDesencripta)
  RETURN lcRet
 ENDFUNC
 
-*---------------------------------------------
+
+
+FUNCTION Desencripta(tcCadena, tcLlave)
+*#/----------------------------------------
 * Función que desencripta una cadena encriptada
 * Parámetros:
 *    tcCadena - Cadena a desencriptar
 *    tcLlave - Llave para desencriptar (Debe ser la misma de Encriptar)
 * Retorno: Caracter (la mitad de largo que el texto pasado)
-*---------------------------------------------
-FUNCTION Desencripta(tcCadena, tcLlave)
+*#/----------------------------------------
  LOCAL lc, ln, lcRet, lnByte
  LOCAL lnClaveMul, lnClaveXor
  IF EMPTY(tcLlave)
@@ -3304,10 +3379,12 @@ FUNCTION Desencripta(tcCadena, tcLlave)
  RETURN lcRet
 ENDFUNC
 
-*---------------------------------------------
-* Función usada por Encripta y Desencripta
-*---------------------------------------------
+
+
 FUNCTION GetClaves(tcLlave, tnClaveMul, tnClaveXor)
+*#/----------------------------------------
+* Función usada por Encripta y Desencripta
+*#/----------------------------------------
  LOCAL lc, ln
  lc = ALLTRIM(LOWER(tcLlave))
  tnClaveMul = 31
@@ -3319,15 +3396,17 @@ FUNCTION GetClaves(tcLlave, tnClaveMul, tnClaveXor)
  ENDDO
 ENDFUNC
 
-*---------------------------------------------
+
+
+FUNCTION RegistraEstadoOt
+PARAMETERS p_idot, p_idestado
+*#/----------------------------------------
 * Función que registra los estados en OtEstadosOt
 * Parámetros:
 *    p_idot - IdOT que se va a registrar el estado
 *    p_idestado - IdEstado a registrar
 * Retorno: True o False en caso que se registre correctamente o no
-*---------------------------------------------
-FUNCTION RegistraEstadoOt
-PARAMETERS p_idot, p_idestado
+*#/----------------------------------------
 
 	
 	* me conecto a la base de datos
@@ -3377,6 +3456,7 @@ ENDFUNC
 
 FUNCTION CANTIDADHORAS
 PARAMETERS P_HORAD , P_HORAH
+*#/----------------------------------------
 * calcula la cantidad de horas entre una hora de inicio y una de finalizacion
 * formato en el que debe recibir los parametros en tipo de datos caracter:
 *		'AAAAMMDDHH:MM:SS'
@@ -3385,7 +3465,8 @@ PARAMETERS P_HORAD , P_HORAH
 * retorna la cantidad de horas minutos y segundo en formato caracter
 * transcurridos desde la fecha/hora de inicio a la de fin
 *		'HHHHHH:MM:SS'
-*
+*#/----------------------------------------
+
 	vphorad = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_horad,' ','0'),':',''))+'00000000000000'),1,14)
 	vphorah = SUBSTR(ALLTRIM((STRTRAN(STRTRAN(p_horah,' ','0'),':',''))+'00000000000000'),1,14)
 
@@ -3425,10 +3506,12 @@ ENDFUNC
 
 FUNCTION SUMAHORAS
 PARAMETERS P_HORA1 , P_HORA2
+*#/----------------------------------------
 * suma las horas que recibe como parametro HORA1 Y HORA2
 * el formato en el que recibe es de tipo caracter
 *		'HHHHHH:MM:SS'
 * devuelve el valor acumulado de horas en el mismo formato
+*#/----------------------------------------
 	
 	v_sig_h1= SUBSTR(ALLTRIM(p_hora1),1,1)
 	v_sig_h2= SUBSTR(ALLTRIM(p_hora2),1,1)
@@ -3504,9 +3587,11 @@ ENDFUNC
 
 FUNCTION IPAddress
 PARAMETERS pdato 
+*#/----------------------------------------
 * Parametro pdato
 *		 = 1 devuelve la ip local del equipo
 *		 = 2 devuelve Nombre del host
+*#/----------------------------------------
 v_error = .f.
 ON ERROR v_error = .t.
 oWS = CREATEOBJECT ("MSWinsock.Winsock")
@@ -3630,6 +3715,10 @@ ENDFUNC
 
 
 
+
+FUNCTION obtienegrupo
+PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
+*#/----------------------------------------
 *** FUNCION PARA LA OBTENCION DE UNA TABLA O CURSOR CON TODOS LOS ELEMENTOS 
 *** DE UN GRUPO , EN LA TABLA SE MARCAN TODOS LOS ELEMENTOS QUE PERTENECEN AL GRUPO
 *** Y TODOS AQUELLOS QUE ESTÁN FUERA DEL MISMO A TRAVEZ DEL CAMPO pertenece
@@ -3641,9 +3730,7 @@ ENDFUNC
 ***			nombreg char(100)
 ***			tabla char(50)
 ***			campo char(50)
-
-FUNCTION obtienegrupo
-PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
+*#/----------------------------------------
 
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 
@@ -3727,15 +3814,16 @@ ENDFUNC
 
 
 
-*---------------------------------------------
+
+FUNCTION getIdTabla
+PARAMETERS p_nomTabla
+*#/----------------------------------------
 * Función que retorna el nombre del campo clave de la tabla pasada como parámetro
 * Parámetros:
 *    p_nomTabla: nombre de la tabla
 * Retorno: Retorna el nombre del campo clave de la tabla. vacio en caso de no encotrarlo
-*---------------------------------------------
+*#/----------------------------------------
 
-FUNCTION getIdTabla
-PARAMETERS p_nomTabla
 v_campoPK = ""
 vconeccionFdb = abreycierracon(0,_SYSSCHEMA)
 
@@ -3802,9 +3890,12 @@ RETURN v_campoPK
 ENDFUNC 
 
 
-** SEPARA CARACTERES BUSCADOS Y RETORNA VERDADERO O FALSO 0 O 1
 FUNCTION ATCF 
 PARAMETERS c_buscado, c_buscaren
+*#/----------------------------------------
+** SEPARA CARACTERES BUSCADOS Y RETORNA VERDADERO O FALSO 0 O 1
+*#/----------------------------------------
+
 IF !EMPTY(c_buscado) then 
 	vfiltra01 = 0
 	c_buscado 	= UPPER(c_buscado)
@@ -3852,45 +3943,14 @@ ENDIF
 ENDFUNC 
 
 
-*!*	** SEPARA CARACTERES BUSCADOS Y RETORNA VERDADERO O FALSO 0 O 1
-*!*	FUNCTION ATCF_BKP 
-*!*	PARAMETERS c_buscado, c_buscaren
-*!*	IF !EMPTY(c_buscado) then 
-*!*		vfiltra01 = 0
-*!*		c_buscado 	= UPPER(c_buscado)
-*!*		c_buscaren 	= UPPER(c_buscaren)
-*!*		
-*!*		ALINES(cbuscadoarr,c_buscado,16,"&","#")
-*!*		aelementos = ALEN(cbuscadoarr)
-
-*!*		DIMENSION cbuscadof (aelementos,2)
-*!*		FOR i= 1 TO aelementos
-*!*			cbuscadof(i,2) = IIF(ATC("#",ALLTRIM(cbuscadoarr(i)))>0,'+',IIF(ATC("&",ALLTRIM(cbuscadoarr(i)))>0,'*','+'))
-*!*			cbuscadoarr(i)=STRTRAN(STRTRAN(cbuscadoarr(i),'#',""),"&","")
-*!*		ENDFOR 
-
-*!*		FOR i=1 TO aelementos
-*!*			vfiltra001 = IIF(ATC(ALLTRIM(cbuscadoarr(i)),c_buscaren)>0,'1','0')
-*!*			cbuscadof(i,1)=vfiltra001
-*!*		ENDFOR 
-*!*		vformula = ""
-*!*		FOR i=1 TO aelementos
-*!*			vformula = vformula+cbuscadof(i,1)+cbuscadof(i,2)
-*!*		ENDFOR 
-*!*		vformula = vformula +'+0'  
-*!*		vfiltra01 = &vformula
-*!*		RELEASE cbuscadoarr , cbuscadof
-*!*		RETURN vfiltra01
-*!*	ELSE	
-*!*		RETURN 1
-*!*	ENDIF 
-*!*	ENDFUNC 
 
 
-* FUNCION DE BUSQUEDA DE REPORTES Y SELECCION DE ACUERDO AL PARAMETRO APLICADO.
 
 FUNCTION fselectreporte 
 PARAMETERS pvar_paramrepo, pvar_tablarepo
+*#/----------------------------------------
+* FUNCION DE BUSQUEDA DE REPORTES Y SELECCION DE ACUERDO AL PARAMETRO APLICADO.
+*#/----------------------------------------
 	****************************************
 	v_paramRepo = pvar_paramrepo
 	pvar_retorno = ""
@@ -3995,12 +4055,14 @@ PARAMETERS pvar_paramrepo, pvar_tablarepo
 ENDFUNC 
 
 
-* Incerta un Reporte en la tabla reportesimp y agrega una relacion en comprorepo
-* Se utiliza cuando no existe el reporte que el usuario quiere incertar
-* retorna el idreporte si lo pudo insertar, sino devuelve 0
 
 FUNCTION CargaReporte
 PARAMETERS pr_claverepo
+*#/----------------------------------------
+* Incerta un Reporte en la tabla reportesimp y agrega una relacion en comprorepo
+* Se utiliza cuando no existe el reporte que el usuario quiere incertar
+* retorna el idreporte si lo pudo insertar, sino devuelve 0
+*#/----------------------------------------
 
 	** Primero pido e incerto el reporte en la tabla reportesimp **
 	** cargo el reporte si no existe ** 
@@ -4138,6 +4200,9 @@ ENDFUNC
 
 
 
+FUNCTION obtieneallgrupos
+PARAMETERS  para_aliasd
+*#/----------------------------------------
 *** FUNCION PARA LA OBTENCION DE UNA TABLA O CURSOR CON TODOS LOS ELEMENTOS 
 *** LOS GRUPOS DEL SISTEMA Y SUS COMPONENTES
 *** campos devueltos en la tabla
@@ -4153,8 +4218,8 @@ ENDFUNC
 ***			nombretipo c(100)
 ***			codarbol c(15)
 ***			tiporeg c(1) 'M'=Miembro, 'G'=Grupo 'T'=Tipo Grupo
-FUNCTION obtieneallgrupos
-PARAMETERS  para_aliasd
+*#/----------------------------------------
+
 p_aliasreto  = ""
 
 	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
@@ -4245,7 +4310,11 @@ toolbargrupos.tag = var_perfil
 ENDFUNC 
 
 
-*---------------------------------------------
+
+
+FUNCTION registrarEstado
+PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
+*#/----------------------------------------
 * Función que registra el estado según los parámetros pasados en la tabla estadosreg
 * Parámetros:
 *   p_nomTabla: nombre de la tabla
@@ -4256,10 +4325,7 @@ ENDFUNC
 **
 * Retorno:
 *	True: si no se produjeron errores, False en otro caso
-*---------------------------------------------
-
-FUNCTION registrarEstado
-PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
+*#/----------------------------------------
 
 	estObj	= CREATEOBJECT('estadosclass')
 	
@@ -4354,23 +4420,27 @@ ENDFUNC
 
 
 
-** AGREGA EL CAMPO busquedag para poder realizar busquedas y filtrados con el objeto de grupos
 
 FUNCTION generabusquedag
 	PARAMETERS para_tabla, para_string
+*#/----------------------------------------
+** AGREGA EL CAMPO busquedag para poder realizar busquedas y filtrados con el objeto de grupos
+*#/----------------------------------------
 	SELECT &para_tabla
 	ALTER table &para_tabla ADD COLUMN busquedag c(254)
 	replace ALL busquedag WITH &para_string
 	GO TOP 
 RETURN 
 
-*---------------------------------------------------------------------------
+
+
+FUNCTION filtragrupos
+	PARAMETERS pf_tbbuscador, pf_tablas, pf_extras
+*#/----------------------------------------
 * Filtrado de grupos en tablas Locales, recibe como parametro una tabla local 
 *  y aplica el filtro de grupo a las tablas si está seleccionada la opcion de filtrados
 *  en el objeto de grupos
-*------------------------------------------------------------------------------
-FUNCTION filtragrupos
-	PARAMETERS pf_tbbuscador, pf_tablas, pf_extras
+*#/----------------------------------------
 
 	IF TYPE("pf_extras")='C' THEN 
 		IF !EMPTY(ALLTRIM(pf_extras)) THEN	
@@ -4420,10 +4490,10 @@ FUNCTION filtragrupos
 	
 ENDFUNC 
 
-*-------------------------------------------------------------
-* Oculta o muestra la tabla de seleccion de grupos del sistema
-*-------------------------------------------------------------
 FUNCTION showhidetoolbargrupo
+*#/----------------------------------------
+* Oculta o muestra la tabla de seleccion de grupos del sistema
+*#/----------------------------------------
 	IF toolbargrupos.visible THEN 
 		toolbargrupos.hide
 		toolbargrupos.pageayuda.grupos.filtragrupos.value = .f.
@@ -4435,7 +4505,10 @@ ENDFUNC
 
 
 
-*---------------------------------------------
+
+FUNCTION obtenerEstado 
+PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd
+*#/----------------------------------------
 * Función que retorna el IdEstadoR del último estado según los parámetros pasados en la tabla estadosreg
 * Parámetros:
 *   p_nomTabla: nombre de la tabla
@@ -4445,10 +4518,7 @@ ENDFUNC
 **
 * Retorno:
 *	True: si no se produjeron errores, False en otro caso
-*---------------------------------------------
-
-FUNCTION obtenerEstado 
-PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd
+*#/----------------------------------------
 
 	v_indice = ""
 	IF p_tipoInd = 'I'
@@ -4485,12 +4555,12 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd
 ENDFUNC 
 
 
-*---------------------------------------------------------------
-* Ejecuta los formularios controlando que no estén activos
-* Utilizado para evitar activar varias veces el mismo formulario
-*---------------------------------------------------------------
 FUNCTION ejecutaform 
 PARAMETERS par_form, par_varpasadas
+*#/----------------------------------------
+* Ejecuta los formularios controlando que no estén activos
+* Utilizado para evitar activar varias veces el mismo formulario
+*#/----------------------------------------
 	vpar_retorno = ""
 	vpar_varpasadas = ""
 	vpar_form = ""
@@ -4511,16 +4581,16 @@ PARAMETERS par_form, par_varpasadas
 ENDFUNC 
 
 
-*---------------------------------------------------------------
+FUNCTION obtenerCampoIndice
+PARAMETERS p_tabla, p_tipo, p_cone
+*#/----------------------------------------
 * Función para obtener el campo indice de una tabla de la bd
 * Parametros: p_Tabla: Nombre de la tabla consultada
 * 			  p_tipo: indica si quiere que retorne el tipo de campo del indice .f. = no retorna, .t.= retorna tipo "C" o "I"
 *				 	  concatenado al nombre de campo serparado por ";"
 *			  p_cone: si recibe la conexion, entonces no cierra ni abre, usa la conexion recibida
 * Retorno: Retorna el nombre del campo indice de la tabla consultada
-*---------------------------------------------------------------
-FUNCTION obtenerCampoIndice
-PARAMETERS p_tabla, p_tipo, p_cone
+*#/----------------------------------------
 
 
 	IF TYPE("p_cone") = 'N' THEN && Se le Paso la Conexion entonces no abre ni cierra 
@@ -4563,12 +4633,14 @@ ENDFUNC
 
 
 
+FUNCTION SetearIndice
+PARAMETERS pa_tabla, pa_tablaorden, pa_campobus, pa_valorbus, pa_camporet, pa_tag
+*#/----------------------------------------
 *+ Funcion para el seteo de indices en tablas locales
 * recibe como parametros una tabla a ordenar , una tabla con los indices y el valor que debe
 * seleccionar para crear el indice. 
 * busca en la tabla de orde pa_orden , selecciona el indice y lo crea en pa_tabla
-FUNCTION SetearIndice
-PARAMETERS pa_tabla, pa_tablaorden, pa_campobus, pa_valorbus, pa_camporet, pa_tag
+*#/----------------------------------------
 
 	var_indice = ALLTRIM(BUSCAVALORDB(pa_tablaorden,pa_campobus,pa_valorbus, pa_camporet,1))
 	
@@ -4583,11 +4655,11 @@ ENDFUNC
 
 
 FUNCTION ejecutarexe
+PARAMETERS param_path ,param_executa
 *#/---------------------------------------------------------------
 * LLama al Menu de Configuracion para Setearlo pasando como parametros
 * los datos del Esquema seleccionado en el Sistema Seleccionado
 *#/---------------------------------------------------------------
-PARAMETERS param_path ,param_executa
 
  
 
@@ -4629,6 +4701,7 @@ ENDFUNC
 
 
 FUNCTION setidxgrilla
+PARAMETERS p_grilla, p_columna, p_header 
 *#/-------------------------------------------------------------
 * Setea los indices en las grillas pasadas como parametros
 * Recibe como parametros la Grilla con todo el nombre gerarquico 
@@ -4639,7 +4712,6 @@ FUNCTION setidxgrilla
 * Para el Orden del Indice Ascentente o Descendente , la grilla debe tener seteado en 
 * el campo StatusBarText= "A" = "ASCENDING" u "D" = "DESCENDING"
 *#/-------------------------------------------------------------
-PARAMETERS p_grilla, p_columna, p_header 
 v_grilla_tabla 			= p_grilla+".recordsource"
 v_grilla_tag 			= p_grilla+".tag"
 v_grilla_StatusBarText	= p_grilla+".StatusBarText"
@@ -4697,12 +4769,12 @@ ENDFUNC
 
 
 FUNCTION seteagrilla
+PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 *#/-------------------------------------------------------------
 * Seteo de las Grillas de
 * Recibe como parametros, el cursor, el nombre de la grilla
 * un arreglo con las columnas a a colocar en la grilla
 *#/-------------------------------------------------------------
-PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 
 	vcan_column = ALEN(&p_matcolumn,1)
 	
@@ -4756,13 +4828,13 @@ RETURN
 ENDFUNC 
 
 FUNCTION fcodentidad
+PARAMETERS pcodenti, pcual
 *#/*****************************************************
 */ Toma en caracteres separados por puntos el valor de codigo
 */ y lo divide de acuerdo al codigo de ENTIDAD-SERVICIO-SUBCODIGO
 */ recibe caracteres y devuelve en valor numerico de acuerdo
 */ al parametro solicitado 1-ENTIDAD  2-SERVICIO  3-SUBCODIGO
 *#/******************************************************
-PARAMETERS pcodenti, pcual
 varretorno = 0
 ALINES(ccodarray,pcodenti,1,".",'-')
 caelementos = ALEN(ccodarray)
@@ -4791,6 +4863,7 @@ RETURN varretorno
 
 
 FUNCTION consultalocprovpais
+PARAMETERS p_idlocalidad,p_conCod, p_conProv, p_conPais
 *#/-------------------------------------------------------------
 * Retorna una cadena de caracteres con la localidad
 * Con el siguiente formato: <Localidad> [(<Cod_postal)] [- <Provincia>] [- <Pais>]
@@ -4801,7 +4874,6 @@ FUNCTION consultalocprovpais
 *	p_conPais B:		Booleano indicando si se muestra o no el país
 *	
 *#/-------------------------------------------------------------
-PARAMETERS p_idlocalidad,p_conCod, p_conProv, p_conPais
 
 		v_idlocalidad	= p_idlocalidad
 		v_conCod		= p_conCod
@@ -4864,6 +4936,7 @@ ENDFUNC
 
 
 FUNCTION calculaDigitoVerif
+PARAMETERS p_codigo
 *#/-------------------------------------------------------------
 * Retorna una cadena de caracteres con agregando al final el digito verificador a la cadena pasada como parámetro
 * Con el siguiente formato: CCCCCCCCCCCTTTPPPPAAAAAAAAAAAAAAVVVVVVVVD
@@ -4872,7 +4945,6 @@ FUNCTION calculaDigitoVerif
 *	p_codigoI: 	Cadena a calcular el digito verificador
 * Retorno: Cadena con digito verificador	
 *#/-------------------------------------------------------------
-PARAMETERS p_codigo
 
 	v_codigo	= ALLTRIM(p_codigo)
 	v_cantDig	= LEN(v_codigo)
@@ -4922,9 +4994,11 @@ PARAMETERS p_codigo
 ENDFUNC 
 
 
-** Función que retorna la cadena pasada como parámetro separada por puntos
 FUNCTION separarcadena
 PARAMETERS PCADENA
+*#/----------------------------------------
+** Función que retorna la cadena pasada como parámetro separada por puntos
+*#/----------------------------------------
 	RETORNO = ALLTRIM(STRTRAN(PCADENA,".",""))
 	CANTCAR = LEN(ALLTRIM(RETORNO))
 	IF !(MOD(CANTCAR,2) = 0) THEN 
@@ -4944,13 +5018,13 @@ RETURN RETORNA
 
 
 FUNCTION fejercicioplan
+PARAMETERS p_fecha,p_devuelve
 *#/-------------------------------------------------------------
 * Retorna el id del dejercicio economico y el id del Plan de Cuentas
 * de acuerdo al ejercicio seleccionado segun la fecha ingresada
 * Parametros: 1-Fecha a considerar
 *			  2-Condicion devuelta : 0=Devuelve el idejercicio, 1= Devuelve el idplan
 *#/-------------------------------------------------------------
-PARAMETERS p_fecha,p_devuelve
 
 	IF TYPE('p_fecha')= 'D' THEN 
 		v_fechapar = DTOS(p_fecha)
@@ -4996,6 +5070,7 @@ ENDFUNC
 
 
 FUNCTION fdescribecompro
+PARAMETERS par_tabla,par_nomindice,par_valindice
 *#/-------------------------------------------------------------
 * Retorna un string conteniendo una descripcion del comprobante
 * que permite identificarlo univocamente. 
@@ -5003,7 +5078,6 @@ FUNCTION fdescribecompro
 *			  2-nombre del indice, Si indice está vacio lo obtiene
 *			  3-Valor del indice
 *#/-------------------------------------------------------------
-PARAMETERS par_tabla,par_nomindice,par_valindice
 
 	v_retornod = ""
 
@@ -5055,10 +5129,12 @@ ENDFUNC
 
 
 
-* FUNCIÓN PARA IMPRIMIR UN REMITO
-* PARAMETROS: P_IDREMITO, P_ESELECTRONICA
 FUNCTION imprimirRemito
 PARAMETERS p_idremito, p_esElectronica
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UN REMITO
+* PARAMETROS: P_IDREMITO, P_ESELECTRONICA
+*#/----------------------------------------
 
 
 	v_idremito = p_idremito
@@ -5129,13 +5205,15 @@ PARAMETERS p_idremito, p_esElectronica
 	ENDIF 
 
 ENDFUNC 
+
+
+FUNCTION imprimirRetenciones
+PARAMETERS P_idpago, p_conexion
 *#/****************************
 * FUNCIÓN PARA IMPRIMIR LOS COMPROBANTES DE RETENCIONES DADO UNA ORDEN DE PAGO
 * PARAMETROS: P_idpago: Recibe como parámetro el ID de la orden de pago
 * La función imprime los comprobantes de retención según los parametros
 *#/****************************
-FUNCTION imprimirRetenciones
-PARAMETERS P_idpago, p_conexion
 
 	vconeccionF= 0
 	IF TYPE('p_conexion') = 'L'
@@ -5186,14 +5264,13 @@ PARAMETERS P_idpago, p_conexion
 ENDFUNC 
 
 
-
+FUNCTION imprimirRetencion
+PARAMETERS p_idretencion, p_conexion
 *#/****************************
 * FUNCIÓN PARA IMPRIMIR EL COMPROBANTE DE RENTECIÓN
 * PARAMETROS: P_idretencion: Recibe como parámetro el ID de la retención ha imprimir
 * La función imprime un comprobante de retención según los parametros
 *#/****************************
-FUNCTION imprimirRetencion
-PARAMETERS p_idretencion, p_conexion
 
 	vconeccionF= 0
 	IF TYPE('p_conexion') = 'L'
@@ -5330,6 +5407,10 @@ ENDFUNC
 
 
 
+
+FUNCTION AjusteComprobante
+PARAMETERS p_idtipomov, p_idcomproba,p_nombreCampo,p_idregistro,p_tablaDatos
+*#/----------------------------------------
 **** FUNCIÓN PARA GENERAR AJUSTES DE UN COMPROBANTE
 ** PARAMETROS: 	P_idtipomov: ID de la tabla tipomstock (Indica el tipo de ajuste a realizar)
 ***				P_idcomproba: ID de la tabla comprobante (comprobante relacionado al ajuste)
@@ -5337,9 +5418,7 @@ ENDFUNC
 ***				P_Idregistro: ID de la tabla asociada al comprobante
 ***				P_TablaDatos: Tabla con los articulos a los que se le hará el ajuste, tiene el siguiente formato: [articulo C(50),cantidad Y,deposito I]
 **RETORNO:		.T. o .F. Dependiendo si se realizó el ajuste correctamente o no respectivamente
-
-FUNCTION AjusteComprobante
-PARAMETERS p_idtipomov, p_idcomproba,p_nombreCampo,p_idregistro,p_tablaDatos
+*#/----------------------------------------
 
 v_idtipomov		= p_idtipomov
 v_idcomproba	= p_idcomproba
@@ -5619,6 +5698,10 @@ ENDFUNC
 
 
 
+
+FUNCTION AjusteComprobanteProv
+PARAMETERS p_idtipomov, p_idcomproba,p_nombreCampo,p_idregistro,p_tablaDatos,p_pventa
+*#/----------------------------------------
 **** FUNCIÓN PARA GENERAR AJUSTES DE UN COMPROBANTE de PROVEEDOR
 ** PARAMETROS: 	P_idtipomov: ID de la tabla tipomstock (Indica el tipo de ajuste a realizar)
 ***				P_idcomproba: ID de la tabla comprobante (comprobante relacionado al ajuste)
@@ -5627,9 +5710,7 @@ ENDFUNC
 ***				P_TablaDatos: Tabla con los articulos a los que se le hará el ajuste, tiene el siguiente formato: [articulo C(50),cantidad Y,deposito I]
 ***				P_pventa: Pventa relacionado al ajuste que se va a realizar
 **RETORNO:		.T. o .F. Dependiendo si se realizó el ajuste correctamente o no respectivamente
-
-FUNCTION AjusteComprobanteProv
-PARAMETERS p_idtipomov, p_idcomproba,p_nombreCampo,p_idregistro,p_tablaDatos,p_pventa
+*#/----------------------------------------
 
 v_idtipomov		= p_idtipomov
 v_idcomproba	= p_idcomproba
@@ -5994,6 +6075,10 @@ ENDFUNC
 
 
 
+
+FUNCTION AjusteMatComprobanteProv
+PARAMETERS p_idtipomov, p_idcomproba,p_nombreCampo,p_idregistro,p_tablaDatos
+*#/----------------------------------------
 **** FUNCIÓN PARA GENERAR AJUSTES de MATERIALES DE UN COMPROBANTE de PROVEEDOR
 ** PARAMETROS: 	P_idtipomov: ID de la tabla tipomstock (Indica el tipo de ajuste a realizar)
 ***				P_idcomproba: ID de la tabla comprobante (comprobante relacionado al ajuste)
@@ -6001,9 +6086,7 @@ ENDFUNC
 ***				P_Idregistro: ID de la tabla asociada al comprobante
 ***				P_TablaDatos: Tabla con los articulos a los que se le hará el ajuste, tiene el siguiente formato: [articulo C(50),cantidad Y,deposito I]
 **RETORNO:		.T. o .F. Dependiendo si se realizó el ajuste correctamente o no respectivamente
-
-FUNCTION AjusteMatComprobanteProv
-PARAMETERS p_idtipomov, p_idcomproba,p_nombreCampo,p_idregistro,p_tablaDatos
+*#/----------------------------------------
 
 v_idtipomov		= p_idtipomov
 v_idcomproba	= p_idcomproba
@@ -7048,230 +7131,18 @@ RETURN ret_modelo
 ENDFUNC 
 
 
-*!*	*** -----------------------------------------
-*!*	* Cambia el reclamop del sector indicado al estado pasado como parámetro
-*!*	* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
-*!*	* Parámetros: 
-*!*	*	P_reclamop: Reclamo al que se le va a cambiar de estado
-*!*	*	P_Sector:	Sector asociado al reclamo
-*!*	*	P_estado:	Nuevo estado del reclamo para el sector
-*!*	*	P_CierraTodos: Indica que si el sector que se va a cambiar es el origen, y el estado es Cerrado: va a cerrar el reclamo para todos los sectores
-*!*	* Retorna: True o False, según se cambió o no el estado
-*!*	*** -----------------------------------------
-
-*!*	FUNCTION cambiaAEstado
-*!*		
-*!*		PARAMETERS p_reclamop, p_sector, p_estado, P_cierraTodos
-
-*!*		v_idreclamop	= p_reclamop
-*!*		v_idsector		= p_sector
-*!*		v_idestado		= p_estado
-*!*		v_cierraTodos	= p_cierraTodos
-*!*		v_fecha			= DTOS(DATE())+ALLTRIM(SUBSTR(ALLTRIM(TIME(DATETIME())),1,8))
-*!*		
-
-*!*		vconeccionM=abreycierracon(0,_SYSSCHEMA)	
 
 
 
-*!*		*** Cambio el estado del reclamo, agregando un registro de la tabla reclamoe *
-*!*		
-*!*		p_campoidx	= 'idreclamoe'
-*!*		p_tipo		= 'I'
-*!*		p_tabla		= 'reclamoe'
-*!*		p_incre		= 1
-*!*		
-*!*		v_idreclamoe	= maxnumeroidx (p_campoidx, p_tipo, p_tabla, p_incre)
-*!*		
-*!*		IF v_idreclamoe <= 0 
-*!*			** Error al obtner el max idreclamoe 
-*!*					
-*!*			** me desconecto
-*!*			=abreycierracon(vconeccionM,"")
-*!*		
-*!*			RETURN .F.
-*!*		
-*!*		ELSE
-*!*		
-
-*!*			vconeccionM=abreycierracon(0,_SYSSCHEMA)	
-
-*!*			
-*!*			sqlmatriz(1)=" select * from recestado "
-*!*			sqlmatriz(2)=" where idrecest = "+ALLTRIM(STR(v_idestado))
-*!*			
-*!*			
-*!*			verror=sqlrun(vconeccionM,"estado_sql")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error al buscar el estado",0+48+0,"Error")
-*!*			    		
-*!*				** me desconecto
-*!*				=abreycierracon(vconeccionM,"")
-*!*				
-*!*			    RETURN .F.
-*!*			ENDIF 
-
-*!*			SELECT estado_sql
-*!*			GO TOP 
-*!*			
-*!*			IF NOT EOF()
-*!*				v_estado	= estado_sql.estado
-*!*			ELSE
-*!*					
-*!*			** me desconecto
-*!*			=abreycierracon(vconeccionM,"")
-*!*			
-*!*				RETURN .F.
-*!*			ENDIF 
-*!*			
-
-*!*		
-
-*!*			vconeccionM=abreycierracon(0,_SYSSCHEMA)	
-
-
-*!*			sqlmatriz(1)=" insert into reclamoe  "
-*!*			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idreclamoe))+","+ALLTRIM(STR(v_idreclamop))+","+ALLTRIM(STR(v_idestado))+","+ALLTRIM(STR(v_idsector))+",'"+ALLTRIM(v_fecha)+"')"
-
-
-*!*			verror=sqlrun(vconeccionM,"ins_reclamoe_sql")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
-*!*			    		
-*!*				** me desconecto
-*!*				=abreycierracon(vconeccionM,"")
-*!*		
-*!*			    RETURN .F.
-*!*			ENDIF 
-
-*!*			
-*!*			IF v_idreclamop > 0 AND v_idreclamoe > 0
-*!*			
-*!*			
-*!*			*** Busco datos del reclamo ***
-*!*				sqlmatriz(1)=" select * from reclamop "
-*!*				sqlmatriz(2)=" where idreclamop = "+ALLTRIM(STR(v_idreclamop))
-*!*				
-*!*				
-*!*				verror=sqlrun(vconeccionM,"reclamop_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error al buscar el reclamo",0+48+0,"Error")
-*!*				    		
-*!*					** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*					
-*!*				    RETURN .F.
-*!*				ENDIF 
-
-*!*				SELECT reclamop_sql
-*!*				GO TOP 
-*!*				
-*!*				IF NOT EOF()
-*!*					v_numeroRec	= reclamop_sql.numero
-*!*				ELSE
-*!*						
-*!*					** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*					
-*!*					RETURN .F.
-*!*				ENDIF 
-*!*				
-*!*			*** Busco datos del sector ***	
-*!*				sqlmatriz(1)=" select * from recsector "
-*!*				sqlmatriz(2)=" where idrecsec = "+ALLTRIM(STR(v_idsector))
-*!*				
-*!*					
-*!*				verror=sqlrun(vconeccionM,"sector_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error al buscar el sector",0+48+0,"Error")
-*!*				    		
-*!*					** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*					
-*!*				    RETURN .F.
-*!*				ENDIF 
-
-*!*				SELECT sector_sql
-*!*				GO TOP 
-*!*				
-*!*				IF NOT EOF()
-*!*					v_sectorRec	= sector_sql.sector
-*!*				ELSE
-*!*				
-*!*						
-*!*					** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*					
-*!*					RETURN .F.
-*!*				ENDIF 
-*!*						
-
-*!*				p_campoidx	= 'idrecnov'
-*!*				p_tipo		= 'I'
-*!*				p_tabla		= 'recnovedad'
-*!*				p_incre		= 1
-*!*			
-*!*			
-*!*				v_idrecnov	= maxnumeroidx(p_campoidx, p_tipo, p_tabla, p_incre)
-*!*				
-*!*				
-
-*!*				vconeccionM=abreycierracon(0,_SYSSCHEMA)	
-
-*!*				
-*!*				v_fechaHora		= DATETIME()
-*!*				v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
-*!*				v_fechaStr		= ALLTRIM(TTOC(DATETIME()))
-*!*				v_usuario		= _SYSUSUARIO
-*!*				
-*!*				v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
-*!*				
-*!*				v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
-*!*						
-*!*				
-*!*				sqlmatriz(1)=" insert into recnovedad "
-*!*				sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"')"
-
-
-*!*				verror=sqlrun(vconeccionM,"ins_recnovedad_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error al registrar la novedad del reclamo ",0+48+0,"Error")
-*!*				    		
-*!*					** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*					
-*!*				    RETURN .F.
-*!*				ENDIF 
-*!*			
-*!*			ELSE
-*!*			
-*!*			
-*!*			ENDIF 
-*!*		
-*!*		
-*!*		
-*!*		ENDIF 
-*!*		
-*!*		
-*!*			
-*!*		** me desconecto
-*!*		=abreycierracon(vconeccionM,"")
-*!*		
-
-*!*		RETURN .T.
-*!*	ENDFUNC 
-
-
-
-*** -----------------------------------------
-* Cambia el reclamop del sector indicado al estado pasado como parámetro
-* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
-* Retorna: True o False, según se cambió o no el estado
-*** -----------------------------------------
 
 
 FUNCTION cambiaEstadoRec
-	PARAMETERS p_reclamop, p_sector, p_estado
+PARAMETERS p_reclamop, p_sector, p_estado
+*#/----------------------------------------
+* Cambia el reclamop del sector indicado al estado pasado como parámetro
+* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
+* Retorna: True o False, según se cambió o no el estado
+*#/----------------------------------------
 
 	v_idreclamop	= p_reclamop
 	v_idsector		= p_sector
@@ -7472,14 +7343,13 @@ ENDFUNC
 
 
 
-*** -----------------------------------------
-* Cambia los estados del reclamo según el sector y los sectores asociados al reclamo si está habilitada la opción
-* Retorna: True o False, según se cambió o no el estado
-*** -----------------------------------------
 
 FUNCTION cambiaAEstado
-	
 	PARAMETERS p_reclamop, p_sector, p_estado
+*#/----------------------------------------
+* Cambia los estados del reclamo según el sector y los sectores asociados al reclamo si está habilitada la opción
+* Retorna: True o False, según se cambió o no el estado
+*#/----------------------------------------
 
 	v_idreclamop	= p_reclamop
 	v_idsector		= p_sector
@@ -7716,10 +7586,12 @@ ENDFUNC
 
 
 
-* FUNCIÓN PARA IMPRIMIR PAGO
-* PARAMETROS: P_idPagoProv
 FUNCTION imprimirPagoProv
 PARAMETERS p_idpagoProv
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR PAGO
+* PARAMETROS: P_idPagoProv
+*#/----------------------------------------
 
 
 	v_idpagoProv = p_idpagoProv
@@ -7895,15 +7767,13 @@ ENDFUNC
 
 
 
-*** -----------------------------------------
-* Obtiene el ID del sector al que pertenece el usuario
-* Retorna: idusuario
-*** -----------------------------------------
 
 FUNCTION getSectorUsu
-	
-	PARAMETERS p_usuario
-
+PARAMETERS p_usuario
+*#/----------------------------------------
+* Obtiene el ID del sector al que pertenece el usuario
+* Retorna: idusuario
+*#/----------------------------------------
 	v_idsector	= 0
 	
 	v_usuario	= p_usuario
@@ -7940,14 +7810,13 @@ ENDFUNC
 
 
 
-*** -----------------------------------------
-* Obtiene el ID del sector al que pertenece el usuario
-* Retorna: idrecsec
-*** -----------------------------------------
 
 FUNCTION getSecUsu
-	
 	PARAMETERS p_usuario
+*#/----------------------------------------
+* Obtiene el ID del sector al que pertenece el usuario
+* Retorna: idrecsec
+*#/----------------------------------------
 
 	v_idsector	= 0
 	
@@ -7984,254 +7853,19 @@ ENDFUNC
 
 
 
-*!*	*** -----------------------------------------
-*!*	* Cambia el reclamop del sector indicado al estado pasado como parámetro
-*!*	* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
-*!*	* Retorna: True o False, según se cambió o no el estado
-*!*	*** -----------------------------------------
-
-*!*	FUNCTION cambiaAEstado
-*!*		
-*!*		PARAMETERS p_reclamop, p_sector, p_estado
-
-*!*		v_idreclamop	= p_reclamop
-*!*		v_idsector		= p_sector
-*!*		v_idestado		= p_estado
-*!*		v_fecha			= DTOS(DATE())+ALLTRIM(SUBSTR(ALLTRIM(TIME(DATETIME())),1,8))
-*!*		
-*!*		*Abro conexión
-*!*		vconeccionM=abreycierracon(0,_SYSSCHEMA)
-
-
-*!*		*** Cambio el estado del reclamo, agregando un registro de la tabla reclamoe *
-*!*		
-*!*		p_campoidx	= 'idreclamoe'
-*!*		p_tipo		= 'I'
-*!*		p_tabla		= 'reclamoe'
-*!*		p_incre		= 1
-*!*		
-*!*		v_idreclamoe	= maxnumeroidx (p_campoidx, p_tipo, p_tabla, p_incre)
-*!*		
-*!*		IF v_idreclamoe <= 0 
-*!*			** Error al obtner el max idreclamoe 
-*!*					
-*!*			** me desconecto
-*!*			=abreycierracon(vconeccionM,"")
-*!*		
-*!*			RETURN .F.
-*!*		
-*!*		ELSE
-*!*		
-*!*		
-*!*		
-*!*			vconeccionM=abreycierracon(0,_SYSSCHEMA)
-*!*			
-*!*			sqlmatriz(1)=" select * from recestado "
-*!*			sqlmatriz(2)=" where idrecest = "+ALLTRIM(STR(v_idestado))
-*!*			
-*!*			
-*!*			verror=sqlrun(vconeccionM,"estado_sql")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error al buscar el estado",0+48+0,"Error")
-*!*			    		
-*!*				** me desconecto
-*!*				=abreycierracon(vconeccionM,"")
-*!*				
-*!*			    RETURN .F.
-*!*			ENDIF 
-
-*!*			SELECT estado_sql
-*!*			GO TOP 
-*!*			
-*!*			IF NOT EOF()
-*!*				v_estado	= estado_sql.estado
-*!*			ELSE
-*!*					
-*!*			** me desconecto
-*!*			=abreycierracon(vconeccionM,"")
-*!*			
-*!*				RETURN .F.
-*!*			ENDIF 
-*!*			
-
-
-
-*!*			*Abro conexión
-*!*			vconeccionM=abreycierracon(0,_SYSSCHEMA)
-
-*!*			DIMENSION lamatriz(5,2)
-*!*			
-*!*						
-*!*			lamatriz(1,1)='idreclamoe'
-*!*			lamatriz(1,2)=ALLTRIM(STR(v_idreclamoe))
-*!*			lamatriz(2,1)='idreclamop'
-*!*			lamatriz(2,2)=ALLTRIM(STR(v_idreclamop))
-*!*			lamatriz(3,1)='idrecest'
-*!*			lamatriz(3,2)=ALLTRIM(STR(v_idestado))
-*!*			lamatriz(4,1)='idrecsec'
-*!*			lamatriz(4,2)=ALLTRIM(STR(v_idsector))
-*!*			lamatriz(5,1)='fecha'
-*!*			lamatriz(5,2)="'"+ALLTRIM(v_fecha)+"'"
-*!*					
-*!*			p_tabla     = 'reclamoe'
-*!*			p_matriz    = 'lamatriz'
-*!*			p_tipoope     = 'I'
-*!*			p_condicion   = ''
-*!*			v_titulo      = " EL ALTA "
-*!*			p_conexion  = vconeccionM
-*!*			
-*!*			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
-*!*			    
-*!*			    ** me desconecto
-*!*				=abreycierracon(vconeccionM,"")
-*!*			
-*!*			  RETURN .F.
-*!*			ENDIF	
-
-
-*!*			
-*!*			IF v_idreclamop > 0 AND v_idreclamoe > 0
-*!*			
-*!*			
-*!*			*** Busco datos del reclamo ***
-*!*				sqlmatriz(1)=" select * from reclamop "
-*!*				sqlmatriz(2)=" where idreclamop = "+ALLTRIM(STR(v_idreclamop))
-*!*				
-*!*				
-*!*				verror=sqlrun(vconeccionM,"reclamop_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error al buscar el reclamo",0+48+0,"Error")
-*!*				    		
-*!*					** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*					
-*!*				    RETURN .F.
-*!*				ENDIF 
-
-*!*				SELECT reclamop_sql
-*!*				GO TOP 
-*!*				
-*!*				IF NOT EOF()
-*!*					v_numeroRec	= reclamop_sql.numero
-*!*				ELSE
-*!*						
-*!*					** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*					
-*!*					RETURN .F.
-*!*				ENDIF 
-*!*				
-*!*			*** Busco datos del sector ***	
-*!*				sqlmatriz(1)=" select * from recsector "
-*!*				sqlmatriz(2)=" where idrecsec = "+ALLTRIM(STR(v_idsector))
-*!*				
-*!*					
-*!*				verror=sqlrun(vconeccionM,"sector_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error al buscar el sector",0+48+0,"Error")
-*!*				    		
-*!*					** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*					
-*!*				    RETURN .F.
-*!*				ENDIF 
-
-*!*				SELECT sector_sql
-*!*				GO TOP 
-*!*				
-*!*				IF NOT EOF()
-*!*					v_sectorRec	= sector_sql.sector
-*!*				ELSE
-*!*				
-*!*						
-*!*					** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*					
-*!*					RETURN .F.
-*!*				ENDIF 
-*!*						
-*!*				** me desconecto
-*!*				=abreycierracon(vconeccionM,"")
-*!*				
-*!*				
-*!*				p_campoidx	= 'idrecnov'
-*!*				p_tipo		= 'I'
-*!*				p_tabla		= 'recnovedad'
-*!*				p_incre		= 1
-*!*			
-*!*			
-*!*				v_idrecnov	= maxnumeroidx(p_campoidx, p_tipo, p_tabla, p_incre)
-*!*				
-*!*				
-*!*				*Abro conexión
-*!*				vconeccionM=abreycierracon(0,_SYSSCHEMA)
-*!*				
-*!*				v_fechaHora		= DATETIME()
-*!*				v_fecha			= DTOS(v_fechaHora)+ALLTRIM(SUBSTR(ALLTRIM(TIME(v_fechaHora)),1,8))
-*!*				v_fechaStr		= ALLTRIM(TTOC(DATETIME()))
-*!*				v_usuario		= _SYSUSUARIO
-*!*				
-*!*				v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
-*!*				
-*!*				v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
-*!*					
-*!*				
-*!*				DIMENSION lamatriz2(5,2)
-*!*		
-*!*					
-*!*				lamatriz2(1,1)='idrecnov'
-*!*				lamatriz2(1,2)=ALLTRIM(STR(v_idrecnov))
-*!*				lamatriz2(2,1)='idreclamop'
-*!*				lamatriz2(2,2)=ALLTRIM(STR(v_idreclamop))
-*!*				lamatriz2(3,1)='fecha'
-*!*				lamatriz2(3,2)="'"+ALLTRIM(v_fecha)+"'"
-*!*				lamatriz2(4,1)='novedades'
-*!*				lamatriz2(4,2)="'"+ALLTRIM(v_novedad)+"'"
-*!*				lamatriz2(5,1)='usuario'
-*!*				lamatriz2(5,2)="'"+ALLTRIM(v_usuario)+"'"
-*!*						
-*!*				p_tabla     = 'recnovedad'
-*!*				p_matriz    = 'lamatriz2'
-*!*				p_tipoope     = 'I'
-*!*				p_condicion   = ''
-*!*				v_titulo      = " EL ALTA "
-*!*				p_conexion  = vconeccionM
-*!*				
-*!*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error al registrar el estado del reclamo ",0+48+0,"Error")
-*!*				    
-*!*				    ** me desconecto
-*!*					=abreycierracon(vconeccionM,"")
-*!*				
-*!*				  RETURN .F.
-*!*				ENDIF	
-*!*				
-*!*			
-*!*			ENDIF 
-*!*			
-*!*		
-*!*		ENDIF 
-*!*				
-*!*		** me desconecto
-*!*		=abreycierracon(vconeccionM,"")
-*!*		
-
-*!*		RETURN .T.
-*!*	ENDFUNC 
 
 
 
 
-*** -----------------------------------------
-* Cambia el reclamop del sector indicado al estado pasado como parámetro
-* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
-* Retorna: True o False, según se cambió o no el estado
-*** -----------------------------------------
 
 
 FUNCTION cambiaEstadoRec
 	PARAMETERS p_reclamop, p_sector, p_estado
+*#/----------------------------------------
+* Cambia el reclamop del sector indicado al estado pasado como parámetro
+* Guarda el registro del cambio de estado además genera la novedad de cambio del estado
+* Retorna: True o False, según se cambió o no el estado
+*#/----------------------------------------
 
 	v_idreclamop	= p_reclamop
 	v_idsector		= p_sector
@@ -8435,14 +8069,13 @@ ENDFUNC
 
 
 
-*** -----------------------------------------
-* Cambia los estados del reclamo según el sector y los sectores asociados al reclamo si está habilitada la opción
-* Retorna: True o False, según se cambió o no el estado
-*** -----------------------------------------
 
 FUNCTION cambiaAEstado
-	
 	PARAMETERS p_reclamop, p_sector, p_estado
+*#/----------------------------------------
+* Cambia los estados del reclamo según el sector y los sectores asociados al reclamo si está habilitada la opción
+* Retorna: True o False, según se cambió o no el estado
+*#/----------------------------------------
 
 	v_idreclamop	= p_reclamop
 	v_idsector		= p_sector
@@ -8530,13 +8163,14 @@ ENDFUNC
 
 
 
-** FUNCION DE CALCULO DE NUMEROS ALEATORIOS
-* puede recibir como parametros la cantidad de numeros aleatorios
-* si no recibe cantidad devuelve de acuerdo a la variable _SYSRAND
-*
 
 FUNCTION frandom
 PARAMETERS p_digitos
+*#/----------------------------------------
+** FUNCION DE CALCULO DE NUMEROS ALEATORIOS
+* puede recibir como parametros la cantidad de numeros aleatorios
+* si no recibe cantidad devuelve de acuerdo a la variable _SYSRAND
+*#/----------------------------------------
 
 IF TYPE('p_digitos') <> 'N'
 
@@ -8552,15 +8186,17 @@ ENDIF
 	
 ENDFUNC 
 
-*** -----------------------------------------
+
+
+
+FUNCTION estadoReclamoPorSector
+	PARAMETERS p_reclamop, p_sector, p_Retorno
+*#/----------------------------------------
 * Retorna el ultimo estado para un reclamo dado, segun el sector
 * Parametros: Reclamo, Sector, Retorno (I: Indice,N: Nombre)
 * Retorna: ID_Reclamo_Estado
-*** -----------------------------------------
+*#/----------------------------------------
 
-FUNCTION estadoReclamoPorSector
-	
-	PARAMETERS p_reclamop, p_sector, p_Retorno
 
 	v_idreclamop	= p_reclamop
 	v_idsector		= p_sector
@@ -8706,15 +8342,14 @@ ENDFUNC
 
 
 
-*** -----------------------------------------
+
+FUNCTION reclamoPerteneceSector
+	PARAMETERS p_reclamop, p_sector
+*#/----------------------------------------
 * Retorna Verdadero o Falso, si el reclamo pertenece al sector dado
 * Parametros: Reclamo, Sector
 * Retorna: True o False
-*** -----------------------------------------
-
-FUNCTION reclamoPerteneceSector
-	
-	PARAMETERS p_reclamop, p_sector
+*#/----------------------------------------
 
 	v_idreclamop	= p_reclamop
 	v_idsector		= p_sector
@@ -8752,14 +8387,14 @@ ENDFUNC
 
 
 
-*** -----------------------------------------
-* Retorna una lista de correos asociados a la entidad pasado como parámetro
-* pIdEntidadd: ID de la entidad
-* Retorno: Lista de Emails separados por ';'
-*** -----------------------------------------
 
 FUNCTION obtenerCorreos
 	PARAMETERS pIdEntidad
+*#/----------------------------------------
+* Retorna una lista de correos asociados a la entidad pasado como parámetro
+* pIdEntidadd: ID de la entidad
+* Retorno: Lista de Emails separados por ';'
+*#/----------------------------------------
 
 	
 	v_retorno	= ""
@@ -8810,11 +8445,11 @@ FUNCTION obtenerCorreos
 ENDFUNC 
 
 
-*** -----------------------------------------
+FUNCTION cargaCfgCorreo
+*#/----------------------------------------
 * Busca la configuración de correo para el usuario logeado
 * Retorna: objeto de configuración
-*** -----------------------------------------
-FUNCTION cargaCfgCorreo
+*#/----------------------------------------
 
 
 vconeccionM = abreycierracon(0,_SYSSCHEMA)
@@ -8880,13 +8515,13 @@ vconeccionM = abreycierracon(0,_SYSSCHEMA)
 ENDFUNC 
 
 
-*-----------------------------------------------------------------------------------
-* Obtiene todos los reclamos no leidos dato el usuario (y con el usuario el sector)
-*-----------------------------------------------------------------------------------
 
 
 FUNCTION obtieneRecNoLeidos
 PARAMETERS  para_aliasrnl, p_usuario
+*#/----------------------------------------
+* Obtiene todos los reclamos no leidos dato el usuario (y con el usuario el sector)
+*#/----------------------------------------
 p_aliasretorno  = ""
 
 v_idrecsec	= getSecUsu(p_usuario)
@@ -8930,12 +8565,12 @@ ENDFUNC
 	
 	
 FUNCTION GetListasPrecios	
+PARAMETERS p_nombrearchivo, p_condfis
 *#/****
 * Obtiene todas las listas de precios con los Precios Actualizados 
 * La lista 0 corresponde a la basica de articulos sin Calculo de Costos
 * Recibe como parametro el nombre de la tabla en la cual retornará las listas y la condicion fiscal (por defecto es la 1)
 *#/**********************************************************************
-PARAMETERS p_nombrearchivo, p_condfis
 
 
 vtmp_recalcular = .f. 
@@ -9223,12 +8858,11 @@ RETURN ""
 
 
 FUNCTION armarComprobanteXML
+PARAMETERS p_idFactura
 *#/*** Función que arma el comprobante en un archivo XML**
 * Busca en la Base de Datos los datos de la factura según el ID pasado como parámetro, 
 * Utiliza la función CURSORTOXML, el formato del nombre xml es: 'factura_<idFactura>', donde <idFactura> es el ID en la tabla facturas
 *#/** Recibe como parámetro el IDFactura
-PARAMETERS p_idFactura
-
 
 	v_servicioCargado = .F.
 	v_compCargado = .F.
@@ -9573,6 +9207,11 @@ FUNCTION cfgmenues
 ENDFUNC 
 
 
+
+
+FUNCTION UpDwViFile
+PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_valid, pud_cponom, pud_cpoar
+*#/----------------------------------------
 * Funcion para insertar y descargar archivos de la base de datos 
 * PARAMETROS 
 * pud_path	= path completo del archivo a subir o path donde descargarlo
@@ -9587,10 +9226,7 @@ ENDFUNC
 *
 *Ej Upload 		= updownfile("c:\temp\","archivo.txt","UV-",vconeccion,"empresa","empresa","NombreEmpresa","nombrecert","certificado" ) 
 *Ej Download 	= updownfile("c:\temp\","","DVC",vconeccion,"empresa","empresa","NombreEmpresa","nombrecert","certificado") 
-
-FUNCTION UpDwViFile
-PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_valid, pud_cponom, pud_cpoar
-
+*#/----------------------------------------
 	v_mostrar = .t.	
 	IF !EMPTY(pud_path) THEN 
 		IF !(SUBSTR(pud_path,LEN(ALLTRIM(pud_path)),1)="\") THEN 
@@ -9715,62 +9351,18 @@ PARAMETERS pud_path, pud_arch, pud_updw, pud_conex, pud_tabla, pud_cpoix, pud_va
 	
 ENDFUNC 
 
-*!*	*****
-*!*	*Funcion que cambia la fecha del comprobante pasado como parámetro a la fecha actual
-*!*	*
-*!*	*Parametros:ID del comprobante, tabla
-*!*	*Retorna True o False en caso de que se haya registrado correctamente o no 
-*!*	*****
-
-*!*	FUNCTION  actualizarFechaComp
-*!*	PARAMETERS p_idregistro, p_tabla
 
 
-*!*		v_retorno = .F.
-*!*		IF p_idregistro > 0
-*!*			
-*!*			v_fechaActual = DTOS(DATE())
-*!*			*** Modifico la cabecera del reclamo ***
-*!*			DIMENSION lamatriz(1,2)
-*!*			
-*!*			
-*!*			lamatriz(1,1)='fecha'
-*!*			lamatriz(1,2)="'"+ALLTRIM(v_fechaActual)+"'"
-*!*			
-*!*			vconeccionA=abreycierracon(0,_SYSSCHEMA)	
-*!*			
-*!*			p_tipoope   = 'U'
-*!*			p_condicion = "idfactura = "+ALLTRIM(STR(p_idregistro))
-*!*			v_titulo    = " EL MODIFICACION "
-*!*			p_tabla     = ALLTRIM(v_tabla)
-*!*			p_matriz    = 'lamatriz'
-*!*			p_conexion  = vconeccionA
-*!*			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error en ",0+48+0,"Error")
-
-*!*			   v_retorno = .F.
-*!*			  ELSE
-*!*			  v_retorno = .T.
-*!*			ENDIF  
-*!*				* me desconecto	
-*!*			=abreycierracon(vconeccionA,"")
-*!*		ELSE
-*!*			v_retorno = .F.
-*!*		ENDIF 
-*!*			RETURN v_retorno
-
-*!*	ENDFUNC 
 
 
-*****
+FUNCTION  actualizarComp
+PARAMETERS p_idregistro, p_tabla
+*#/----------------------------------------
 *Funcion que cambia la fecha del comprobante y el CUIT
 *
 *Parametros:ID del comprobante, tabla
 *Retorna True o False en caso de que se haya registrado correctamente o no 
-*****
-
-FUNCTION  actualizarComp
-PARAMETERS p_idregistro, p_tabla
+*#/----------------------------------------
 
 
 	v_retorno = .F.
@@ -9845,6 +9437,11 @@ PARAMETERS p_idregistro, p_tabla
 
 ENDFUNC 
 
+
+
+FUNCTION movimientoTPago
+PARAMETERS P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta
+*#/----------------------------------------
 *** Retorna el tipo de movimiento registrado según el comprobante, el tipo de pago, la cuenta y la caja
 ** Parametros:
 **		P_idtipocompro: ID del tipo de comprobante
@@ -9853,9 +9450,7 @@ ENDFUNC
 **		P_idcuenta: ID de la cuenta (SI es 0, significa que va a obtener cualquier cuenta)
 **
 ** Retorno: Retorna el movimiento registrado para la combinación de parámetros
-***
-FUNCTION movimientoTPago
-PARAMETERS P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta
+*#/----------------------------------------
 
 	
 	v_retorno = ""
@@ -9912,7 +9507,10 @@ ENDFUNC
 
 
 
+FUNCTION guardarMoviTPago
+PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro, p_tablacp, p_campocp, p_idregistrocp
 
+*#/----------------------------------------
 *** Guardo un registro en la tabla de movitpago
 ** PARAMETROS: 
 **	P_idtipopago: ID del tipo de pago que se quiere registrar
@@ -9926,9 +9524,7 @@ ENDFUNC
 **  P_campocp: Nombre del campo indice de la tabla Asociada al cobro
 **  P_idregistrocp: Numero de registro indice correspondiente al campo pasado como p_campocp
 **	Retorno: Retorna True si se guardó correctamente, False en otro caso
-***
-FUNCTION guardarMoviTPago
-PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro, p_tablacp, p_campocp, p_idregistrocp
+*#/----------------------------------------
 			
 	v_retorno = .F.	
 
@@ -9999,6 +9595,9 @@ PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta
 
 ENDFUNC 
 
+FUNCTION moviTipoPago
+PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movimiento,p_tablaRet
+*#/----------------------------------------
 *** Funcion de busqueda de los ultimos movimientos de Tipos de pago según los parametros pasados como parámetros
 **  Si el parámetro recibido es CERO, lo ignora en la condición trayendo todos los registros para ese parámetro
 ** Parametros:
@@ -10009,15 +9608,8 @@ ENDFUNC
 *	p_movimiento: movimiento registrado
 *	p_tablaRet: Nombre de la tabla de retorno
 *** Retorno: Retorna True si se obtuvo correctamente los registros del movimiento; False en otro caso.
-***
-FUNCTION moviTipoPago
-PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movimiento,p_tablaRet
+*#/----------------------------------------
 
-*!*		IF p_idtipopago < 0 OR p_idcaja < 0 OR p_idcuenta OR ALLTRIM(p_tablaRet) == "" OR p_idregistro < 0
-*!*		
-*!*			RETURN .F.
-*!*		
-*!*		ENDIF 
 
 	tipoPagoObj 	= CREATEOBJECT('tipospagosclass')
 
@@ -10085,7 +9677,9 @@ ENDFUNC
 
 
 FUNCTION ContabilizaMov
-*#/ Contabilizacion de Operaciones
+PARAMETERS pcont_tabla, pcont_id, pcont_conex
+*#/----------------------------------------
+*/ Contabilizacion de Operaciones
 * Recibe como parametros la tabla, el Idregistro y la conexion, 
 * Verifica que el registro de la tabla pasada ya no esté contabilizado , si es asi no contabiliza, 
 * de otra manera genera y graba el asiento.
@@ -10093,8 +9687,8 @@ FUNCTION ContabilizaMov
 * 		   : 0 SI NO GENERO EL ASIENTO 
 *		   : -1 SI NO LO GENERÓ Y EL OPERADOR DEBIERA INGRESARLO, esto se controla con una variable publica : _SYSMCONTABLE de seteo 
 *			que indica si el operador debe ingresar o no los asientos al no encontrar un modelo adecuado
-*#/*          : -2 NO Generó el Asiento porque no está habilitado el Módulo Contable
-PARAMETERS pcont_tabla, pcont_id, pcont_conex
+**          : -2 NO Generó el Asiento porque no está habilitado el Módulo Contable
+*#/----------------------------------------
 	
 	ret_idasiento = 0
 	
@@ -10221,15 +9815,17 @@ ENDFUNC
 
 
 
+
+FUNCTION ContabilizaManual
+	PARAMETERS pcont_tabla, pcont_id, pcont_conex, pcont_tasiento
+*#/----------------------------------------
 */ Contabilizacion de Operaciones Manuales
 * Recibe como parametros la tabla, el Idregistro y la conexion, 
 * Verifica que el registro de la tabla pasada ya no esté contabilizado , si es asi no contabiliza, 
 * de otra manera genera y graba el asiento.
 *  RETORNA : NUMERO DE ASIENTO GENERADO "IDASIENTO", 
 * 		   : 0 SI NO GENERO EL ASIENTO 
-
-FUNCTION ContabilizaManual
-	PARAMETERS pcont_tabla, pcont_id, pcont_conex, pcont_tasiento
+*#/----------------------------------------
 	
 	reto_idasiento = 0
 	IF TYPE('_SYSCONTABLE') <> 'N' THEN 
@@ -10335,14 +9931,16 @@ FUNCTION ContabilizaManual
 ENDFUNC 
 
 
+FUNCTION ContabilizaCompro
+	PARAMETERS pcomp_tabla, pcomp_id, pcomp_con, pcomp_impo
+*#/----------------------------------------
 ** Funcion de Llamada a Contabilizar los comprobantes recibidos como parametros. 
 * Parametros:
 * 		pcomp_tabla : Tabla que contiene el registro del comprobante a contabilizar
 *		pcomp_id	: id del registro a buscar para contabilizar
 *		pcomp_con	: conexion a la base de datos , si es 0, entonces abre una nueva conexion, sino usa una abierta
 *		pcomp_impo 	: Importe total del comprobante a contabilizar, si es para contabilización manual	
-FUNCTION ContabilizaCompro
-	PARAMETERS pcomp_tabla, pcomp_id, pcomp_con, pcomp_impo
+*#/----------------------------------------
 	v_idasienton= ContabilizaMov(pcomp_tabla,  pcomp_id, pcomp_con )
 	IF v_idasienton = -1 THEN 
 		v_idasienton = ContabilizaManual(pcomp_tabla,  pcomp_id, pcomp_con,pcomp_impo)
@@ -10354,6 +9952,10 @@ ENDFUNC
 
 
 
+
+FUNCTION movimientoTPago
+PARAMETERS P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta
+*#/----------------------------------------
 *** Retorna el tipo de movimiento registrado según el comprobante, el tipo de pago, la cuenta y la caja
 ** Parametros:
 **		P_idtipocompro: ID del tipo de comprobante
@@ -10362,10 +9964,7 @@ ENDFUNC
 **		P_idcuenta: ID de la cuenta (SI es 0, significa que va a obtener cualquier cuenta)
 **
 ** Retorno: Retorna el movimiento registrado para la combinación de parámetros
-***
-FUNCTION movimientoTPago
-PARAMETERS P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta
-
+*#/----------------------------------------
 	
 	v_retorno = ""
 	
@@ -10423,79 +10022,11 @@ ENDFUNC
 
 
 
-*!*	*** Guardo un registro en la tabla de movitpago
-*!*	** PARAMETROS: 
-*!*	**	P_idtipopago: ID del tipo de pago que se quiere registrar
-*!*	**	P_tabla: Nombre de la tabla asociada al tipo de pago ('CHEQUE', 'CUPON'...) 
-*!*	**	P_campo: Nombre del campo indice de la tabla
-*!*	**	P_idregistro: Numero de registro de la tabla correspondiente al campo pasado como parámetro
-*!*	**	P_idacajareca: ID de la caja recaudadora (Si es 0 se puede tomar como que es para cualquier caja) 
-*!*	**	P_idcuenta: ID de la cuenta (Si es 0 se puede tomar como que es para cualquier caja)
-*!*	**  P_idcomproba: ID del tipo de comprobante 
-*!*	**	Retorno: Retorna True si se guardó correctamente, False en otro caso
-*!*	***
-*!*	FUNCTION guardarMoviTPago
-*!*	PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta,P_idtipocompro
-*!*				
-*!*		v_retorno = .F.	
-*!*		
-*!*		v_movimiento	=  movimientoTPago(P_idtipocompro, P_idtipopago, P_idcajareca, P_idcuenta)
-
-*!*		IF EMPTY(ALLTRIM(v_movimiento)) == .T. && No retorno ningún movimiento, no se va a registrar el movimiento
-*!*			v_retorno = .F.
-*!*			RETURN v_retorno
-*!*		
-*!*		ENDIF 
 
 
-*!*		v_fecha			= DTOS(DATE())
-*!*		v_hora			= TIME()
-*!*		
-*!*		
-*!*		DIMENSION lamatriz3(10,2)
-*!*		
-*!*			
-*!*		lamatriz3(1,1)='idmovitp'
-*!*		lamatriz3(1,2)= "0"
-*!*		lamatriz3(2,1)='idtipopago'
-*!*		lamatriz3(2,2)= ALLTRIM(STR(p_idtipopago))
-*!*		lamatriz3(3,1)='tabla'
-*!*		lamatriz3(3,2)= "'"+ALLTRIM(P_tabla)+"'"
-*!*		lamatriz3(4,1)='campo'
-*!*		lamatriz3(4,2)= "'"+ALLTRIM(P_campo)+"'"
-*!*		lamatriz3(5,1)='idregistro'
-*!*		lamatriz3(5,2)= ALLTRIM(STR(P_idregistro))
-*!*		lamatriz3(6,1)='idcajareca'
-*!*		lamatriz3(6,2)= ALLTRIM(STR(P_idcajareca))
-*!*		lamatriz3(7,1)='idcuenta'
-*!*		lamatriz3(7,2)=ALLTRIM(STR(P_idcuenta))
-*!*		lamatriz3(8,1)='fecha'
-*!*		lamatriz3(8,2)="'"+ALLTRIM(v_fecha)+"'"
-*!*		lamatriz3(9,1)='hora'
-*!*		lamatriz3(9,2)="'"+ALLTRIM(v_hora)+"'"
-*!*		lamatriz3(10,1)='movimiento'
-*!*		lamatriz3(10,2)="'"+ALLTRIM(v_movimiento)+"'"
-*!*		
-*!*		vconeccionMo = abreycierracon(0,_SYSSCHEMA)
-*!*		
-*!*		p_tipoope     = 'I'
-*!*		p_condicion   = ''
-*!*		v_titulo      = " EL ALTA "
-*!*		p_tabla     = 'movitpago'
-*!*		p_matriz    = 'lamatriz3'
-*!*		p_conexion  = vconeccionMo
-*!*		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
-*!*		
-*!*			=abreycierracon(vconeccionMo ,"")	
-
-*!*		    RETURN .F.
-*!*		ENDIF	
-*!*		=abreycierracon(vconeccionMo ,"")	
-*!*		RETURN .T.
-
-*!*	ENDFUNC 
-
+FUNCTION moviTipoPago
+PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movimiento,p_tablaRet
+*#/----------------------------------------
 *** Funcion de busqueda de los ultimos movimientos de Tipos de pago según los parametros pasados como parámetros
 **  Si el parámetro recibido es CERO, lo ignora en la condición trayendo todos los registros para ese parámetro
 ** Parametros:
@@ -10506,15 +10037,7 @@ ENDFUNC
 *	p_movimiento: movimiento registrado
 *	p_tablaRet: Nombre de la tabla de retorno
 *** Retorno: Retorna True si se obtuvo correctamente los registros del movimiento; False en otro caso.
-***
-FUNCTION moviTipoPago
-PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movimiento,p_tablaRet
-
-*!*		IF p_idtipopago < 0 OR p_idcaja < 0 OR p_idcuenta OR ALLTRIM(p_tablaRet) == "" OR p_idregistro < 0
-*!*		
-*!*			RETURN .F.
-*!*		
-*!*		ENDIF 
+*#/----------------------------------------
 
 
 	tipoPagoObj 	= CREATEOBJECT('tipospagosclass')
@@ -10578,12 +10101,14 @@ ENDFUNC
 
 
 ******************************************************
-******************************************************
-** Funcion para Anulación de Recibos y Ordenes de Pago
-******************************************************
 
 FUNCTION AnularRP
 PARAMETERS pan_idcomproba, pan_idregistro
+*#/----------------------------------------
+******************************************************
+** Funcion para Anulación de Recibos y Ordenes de Pago
+******************************************************
+*#/----------------------------------------
 
 	estadosRP	= CREATEOBJECT('estadosclass')
 	v_estadoRPAnulado = estadosRP.getIdestado("ANULADO")
@@ -10944,6 +10469,10 @@ ENDFUNC
 
 
 
+
+FUNCTION ContrAsiento
+PARAMETERS pca_idasiento,pca_DH, pca_tablaOri, pca_idOri, pca_tablaDes, pca_idDes
+*#/----------------------------------------
 */* Carga un Contra-Asiento segun reciba el parametro del comprobante o del asiento origen
 * Incerta el Asiento en la tabla asientos y devuelve el id de asiento generado
 * Segun el ultimo parametro el asiento se invierte en columnas debe y haber o bien se carga
@@ -10952,9 +10481,7 @@ ENDFUNC
 * pca_idasiento	:  idasiento del asiento a cancelar
 * pca_DH		:  + . Invierte el asiento Manteniendo el signo en cada columna
 *		  		   - . Mantiene los valores en las columnas pero con signo negativo 		  	
-FUNCTION ContrAsiento
-PARAMETERS pca_idasiento,pca_DH, pca_tablaOri, pca_idOri, pca_tablaDes, pca_idDes
-
+*#/----------------------------------------
 
 	IF !(TYPE('pca_tablaOri')='C') THEN 
 		pca_tablaOri = ""
@@ -11127,9 +10654,11 @@ PARAMETERS pca_idasiento,pca_DH, pca_tablaOri, pca_idOri, pca_tablaDes, pca_idDe
 ENDFUNC 
 
 
-*/* Manejo de funciones de Error para las conexiones FTP
 
 PROCEDURE MENSAJE_ERROR
+*#/----------------------------------------
+*/* Manejo de funciones de Error para las conexiones FTP
+*#/----------------------------------------
 LPARAMETERS toFTP, tcMensaje
 LOCAL KEY_ENTER
   
@@ -11161,15 +10690,16 @@ ENDPROC
 *******************************************************************************
 
 
-*** Función para guardar el Historico de actualización de costo del artículo ****
-**Parametros: articulo: codigo del articulo a actualizar; costo: costo del articulo actualizado; coneccion: Conección a la Base de Datos
-**            fechahisto: fecha y hora para registrar la grabacion del historico de costos
-** Retorno: Retorna True si se Guarda correctamente, False en caso contrario
-*******
 
 
 FUNCTION guardaHistCostoArt
 PARAMETERS p_articulo, p_costo, p_conexion,p_fechahisto
+*#/----------------------------------------
+*** Función para guardar el Historico de actualización de costo del artículo ****
+**Parametros: articulo: codigo del articulo a actualizar; costo: costo del articulo actualizado; coneccion: Conección a la Base de Datos
+**            fechahisto: fecha y hora para registrar la grabacion del historico de costos
+** Retorno: Retorna True si se Guarda correctamente, False en caso contrario
+*#/----------------------------------------
 
 v_conexion = 0
 
@@ -11239,13 +10769,13 @@ ENDFUNC
 
 
 
-*-----------------------------------------------------------------------------------
-* Obtiene el Saldo de Crédito disponible para la entidad pasada como parametro
-*-----------------------------------------------------------------------------------
 
 
 FUNCTION CreditoLimiteE
 PARAMETERS  para_entidad, para_monto
+*#/----------------------------------------
+* Obtiene el Saldo de Crédito disponible para la entidad pasada como parametro
+*#/----------------------------------------
 
 	_SQLENTIDAD = para_entidad
 	vconeccionCR = abreycierracon(0,_SYSSCHEMA)
@@ -11285,12 +10815,12 @@ ENDFUNC
 *------------------------------------------------------------------------------------
 
 
-*-----------------------------------------------------------------------------------
-* Incerta y Elimina Articulos en los Grupos asociados a las Lineas de los Artículos. Parametro : '+' o '-'
-*-----------------------------------------------------------------------------------
 
 FUNCTION GruposArtLinea
 PARAMETERS pl_articulo, pl_linea, pl_opera, pl_conexion
+*#/----------------------------------------
+* Incerta y Elimina Articulos en los Grupos asociados a las Lineas de los Artículos. Parametro : '+' o '-'
+*#/----------------------------------------
 	IF _SYSTIPOGRLIA = 0 THEN && No se definieron Grupos para las Lineas
 		RETURN 
 	ENDIF 
@@ -11420,12 +10950,12 @@ RETURN
 
 
 
-*-----------------------------------------------------------------------------------
-* Incerta y Elimina Articulos en los Grupos asociados a las Lineas de los Materiales. Parametro : '+' o '-'
-*-----------------------------------------------------------------------------------
-
 FUNCTION GruposMatLinea
 PARAMETERS pl_material, pl_linea, pl_opera, pl_conexion
+
+*#/----------------------------------------
+* Incerta y Elimina Articulos en los Grupos asociados a las Lineas de los Materiales. Parametro : '+' o '-'
+*#/----------------------------------------
 	IF _SYSTIPOGRLIM = 0 THEN && No se definieron Grupos para las Lineas
 		RETURN 
 	ENDIF 
@@ -11666,6 +11196,9 @@ FUNCTION CambiaTipoDato
 ENDFUNC 
 
 
+FUNCTION GeneraEtiquetas
+PARAMETERS pge_tabla, pge_id, pge_detalle, pge_cantidad, pge_detalleb
+*#/----------------------------------------
 * ----------------------------------------------------------------------------------------
 *- Genera Registro en Tabla Etiquetas para los registros Pasados como parametros
 *- Parametros : 
@@ -11675,8 +11208,7 @@ ENDFUNC
 *- Retorna el indice de las etiquetas generadas : Primer Etiqueta y Ultima Etiqueta 
 *- formato : DDDDDDDDDD;DDDDDDDDDD
 *-----------------------------------------------------------------------------------------
-FUNCTION GeneraEtiquetas
-PARAMETERS pge_tabla, pge_id, pge_detalle, pge_cantidad, pge_detalleb
+*#/----------------------------------------
 
 
 	v_nomIndice	 = obtenerCampoIndice(ALLTRIM(pge_tabla))
@@ -11793,13 +11325,14 @@ ENDFUNC
 
 
 
-*-----------------------------------------
+
+FUNCTION PrintEtiquetas
+PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
+*#/----------------------------------------
 *- Impresión de Etiquetas, recibe como parametro una tabla o un rango de Etiquetas 
 *- con el listado de etiquetas a Imprimir y el modo de etiqueta seleccionado
 *- BC: Codigo de Barras, QR : Codigo QR
-*--------------------------------------------
-FUNCTION PrintEtiquetas
-PARAMETERS par_etiqueimp, par_etiquetaINI, par_etiquetaFIN, par_BCQR
+*#/----------------------------------------
 
 	vconeccionF=abreycierracon(0,_SYSSCHEMA)
 
@@ -11910,6 +11443,10 @@ ENDFUNC
 
 
 
+
+FUNCTION FindInTables
+PARAMETERS fi_tabla, fi_campo, fi_valor, fi_modo
+*#/----------------------------------------
 *---VERIFICA AL INTEGRIDAD REFERENCIA DE DATOS-----------------------
 *- Busqueda de un valor y un campo dado en una tabla en 
 *- Las Tablas Restantes del Esquema
@@ -11920,9 +11457,7 @@ ENDFUNC
 *-             valor: valor del campo a buscar,
 *-              modo: modo de busqueda, 0 busca todas las ocurrencias, 1 busca la primer ocurrencia
 *--------------------------------------------------------------------
-FUNCTION FindInTables
-PARAMETERS fi_tabla, fi_campo, fi_valor, fi_modo
-	
+*#/----------------------------------------	
 	ptablareto = ""
 
 	vconeccionF=abreycierracon(0,_SYSSCHEMA)
@@ -11964,15 +11499,16 @@ ENDFUNC
 
 
 
+FUNCTION eliminarRegistros
+PARAMETERS p_tabla,p_campo,p_valor
+*#/----------------------------------------
 *** Elimina todas las dependencias del registro pasado como parámetro. ****
 ** Parametros:
 ***			p_tabla: Tabla asociada al registro, desde esta tabla se buscan las tablas relacionadas
 ***			p_campo: Campo de las tablas a eliminar
 ***			p_valor: Valor del registro a eliminar
 ** Retorno: Retorna True en caso que se hayan eliminado todas las dependencias del registro, False en otro caso
-*******
-FUNCTION eliminarRegistros
-PARAMETERS p_tabla,p_campo,p_valor
+*#/----------------------------------------
 
 		v_listaTablas = ""
 		v_listaTablas = FindInTables(p_tabla, p_campo, p_valor, 0)
@@ -12051,14 +11587,17 @@ ENDFUNC
 
 
 
+
+FUNCTION CambiaIDCodigomat
+PARAMETERS pca_codigo,pca_modo, pca_conex 
+*#/----------------------------------------
 *- devuelve el codigo del material o bien el idmate, dependiendo 
 *- de la conversion que se le pida especificada en Modo
 *- pca_modo = 'ID' OR 'CO'
 *- ID = devuelve IDMATE buscando con CODIGOMAT
 *- CO = devuelve CODIGOMAT buscando con IDMATE 
+*#/----------------------------------------
 
-FUNCTION CambiaIDCodigomat
-PARAMETERS pca_codigo,pca_modo, pca_conex 
 cretorno = ""
 IF !empty(pca_codigo) THEN
 	
@@ -12091,12 +11630,15 @@ RETURN cretorno
 ENDFUNC
 
 
+
+FUNCTION BuscaLoteEti
+PARAMETERS pl_tablaeti
+*#/----------------------------------------
 *- Devuelve el Nombre de Una Tabla conteniendo las Etiquetas 
 *- que contiene un lote de Lectura Batch de Etiquetas
 *- pl_tablaeti: nombre de la tabla para seleccion de etiquetas
 *- devuelve el nombre de la tabla con los datos de la consulta o vacio si no selecciona nada
-FUNCTION BuscaLoteEti
-PARAMETERS pl_tablaeti
+*#/----------------------------------------
 	cretorno = ""
 	DO FORM lecturaetiquetas TO v_loteeti
 	
@@ -12258,7 +11800,11 @@ RETURN cretorno
 ENDFUNC
 
 
-*--------------------------------------------------------------------------------------------
+
+
+FUNCTION pedirAutorizacion
+PARAMETERS p_funcion, p_detalleauto
+*#/----------------------------------------
 **Función para pedir autorización para realizar la función pasada como parámetro
 ** Busca en la base de datos si corresponde pedir autorización según el usuario y la función.
 ** Genera un pedido de autorización que deberá autorizar un usuario habilitado para ello
@@ -12266,11 +11812,7 @@ ENDFUNC
 ** Parametros: p_funcion: nombre clave de la función que se desea autorizar
 **
 ** Retorno: Retorna True en caso de que el usuario esté autorizado. False en otro caso
-*--------------------------------------------------------------------------------------------
-
-
-FUNCTION pedirAutorizacion
-PARAMETERS p_funcion, p_detalleauto
+*#/----------------------------------------
 
 	
 	IF ALLTRIM(_SYSPEDIRAUT) == 'N'
@@ -12399,16 +11941,16 @@ ENDFUNC
 
 
 
-*-----------------------------------------------------------------------------------
+
+FUNCTION obtienePedidosAutorizacion
+PARAMETERS  p_nombreTabla,p_estado 
+*#/----------------------------------------
 ** Obtiene todos los pedidos de autorización 
 ** Parámetros:  p_nombreTabla: nombre de la tabla donde se van a cargar los pedidos
 **				p_estado: estado de los pedidos a listar (Puede ser 'A', 'P' o 'N')
 ** Retorno: True si se cargó correctamente, False en caso contrario
-*-----------------------------------------------------------------------------------
+*#/----------------------------------------
 
-
-FUNCTION obtienePedidosAutorizacion
-PARAMETERS  p_nombreTabla,p_estado 
 
 	IF EMPTY(ALLTRIM(p_nombreTabla)) = .T.
 		MESSAGEBOX("El nombre de la tabla pasada como parámetro es inválida",0+16+256,"Error al obtener pedidos de autorización")
@@ -12461,14 +12003,14 @@ ENDFUNC
 
 
 
-*-----------------------------------------------------------------------------------
-** Obtiene todas las cotizaciones y precios segun listas y cuotas para un artículo determinado 
-** Parámetros:  p_articulos  - Lista de Articulos a mostrar
-*-----------------------------------------------------------------------------------
 
 
 FUNCTION PreciosArticulo
 PARAMETERS  pv_articulos
+*#/----------------------------------------
+** Obtiene todas las cotizaciones y precios segun listas y cuotas para un artículo determinado 
+** Parámetros:  p_articulos  - Lista de Articulos a mostrar
+*#/----------------------------------------
 
 
 	pv_articulos = STRTRAN(STRTRAN(STRTRAN(pv_articulos,"´","'"),"(","'"),")","'")
@@ -12572,12 +12114,12 @@ ENDFUNC
 
 
 
-*-----------------------------------------------------------------------------------
-** Elimina El Asiento Contable pasado como parametro
-** Retorna 0 si lo pudo eliminar, sino retorna el numero del asiento
-*-----------------------------------------------------------------------------------
 FUNCTION EliminaAsientoC
 PARAMETERS pe_idasiento
+*#/----------------------------------------
+** Elimina El Asiento Contable pasado como parametro
+** Retorna 0 si lo pudo eliminar, sino retorna el numero del asiento
+*#/----------------------------------------
 
 
 	IF pe_idasiento = 0 THEN 
@@ -12619,13 +12161,14 @@ PARAMETERS pe_idasiento
 
 ENDFUNC 
 
-*//////////////////////////////////////
-*/ Determina el Filtro de Observación a aplicar en funcion
-*/ del filtrado que aplica al comprobante recibido como parametros
-*//////////////////////////////////////
+
 
 FUNCTION FiltroObserva
 PARAMETERS pf_tabla, pf_idregi, pf_vconeccion
+*#/----------------------------------------
+*/ Determina el Filtro de Observación a aplicar en funcion
+*/ del filtrado que aplica al comprobante recibido como parametros
+*#/----------------------------------------
 	
 	pf_campoid = getIdTabla(pf_tabla) && Obtengo el nombre del campo indice de la tabla
 	
@@ -12757,6 +12300,9 @@ ENDFUNC
 
 FUNCTION EliminarMoviTPago
 PARAMETERS pan_idcomproba, pan_idregistro
+*#/----------------------------------------
+*
+*#/----------------------------------------
 	
 	vconeccionEl = abreycierracon(0,_SYSSCHEMA)
 	
@@ -12824,17 +12370,18 @@ PARAMETERS pan_idcomproba, pan_idregistro
 	
 RETURN 
 	
-*//////////////////////////////////////
+
+
+FUNCTION obtenerObservaComp
+PARAMETERS p_tabla,p_campo,p_idregistro,p_coneccion,p_registrar
+*#/----------------------------------------
 */ Obtiene la observación correspondiente según los filtros para la tabla, campo e id
 */ Y registra opcionalmente en la tabla observareg
 * Parametros:
 * p_tabla; p_campo; p_idregistro: tabla, campo y registro de la cual se va a obtener la observación 
 * p_coneccion: conección a utilizar
 * p_registrar: Si es Verdadero: registra la observación obtenida en la tabla observareg; si es Falso, la obtiene de la tabla sin registrar
-*//////////////////////////////////////
-
-FUNCTION obtenerObservaComp
-PARAMETERS p_tabla,p_campo,p_idregistro,p_coneccion,p_registrar
+*#/----------------------------------------
 
 	v_idregistrostr =IIF((UPPER(type("p_idregistro"))='I' or UPPER(type("p_idregistro"))='N'),ALLTRIM(STR(p_idregistro)),"'"+ALLTRIM(p_idregistro)+"'")	
 	IF EMPTY(ALLTRIM(p_tabla)) = .T. OR EMPTY(ALLTRIM(p_campo)) = .T. OR EMPTY(ALLTRIM(v_idregistrostr))= .T. OR EMPTY(ALLTRIM(p_tabla)) = .T. 
@@ -12912,7 +12459,10 @@ PARAMETERS p_tabla,p_campo,p_idregistro,p_coneccion,p_registrar
 ENDFUNC 
 
 
-*//////////////////////////////////////
+
+FUNCTION SavePasswd
+	PARAMETERS psv_accion, psv_usuario, psv_passw, psv_esquema, psv_save, psv_llave
+*#/----------------------------------------
 */ Guarda el Seteo de la Clave de Acceso para aquellos usuarios que quieren salvar el passwd de acceso
 * Parametros:
 *  psv_accion	: A=ACTUALIZA O R=RECUPERA  CARACTER
@@ -12921,10 +12471,8 @@ ENDFUNC
 *  psv_esquema	: Esquema al que se conecta CARACTER
 *  psv_save		: .t.= Salva Acceso, .f.= No Salva el Acceso LOGICO
 *  psv_llave	: LLave para encriptacion CARACTER
-*//////////////////////////////////////
+*#/----------------------------------------
 
-FUNCTION SavePasswd
-	PARAMETERS psv_accion, psv_usuario, psv_passw, psv_esquema, psv_save, psv_llave
 	vsv_retorno = ""
 	
 	IF !FILE(_SYSSERVIDOR+'savepwd.dbf') THEN 
@@ -12979,17 +12527,18 @@ RETURN vsv_retorno
 
 
 
-*//////////////////////////////////////
+
+FUNCTION RandomSele
+	PARAMETERS rnd_tabla, rnd_cantidad 
+*#/----------------------------------------
 */ Retorna un conjunto de valores de registros de una tabla seleccionados al azar
 */ recibe como parametros la tabla y la cantidad de registros al azar a devolver
 */ devuelve un archivo tipo texto con los indices seleccionados con extension .rnd
 * Parametros:
 *  rnd_tabla	: Nombre de la Tabla a elegir    CARACTER
 *  rnd_cantidad : Cantidad de registros a elegir INTEGER
-*//////////////////////////////////////
+*#/----------------------------------------
 
-FUNCTION RandomSele
-	PARAMETERS rnd_tabla, rnd_cantidad 
 	rnd_retorno 	= rnd_tabla+".rnd"
 	ret_campotipo 	= obtenerCampoIndice(rnd_tabla,.T.)
 	rnd_campo 		= SUBSTR(ret_campotipo,1,ATC(";",ret_campotipo)-1)
@@ -13136,17 +12685,17 @@ ENDFUNC
 
 
 
-*//////////////////////////////////////
+
+FUNCTION ArtiCostoHisto
+PARAMETERS p_fechahisto,p_tablahisto, p_coneccion
+*#/----------------------------------------
 */ Obtiene el costo historico por articulos dada una Fecha
 */ Devuelve el costo historico a la fecha pasada para todos los articulos
 * Parametros:
 * p_fecha: Fecha para el Calculo del Costo Histórico, si fecha es vacia devuelve el ultimo costo ingresado
 * p_coneccion: conección a utilizar
 * p_tablaret: Nombre de la tabla en la que devolverá el costo historico para todos los artículos
-*//////////////////////////////////////
-
-FUNCTION ArtiCostoHisto
-PARAMETERS p_fechahisto,p_tablahisto, p_coneccion
+*#/----------------------------------------
 
 	IF (UPPER(type("p_coneccion"))='I' or UPPER(type("p_coneccion"))='N')  THEN 
 		IF p_coneccion = 0 THEN 
@@ -13183,7 +12732,10 @@ ENDFUNC
 
 
 
-*//////////////////////////////////////
+
+FUNCTION FCAdeudadas
+PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_insert, pv_tmp, p_coneccion
+*#/----------------------------------------
 */ Obtiene las facturas adeudadas para una entidad 
 */ Asocia la deuda de una cuenta a una factura del cliente  
 */ Devuelve una tabla con los idfactura y el importe de deuda
@@ -13197,10 +12749,7 @@ ENDFUNC
 * pv_conexion: puntero de la conexion a la base de datos
 * En cualquiera de los casos devuelve la deuda en un archivo de texto .csv
 * Formato de archivo devuelto .csv : idfactura I, idfcdeuda I, importe Double(13,2)
-*//////////////////////////////////////
-
-FUNCTION FCAdeudadas
-PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_insert, pv_tmp, p_coneccion
+*#/----------------------------------------
 
 	IF (UPPER(type("p_coneccion"))='I' or UPPER(type("p_coneccion"))='N')  THEN 
 		IF p_coneccion = 0 THEN 
@@ -13363,7 +12912,9 @@ ENDFUNC
 
 
 
-*//////////////////////////////////////
+FUNCTION facturasCtasAdeudadas
+PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
+*#/----------------------------------------
 */ Obtiene las facturas y cuotas adeudadas filtradas por fecha de comprobante
 */ Devuelve una tabla con los datos de la facturas, cuotas
 * Parametros:
@@ -13373,9 +12924,7 @@ ENDFUNC
 * pv_conexion: puntero de la conexion a la base de datos
 * Retorno: Devuelve True si la función termino correctamente, False en otro caso. Además devuelve la consulta en una tabla con el nombre pasada como parámetro.
 * Aclaración: Si el comprobante no tiene cuotas, la columna idcuotafc tendra valor = 0
-*//////////////////////////////////////
-FUNCTION facturasCtasAdeudadas
-PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
+*#/----------------------------------------
 
 	
 	IF TYPE('p_fechaIni') = 'C' AND TYPE('p_fechaFin') = 'C' AND TYPE('p_nomTablaTmp') = 'C'
@@ -13421,16 +12970,16 @@ PARAMETERS p_fechaIni, p_fechaFin, p_nomTablaTmp, p_coneccion
 
 ENDFUNC 
 
-*//////////////////////////////////////
+
+FUNCTION agregarParamaetro
+PARAMETERS p_funcion,p_parametro
+*#/----------------------------------------
 */ Agrega un parametro a la funcion
 */ Devuelve la funcion pasada con el nuevo paràmetro
 * Parametros:
 * p_funcion: Funciòn a la que se le va a agregar un paràmetro
 * p_parametro: Paràmetro a agregar
-
-*//////////////////////////////////////
-FUNCTION agregarParamaetro
-PARAMETERS p_funcion,p_parametro
+*#/----------------------------------------
 
 	IF TYPE('p_funcion') = 'C' AND TYPE('p_parametro') = 'C'
 		v_funcion = p_funcion
@@ -13464,6 +13013,11 @@ ENDFUNC
 
 ******************************************************
 ******************************************************
+******************************************************
+
+FUNCTION VinculoComp
+PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe 
+*#/----------------------------------------
 ** Funcion Genera Comprobante de Vinculos entre Facturas y Recibos o Pagos
 ** Regostra Vinculos y Libreraciones de Comprobantes
 ** Parametros: 	pv_tipovin		= V/D Vincula o Desvincula Comprobantes
@@ -13472,10 +13026,7 @@ ENDFUNC
 **				pv_idfactuv		= ID de la factura de cliente o de la factura de proveedores cancelada
 **				pv_importe		= importe de la operación aplicada o desvinculada
 **
-******************************************************
-
-FUNCTION VinculoComp
-PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe 
+*#/----------------------------------------
 	
 
 	v_tablav 		= ""
@@ -13725,16 +13276,15 @@ ENDFUNC
 
 
 
-******************************************************
-******************************************************
+
+FUNCTION TarjetaCtaBaja
+PARAMETERS pct_idcheque
+*#/----------------------------------------
 ** Pasa Cuotas de Tarjetas propias de la Cuenta Tarjeta correspondiente
 ** a la Cuenta Proveedores, Genera CI TARJETA (Sin Registro de Asiento)
 ** Genera Factura de Proveedor en Entidad Asociada a Cuenta de Caja Banco para Tarjeta
 ** Genera Asiento Contable dando de Baja la Cuenta en Tarjeta y pasando el Saldo a Proveedores
-******************************************************
-
-FUNCTION TarjetaCtaBaja
-PARAMETERS pct_idcheque
+*#/----------------------------------------
 
 	IF  MESSAGEBOX("CONFIRMA LA LIQUIDACIÓN DE LA CUOTA SELECCIONADA  ",4+32,"Liquidacion de Cuotas de Tarjetas")= 7 THEN 
 		RETURN 		
@@ -14170,14 +13720,14 @@ ENDFUNC
 
 
 
-**********************************************************
-** FUNCIÓN para anular Caja Ingreso o Egreso
-** Parametros: pIdRegistro: Id del registro de la tabla cajaie que se desea anular.
-** Retorno: Retorna ID del registro de anulación. 0 en caso que no se haya registrado
-**********************************************************
 
 FUNCTION anularCajaIE
 PARAMETERS pIdregistro
+*#/----------------------------------------
+** FUNCIÓN para anular Caja Ingreso o Egreso
+** Parametros: pIdRegistro: Id del registro de la tabla cajaie que se desea anular.
+** Retorno: Retorna ID del registro de anulación. 0 en caso que no se haya registrado
+*#/----------------------------------------
 
 	v_retornocie = 0
 
@@ -14758,15 +14308,14 @@ ENDFUNC
 
 
 
-*** Función que obtiene las opciones asociadas a la factura**
-** Recibe como parámetro el IDFactura
-** Retorna una lista de opciones con el siguiente formato: 'codigo1,valor1;codigo2,valor2;codigoN,valorN'
-**
-
-
 
 FUNCTION obtenerOpcionesFactura
 PARAMETERS p_idFactura
+*#/----------------------------------------
+*** Función que obtiene las opciones asociadas a la factura**
+** Recibe como parámetro el IDFactura
+** Retorna una lista de opciones con el siguiente formato: 'codigo1,valor1;codigo2,valor2;codigoN,valorN'
+*#/----------------------------------------
 
 	v_opcionesRet = ""
 
@@ -14829,11 +14378,13 @@ ENDFUNC
 
 
 
-*** Función para eliminar los Vinculos de Comprobantes los Asientos de estos
-*** que se hayan vinculado con un Recibo u Orden de Pago que se Anula
-***
 FUNCTION EliminaVinculo
 PARAMETERS pe_tablav, pe_idregiv
+*#/----------------------------------------
+*** Función para eliminar los Vinculos de Comprobantes los Asientos de estos
+*** que se hayan vinculado con un Recibo u Orden de Pago que se Anula
+*#/----------------------------------------
+***
 
 	**** Busco los Vinculos Asociados al Comprobante ***
 	
@@ -14898,11 +14449,12 @@ ENDFUNC
 
 
 
-
-* FUNCIÓN PARA IMPRIMIR MOVIMIENTOS DE ETIQUETAS
-* PARAMETROS: p_idtransfeti
 FUNCTION imprimirTransfEti
 PARAMETERS p_idtransfeti
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR MOVIMIENTOS DE ETIQUETAS
+* PARAMETROS: p_idtransfeti
+*#/----------------------------------------
 
 
 
@@ -14969,6 +14521,9 @@ ENDFUNC
 
 
 FUNCTION variables_sys
+*#/----------------------------------------
+*
+*#/----------------------------------------
 	PARAMETERS p_ec
 *!*		v_llave = 20
 	IF p_ec = 0 THEN &&encripta
@@ -15012,10 +14567,12 @@ ENDFUNC
 
 
 
-* FUNCIÓN PARA IMPRIMIR UN AJUSTE DE STOCK
-* PARAMETROS: p_idajuste
 FUNCTION imprimirAjuste
 PARAMETERS p_idajuste
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UN AJUSTE DE STOCK
+* PARAMETROS: p_idajuste
+*#/----------------------------------------
 
 	v_idajuste = p_idajuste
 	IF v_idajuste > 0
@@ -15077,13 +14634,15 @@ ENDFUNC
 
 
 
+FUNCTION ActualizaListasR
+PARAMETERS p_ListaP
+*#/----------------------------------------
 * Funcion de Actualizacion de Listas de Precios Resultados 
 * - Calculos de Listas de Precios Finalizadas - 
 * - Tablas actualizadas : r_listaprea (contienes precios de articulos finales)
 *						  r_listapreb (contiene las listas de precios )
 * PARAMETROS: p_ListaP : Si está vacío entonces elimina los registros del Calculo Actual (Vacia las Tablas )
-FUNCTION ActualizaListasR
-PARAMETERS p_ListaP
+*#/----------------------------------------
 
 	IF !(TYPE("p_ListaP")="C") THEN 
 		p_ListaP = ""
@@ -15226,13 +14785,14 @@ PARAMETERS p_ListaP
 RETURN 
 
 
-
+FUNCTION ActuDatosAnexos
+PARAMETERS pda_tablatmp, pda_id
+*#/----------------------------------------
 * Funcion de Actualizacion de DatosAnexos 
 * - Calculos de Listas de Precios Finalizadas - 
 * - Tablas actualizadas : datosanexo (Contienes Datos Anexos)
 * PARAMETROS: pda_tablatmp: Tabla que contiene los Registros a Grabar en datosanexo
-FUNCTION ActuDatosAnexos
-PARAMETERS pda_tablatmp, pda_id
+*#/----------------------------------------
 
 	IF !(TYPE("pda_tablatmp")="C") THEN 
 		pda_tablatmp = ""
@@ -15324,11 +14884,12 @@ ENDFUNC
 
 	
 
-
-* FUNCIÓN PARA IMPRIMIR DETALLES ANEXOS DE COMPROBANTES ()
-* PARAMETROS: P_IDtabla , P_IDcomp
 FUNCTION imprimirDetalleAnexo
 PARAMETERS p_tablacomp, p_idcomp
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR DETALLES ANEXOS DE COMPROBANTES ()
+* PARAMETROS: P_IDtabla , P_IDcomp
+*#/----------------------------------------
 
 	IF p_idcomp  > 0
 		
@@ -15380,13 +14941,14 @@ ENDFUNC
 
 
 
-*-----------------------------------------------------------------------------------
-* Obtiene todos los Comprobantes Electrónicos Pendientes de Autorización
-*-----------------------------------------------------------------------------------
 
 
 FUNCTION ObtieneCompNoAutoriza
 PARAMETERS  para_aliasrnl
+*#/----------------------------------------
+* Obtiene todos los Comprobantes Electrónicos Pendientes de Autorización
+*#/----------------------------------------
+
 p_aliasretorno  = ""
 
 	vconeccionM = abreycierracon(0,_SYSSCHEMA)
@@ -15419,13 +14981,15 @@ ENDFUNC
 
 
 
+
+
+FUNCTION FUpdatesys
+*#/----------------------------------------
 *-----------------------------------------------------------------------------------
 * Chequea si existe alguna Actualización Nueva para descargar por FTP 
 * Retorna 1 si existe actualización o 0 Si no existen versiones nuevas
 *-----------------------------------------------------------------------------------
-
-
-FUNCTION FUpdatesys
+*#/----------------------------------------
 
 	 p_updretorno  = 0
 	 IF !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'   ',1,3)=='S/A') AND !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'    ',1,3)=='N/A') AND !EMPTY(ALLTRIM(_SYSFTPUPDATE))  THEN 
@@ -15487,12 +15051,15 @@ FUNCTION FUpdatesys
 ENDFUNC 
 
 
+
+FUNCTION ping
+param tcServer
+*#/----------------------------------------
 *******************************************
 ** Ping, recibe como parametro un hosts y envia un ping para chequear que exista
 * devuelve .t. si responde, .f. si no responde el host
 *******************************************
-FUNCTION ping
-param tcServer
+*#/----------------------------------------
     LOCAL llResult
     tcServer = IIF( VARTYPE(tcServer)='C', ALLTRIM(tcServer), '')
 
@@ -15522,6 +15089,9 @@ RETURN llResult
 
 
 
+FUNCTION FCumpleNP
+param cnp_idnp, cnp_tipo
+*#/----------------------------------------
 *******************************************
 ** Cumplimenta las OT Pendientes en una Nota de Pedido
 ** Parámetros:
@@ -15529,8 +15099,7 @@ RETURN llResult
 *   cnp_tipo: Tipo de articulos a cumplir, puede ser sobre articulos o materiales
 *		 0 : Articulos, 1: Materiales , 2: Todos
 *******************************************
-FUNCTION FCumpleNP
-param cnp_idnp, cnp_tipo
+*#/----------------------------------------
 
 	cnp_condicion = " where ot.idnp = "+ALLTRIM(str(cnp_idnp))+" and p.pendiente > 0 "+IIF(cnp_tipo=0," and ot.idmate = 0 ","" )+IIF(cnp_tipo=1," and ot.idmate > 0 ","")
 
@@ -15680,6 +15249,9 @@ RETURN .T.
 
 
 
+FUNCTION FIinsertaOT
+PARAMETERS  ins_idnp, ins_tabla
+*#/----------------------------------------
 *******************************************
 ** Inserta OT en una Nota de Pedido
 ** Parámetros:
@@ -15687,8 +15259,7 @@ RETURN .T.
 *   ins_tabla: Tabla que contiene los articulos o materiales a insertar en a NP
 *		 Estructura : articulo c(20), idmate I, cantidad n(10,2)
 *******************************************
-FUNCTION FIinsertaOT
-PARAMETERS  ins_idnp, ins_tabla
+*#/----------------------------------------
 
 	IF !(TYPE("ins_tabla")="C") THEN 
 		ins_tabla= ""
@@ -15851,6 +15422,9 @@ RETURN .T.
 
 **********************************************************************************
 
+FUNCTION FVinculaOTNP
+PARAMETERS  pv_idot, pv_idnp, pv_operacion 
+*#/----------------------------------------
 *******************************************
 ** Vincula la OT del Módulo de Ordenes de Trabajo con las Notas de Pedidos de Clientes
 ** Parametros:
@@ -15858,8 +15432,7 @@ RETURN .T.
 **				pv_idnp = idnp de la Nota de Pedido a Vincular con la OT
 ** 				pv_operacion=  1: Vincula la OT con la Nota de Pedido -  2: Cumple los materiales de la NP asociada a la OT
 *******************************************
-FUNCTION FVinculaOTNP
-PARAMETERS  pv_idot, pv_idnp, pv_operacion 
+*#/----------------------------------------
 
 IF pv_operacion = 1 THEN 	&& Vinculacion OT con NP
 
@@ -15978,7 +15551,10 @@ RETURN .t.
 
 
 
+FUNCTION FTranfiereEti
+param trp_iddepoo, trp_iddepod, trp_tablaeti, trp_fecha
 
+*#/----------------------------------------
 *******************************************
 ** Carga un Comprobante de Transferencia de Etiquetas entre depósitos
 ** Recibe las etiquetas y el deposito de origen y destino, chequea que estén
@@ -15990,8 +15566,7 @@ RETURN .t.
 *   trp_fecha   : Fecha para la Transferencia
 *  Retorna el Numero de Transferencia de Etiqueta o 0 si no la pudo hacer
 *******************************************
-FUNCTION FTranfiereEti
-param trp_iddepoo, trp_iddepod, trp_tablaeti, trp_fecha
+*#/----------------------------------------
 
 	IF !(TYPE("trp_tablaeti")="C") THEN 
 		trp_tablaeti= ""
@@ -16196,14 +15771,17 @@ RETURN v_idtraeti
 
 
 
+FUNCTION FMueveEtiAjusteST
+PARAMETERS pa_idajuste
+*#/----------------------------------------
 *******************************************
 ** Selecciona las Etiquetas de Un Ajuste de Stock para Transferirla segun los movimientos de Depósitos
 ** Parámetros:
 *	pa_idajuste: Id del Ajuste de Stock
 *  Retorna el id del movimiento de transferencia realizado o 0 si no lo pudo hacer
 *******************************************
-FUNCTION FMueveEtiAjusteST
-PARAMETERS pa_idajuste
+*#/----------------------------------------
+
 	*** Si Generó Etiquetas y las Ingreso a depósito, debo generar una transferencia de estas hacia el deposito ingresado
 
 	* me conecto a la base de datos
@@ -16246,6 +15824,9 @@ ENDFUNC
 
 
 
+FUNCTION FGeneraAsoc
+PARAMETERS cp_idcomprobao, cp_id
+*#/----------------------------------------
 *******************************************
 ** Chequea que se puedan Generar Comprobantes Asociados para el Comprobante pasado como parametros 
 ** Parámetros:
@@ -16253,8 +15834,7 @@ ENDFUNC
 *   cm_id: id del comprobante origen 
 *   Observacion : El comprobante Asociado se obtiene de la variable _SYSCMPASOC
 *******************************************
-FUNCTION FGeneraAsoc
-PARAMETERS cp_idcomprobao, cp_id
+*#/----------------------------------------
 
 	IF EMPTY(_SYSCMPASOC) OR SUBSTR((_SYSCMPASOC+' '),1,1)='N' THEN 
 		RETURN ""
@@ -16291,6 +15871,9 @@ ENDFUNC
 
 
 
+FUNCTION FGeneraCmpAsoc
+PARAMETERS cmp_idcomprobao, cmp_id, cmp_idcomprobad
+*#/----------------------------------------
 *******************************************
 ** Genera Comprobantes Asociados a partir de uno dado
 ** Parámetros:
@@ -16299,8 +15882,7 @@ ENDFUNC
 *	cm_idcomprobad: Id del Comprobante que Generará 
 *   Observacion : El comprobante Asociado se obtiene de la variable _SYSCMPASOC
 *******************************************
-FUNCTION FGeneraCmpAsoc
-PARAMETERS cmp_idcomprobao, cmp_id, cmp_idcomprobad
+*#/----------------------------------------
 
 
 	* me conecto a la base de datos
@@ -16726,14 +16308,15 @@ ENDFUNC
 
 
 
-
+FUNCTION FNDatosExtras
+PARAMETERS pm_tabla, pm_id
+*#/----------------------------------------
 *******************************************
 ** Chequea la Tabla pasada como parámetro tenga etiquetas de datos Anexos, si hay solicita los datos para el id pasado como parametro
 *	pm_tabla: Tabla para la solicitud de datos Anexos
 *   pm_id: Id de la tabla para Asociar los datos anexos
 *******************************************
-FUNCTION FNDatosExtras
-PARAMETERS pm_tabla, pm_id
+*#/----------------------------------------
 
 	*** Me conecto a la base de datos
 	vconeccionFND=abreycierracon(0,_SYSSCHEMA)	
@@ -16771,6 +16354,9 @@ ENDFUNC
 
 
 
+FUNCTION FNPresupuToNP
+PARAMETERS pp_idpresupu
+*#/----------------------------------------
 ****************************************************************************************************************
 *** Generación de una Nota de Pedido a partir de un Presupuesto *********************************************
 ***
@@ -16778,8 +16364,7 @@ ENDFUNC
 *** pp_idpresupu : ID del presupuesto para el cual se realizará la nota de pedido anexa
 *** retorna el idnp: de la nota de pedido generada, si no lo genera retorna 0
 ************************************************************************************************************
-FUNCTION FNPresupuToNP
-PARAMETERS pp_idpresupu
+*#/----------------------------------------
 
 	rt_idnp = 0 
 	v_tmp = frandom()
@@ -17157,14 +16742,16 @@ RETURN rt_idnp
 
 
 
+FUNCTION obtenerContribuyente 
+PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
+*#/----------------------------------------
 * FUNCIÓN PARA OBTENER LOS DATOS DE UN CONTRIBUYENTE REGISTRADO EN AFIP
 * PARAMETROS: 	p_tablaRetorno: Nombre de la tabla donde se van a retornar los datos del contribuyente encontrado
 *				p_cuitContrib: CUIT del contribuyente a buscar en el AFIP	
 *				p_nomsg: Parámetro para indicar si se van a mostrar los mensajes de error. Por defecto no muestra mensajes
 * RETORNO: Retorna True si no hubo errores al intentar obtener los datos del contribuyente, retorna False en caso que haya ocurrido un error.
+*#/----------------------------------------
 
-FUNCTION obtenerContribuyente 
-PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 
 	v_retorno = .F.
 
@@ -17423,16 +17010,18 @@ ENDFUNC
 
 
 
-**** INICIO FUNCION ANULAR TRANSFERENCIAS **************
+FUNCTION AnularTransfe
+PARAMETERS pIdregistro
 
+*#/----------------------------------------
+**** INICIO FUNCION ANULAR TRANSFERENCIAS **************
 **********************************************************
 ** FUNCIÓN para anular Trasferencias Bancarias
 ** Parametros: pIdRegistro: Id del registro de la tabla Transferencias que se desea anular.
 ** Retorno: Retorna ID del registro de anulación. 0 en caso que no se haya registrado
 **********************************************************
+*#/----------------------------------------
 
-FUNCTION AnularTransfe
-PARAMETERS pIdregistro
 
 	v_retornocie = 0
 
@@ -18017,6 +17606,9 @@ ENDFUNC
 ************ FIN FUNCION ANULAR TRANSFERENCIAS *********************************
 
 
+FUNCTION cargarLocalidad
+PARAMETERS p_nomLoc, p_cp, p_nomProv, p_nomPais
+*#/----------------------------------------
 **** FUNCION PARA CARGAR UNA LOCALIDAD POR NOMBRE DE LOCALIDAD, PROVINCIA y CP ****
 ** PARAMETROS:
 * p_nomloc: Nombre de la localidad que se va a crear
@@ -18024,9 +17616,8 @@ ENDFUNC
 * p_nomProv: Nombre de la provincia correspondiente
 * p_nomPais: Pais de la localidad, en caso de no recibir un pais toma por defecto 'ARGENTINA'
 ** RETORNO: Retorna el numero de localidad, cero en caso de ocurrir un error
+*#/----------------------------------------
 
-FUNCTION cargarLocalidad
-PARAMETERS p_nomLoc, p_cp, p_nomProv, p_nomPais
 
 	IF TYPE('p_nomPais') <> 'C'
 		p_nomPais = "ARGENTINA"
@@ -18776,6 +18367,11 @@ PARAMETERS pga_tablacobros, p_cone
 	ENDIF 
 
 ENDFUNC 
+
+
+FUNCTION retenciones
+PARAMETERS p_entidad, P_fecha, p_nomTabRes,P_importe
+*PARAMETERS p_entidad, P_importe,P_fecha, p_nomTabRes
 *#/**************************************************************
 *** FUNCIÓN PARA EL CALCULO DE RETENCIONES A APLICAR ***
 ****************************************************************
@@ -18788,9 +18384,6 @@ ENDFUNC
 ** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
 *#/**************************************************************
 
-FUNCTION retenciones
-PARAMETERS p_entidad, P_fecha, p_nomTabRes,P_importe
-*PARAMETERS p_entidad, P_importe,P_fecha, p_nomTabRes
 
 v_retorno = 0
 v_importeTot = 0.00
@@ -18913,6 +18506,9 @@ ENDFUNC
 
 
 
+FUNCTION generarCompRetencion
+PARAMETERS p_nomTablaret, p_idcomprobaaso, p_idregistroaso
+*#/----------------------------------------
 ****************************************************************
 *** FUNCIÓN PARA GENERAR UN COMPROBANTE DE RETENCIÓN SEGÚN LA TABLA ***
 ****************************************************************
@@ -18922,9 +18518,8 @@ ENDFUNC
 ****************************************************************
 ** RETORNO: Retorna True si se generó correctamente, completando previamente los datos de idreten, idcomproba, numero
 ****************************************************************
+*#/----------------------------------------
 
-FUNCTION generarCompRetencion
-PARAMETERS p_nomTablaret, p_idcomprobaaso, p_idregistroaso
 
 
 IF TYPE('p_idcomprobaaso') = 'N'
@@ -19093,19 +18688,10 @@ ENDIF
 				    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar linkcompro",0+48+0,"Error")
 					RETURN .f.
 				ENDIF 
-	
-	
-				 
-				
-				
-				
+		
 				
 			* me desconecto	
 			=abreycierracon(vconeccionF,"")
-			
-			
-			
-			
 			
 			ENDIF 
 		
@@ -19125,6 +18711,8 @@ ENDFUNC
 
 
 
+FUNCTION percepciones
+PARAMETERS p_entidad, P_fecha, p_nomTabRes,P_importe
 
 *#/**************************************************************
 *** FUNCIÓN PARA EL CALCULO DE PERCEPCIONES A APLICAR ***
@@ -19137,9 +18725,6 @@ ENDFUNC
 ****************************************************************
 ** RETORNO: Retorna el importe a percibir, el total de percepciones al mes y total de pagos. True si terminó correctamente, False en otro caso
 *#/**************************************************************
-
-FUNCTION percepciones
-PARAMETERS p_entidad, P_fecha, p_nomTabRes,P_importe
 
 v_retorno = .F.
 v_importeTot = 0.00
@@ -19209,15 +18794,13 @@ v_importeTot = 0.00
 	** 3- En caso de que le corresponda percepciones, abrir una ventana con las percepciones asociadas, pidiendo ingresar el monto total y una lista para poder elegir las percepciones que quiera aplicar
 	****************************************************************
 
- 	DO FORM selectpercepciones WITH v_importeTot ,p_nomTabRes TO v_retorno 
-		
+ 	v_retorno = 0.00 
+	** DO FORM selectpercepciones WITH v_importeTot ,p_nomTabRes TO v_retorno   && NO TENGO EL FORMULARIO
  	
  	IF v_retorno > 0.00
- 	
-	
+
  		SELECT &p_nomtabres
- 		GO TOP 
- 		 		
+ 		GO TOP  		
  	ELSE
  		MESSAGEBOX("Hubo un problema al intentar aplicar percepciones",0+48+0,"Aplicar percepciones")
  		RETURN 0.00
@@ -19228,8 +18811,45 @@ v_importeTot = 0.00
  	RETURN -1
  ENDIF 
 
- 
- 
 RETURN v_retorno
 
 ENDFUNC 
+
+
+
+FUNCTION ConsultaEntidad
+PARAMETERS pce_entidad
+*#/**************************************************************
+*** CONSULTA DE ENTIDAD ***
+****************************************************************
+** PARÁMETROS: 	P_entidad: id de la entidad a consultar
+** RETORNO: Retorna una el nombre de una tabla con todos los datos de la entidad o "" si la entidad no existe
+*#/**************************************************************
+vreto_entidad 	=""
+vnombrear		= "entidad"+frandom()
+IF pce_entidad > 0 THEN 
+
+	vconeccionPCE = abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)="Select * FROM entidades WHERE entidad = " + ALLTRIM(STR(pce_entidad))
+	verror=sqlrun(vconeccionPCE,"entidades_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la Razon Social de la entidad solicitada ",0+48+0,"Error")
+	ENDIF 
+	SELECT entidades_sql 
+	GO TOP 
+	IF EOF() THEN 
+		USE IN entidades_sql
+		=abreycierracon(vconeccionPCE ,"")
+		RETURN vreto_entidad 
+	ENDIF 
+	SELECT * FROM entidades_sql INTO TABLE &vnombrear
+	USE IN &vnombrear
+	USE IN entidades_sql
+	vreto_entidad = vnombrear
+	=abreycierracon(vconeccionPCE,"")
+ENDIF 
+
+RETURN vreto_entidad 
+
+
