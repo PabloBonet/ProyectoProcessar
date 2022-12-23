@@ -78,17 +78,7 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 	v_desde = "'"+STRTRAN(STR(anio,4,0)," ","0")+STRTRAN(STR(mes,2,0)," ","0")+diaini+"'"
 	v_hasta = "'"+STRTRAN(STR(anio,4,0)," ","0")+STRTRAN(STR(mes,2,0)," ","0")+diafin+"'"
 	
-*!*		sqlmatriz(1) = " SELECT R.cod_socio, max(R.pagosmes) as pagosmes FROM reciretencion  R "
-*!*		sqlmatriz(2) = "    left join recibosprov P on R.idrecibo = P.idrecibo "
-*!*		sqlmatriz(3) = "    WHERE P.fecha between "+v_desde+" and "+v_hasta+" and "
-*!*		sqlmatriz(4) = "    	  R.cod_socio = "+ALLTRIM(STR(tmpretencion.cod_socio))+" AND "
-*!*		sqlmatriz(5) = "          R.icodigo = "+ALLTRIM(STR(tmpretencion.icodigo))
-*!*		sqlmatriz(6) = "     group BY R.cod_socio ORDER BY R.cod_socio"	
-*!*		verror=sqlrun(varconexionF,"totpagos0")
-*!*		IF verror=.f.  
-*!*		    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Impuestos (0)",0+16+0,"")
-*!*		ENDIF 
-*!*		
+
 
 
 ******************************************************************************************
@@ -99,18 +89,11 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 *** Retenciones realizadas en el mes pasado como parámetro ***
 ****
 
-*!*		sqlmatriz(1) = " SELECT R.entidad, max(R.importe) as pagosmes FROM retenciones R "
-*!*		sqlmatriz(2) = "    WHERE R.fecha between "+v_desde+" and "+v_hasta+" and "
-*!*		sqlmatriz(3) = "    	  R.entidad = "+ALLTRIM(STR(p_entidad))+" AND "
-*!*		sqlmatriz(4) = "          R.idimpuret = "+ALLTRIM(STR(P_idimpuret))
-*!*		sqlmatriz(5) = "     group BY R.entidad ORDER BY R.entidad "	
 	
 sqlmatriz(1)= " SELECT p.entidad, ifnull(r.idimpuret, 0) as idimpuret, SUM(p.importe) as pagosmes, ifnull(sum(r.importe),0.00) as impret   FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
 sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
 sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  R.idimpuret = "+ALLTRIM(STR(P_idimpuret)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad,r.idimpuret "
- 
- 
- 
+   
  
 	verror=sqlrun(varconexionF,"totpagosRet0")
 	IF verror=.f.  
@@ -222,16 +205,15 @@ SELECT totpagos
 	ENDIF 
 	
 	
-	
 	IF v_enconvenio = 'S' && Si está en convenio busco en las escalas según el campo razonin de la tabla impuretencion
 
-		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon  "
+		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret  "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
 	ELSE && Si no está en convenio busco en las escalas según el campo razonnin de la tabla impuretencion
 
-		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon  "
+		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret  "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonnin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
@@ -247,24 +229,10 @@ SELECT totpagos
 ****
 *** Obtengo el total de retenciones realizadas en el mes para la entidad
 ****
-*!*		sqlmatriz(1) = " SELECT R.entidad, sum(R.importe) as retenmes FROM retenciones  R  "
-*!*		sqlmatriz(2) = " left join linkcompro L on R.idcomproba = L.idcomprobaa and R.idreten = L.idregistroa "
-*!*		sqlmatriz(3) = "    left join pagosprov P on L.idcomprobab = P.idcomproba and L.idregistrob = P.idpago  "
-*!*		sqlmatriz(4) = " left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov'"
-*!*		sqlmatriz(5) = "    WHERE P.fecha between "+v_desde+" and "+v_hasta+" and "
-*!*		sqlmatriz(6) = "    	     R.entidad = "+ALLTRIM(STR(P_entidad))+ " and "
-*!*		sqlmatriz(7) = "    	     R.idimpuret   = "+ALLTRIM(STR(p_idimpuret)) +" and u.idestador != " +ALLTRIM(STR(v_estadoAnulado))
-*!*		sqlmatriz(8) = "     group BY R.entidad ORDER BY R.entidad"	
-*!*		verror=sqlrun(varconexionF,"totreten0")
-*!*		IF verror=.f.  
-*!*		    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias(5)",0+16+0,"")
-*!*		    RETURN .F.
-*!*		ENDIF 
 	
 	SELECT entidad, impret as retenmes FROM totpagosRet WHERE idimpuret = p_idimpuret INTO TABLE totreten0
 	
-	
-	
+		
 	ZAP IN totreten
 	SELECT totreten0
 	GO TOP 
@@ -283,8 +251,7 @@ SELECT totpagos
 		SKIP 1
 	ENDDO  
 	
-	
-	
+		
 	v_razonAplicar = 0.00
 	SELECT impureten
 	GO TOP 
@@ -295,18 +262,12 @@ SELECT totpagos
 			
 			* Si está incluido  en convenio, uso el id perteneciente al campo razonin de la tabla impuretencion
 			
-			
 			* Si NO está incluido en convenio, uso el id perteneciente al campo razonnin
-			
-			
-						
-			
 			
 **********************************************************************************************************************
 **** CALCULO DE RETENCIONES SEGÚN LAS ESCALAS CORRESPONDIENTES Y EN FUNCIÓN DE LOS PAGOS Y RETENCIONES REALIZADOS ****
 **********************************************************************************************************************
 					
-			
 			
 *******************
 **** 1- Calculo el total de pagos incluyendo el pago actual: v_pago_total_retener = total_pagos_mes + p_importe
@@ -341,40 +302,48 @@ SELECT totpagos
 				SELECT retenciongan
 				
 				v_valmin = retenciongan.valmin
-*				MESSAGEBOX(v_valmin)
+
 				v_retener = v_aretener - v_valmin
-*				MESSAGEBOX(v_retener)
+
 				v_razon = retenciongan.razon
-*				MESSAGEBOX(v_razon )
+
 				v_valfijo = retenciongan.valfijo
-*				MESSAGEBOX(v_valfijo )			
+	
 			
 				v_totalRetencionesRealizadas =0.00
 				
 				
-			SELECT totreten
-			GO TOP 
-			
-			IF NOT EOF()
-				SELECT SUM(IIF(ISNULL(retenmes),0.00,retenmes)) as tot FROM totreten  INTO CURSOR totalRetRealizadas			
-				SELECT totalRetRealizadas
-				GO top
+				SELECT totreten
+				GO TOP 
 				
 				IF NOT EOF()
-					v_totalRetencionesRealizadas = totalRetRealizadas.tot
+					SELECT SUM(IIF(ISNULL(retenmes),0.00,retenmes)) as tot FROM totreten  INTO CURSOR totalRetRealizadas			
+					SELECT totalRetRealizadas
+					GO top
+					
+					IF NOT EOF()
+						v_totalRetencionesRealizadas = totalRetRealizadas.tot
+					ELSE
+						v_totalRetencionesRealizadas  = 0.00
+					ENDIF 
 				ELSE
-					v_totalRetencionesRealizadas  = 0.00
+					v_totalRetencionesRealizadas =0.00
 				ENDIF 
-			ELSE
-				v_totalRetencionesRealizadas =0.00
-			ENDIF 
 
 				v_retencion = v_retener*(v_razon/100) + v_valfijo - v_totalRetencionesRealizadas 
 		
+			
+****
+*** Controlo que el monto a retener sea mayor al mínimo de retenciones por impuesto
+****			
+			
+			SELECT impureten
+			v_minRet = impureten.minret
+			
+			IF v_retencion < v_minRet
+				&& La retención a aplicar es menor que el minimo a retener para el concepto. No se aplican retenciones
+			ELSE
 						
-			
-			
-			
 ****
 *** Guardo en la tabla los datos para la retención
 ****			
@@ -394,8 +363,6 @@ SELECT totpagos
 				ELSE 
 					v_totRetmes = 0.00				
 				ENDIF 
-
-				
 				
 				v_entidad = p_entidad
 				v_idimpuret = P_idimpuret
@@ -410,6 +377,7 @@ SELECT totpagos
 				
 				INSERT INTO &p_nombretabRes (entidad, idimpuret,impTotal,impARet,baseimpo,razon,idtipopago,descrip,totpagomes,totretmes,sujarete,idafipesc) VALUES (v_entidad, v_idimpuret,v_impTotal,v_impARet,v_baseImponible,v_razon,v_idtipopago,v_descrip,v_totpagomes,v_totretmes,v_aretener,v_idafipesc)
 
+			ENDIF 
 			
 			
 			ELSE && No tengo que retener			
@@ -426,7 +394,6 @@ SELECT totpagos
 	USE IN totreten
 	USE IN totpagos
 	
-
 	
 	* cierro la conexion
 	= abreycierracon(varconexionF,"")
@@ -492,7 +459,7 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 	
 	IF v_enconvenio = 'S' && Si está en convenio busco en las escalas según el campo razonin de la tabla impuretencion
 
-		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon  "
+		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
@@ -502,7 +469,7 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 
 	ELSE && Si no está en convenio busco en las escalas según el campo razonnin de la tabla impuretencion
 
-		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon  "
+		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonnin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
@@ -516,8 +483,7 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias(2)",0+16+0,"")
 	    RETURN .F.
-	ENDIF 
-	
+	ENDIF 	
 	
 					
 	*******************
@@ -527,7 +493,6 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 			SELECT impureten
 			v_baseImponible = impureten.baseimpon
 			
-						
 			
 			v_aretener = v_pago_total_retener - v_baseImponible
 			
@@ -538,67 +503,55 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 				SELECT retenciongan
 				
 				v_valmin = retenciongan.valmin
-*				MESSAGEBOX(v_valmin)
+
 				v_retener = v_aretener - v_valmin
-*				MESSAGEBOX(v_retener)
+
 				v_razon = retenciongan.razon
-*				MESSAGEBOX(v_razon )
+
 				v_valfijo = retenciongan.valfijo
-*				MESSAGEBOX(v_valfijo )			
-			
+
 				v_totalRetencionesRealizadas =0.00
 				
+				v_retencion = v_retener*(v_razon/100) + v_valfijo
+			
+						
+****
+*** Controlo que el monto a retener sea mayor al mínimo de retenciones por impuesto
+****			
+			
+				SELECT impureten
+				v_minRet = impureten.minret
 				
-*!*				SELECT totreten
-*!*				GO TOP 
-*!*				
-*!*				IF NOT EOF()
-*!*					SELECT SUM(IIF(ISNULL(retenmes),0.00,retenmes)) as tot FROM totreten  INTO CURSOR totalRetRealizadas			
-*!*					SELECT totalRetRealizadas
-*!*					GO top
-*!*					
-*!*					IF NOT EOF()
-*!*						v_totalRetencionesRealizadas = totalRetRealizadas.tot
-*!*					ELSE
-*!*						v_totalRetencionesRealizadas  = 0.00
-*!*					ENDIF 
-*!*				ELSE
-*!*					v_totalRetencionesRealizadas =0.00
-*!*				ENDIF 
+				IF v_retencion < v_minRet
+					&& La retención a aplicar es menor que el minimo a retener para el concepto. No se aplican retenciones
+				ELSE
 
-					v_retencion = v_retener*(v_razon/100) + v_valfijo
+****
+*** Guardo en la tabla los datos para la retención
+****			
+										
+					v_entidad = p_entidad
+					v_idimpuret = P_idimpuret
+					v_impTotal = P_importe
+					v_impARet = v_retencion
+					
+					SELECT impureten 
+					
+					v_idtipopago = impureten.idtipopago
+					v_descrip = ALLTRIM(impureten.detalle)+ " - " + ALLTRIM(impureten.descescala)
+					v_idafipesc = impureten.idafipesc
+					
 			
+					INSERT INTO &p_nombretabRes (entidad, idimpuret,impTotal,impARet,baseimpo,razon,idtipopago,descrip,sujarete, idafipesc) VALUES (v_entidad, v_idimpuret,v_impTotal,v_impARet,v_baseImponible,v_razon,v_idtipopago,v_descrip,v_aretener, v_idafipesc)
 
-			
-			****
-			*** Guardo en la tabla los datos para la retención
-			****			
-							
-				
-				
-				v_entidad = p_entidad
-				v_idimpuret = P_idimpuret
-				v_impTotal = P_importe
-				v_impARet = v_retencion
-				
-				SELECT impureten 
-				
-				v_idtipopago = impureten.idtipopago
-				v_descrip = ALLTRIM(impureten.detalle)+ " - " + ALLTRIM(impureten.descescala)
-				v_idafipesc = impureten.idafipesc
-				
-		
-				INSERT INTO &p_nombretabRes (entidad, idimpuret,impTotal,impARet,baseimpo,razon,idtipopago,descrip,sujarete, idafipesc) VALUES (v_entidad, v_idimpuret,v_impTotal,v_impARet,v_baseImponible,v_razon,v_idtipopago,v_descrip,v_aretener, v_idafipesc)
+				ENDIF 
 
-			
-			
+						
 			ELSE && No tengo que retener			
 			
 			ENDIF 
 			
 			
-			
-
 		RETURN .T.
 
 ENDFUNC 
