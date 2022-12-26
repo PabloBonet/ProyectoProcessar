@@ -207,13 +207,13 @@ SELECT totpagos
 	
 	IF v_enconvenio = 'S' && Si está en convenio busco en las escalas según el campo razonin de la tabla impuretencion
 
-		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret  "
+		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon as  baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret  "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
 	ELSE && Si no está en convenio busco en las escalas según el campo razonnin de la tabla impuretencion
 
-		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret  "
+		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimponn as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret  "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonnin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
@@ -459,7 +459,7 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 	
 	IF v_enconvenio = 'S' && Si está en convenio busco en las escalas según el campo razonin de la tabla impuretencion
 
-		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
+		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
@@ -469,7 +469,7 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 
 	ELSE && Si no está en convenio busco en las escalas según el campo razonnin de la tabla impuretencion
 
-		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
+		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimponn as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonnin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
