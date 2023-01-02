@@ -7604,7 +7604,7 @@ PARAMETERS p_idpagoProv
 					
 				
 		
-			sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetapago, dc.idtipopago, dc.importe as impCobrado, dc.idcuenta, tp.detalle as tipopago, cb.codcuenta "
+			sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetapago, dc.idtipopago, dc.importe as impCobrado, dc.idcuenta, tp.detalle as tipopago, cb.codcuenta, cb.detalle as nomcuenta"
 			sqlmatriz(2)=" from pagosprov r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba "
 			sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom " 
 			sqlmatriz(4)=" left join entidades e on r.entidad = e.entidad left join detallepagos dc on r.idcomproba = dc.idcomproba and r.idpago = dc.idregistro "
