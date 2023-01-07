@@ -2584,6 +2584,7 @@ FUNCTION CargaCtaCteClientes
 	PARAMETERS p_idimportap, p_archivo, p_func
 *#/----------------------------------------
 */ Carga de Cuentas corrientes de clientes
+* Formato archivo csv serparado por ; ( entidad I, servicio I, cuenta I, fecha C(8),numerocomp C(200), monto Y, cuota I, vtocta C(8), fechavenc1 c(8), fechavenc2 c(8), fechavenc3 c(8) )			
 *#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func

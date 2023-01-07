@@ -4452,31 +4452,33 @@ FUNCTION filtragrupos
 		EJE4=""
 	ENDIF 
 
-	SELECT &pf_tablas
+*	SELECT &pf_tablas
 	
 	IF !EMPTY(ALLTRIM(pf_tbbuscador)) THEN	
 		EJE1 = "ATCF(ALLTRIM('"+ALLTRIM(pf_tbbuscador)+"'), busqueda) > 0 "
 	ELSE
 		EJE1= ""	
 	ENDIF 
+
 	IF !EMPTY(ALLTRIM(toolbargrupos.seleccion)) AND toolbargrupos.pageayuda.grupos.filtragrupos.value THEN	
-
-
 		EJE2 = "ATCF(ALLTRIM(busquedag), toolbargrupos.seleccion) > 0 "
 	ELSE
 		EJE2= ""	
 	ENDIF 
+	
 	IF !EMPTY(EJE1) AND !EMPTY(EJE2) THEN 
 		EJE3="SET FILTER TO "+EJE1+" AND "+EJE2
 	ELSE
 		EJE3="SET FILTER TO "+EJE1+EJE2
 	ENDIF 
 	
+	
 	IF !EMPTY(EJE1+EJE2) AND !EMPTY(EJE4) THEN 
 		EJE3 = EJE3+" AND "+EJE4
 	ELSE
 		EJE3 = EJE3+EJE4
 	ENDIF 
+
 
 	vcan_tablas=alines( arraytablas, pf_tablas, ";")
 	IF vcan_tablas > 0 THEN 
@@ -4489,6 +4491,9 @@ FUNCTION filtragrupos
 	RELEASE arraytablas 
 	
 ENDFUNC 
+
+
+
 
 FUNCTION showhidetoolbargrupo
 *#/----------------------------------------
@@ -7604,7 +7609,7 @@ PARAMETERS p_idpagoProv
 					
 				
 		
-			sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetapago, dc.idtipopago, dc.importe as impCobrado, dc.idcuenta, tp.detalle as tipopago, cb.codcuenta, cb.detalle as nomcuenta"
+			sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetapago, dc.idtipopago, dc.importe as impCobrado, dc.idcuenta, tp.detalle as tipopago, cb.codcuenta, cb.detalle as nomcuenta "
 			sqlmatriz(2)=" from pagosprov r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba "
 			sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom " 
 			sqlmatriz(4)=" left join entidades e on r.entidad = e.entidad left join detallepagos dc on r.idcomproba = dc.idcomproba and r.idpago = dc.idregistro "
@@ -13019,7 +13024,7 @@ FUNCTION VinculoComp
 PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe 
 *#/----------------------------------------
 ** Funcion Genera Comprobante de Vinculos entre Facturas y Recibos o Pagos
-** Regostra Vinculos y Libreraciones de Comprobantes
+** Registra Vinculos y Libreraciones de Comprobantes
 ** Parametros: 	pv_tipovin		= V/D Vincula o Desvincula Comprobantes
 ** 				pv_idcomprobav	= ID del comprobante que cancela la Factura
 **				pv_idregistrov	= ID registro del comprobante que cancela la factura 
@@ -13249,14 +13254,18 @@ PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe
 		*Registracion Contable del Vinculo de Comprobantes	
 		v_cargo = ContabilizaCompro('vinculocomp', v_idvinculo , vconeccionVi, v_importe)
 			
-		IF TYPE("_SYSIMPVINC")='C' THEN 	
-			IF ALLTRIM(_SYSIMPVINC) = 'S' THEN 	
-				sino = MESSAGEBOX("¿Desea imprimir el Comprobante de Vínculación-Desvinculación?",4+32,"Imprimir")
-				IF sino = 6
-					*SI
-					imprimirVinculoComp(v_idvinculo)
-				ENDIF 
-		  	ENDIF 
+		IF TYPE("_SYSIMPVINC")='C' THEN 		
+			IF ALLTRIM(_SYSIMPVINC) = 'T' THEN 	
+				imprimirVinculoComp(v_idvinculo)
+			ELSE 	
+				IF ALLTRIM(_SYSIMPVINC) = 'S' THEN 	
+					sino = MESSAGEBOX("¿Desea imprimir el Comprobante de Vínculación-Desvinculación?",4+32,"Imprimir")
+					IF sino = 6
+						*SI
+						imprimirVinculoComp(v_idvinculo)
+					ENDIF 
+			  	ENDIF 
+			ENDIF 
 		ELSE 
 			sino = MESSAGEBOX("¿Desea imprimir el Comprobante de Vínculación-Desvinculación?",4+32,"Imprimir")
 			IF sino = 6
@@ -18050,8 +18059,8 @@ ENDFUNC
 
 
 FUNCTION AplicarCreditos
-PARAMETERS pac_idfactura, pac_credito
-*/ ------------------------------
+PARAMETERS pac_idfactura, pac_credito, pac_idcomcr, pac_idcr
+*#/ ------------------------------
 * Aplica a la cuota 0 de la factura Seleccionada si la hubiere el crédito
 * disponible en la cuenta, la cuenta de la entidad la busca a partir de la
 * Factura que recibe como parámetro. El Crédito a aplicar lo recibe como parámetro
@@ -18059,7 +18068,16 @@ PARAMETERS pac_idfactura, pac_credito
 * Los aplica a partir de la fecha mas vieja en adelante hasta agotar el saldo
 * o cancelar el crédito recibido como parámetro
 * Realiza los vinculos con los comprobantes
-*/--------------------------------
+*#/--------------------------------
+
+	IF ALLTRIM(TYPE("pac_idcomcr"))='N' THEN 
+		v_pac_idcomcr = pac_idcomcr
+		v_pac_idcr    = pac_idcr
+	ELSE
+		v_pac_idcomcr = 0
+		v_pac_idcr    = 0		
+	ENDIF 
+
 
 	* Me conecto a la base de datos *
 	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
@@ -18068,10 +18086,10 @@ PARAMETERS pac_idfactura, pac_credito
 		
 	sqlmatriz(1)= " SELECT f.entidad, f.idfactura, f.idcomproba, ifnull(sf.saldof,0.00) as saldof , "
 	sqlmatriz(2)= " ifnull(c.idcuotafc,0) as idcuotafc,ifnull(c.cuota,0) as cuota, "
-	sqlmatriz(3)= " ifnull(sc.saldof,0.00) as saldoc FROM processarmkfc.facturas f "
-	sqlmatriz(4)= "	left join processarmkfc.facturascta c on f.idfactura = c.idfactura "
-	sqlmatriz(5)= "	left join processarmkfc.r_facturasaldo sf on sf.idfactura = f.idfactura "
-	sqlmatriz(6)= "	left join processarmkfc.r_facturasctasaldo sc on sc.idcuotafc = c.idcuotafc "
+	sqlmatriz(3)= " ifnull(sc.saldof,0.00) as saldoc FROM facturas f "
+	sqlmatriz(4)= "	left join facturascta c on f.idfactura = c.idfactura "
+	sqlmatriz(5)= "	left join r_facturasaldo sf on sf.idfactura = f.idfactura "
+	sqlmatriz(6)= "	left join r_facturasctasaldo sc on sc.idcuotafc = c.idcuotafc "
 	sqlmatriz(7)= "	where f.idfactura = "+ALLTRIM(STR(pac_idfactura))+"  and ifnull(sf.saldof,0.00) > 0 and "
 	sqlmatriz(8)= "	(ifnull(c.idcuotafc,0.00) = 0 or ifnull(sc.saldof,0.00) > 0)  order by c.cuota "
  	
@@ -18099,12 +18117,19 @@ PARAMETERS pac_idfactura, pac_credito
 		RETURN 
 	ENDIF 
 
-	USE CreEntidad IN 0
-	SELECT *, 0.00 as aplicado FROM creentidad INTO TABLE CreditoEntidad WHERE opera < 0
+	USE CreEntidad IN 0 
+	
+	if	v_pac_idcomcr > 0 THEN 
+		SELECT *, 10000000.00 as aplicado FROM creentidad INTO TABLE CreditoEntidad WHERE opera < 0 and idcomproba = v_pac_idcomcr and idregistro = v_pac_idcr
+	ELSE 
+		SELECT *, 10000000.00 as aplicado FROM creentidad INTO TABLE CreditoEntidad WHERE opera < 0 
+	ENDIF 
 	SELECT CreEntidad
 	USE IN CreEntidad
 	
 	SELECT CreditoEntidad
+	replace ALL aplicado WITH 0
+	GO TOP 
 	
 	*creo una tabla temporaria para cargar las imputaciones de cobros
 	CREATE TABLE cobrosaplicar (idcomproba i, idregipago i, idcomprobf i ,idfactura i, idcuotafc i, imputado y )
@@ -18124,6 +18149,8 @@ PARAMETERS pac_idfactura, pac_credito
 		
 		SELECT CreditoEntidad
 		GO TOP 
+		
+		
 		DO WHILE (v_pac_credito > 0) AND !v_terminarcr and !EOF() && Recorro todos los comprobantes con crédito para aplicar
 		
 			va_idcomproba = CreditoEntidad.idcomproba
@@ -18134,7 +18161,9 @@ PARAMETERS pac_idfactura, pac_credito
 	
 			IF v_saldocr > 0 THEN 		&& si el comprobante tiene saldo para aplicar entonces trata de aplicarlo
 				IF v_deudaap > 0 THEN && Aca tengo saldo disponible y deuda para aplicar 
-					
+
+
+				
 					DO CASE 
 						CASE v_deudaap >= v_saldocr && deuda en comprobante >= Saldo disponible para aplicar
 							va_imputado = IIF(v_saldocr<=v_pac_credito,v_saldocr,v_pac_credito) && Aplica todo el saldo disponible en el comprobante o el limite de credito
@@ -18150,7 +18179,9 @@ PARAMETERS pac_idfactura, pac_credito
 				va_imputado = 0
 			ENDIF
 			
+	
 			IF va_imputado > 0 THEN 			 
+
 				SELECT cobrosaplicar
 												
 				INSERT INTO cobrosaplicar VALUES ( va_idcomproba, va_idregipago, va_idcomprof, va_idfactura, va_idcuotafc, va_imputado )
@@ -18161,11 +18192,12 @@ PARAMETERS pac_idfactura, pac_credito
 				replace aplicado WITH aplicado + va_imputado
 								
 			ENDIF 
-			
+
 			SELECT CreditoEntidad
-			IF (CreditoEntidad.saldo - CreditoEntidad.aplicado) <= 0 THEN 
-				v_terminarcr = .t. 
-			ENDIF  
+*!*				IF (CreditoEntidad.saldo - CreditoEntidad.aplicado) <= 0 THEN 
+*!*	*				v_terminarcr = .t. 
+*!*				ENDIF  
+			
 			SKIP
 	
 		ENDDO 
@@ -18355,8 +18387,12 @@ PARAMETERS pga_tablacobros, p_cone
 			
 			
 		* Creo el Comprobante de registro de vinculos 
-
+		* No quiero que imprima cada vez que genera el comprobante de vinculo en este caso
+		*  Modifico la Variable de Impresión de Vinculos para obviar la Impresion
+		vsysimpvinc_est = _SYSIMPVINC		
+		_SYSIMPVINC = 'N'
 		reto=VinculoComp('V',&pga_tablacobros..idcomproba,&pga_tablacobros..idregipago, &pga_tablacobros..idfactura,&pga_tablacobros..imputado)
+		_SYSIMPVINC = vsysimpvinc_est 
 		
 		SELECT &pga_tablacobros
 		SKIP 
@@ -18853,3 +18889,545 @@ ENDIF
 RETURN vreto_entidad 
 
 
+
+
+
+FUNCTION GeneraCMPCostos
+PARAMETERS p_tabladatos
+*#/----------------------------------------
+**** FUNCIÓN PARA GENERAR COMPROBANTES DE COSTOS AUTOMATICOS
+** Si los costos unitarios recibidos son 0 entonces busca el costo en las tablas de articulos o materiales
+** PARAMETROS: 	par_costos: Tabla con los datos de entidad, articulos y Materiales para realizar el ajuste de costos
+** 
+** RETORNO:		Retorna 0 si no pudo realizar el Comprobante o el idcostop en caso de realizar el Comprobante correctamente 
+**              Retorna -1 si no está habilitada la opcion de Generacion de Comprobantes de Costos Automático _SYSGENCOSTOS= "S/N"
+** Tabla recibida como parametro: 
+** fecha c(8), entidad i, articulo c(50), cantidad y, unitario y, idmate i, tablal c(50), campol c(50), idl i, detalle c(150)
+*#/----------------------------------------
+	IF _SYSGENCOSTOS = 'N' THEN 
+		RETURN -1 
+	ENDIF 
+	v_tablaDatos	= p_tablaDatos
+	v_retornocmp	= 0
+
+	USE &v_tablaDatos IN 0 
+
+	**** Busco el Primer idcomproba que corresponde a Costos ***
+	vconeccionC=abreycierracon(0,_SYSSCHEMA)	
+
+	*** Busco los comprobantes y sus respectivos puntos de venta 
+	sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla, t.pventa, "
+	sqlmatriz(2)=" t.puntov from comprobantes c left join compactiv t on c.idcomproba = t.idcomproba where c.tabla = 'costop' "
+	verror=sqlrun(vconeccionC,"Comprobantes_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de comprobantes ",0+48+0," Error ")
+	    =abreycierracon(vconeccionC,"")
+	    RETURN .F.
+	ENDIF
+
+	*** Busco la Entidad o Nombre de Empresa asociado
+	sqlmatriz(1)=" select * from entidades where entidad = "+ALLTRIM(STR(&v_tablaDatos..entidad))
+	verror=sqlrun(vconeccionC,"entidad_sel")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  Entidad para Costo ",0+48+0,"Error")
+	     =abreycierracon(vconeccionC,"")
+	    RETURN .F.
+	ENDIF
+
+
+	SELECT &v_tablaDatos
+	GO TOP 
+	IF NOT EOF()
+	
+		v_idcostop 	 = 0
+		v_idcomproba = Comprobantes_sql.idcomproba
+		v_pventa	 = Comprobantes_sql.pventa
+		v_entidad	 = entidad_sel.entidad
+		v_nombre	 = ALLTRIM(entidad_sel.apellido)+" "+ALLTRIM(entidad_sel.nombre)+" "+ALLTRIM(entidad_sel.compania)
+		v_numero 	 = maxnumerocom(v_idcomproba, v_pventa,1)
+		v_fecha		 = &v_tablaDatos..fecha
+		
+		v_TablaL	= &v_tablaDatos..tablaL
+		v_CampoL	= &v_tablaDatos..campoL
+		v_IdL		= &v_tablaDatos..idL
+		v_observa	= &v_tablaDatos..detalle
+
+		DIMENSION lamatriz1(8,2)
+		DIMENSION lamatriz2(13,2)
+
+	******INSERTO CABECERA DE COSTO ***********************************
+
+		lamatriz1(1,1)='idcostop'
+		lamatriz1(1,2)= ALLTRIM(STR(v_idcostop))
+		lamatriz1(2,1)='idcomproba'
+		lamatriz1(2,2)=ALLTRIM(STR(v_idcomproba))
+		lamatriz1(3,1)='pventa'
+		lamatriz1(3,2)=ALLTRIM(STR(v_pventa))
+		lamatriz1(4,1)='numero'
+		lamatriz1(4,2)= ALLTRIM(STR(v_numero))
+		lamatriz1(5,1)='fecha'
+		lamatriz1(5,2)= "'"+ALLTRIM(v_fecha)+"'"
+		lamatriz1(6,1)='entidad'
+		lamatriz1(6,2)=ALLTRIM(STR(v_entidad))
+		lamatriz1(7,1)='nombre'
+		lamatriz1(7,2)="'"+alltrim(v_nombre)+"'"
+		lamatriz1(8,1)='observa'
+		lamatriz1(8,2)="'"+ALLTRIM(v_observa)+"'"
+
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		p_tabla     = 'costop'
+		p_matriz    = 'lamatriz1'
+		p_conexion  = vconeccionC
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" Costos ",0+48+0,"Error")
+		ENDIF  
+
+		sqlmatriz(1)="SELECT last_insert_id() as maxid "
+		verror=sqlrun(vconeccionF,"max_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo ID ",0+48+0,"Error")
+		    v_errores = .T.
+		ENDIF 
+		SELECT max_sql
+		GO TOP 
+		v_idcostop = VAL(max_sql.maxid)
+		USE IN max_sql 
+
+
+	*** INSERTO DETALLE ***			
+		SELECT &v_tablaDatos
+		v_totalneto = 0
+		
+		DO WHILE !EOF() 
+
+			v_idcostoh = 0
+			v_articulo = &v_TablaDatos..articulo
+			v_cantidad = &v_TablaDatos..cantidad
+			v_unitario = &v_TablaDatos..unitario
+			v_idmate   = &v_TablaDatos..idmate
+			v_impuestos= 0.00
+			v_impuesto = 0
+			v_razonimp   = 0
+			
+			
+			** Obtengo o el Articulo o el Material asociado al Costo **
+			IF v_idmate = 0 THEN  && Articulos		
+				sqlmatriz(1)=" select detalle, unidad, costo from articulos where articulo = '"+ALLTRIM(v_articulo)+"'"
+			ELSE && Materiales
+				sqlmatriz(1)=" select detalle, unidad, impuni as costo  from otmateriales where idmate = "+ALLTRIM(STR(v_idmate))		
+			ENDIF 
+			verror=sqlrun(vconeccionC,"articulo_sql")
+			IF verror=.f.  
+				MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de articulos ",0+48+0,"Error")
+				=abreycierracon(vconeccionC,"")
+				RETURN v_retornocmp
+			ENDIF
+			SELECT articulo_sql
+			GO TOP 
+			IF !EOF() THEN
+				v_detalle = articulo_sql.detalle
+				v_unidad  = articulo_sql.unidad
+				IF v_unitario  = 0 THEN 
+					v_unitario = articulo_sql.costo	
+				ENDIF 
+			ELSE
+				v_detalle = ""
+				v_unidad  = ""  
+			ENDIF 
+			USE IN articulo_sql 
+			v_neto	   = v_cantidad * v_unitario
+			v_total	   = v_neto
+			v_totalneto = v_totalneto + v_neto
+
+			lamatriz2(1,1)='idcostoh'
+			lamatriz2(1,2)=ALLTRIM(STR(v_idcostoh))
+			lamatriz2(2,1)='idcostop'
+			lamatriz2(2,2)=ALLTRIM(STR(v_idcostop))
+			lamatriz2(3,1)='articulo'
+			lamatriz2(3,2)="'"+ALLTRIM(v_articulo)+"'"
+			lamatriz2(4,1)='detalle'
+			lamatriz2(4,2)= "'"+ALLTRIM(v_detalle)+"'"
+			lamatriz2(5,1)='cantidad'
+			lamatriz2(5,2)=ALLTRIM(STR(v_cantidad,13,4))
+			lamatriz2(6,1)='unidad'
+			lamatriz2(6,2)="'"+alltrim(v_unidad )+"'"
+			lamatriz2(7,1)='unitario'
+			lamatriz2(7,2)=ALLTRIM(STR(v_unitario,13,4))
+			lamatriz2(8,1)='impuestos'
+			lamatriz2(8,2)=ALLTRIM(STR(v_impuestos,13,4))
+			lamatriz2(9,1)='total'
+			lamatriz2(9,2)=ALLTRIM(STR(v_total,13,4))
+			lamatriz2(10,1)='impuesto'
+			lamatriz2(10,2)=ALLTRIM(STR(v_impuesto))
+			lamatriz2(11,1)='razonimp'
+			lamatriz2(11,2)=ALLTRIM(STR(v_razonImp,13,4))
+			lamatriz2(12,1)='neto'
+			lamatriz2(12,2)=ALLTRIM(STR(v_neto,13,4))
+			lamatriz2(13,1)='idmate'
+			lamatriz2(13,2)=ALLTRIM(STR(v_idmate))
+
+			p_tabla     = 'costoh'
+			p_matriz    = 'lamatriz2'
+			p_conexion  = vconeccionC
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error ",0+48+0,"Error")
+			ENDIF						
+		
+			SELECT &v_TablaDatos 
+			SKIP 		
+		ENDDO 
+
+		IF v_IdL > 0 THEN 	&& Agrego vinculo con Registro de Otra Tabla
+			RTA=FLinkRegistro ( "I", vconeccionC,  'costop', 'idcostop', v_idcostop, v_TablaL, v_CampoL, v_IdL )
+			MESSAGEBOX(RTA)
+
+		ENDIF 
+
+		SELECT &v_tablaDatos
+
+
+		USE IN &v_tablaDatos  
+		USE IN entidad_sel
+		USE IN Comprobantes_sql
+		
+		release lamatriz1
+		release lamatriz2
+ 		release lamatriz3
+ 		
+ 		v_retornocmp = v_idcostop 
+
+
+	*** REGISTRO estado activo ***
+
+	registrarEstado("costop","idcostop",v_idcostop,"I","ACTIVO")
+
+	*** REGISTRAR TABLAS FALTANTES ***
+		
+			*** ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO  ***
+
+	guardaCajaRecaH (v_idcomproba, v_idcostop)
+
+	***Contabiliza el comprobante de Costos
+	** GENERO EL ASIENTO PARA EL COSTO
+	v_cargo = ContabilizaCompro('costop', v_idcostop , vconeccionC, v_totalneto )
+	
+	ENDIF 
+
+	=abreycierracon(vconeccionC,"")	
+	RETURN v_retornocmp
+ENDFUNC 
+
+
+
+
+FUNCTION FLinkRegistro
+PARAMETERS plr_fun, plr_cone, plr_tablaa, plr_campoa, plr_ida, plr_tablab, plr_campob, plr_idb
+*#/----------------------------------------
+**   FUNCIÓN PARA GENERAR , VERIFICAR O ELIMINAR VINCULOS ENTRE DISTINTOS REGISTROS DE TABLAS DE LA BD
+** PARAMETROS: 	
+**		plr_fun: Comportamiento 'I o C '=Crear Vinculo entre registros, 'V'=Verificar Vinculos entre Registros, 'E':Eliminar Vinculos entre Registros,
+**      plr_cone: Conexion a la base de datos , si viene en 0 debo crear la Conexion
+**		plr_tablaa: Tabla A para vincular Registro
+**		plr_campoa: Campo A de tabla a vincular Registro
+**		plr_ida:	Valor del Campo A de la tabla a Vincular
+**		plr_tablab: Tabla B para vincular Registro
+**		plr_campob: Campo B de la Tabla a Vincular Registro
+**		plr_idb:    Valor del Campo B de la tabla a Vincular
+** 		RETORNO: 'CS o CN','VS o VN', 'ES o EN', o '' si no pudo hacer nada
+*#/----------------------------------------
+	
+	v_retornoFL = ""
+
+	IF plr_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionFL = plr_cone
+	ELSE 
+		vconeccionFL = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 	
+
+	DO CASE 
+		CASE plr_fun = 'C' OR plr_fun = 'I'
+		
+			IF !EMPTY(plr_tablaa) AND !EMPTY(plr_campoa) AND !EMPTY(plr_ida) AND ;
+			   !EMPTY(plr_tablab) AND !EMPTY(plr_campob) AND !EMPTY(plr_idb) 	  THEN 	&& Agrego vinculo con Registro de Otra Tabla
+			   
+				v_idlinkreg = 0
+
+				DIMENSION lamatriz3(7,2)
+
+				lamatriz3(1,1)='idlinkreg'
+				lamatriz3(1,2)=ALLTRIM(STR(v_idlinkreg))
+				lamatriz3(2,1)='tablaa'
+				lamatriz3(2,2)="'"+ALLTRIM(plr_tablaa)+"'"
+				lamatriz3(3,1)='campoa'
+				lamatriz3(3,2)="'"+ALLTRIM(plr_campoa)+"'"
+				lamatriz3(4,1)='ida'
+				lamatriz3(4,2)= ALLTRIM(STR(plr_ida))
+				lamatriz3(5,1)='tablab'
+				lamatriz3(5,2)="'"+ALLTRIM(plr_tablab)+"'"
+				lamatriz3(6,1)='campob'
+				lamatriz3(6,2)="'"+ALLTRIM(plr_campob)+"'"
+				lamatriz3(7,1)='idb'
+				lamatriz3(7,2)=ALLTRIM(STR(plr_idb))
+
+				p_tipoope = 'I'
+				p_condicion = ""
+				p_tabla     = 'linkregistro'
+				p_matriz    = 'lamatriz3'
+				p_conexion  = vconeccionFL
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en insercion de linkregistro ",0+48+0,"Error")
+					v_retornoFL = 'CN'
+				ENDIF		
+								
+				RELEASE lamatriz3
+				v_retornoFL = 'IS'
+			ELSE
+				v_retornoFL = 'IN'
+			ENDIF 
+
+
+
+
+		CASE plr_fun = 'E' &&Eliminar vinculos entre registros
+
+			IF !EMPTY(plr_tablaa) AND !EMPTY(plr_campoa) AND !EMPTY(plr_ida) AND ;
+			   !EMPTY(plr_tablab) AND !EMPTY(plr_campob) AND !EMPTY(plr_idb) 	THEN  && Elimino Vinculo Específico 
+				sqlmatriz(1)= "delete from linkregistro where tablaa = '"+alltrim(plr_tablaa)+"' and  campoa = '"+alltrim(plr_campoa)+"' and ida = "+alltrim(STR(plr_ida))+" "
+				sqlmatriz(2)= " 						and	  tablab = '"+alltrim(plr_tablab)+"' and  campob = '"+alltrim(plr_campob)+"' and idb = "+alltrim(STR(plr_idb))+" "
+			ENDIF 
+			IF !EMPTY(plr_tablaa) AND !EMPTY(plr_campoa) AND !EMPTY(plr_ida) AND EMPTY(plr_tablab)	THEN 	&& Elimino Vinculo Para una tabla 
+				sqlmatriz(1)= "delete from linkregistro where ( tablaa = '"+alltrim(plr_tablaa)+"' and  campoa = '"+alltrim(plr_campoa)+"' and ida = "+alltrim(STR(plr_ida))+" ) "
+				sqlmatriz(2)= " 						or	  ( tablab = '"+alltrim(plr_tablaa)+"' and  campob = '"+alltrim(plr_campoa)+"' and idb = "+alltrim(STR(plr_ida))+" ) "
+			ENDIF 
+			
+			verror=sqlrun(vconeccionFL,"borra_rel")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en Eliminacion de Registros de Tablas... ",0+48+0,"Error")
+			    RETURN v_retornoFL 
+			ENDIF 
+			v_retornoFL = 'ES'
+
+
+
+	
+		CASE plr_fun = 'V' 
+
+
+			IF !EMPTY(plr_tablaa) AND !EMPTY(plr_campoa) AND !EMPTY(plr_ida) THEN  ;
+
+				IF  !EMPTY(plr_tablab) AND !EMPTY(plr_campob) AND !EMPTY(plr_idb) 	THEN  && Verifico si Existe el Registro 
+					sqlmatriz(1)= "select * from linkregistro where ( tablaa = '"+alltrim(plr_tablaa)+"' and  campoa = '"+alltrim(plr_campoa)+"' and ida = "+alltrim(STR(plr_ida))+"  "
+					sqlmatriz(2)= " 						 and	  tablab = '"+alltrim(plr_tablab)+"' and  campob = '"+alltrim(plr_campob)+"' and idb = "+alltrim(STR(plr_idb))+" )  "
+					sqlmatriz(3)= "							 OR 	( tablaa = '"+alltrim(plr_tablab)+"' and  campoa = '"+alltrim(plr_campob)+"' and ida = "+alltrim(STR(plr_idb))+"  "
+					sqlmatriz(4)= " 						 and      tablab = '"+alltrim(plr_tablaa)+"' and  campob = '"+alltrim(plr_campoa)+"' and idb = "+alltrim(STR(plr_ida))+" ) "
+				
+				ELSE 
+					sqlmatriz(1)= "select * from linkregistro where (( tablaa = '"+alltrim(plr_tablaa)+"' and  campoa = '"+alltrim(plr_campoa)+"' and ida = "+alltrim(STR(plr_ida))+" )  "
+					sqlmatriz(2)= " 						 or	     ( tablab = '"+alltrim(plr_tablaa)+"' and  campob = '"+alltrim(plr_campoa)+"' and idb = "+alltrim(STR(plr_ida))+" )) and ( 1 = 1 "		
+					sqlmatriz(3)= IIF(EMPTY(plr_tablab),""," and ( tablaa = '"+alltrim(plr_tablab)+"' or tablab = '"+alltrim(plr_tablab)+"' ) ")
+					sqlmatriz(4)= IIF(EMPTY(plr_campob),""," and ( campoa = '"+alltrim(plr_campob)+"' or campob = '"+alltrim(plr_campob)+"' ) ")
+					sqlmatriz(5)= IIF(EMPTY(plr_idb),""," and ( ida = "+alltrim(STR(plr_idb))+" or idb = "+alltrim(STR(plr_idb))+" ) ")+" ) "
+				
+				ENDIF 
+							
+				verror=sqlrun(vconeccionFL,"existe_rel")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en Seleccion de LinkRegistros ... ",0+48+0,"Error")
+				    RETURN v_retornoFL 
+				ENDIF
+				
+				SELECT existe_rel
+				GO TOP 
+				IF !EOF() THEN 
+					v_retornoFL = 'VS'
+				ELSE
+					v_retornoFL = 'VN'			
+				ENDIF 
+				USE IN existe_rel 
+			
+			ELSE
+				v_retornoFL = 'VN'			
+			ENDIF 
+
+		OTHERWISE
+	ENDCASE 
+	
+
+
+	IF plr_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionFL = plr_cone
+	ELSE 
+		= abreycierracon(vconeccionFL ,"")
+	ENDIF 	
+	
+	RETURN v_retornoFL
+
+ENDFUNC 
+
+
+
+
+FUNCTION GENCostosOT
+PARAMETERS p_idot, p_cone
+*#/----------------------------------------
+**** GENERA UN ARCHIVO CON LOS COMPRONENTES DE COSTOS DE LAS ORDENES DE TRABAJO
+** Si los costos unitarios recibidos son 0 entonces busca el costo en las tablas de articulos o materiales
+** PARAMETROS: 	p_idot: IDOT de la Orden de Trabajo para la cual obtener los materiales ejecutados para los costos
+** 
+** RETORNO:		Nombre de archivo con el detalle de los materiales ejecutados en la orden de trabajo
+** Tabla resultado generada: 
+** fecha c(8), entidad i, articulo c(50), cantidad y, unitario y, idmate i, tablal c(50), campol c(50), idl i, detalle c(150)
+*#/----------------------------------------
+
+	v_retornoarchi = ""
+	IF p_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionFL = p_cone
+	ELSE 
+		vconeccionFL = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 	
+
+**--- Obtengo los Materiales Ejecutados para la OT
+	sqlmatriz(1)=" select m.idmate, m.codigomat as articulo, SUM(m.cantidad) as cantidad, m.impuni as unitario, p.entidad "
+	sqlmatriz(2)=" from otejecum m "
+	sqlmatriz(3)=" left join otordentra ot on ot.idot = m.idot "
+	sqlmatriz(4)=" left join otpedido p on p.idpedido = ot.idpedido "
+	sqlmatriz(5)=" where  m.idot = "+alltrim(STR(p_idot))+" group by m.idmate "
+	
+	verror=sqlrun(vconeccionFL,"otejecum_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en Seleccion de Ejecución Materiales ... ",0+48+0,"Error")
+	    RETURN v_retornoarchi
+	ENDIF
+	SELECT * FROM otejecum_sql INTO TABLE otejecumCT
+	USE IN otejecum_sql 
+	
+**--- Obtengo las Horas Ejecutados para la OT
+	sqlmatriz(1)=" select m.idmate, m.codigomat as articulo, m.fechai, m.horai, m.fechaf, m.horaf, p.entidad "
+	sqlmatriz(2)=" from otejecuh m "
+	sqlmatriz(3)=" left join otordentra ot on ot.idot = m.idot "
+	sqlmatriz(4)=" left join otpedido p on  p.idpedido = ot.idpedido "
+	sqlmatriz(5)=" where  m.idot = "+alltrim(STR(p_idot))
+
+	verror=sqlrun(vconeccionFL,"otejecuh_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en Seleccion de Ejecución de Horas ... ",0+48+0,"Error")
+	    RETURN v_retornoarchi
+	ENDIF
+
+	SELECT * FROM otejecuh_sql INTO TABLE otejecuhCT0
+	USE IN otejecuh_sql 
+	SELECT otejecuhCT0 
+	ALTER table otejecuhCT0 ADD COLUMN horasejecu c(13)
+	ALTER table otejecuhCT0 ADD COLUMN cantidad y
+	replace ALL horasejecu WITH cantidadhoras(ALLTRIM(fechai)+ALLTRIM(horai),ALLTRIM(fechaf)+ALLTRIM(horaf)) 
+	replace ALL cantidad WITH VAL(SUBSTR(horasejecu,1,6))+VAL(SUBSTR(horasejecu,8,2))/60
+	
+	SET ENGINEBEHAVIOR 70
+	SELECT idmate, articulo, SUM(cantidad) as cantidad , 0 as costo, entidad FROM otejecuhCT0 INTO TABLE otejecuhCT GROUP BY idmate 
+	SET ENGINEBEHAVIOR 90
+	
+	USE IN otejecuhCT0
+	
+
+	vnombrearchi = "costos"+frandom()
+	CREATE TABLE &vnombrearchi ( fecha c(8), entidad i, articulo c(50), cantidad y, unitario y, idmate i, tablal c(50), campol c(50), idl i, detalle c(150) )
+	SELECT &vnombrearchi
+	APPEND FROM otejecumCT
+	APPEND FROM otejecuhCT
+	replace ALL fecha WITH DTOS(DATE()), tablal WITH 'otordentra', campol WITH 'idot', idl WITH p_idot, detalle WITH " Cierre OT "+alltrim(STR(p_idot))
+	USE IN otejecumCT
+	USE IN otejecuhCT
+	USE IN &vnombrearchi 
+
+	IF p_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionFL = p_cone
+	ELSE 
+		= abreycierracon(vconeccionFL ,"")
+	ENDIF 	
+	
+	v_retornoarchi = vnombrearchi 
+	RETURN v_retornoarchi
+ENDFUNC 
+
+
+
+
+
+FUNCTION GetLinkCompro
+PARAMETERS pgl_idcompro, pgl_idregi, p_cone
+*#/ ------------------------------
+* Obtiene en una tabla todos los comprobantes vinculados con uno recibido como parametro
+* PARAMETROS : 
+*	pgl_idcompro: idcomproba que identifica el comprobante para el cual se quiere saber sus vinculos 
+*   pgl_idregi :  id que identifica univocamente el comprobante para el cual se quiere saber sus vinculos
+* RETORNO: 
+* 	retorna una tabla con los comprobantes vinculados al recibido como parámetro si los hubiere.
+*   Si hay error retorna una cadena vacia
+*#/--------------------------------
+
+	v_retornoarchi = ""
+	IF p_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionL = p_cone
+	ELSE 
+		vconeccionL = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 	
+
+
+**--- Obtengo Los Comprobantes Vinculados al recibido como parametro si el recibido está del lado de comprobantes A
+	sqlmatriz(1)=" select l.idlinkcomp, l.idcomprobaa as idcomproa, l.idregistroa as idrega, l.idcomprobab as idcomprob, l.idregistrob as idregb, "
+	sqlmatriz(2)=" c.tabla as tablaa, t.opera as operaa, d.tabla as tablab, u.opera as operab  from linkcompro  l "
+	sqlmatriz(3)=" left join comprobantes c on c.idcomproba   = l.idcomprobaa"
+	sqlmatriz(4)=" left join tipocompro   t on t.idtipocompro = c.idtipocompro "
+	sqlmatriz(5)=" left join comprobantes d on d.idcomproba   = l.idcomprobab "
+	sqlmatriz(6)=" left join tipocompro   u on u.idtipocompro = d.idtipocompro "
+	sqlmatriz(7)=" where  l.idcomprobaa = "+alltrim(STR(pgl_idcompro))+" and l.idregistroa = "+alltrim(STR(pgl_idregi))
+	verror=sqlrun(vconeccionL,"linkcomproA_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en Seleccion LinkCompro ... ",0+48+0,"Error")
+	    RETURN v_retornoarchi
+	ENDIF
+	
+
+**--- Obtengo Los Comprobantes Vinculados al recibido como parametro si el recibido está del lado de comprobantes B
+	sqlmatriz(1)=" select l.idlinkcomp, l.idcomprobab as idcomproa, l.idregistrob as idrega, l.idcomprobaa as idcomprob, l.idregistroa as idregb, "
+	sqlmatriz(2)=" c.tabla as tablaa, t.opera as operaa, d.tabla as tablab, u.opera as operab  from linkcompro  l "
+	sqlmatriz(3)=" left join comprobantes c on c.idcomproba  = l.idcomprobab "
+	sqlmatriz(4)=" left join tipocompro   t on t.idtipocompro = c.idtipocompro "
+	sqlmatriz(5)=" left join comprobantes d on d.idcomproba   = l.idcomprobaa "
+	sqlmatriz(6)=" left join tipocompro   u on u.idtipocompro = d.idtipocompro "
+	sqlmatriz(7)=" where  l.idcomprobab = "+alltrim(STR(pgl_idcompro))+" and l.idregistrob = "+alltrim(STR(pgl_idregi))
+
+	verror=sqlrun(vconeccionL,"linkcomproB_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en Seleccion LinkCompro ... ",0+48+0,"Error")
+	    RETURN v_retornoarchi
+	ENDIF
+	
+	SELECT * FROM linkcomproA_sql UNION ;
+	SELECT * FROM linkcomproB_sql INTO TABLE linkcomproU
+	
+	USE IN linkcomproA_sql 
+	USE IN linkcomproB_sql 
+	
+	SELECT linkcomproU
+
+	vnombrearchi = "GetLinkCMP"+frandom()
+	CREATE TABLE &vnombrearchi ( idlinkcomp i , idcomproa i , idrega i , idcomprob i , idregb i , tablaa c(30), operaa i , tablab c(30), operab i )
+	SELECT &vnombrearchi 
+	APPEND FROM linkcomproU
+	USE IN linkcomproU
+
+	SELECT &vnombrearchi 
+	USE IN &vnombrearchi 
+
+	IF p_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionL = p_cone
+	ELSE 
+		= abreycierracon(vconeccionL ,"")
+	ENDIF 	
+
+	v_retornoarchi = vnombrearchi 
+	RETURN v_retornoarchi
+ENDFUNC 

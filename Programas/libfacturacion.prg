@@ -184,7 +184,6 @@ PARAMETERS par_idperiodo
 		RETURN var_retorno  
 	ENDIF 
 	
-	
 	*/*************
 	* Obtengo el detalle de todos los conceptos o detalles que debo facturar cargado a las entidades Seleccionadas
 	*/ - sin los conceptos compuestos 
@@ -256,6 +255,8 @@ PARAMETERS par_idperiodo
 	sqlmatriz(2)=" left join factulotese e on e.identidadh = d.identidadh "
 	sqlmatriz(3)=" where c.idfactura = 0 and c.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	sqlmatriz(4)=" and c.fechavenc >='"+v_fechaemite+"' order by idcuotasd desc " 
+
+
 	verror=sqlrun(vconeFacturar,"entidadesdcf_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Cuotas a Facturar del Período a Facturar ",0+48+0,"Error")
@@ -281,7 +282,7 @@ PARAMETERS par_idperiodo
 	ALTER table &ventidadesdf ADD COLUMN netocuota y
 	ALTER table &ventidadesdf ADD COLUMN idcuotasd i 
 	ALTER TABLE &ventidadesdf ADD COLUMN ejecucion i 
-	
+
 	
 	* Actualizo precios segun listas de precios solo para Articulos Facturados = idconcepto = 0
 	SET RELATION TO STR(idlista)+'|'+ALLTRIM(articulo) INTO &vlistasprea
@@ -291,6 +292,7 @@ PARAMETERS par_idperiodo
 	replace ALL detalle WITH &vlistasprea..detalle, unidad WITH &vlistasprea..unidad , unitario WITH &vlistasprea..pventa, ;
 					nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
 					netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd FOR idconcepto = 0
+
 
 	
 	
