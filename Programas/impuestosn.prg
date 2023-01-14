@@ -90,10 +90,14 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 ****
 
 	
-sqlmatriz(1)= " SELECT p.entidad, ifnull(r.idimpuret, 0) as idimpuret, SUM(p.importe) as pagosmes, ifnull(sum(r.importe),0.00) as impret   FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
-sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
-sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  R.idimpuret = "+ALLTRIM(STR(P_idimpuret)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad,r.idimpuret "
-   
+*!*	sqlmatriz(1)= " SELECT p.entidad, ifnull(r.idimpuret, 0) as idimpuret, SUM(p.importe) as pagosmes, ifnull(sum(r.importe),0.00) as impret   FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
+*!*	sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
+*!*	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  R.idimpuret = "+ALLTRIM(STR(P_idimpuret)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad,r.idimpuret "
+  
+  	sqlmatriz(1)= " SELECT p.entidad, ifnull(i.idimpuret, 0) as idimpuret, SUM(p.importe) as pagosmes, ifnull(sum(r.importe),0.00) as impret   FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
+	sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join impuretencionh i on r.idreten = i.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
+	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  i.idimpuret = "+ALLTRIM(STR(P_idimpuret)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad,i.idimpuret "
+
  
 	verror=sqlrun(varconexionF,"totpagosRet0")
 	IF verror=.f.  
@@ -136,11 +140,11 @@ sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta
 *** Busco en la tabla linkcompro los comprobantes de pagos a proveedores que no tengan asociadas retenciones ***
 ****
 
-	sqlmatriz(1) = " SELECT p.entidad, SUM(p.importe) as pagosmes, r.idimpuret FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
-	sqlmatriz(2) = "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
+	sqlmatriz(1) = " SELECT p.entidad, SUM(p.importe) as pagosmes, i.idimpuret FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
+	sqlmatriz(2) = "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join impuretencionh i on r.idreten = i.idreten  left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
 	sqlmatriz(3) = "    WHERE p.fecha between "+v_desde+" and "+v_hasta+" and "
 	sqlmatriz(4) = "    	     p.entidad = "+ALLTRIM(STR(p_entidad)) +" and u.idestador != " +ALLTRIM(STR(v_estadoAnulado))
-	sqlmatriz(5) = "    group BY p.entidad having isnull(r.idimpuret) "			
+	sqlmatriz(5) = "    group BY p.entidad having isnull(i.idimpuret) "			
 
 
 
