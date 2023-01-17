@@ -1582,6 +1582,11 @@ FUNCTION CargaEntidades
 	PARAMETERS p_idimportap, p_archivo, p_func
 *#/----------------------------------------
 */ Carga de Entidades
+*	Formato archivo de carga : entidadescar FREE (entidad I, apellido C(100), nombre c(100), cargo C(100), compania C(100), cuit C(13), direccion C(100), ;
+*					localidad C(10), iva I,fechaalta C(8), telefono C(50), cp C(50), fax C(50), ;
+*					email C(254), web C(254), dni I, tipodoc C(3),  ;
+*					fechanac C(8), idafiptipd I, credito n(12,2))			
+*
 *#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
@@ -1616,7 +1621,7 @@ FUNCTION CargaEntidades
 
 		CREATE TABLE .\entidadescar FREE (entidad I, apellido C(100), nombre c(100), cargo C(100), compania C(100), cuit C(13), direccion C(100), ;
 					localidad C(10), iva I,fechaalta C(8), telefono C(50), cp C(50), fax C(50), ;
-					email C(254), web C(254), dni I, tipodoc C(3),  ;
+					email C(254), web C(254), dni N(13), tipodoc C(3),  ;
 					fechanac C(8), idafiptipd I, credito n(12,2))			
 					
 		SELECT entidadescar 
@@ -1693,6 +1698,23 @@ FUNCTION CargaEntidades
 			ENDIF 
 			
 			IF entidadescar.credito > 0 THEN 
+
+					sqlmatriz(1)="SELECT identidacr AS maxi FROM entidadescr ORDER BY identidacr DESC LIMIT 1  "
+					verror=sqlrun(vconeccionF,"maximo")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo código  ",0+48+0,"Error")
+					ENDIF 
+					v_maximo = maximo.maxi
+					SELECT maximo
+					GO TOP 
+					IF EOF() AND RECNO()=1 THEN 
+						v_maximonew = 1
+					ELSE
+						v_maximonew = v_maximo + 1
+					ENDIF 
+					USE IN maximo
+
+			
 				lamatrizcr(1,1) = 'entidad'
 				lamatrizcr(1,2) = ALLTRIM(STR(entidadescar.entidad))
 				lamatrizcr(2,1) = 'fecha'
@@ -1701,8 +1723,8 @@ FUNCTION CargaEntidades
 				lamatrizcr(3,2) = ALLTRIM(STR(entidadescar.credito,12,2))
 				lamatrizcr(4,1) = 'autorizo'
 				lamatrizcr(4,2) = "'"+ALLTRIM(_SYSUSUARIO)+"'"
-				lamatrizcr(5,1) = 'identidadcr'
-				lamatrizcr(5,2) = "0"
+				lamatrizcr(5,1) = 'identidacr'
+				lamatrizcr(5,2) = ALLTRIM(STR(v_maximonew))
 
 				p_tabla     = 'entidadescr'
 				p_matriz    = 'lamatrizcr'
@@ -2819,6 +2841,7 @@ ENDIF
 	ALTER table entidades_sql alter COLUMN folio1 i
 	ALTER table entidades_sql alter COLUMN ruta2 i
 	ALTER table entidades_sql alter COLUMN folio2 i
+	ALTER table entidades_sql alter COLUMN dni n(13)
 	USE IN entidades0_sql 
 	
 
@@ -2886,7 +2909,7 @@ ENDIF
 						
 					SELECT entidades_sql
 					GO TOP 
-					LOCATE FOR entidad = a_entidad AND servicio = 0 AND entidad = 0 
+					LOCATE FOR entidad = a_entidad AND servicio = 0 AND cuenta = 0 
 					
 					
 					***Factura a ENTIDAD
@@ -3163,7 +3186,7 @@ ENDIF
 					lamatriz10(3,1)='cuota'
 					lamatriz10(3,2)= "0"
 					lamatriz10(4,1)='cancuotas'
-					lamatriz10(4,2)=ALLTRIM(STR(a_cuota))
+					lamatriz10(4,2)=ALLTRIM(STR(v_cantCtas))
 					lamatriz10(5,1)='importe'
 					lamatriz10(5,2)="0.00"
 					lamatriz10(6,1)='fechavenc'
@@ -3180,6 +3203,7 @@ ENDIF
 				DO WHILE NOT EOF()
 				
 					v_montocta = ctasctesentcard.monto
+					a_cuota    = ctasctesentcard.cuota
 					v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
 
 					p_tipoope     = 'I'
@@ -3264,6 +3288,9 @@ FUNCTION agregarItemEspecial
 PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
 *#/----------------------------------------
 */ Agrega un Item especial al comprobante de la tabla facturas cuyo ID es pasado como parámetro
+*/ Si no encuentra la funcion en la tabla operaciones especiales TOE entonces entiene que se
+*/ Pasó como parámetro un codigo de artículo para insertar en la factura y busca directamente
+*/ en la tabla de artículos, tomando como codigo de articulo el parametro "p_operacion".
 *#/----------------------------------------
 
 	
@@ -3282,6 +3309,10 @@ PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
 	v_codigo	= SUBSTR(v_codTab,1,v_nPos-1) && Retorna el código
 	v_tabla		= SUBSTR(v_codTab,v_nPos+1)	&& Retorna el resto de la cadena, que corresponde a la tabla
 	
+	IF !( ALLTRIM(v_tabla) == 'articulos' OR ALLTRIM(v_tabla) == 'conceptoser' ) THEN 
+		v_codigo = ALLTRIM(p_operacion)
+		v_tabla = "articulos"		
+	ENDIF 
 	
 	*** Busco el impuesto para el articulo o concepto a agregar ***
 	
@@ -3300,11 +3331,12 @@ PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
 
 	ENDCASE
 	
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
 	
-	
-	verror=sqlrun(vconeccion,"oeImp")
+	verror=sqlrun(vconeccionF,"oeImp")
 	* me desconecto
-		=abreycierracon(vconeccion,"")
+	=abreycierracon(vconeccionF,"")
 	IF verror=.f.
 		MESSAGEBOX("Error al obtener el Impuesto para la Operación Especial",0+48+0,"Error")
 		RETURN .F.
@@ -3314,12 +3346,17 @@ PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
 	
 	SELECT oeImp
 	GO TOP 
+	IF EOF() THEN 
+		MESSAGEBOX("Error al obtener el Impuesto para el Artículo",0+48+0,"Error")
+		=abreycierracon(vconeccionF,"")
+		RETURN .f.
+	ENDIF 
 	
 	v_impuesto = oeImp.impuesto
 	v_razonimp = oeImp.razon
 	v_detalleIMP = oeImp.detaimp
 
-		vconeccionF=abreycierracon(0,_SYSSCHEMA)
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
 	
 	sqlmatriz(1)="select * from facturas "
 	sqlmatriz(2)=" where idfactura = "+ALLTRIM(STR(p_idfactura))
