@@ -5128,6 +5128,7 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 	SELECT tabladescrip_sql
 	USE IN tabladescrip_sql
 
+
 	sqlmatriz(1)	="  update asientoscompro set detacompro = '"+ALLTRIM(v_retornod)+"'"
 	sqlmatriz(2)	="  where  idregicomp = "+ALLTRIM(STR(par_valindice))+" and tabla = '"+ALLTRIM(par_tabla)+"'"
 	verror=sqlrun(vconeccionFD,"asientosco")
