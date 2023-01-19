@@ -19672,6 +19672,7 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 			
 				sqlmatriz(1)=" create table "+ALLTRIM(v_tablaRecibos)+" as (Select dcp.iddetacobro , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
 				sqlmatriz(19)=" where cc.tabla = 'recibos' "
+								
 			ENDIF 
 				
 			
@@ -19705,6 +19706,19 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 					RETURN .F. 
 				ENDIF 
 			
+			IF p_idregistroccb <= 0
+				sqlmatriz(1)=" ALTER TABLE "+ALLTRIM(v_tablaRecibos)+"  ADD INDEX idrecibo(idrecibo), ADD INDEX idcuenta(idcuenta)"
+				
+ 				verror=sqlrun(vconeccionF,"r_ctactebancos_recibos_sqli")
+				IF verror=.f.
+					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+					= abreycierracon(vconeccionF,"")
+					RETURN .F. 
+				ENDIF 
+			
+			ENDIF 
+			
+				
 				
 			CASE ALLTRIM(p_tablaccb) == 'ANULARPAGO'
 		
@@ -19770,6 +19784,21 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
+				
+				
+				IF p_idregistroccb <= 0
+					sqlmatriz(1)=" ALTER TABLE "+ALLTRIM(v_tablaAnularpa)+"  ADD INDEX idanularp(idanularp), ADD INDEX idcuenta(idcuenta)"
+					
+	 				verror=sqlrun(vconeccionF,"r_ctactebancos_anularpago_sqli")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+				ENDIF 
+			
+				
+			
 				
 			CASE ALLTRIM(p_tablaccb) == 'ANULARRECIBO'
 			
@@ -19838,6 +19867,19 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
+				
+				
+				IF p_idregistroccb <= 0
+					sqlmatriz(1)=" ALTER TABLE "+ALLTRIM(v_tablaAnularre)+"  ADD INDEX idanularp(idanularp), ADD INDEX idcuenta(idcuenta)"
+					
+	 				verror=sqlrun(vconeccionF,"r_ctactebancos_anularrecibo_sqli")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+				endif 
+				
 			
 			CASE ALLTRIM(p_tablaccb) == 'CAJAINGRESO'
 				***********************
@@ -19905,6 +19947,18 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
+				
+				
+				IF p_idregistroccb <= 0
+					sqlmatriz(1)=" ALTER TABLE "+ALLTRIM(v_tablacajaingreso)+"  ADD INDEX idcajaie(idcajaie), ADD INDEX idcuenta(idcuenta)"
+					
+	 				verror=sqlrun(vconeccionF,"r_ctactebancos_cajaingreso_sqli")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+				endif
 			
 			CASE ALLTRIM(p_tablaccb) == 'CAJAEGRESO'
 				***********************
@@ -19972,6 +20026,18 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
+				
+				
+				IF p_idregistroccb <= 0
+					sqlmatriz(1)=" ALTER TABLE "+ALLTRIM(v_tablacajaegreso)+"  ADD INDEX idcajaie(idcajaie), ADD INDEX idcuenta(idcuenta)"
+					
+	 				verror=sqlrun(vconeccionF,"r_ctactebancos_cajaegreso_sqli")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+				endif
 			
 			CASE ALLTRIM(p_tablaccb) == 'PAGOSPROV'
 		
@@ -20036,6 +20102,19 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
+				
+				
+				IF p_idregistroccb <= 0
+					sqlmatriz(1)=" ALTER TABLE "+ALLTRIM(v_tablapagosprov)+"  ADD INDEX idpago(idpago), ADD INDEX idcuenta(idcuenta)"
+					
+	 				verror=sqlrun(vconeccionF,"r_ctactebancos_pagosprov_sqli")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+				ENDIF
+				
 				
 			CASE ALLTRIM(p_tablaccb) == 'TRANSFERENCIASD'		
 		
@@ -20107,6 +20186,17 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 					RETURN .F. 
 				ENDIF 
 				
+				IF p_idregistroccb <= 0
+					sqlmatriz(1)=" ALTER TABLE "+ALLTRIM(v_tablatransferenciasd)+"  ADD INDEX idtransfe(idtransfe), ADD INDEX idcuenta(idcuenta)"
+					
+	 				verror=sqlrun(vconeccionF,"r_ctactebancos_transferencias_sqli")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+				ENDIF
+				
 				
 			CASE ALLTRIM(p_tablaccb) == 'TRANSFERENCIASO'		
 			
@@ -20176,6 +20266,20 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
+				
+				
+				
+				IF p_idregistroccb <= 0
+					sqlmatriz(1)=" ALTER TABLE "+ALLTRIM(v_tablatransferenciaso)+"  ADD INDEX idtransfe(idtransfe), ADD INDEX idcuenta(idcuenta)"
+					
+	 				verror=sqlrun(vconeccionF,"r_ctactebancos_transferencias_sqli")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+				ENDIF
+				
 			OTHERWISE
 				RETURN .F.
 			ENDCASE
