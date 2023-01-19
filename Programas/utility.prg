@@ -10463,6 +10463,20 @@ PARAMETERS pan_idcomproba, pan_idregistro
 				
 				
 				
+				IF v_tablaor = 'detallecobros'
+				
+					v_ret = ctaCteBancos('ANULARRECIBO',v_idanulaRP,0)
+
+				ELSE
+					IF v_tablaor = 'detallepagos'
+					
+						v_ret = ctaCteBancos('ANULARPAGO',v_idanulaRP,0)
+					ENDIF 
+				ENDIF 
+				
+				
+				
+				
 				** Elimino los Vinculos de Comprobantes y Asientos de vinculos que pueda haber tenido el Comprobante Anulado
 				************************************************************************************************************
 				= EliminaVinculo(v_tablaPor,pan_idregistro)
@@ -14300,7 +14314,18 @@ GO TOP
 
 				nuevo_asiento = Contrasiento( 0,_SYSCONTRADH, v_tablaPor, pan_idregistro, 'cajaie', v_idcajaie)
 		
-		
+	
+			IF v_opera_comp < 0
+				
+				v_ret = ctaCteBancos('CAJAEGRESO',v_idcajaie,0)
+			ELSE
+				IF v_opera_comp > 0
+					v_ret = ctaCteBancos('CAJAINGRESO',v_idcajaie,0)
+				ENDIF 
+			
+			ENDIF 
+			
+			
 		ELSE
 				
 			=abreycierracon(vconeccionAn ,"")	
@@ -18865,7 +18890,7 @@ ENDIF
 				ENDIF 
 			
 				
-		
+				registrarEstado("retenciones","idreten",v_idretenr,'I',"AUTORIZADO")
 				
 			* me desconecto	
 			=abreycierracon(vconeccionF,"")
@@ -18879,7 +18904,7 @@ ENDIF
 
 	ENDDO
 
-		registrarEstado("retenciones","idreten",v_idretenr,'I',"AUTORIZADO")
+		
 	v_retorno = .T.
 	
 
@@ -19575,13 +19600,14 @@ ENDFUNC
 
 
 
+
 FUNCTION ctaCteBancos
 PARAMETERS p_tablaccb,p_idregistroccb,p_idcuentaccb
 *#/ ------------------------------
 * Crea una tabla Resultado de cuenta corriente asociada a una cuenta bancaria 
 * PARAMETROS : 
 *	p_tablaccb: Tabla principal con la que se va a generar la tabla resultado, pudiendo ser: 
-*					RECIBOS, ANULARP, CAJAIE,PAGOSPROV,TRANSFERENCIAS.
+*					RECIBOS, ANULARP, CAJAINGRESO,CAJAINGRESO,PAGOSPROV,TRANSFERENCIAS.
 *   p_idregistroccb:  id del registro asociado a la tabla pasada como parámetro
 *	p_idcuentaccb: id de la cuenta de banco
 * Descripcion: La función se comporta de diferentes maneras según los parámetro.
@@ -19601,14 +19627,15 @@ v_r_CtaCteBancos = "r_ccb_"
 
 	
 	
+	
 
 IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
+
 	IF EMPTY(ALLTRIM(p_tablaccb)) = .F. && Pasó como parámetro una tabla
-		IF p_idregistroccb > 0 && Inserta en la tabla esa combinación de parámetros
+
 		
 			
-		ELSE && Regenera la tabla resultado para esa tabla 
-			
+		
 			
 			DO CASE 
 			CASE ALLTRIM(p_tablaccb) == 'RECIBOS'
@@ -19618,10 +19645,12 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				**** TABLA RECIBOS ****
 				***********************
 				
-				v_tablaRecibos = ALLTRIM(v_r_CtaCteBancos)+"_recibos"
+				v_tablaRecibos = ALLTRIM(v_r_CtaCteBancos)+"recibos"
 			
-				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablaRecibos)
-				MESSAGEBOX(sqlmatriz(1))
+			IF p_idregistroccb > 0 && Inserta en la tabla esa combinación de parámetros
+				
+				sqlmatriz(1)= "delete from  "+ALLTRIM(v_tablaRecibos) + " where idrecibo = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+			
 				verror=sqlrun(vconeccionF,"existe_tabla")
 				IF verror=.f.
 					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
@@ -19629,13 +19658,29 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 					RETURN .F. 
 				ENDIF 
 			
+					sqlmatriz(1)=" insert into "+ALLTRIM(v_tablaRecibos)+" (Select dcp.iddetacobro , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'recibos' and c.idrecibo = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and dcp.idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+			ELSE && Regenera la tabla resultado para esa tabla 
+				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablaRecibos)
+			
+				verror=sqlrun(vconeccionF,"existe_tabla")
+				IF verror=.f.
+					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+					= abreycierracon(vconeccionF,"")
+					RETURN .F. 
+				ENDIF 
 			
 				sqlmatriz(1)=" create table "+ALLTRIM(v_tablaRecibos)+" as (Select dcp.iddetacobro , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+				sqlmatriz(19)=" where cc.tabla = 'recibos' "
+			ENDIF 
+				
+			
+			
 				sqlmatriz(2)=" c.*, e.cuit, cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia,   "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, pv.pventa, tp.detalle as detapagos, "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
-				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuit, ifnull(ch.cuenta,' ') as cuenta,"
+				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
 				sqlmatriz(7)=" ifnull(cu.idcupon,0) as idcupon , ifnull(cu.idtarjeta, 0) as idtarjeta, ifnull(cu.numero,0) as cunumero, ifnull(cu.tarjeta,' ') as cutarjeta," 
 				sqlmatriz(8)=" ifnull(cu.fecha,' ') as cufecha, ifnull(cu.vencimiento,' ') as cuvence, ifnull(cu.importe,0) as cuimporte, ifnull(cu.titular,' ') as cutitular, ifnull(cu.dni,' ') as cudni, ifnull(cu.codautoriz,' ') as codautori "
 				sqlmatriz(9)=" from detallecobros dcp  left join comprobantes cc on cc.idcomproba = dcp.idcomproba and cc.tabla ='recibos' "
@@ -19648,10 +19693,10 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				sqlmatriz(16)="	left join cobropagolink clk on clk.tablacp = 'detallecobros' and clk.registrocp = dcp.iddetacobro "
 				sqlmatriz(17)=" left join cheques ch on ch.idcheque = clk.idregistro and clk.tabla = 'cheques' "
 				sqlmatriz(18)=" left join cupones cu on cu.idcupon = clk.idregistro and clk.tabla = 'cupones' "		
-				sqlmatriz(19)=" where cc.tabla = 'recibos' "
+				
 				sqlmatriz(20)= " order by fecha, numero) "
 
-				MESSAGEBOX(sqlmatriz(1))
+			
 				*verror=sqlrun(vconeccionF,ALLTRIM(v_tabla_r_CtaCteBancos)+"_recibos_sql")
 				verror=sqlrun(vconeccionF,"r_ctactebancos_recibos_sql")
 				IF verror=.f.
@@ -19662,31 +19707,49 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 			
 				
 			CASE ALLTRIM(p_tablaccb) == 'ANULARPAGO'
-			
-				
+		
 				***********************
 				**** TABLA ANULARPAGO****
 				***********************
-				
-				v_tablaAnularpa = ALLTRIM(v_r_CtaCteBancos)+"_anularpago"
 			
-				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablaAnularpa)
-				MESSAGEBOX(sqlmatriz(1))
-				verror=sqlrun(vconeccionF,"existe_tabla")
-				IF verror=.f.
-					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
-					= abreycierracon(vconeccionF,"")
-					RETURN .F. 
+				v_tablaAnularpa = ALLTRIM(v_r_CtaCteBancos)+"anularpago"
+					
+				IF p_idregistroccb > 0 && Inserta en la tabla esa combinación de parámetros
+				
+					sqlmatriz(1)= "delete from  "+ALLTRIM(v_tablaAnularpa) + " where idanularp = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+				
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" insert into "+ALLTRIM(v_tablaAnularpa)+" (Select dcp.iddetacobro , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'anularp' and c.idpago > 0 and c.idanularp = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and dcp.idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+				ELSE && Regenera la tabla resultado para esa tabla 
+				
+					sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablaAnularpa)
+					
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					sqlmatriz(1)=" create table "+ALLTRIM(v_tablaAnularpa)+" as (Select dcp.iddetacobro , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'anularp' and c.idpago > 0 "
 				ENDIF 
+			
 				
 				
 			
-				sqlmatriz(1)=" create table "+ALLTRIM(v_tablaAnularpa)+" as (Select dcp.iddetacobro , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
-				sqlmatriz(2)=" c.*,  '      ' as cuit, cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia,   "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, pv.pventa, tp.detalle as detapagos, pa.entidad, pa.nombre, pa.numero as npago,  "
+				
+				sqlmatriz(2)=" c.*,  '             ' AS cuit, cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia,   "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, pa.entidad, pa.nombre, pa.numero as npago,  "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
-				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuit, ifnull(ch.cuenta,' ') as cuenta,"
+				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
 				sqlmatriz(7)=" ifnull(cu.idcupon,0) as idcupon , ifnull(cu.idtarjeta, 0) as idtarjeta, ifnull(cu.numero,0) as cunumero, ifnull(cu.tarjeta,' ') as cutarjeta," 
 				sqlmatriz(8)=" ifnull(cu.fecha,' ') as cufecha, ifnull(cu.vencimiento,' ') as cuvence, ifnull(cu.importe,0) as cuimporte, ifnull(cu.titular,' ') as cutitular, ifnull(cu.dni,' ') as cudni, ifnull(cu.codautoriz,' ') as codautori "
 				sqlmatriz(9)=" from detallecobros dcp  left join comprobantes cc on cc.idcomproba = dcp.idcomproba and cc.tabla ='anularp' "
@@ -19698,9 +19761,15 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				sqlmatriz(16)="	left join cobropagolink clk on clk.tablacp = 'detallecobros' and clk.registrocp = dcp.iddetacobro "
 				sqlmatriz(17)=" left join cheques ch on ch.idcheque = clk.idregistro and clk.tabla = 'cheques' "
 				sqlmatriz(18)=" left join cupones cu on cu.idcupon = clk.idregistro and clk.tabla = 'cupones' "		
-				sqlmatriz(19)=" where cc.tabla = 'anularp' and c.idpago > 0 "
+
 				sqlmatriz(20)= " order by fecha, numero) "
 
+				verror=sqlrun(vconeccionF,"r_ctactebancos_anularpago_sql")
+				IF verror=.f.
+					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+					= abreycierracon(vconeccionF,"")
+					RETURN .F. 
+				ENDIF 
 				
 			CASE ALLTRIM(p_tablaccb) == 'ANULARRECIBO'
 			
@@ -19709,24 +19778,46 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				**** TABLA ANULARRECIBO****
 				***********************
 				
-				v_tablaAnularre = ALLTRIM(v_r_CtaCteBancos)+"_anularrecibo"
-			
-				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablaAnularre)
-				MESSAGEBOX(sqlmatriz(1))
-				verror=sqlrun(vconeccionF,"existe_tabla")
-				IF verror=.f.
-					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
-					= abreycierracon(vconeccionF,"")
-					RETURN .F. 
+				v_tablaAnularre = ALLTRIM(v_r_CtaCteBancos)+"anularrecibo"
+				
+				IF p_idregistroccb > 0 && Inserta en la tabla esa combinación de parámetros
+				
+					sqlmatriz(1)= "delete from  "+ALLTRIM(v_tablaAnularre) + " where idanularp = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+				
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" insert into "+ALLTRIM(v_tablaAnularre)+" (Select dcp.iddetapago , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'anularp'  and c.idrecibo > 0 and c.idanularp = "+ALLTRIM(STR(p_idregistroccb))+ IIF(p_idcuentaccb>0," and dcp.idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+
+				ELSE && Regenera la tabla resultado para esa tabla 
+				
+					sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablaAnularre)
+				
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" create table "+ALLTRIM(v_tablaAnularre)+" as (Select dcp.iddetapago , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'anularp'  and c.idrecibo > 0 "
 				ENDIF 
 				
 				
-				sqlmatriz(1)=" create table "+ALLTRIM(v_tablaAnularre)+" as (Select dcp.iddetapago , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
-				sqlmatriz(2)=" c.*, '      ' as cuit ,  cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia,   "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, pv.pventa, tp.detalle as detapagos, re.entidad, re.nombre, re.numero as nrecibo,  "
+				
+				
+				*sqlmatriz(1)=" create table "+ALLTRIM(v_tablaAnularre)+" as (Select dcp.iddetapago , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+				sqlmatriz(2)=" c.*, '             ' AS cuit ,  cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia,   "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, re.entidad, re.nombre, re.numero as nrecibo,  "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
-				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuit, ifnull(ch.cuenta,' ') as cuenta,"
+				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
 				sqlmatriz(7)=" ifnull(cu.idcupon,0) as idcupon , ifnull(cu.idtarjeta, 0) as idtarjeta, ifnull(cu.numero,0) as cunumero, ifnull(cu.tarjeta,' ') as cutarjeta," 
 				sqlmatriz(8)=" ifnull(cu.fecha,' ') as cufecha, ifnull(cu.vencimiento,' ') as cuvence, ifnull(cu.importe,0) as cuimporte, ifnull(cu.titular,' ') as cutitular, ifnull(cu.dni,' ') as cudni, ifnull(cu.codautoriz,' ') as codautori "
 				sqlmatriz(9)=" from detallepagos dcp  left join comprobantes cc on cc.idcomproba = dcp.idcomproba and cc.tabla ='anularp' "
@@ -19738,33 +19829,61 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				sqlmatriz(16)="	left join cobropagolink clk on clk.tablacp = 'detallecobros' and clk.registrocp = dcp.iddetapago "
 				sqlmatriz(17)=" left join cheques ch on ch.idcheque = clk.idregistro and clk.tabla = 'cheques' "
 				sqlmatriz(18)=" left join cupones cu on cu.idcupon = clk.idregistro and clk.tabla = 'cupones' "		
-				sqlmatriz(19)=" where cc.tabla = 'anularp'  and c.idrecibo > 0 "
+				*sqlmatriz(19)=" where cc.tabla = 'anularp'  and c.idrecibo > 0 "
 				sqlmatriz(20)= " order by fecha, numero) "
 
-
-			
-			CASE ALLTRIM(p_tablaccb) == 'CAJAINGRESO'
-				***********************
-				**** TABLA CAJAINGRESO****
-				***********************
-				
-				v_tablacajaingreso = ALLTRIM(v_r_CtaCteBancos)+"_cajaingreso"
-			
-				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablacajaingreso)
-				MESSAGEBOX(sqlmatriz(1))
-				verror=sqlrun(vconeccionF,"existe_tabla")
+				verror=sqlrun(vconeccionF,"r_ctactebancos_anularrecibo_sql")
 				IF verror=.f.
 					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
+			
+			CASE ALLTRIM(p_tablaccb) == 'CAJAINGRESO'
+				***********************
+				**** TABLA CAJAINGRESO****
+				***********************
+		
+				v_tablacajaingreso = ALLTRIM(v_r_CtaCteBancos)+"cajaingreso"
+			
+				IF p_idregistroccb > 0 && Inserta en la tabla esa combinación de parámetros
+			
+			
+					sqlmatriz(1)= "delete from  "+ALLTRIM(v_tablacajaingreso) + " where idcajaie = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" insert into "+ALLTRIM(v_tablacajaingreso)+ " (Select dcp.iddetacobro , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)= " where cc.tabla = 'cajaie' and c.detallecp = 'detallecobros' and  c.idcajaie = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and dcp.idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+					
+					
+				ELSE && Regenera la tabla resultado para esa tabla 
+					sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablacajaingreso)
 				
-				sqlmatriz(1)=" create table "+ALLTRIM(v_tablacajaingreso)+" as (Select dcp.iddetacobro , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
-				sqlmatriz(2)=" c.*, e.cuit, cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp, cc.abrevia,   "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, pv.pventa, tp.detalle as detapagos, "
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" create table "+ALLTRIM(v_tablacajaingreso)+" as (Select dcp.iddetacobro , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)= " where cc.tabla = 'cajaie' and c.detallecp = 'detallecobros'  "
+					
+				ENDIF 
+				
+				
+				
+				
+				sqlmatriz(2)=" c.*,  cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp, cc.abrevia,   "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica,tp.detalle as detapagos, "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
-				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuit, ifnull(ch.cuenta,' ') as cuenta,"
+				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
 				sqlmatriz(7)=" ifnull(cu.idcupon,0) as idcupon , ifnull(cu.idtarjeta, 0) as idtarjeta, ifnull(cu.numero,0) as cunumero, ifnull(cu.tarjeta,' ') as cutarjeta," 
 				sqlmatriz(8)=" ifnull(cu.fecha,' ') as cufecha, ifnull(cu.vencimiento,' ') as cuvence, ifnull(cu.importe,0) as cuimporte, ifnull(cu.titular,' ') as cutitular, ifnull(cu.dni,' ') as cudni, ifnull(cu.codautoriz,' ') as codautori "
 				sqlmatriz(9)=" from detallecobros dcp left join comprobantes cc on cc.idcomproba = dcp.idcomproba and cc.tabla ='cajaie' "
@@ -19777,32 +19896,61 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				sqlmatriz(16)="	left join cobropagolink clk on clk.tablacp = 'detallecobros' and clk.registrocp = dcp.iddetacobro "
 				sqlmatriz(17)=" left join cheques ch on ch.idcheque = clk.idregistro and clk.tabla = 'cheques' "
 				sqlmatriz(18)=" left join cupones cu on cu.idcupon = clk.idregistro and clk.tabla = 'cupones' "		
-				sqlmatriz(19)= " where cc.tabla = 'cajaie' and c.detallecp = 'detallecobros'  order by fecha, numero) "
-			
-			
-			CASE ALLTRIM(p_tablaccb) == 'CAJAEGRESO'
-				***********************
-				**** TABLA CAJAEGRESO****
-				***********************
 				
-				v_tablacajaegreso = ALLTRIM(v_r_CtaCteBancos)+"_cajaegreso"
+				sqlmatriz(20)= " order by fecha, numero) "
 			
-				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablacajaegreso)
-				MESSAGEBOX(sqlmatriz(1))
-				verror=sqlrun(vconeccionF,"existe_tabla")
+				verror=sqlrun(vconeccionF,"r_ctactebancos_cajaingreso_sql")
 				IF verror=.f.
 					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
+			
+			CASE ALLTRIM(p_tablaccb) == 'CAJAEGRESO'
+				***********************
+				**** TABLA CAJAEGRESO****
+				***********************
+			
+				v_tablacajaegreso = ALLTRIM(v_r_CtaCteBancos)+"cajaegreso"
+			
+				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablacajaegreso)
+				
+				IF p_idregistroccb > 0 && Inserta en la tabla esa combinación de parámetros
+					sqlmatriz(1)= "delete from  "+ALLTRIM(v_tablacajaegreso) + " where idcajaie = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+				
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" insert into "+ALLTRIM(v_tablacajaegreso)+" (Select dcp.iddetapago, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					
+					sqlmatriz(19)=" where cc.tabla = 'cajaie' and c.detallecp = 'detallepagos' and c.idcajaie = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and dcp.idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+					
+				ELSE && Regenera la tabla resultado para esa tabla 
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+				
+					sqlmatriz(1)=" create table "+ALLTRIM(v_tablacajaegreso)+" as (Select dcp.iddetapago, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'cajaie' and c.detallecp = 'detallepagos' "
+					
+				ENDIF 
 				
 				
-				sqlmatriz(1)=" create table "+ALLTRIM(v_tablacajaegreso)+" as (Select dcp.iddetapago, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
-				sqlmatriz(2)=" c.*, e.cuit, cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp, cc.abrevia,   "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, pv.pventa, tp.detalle as detapagos, "
+				
+				
+				
+				sqlmatriz(2)=" c.*,  cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp, cc.abrevia,   "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
-				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuit, ifnull(ch.cuenta,' ') as cuenta,"
+				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
 				sqlmatriz(7)=" ifnull(cu.idcupon,0) as idcupon , ifnull(cu.idtarjeta, 0) as idtarjeta, ifnull(cu.numero,0) as cunumero, ifnull(cu.tarjeta,' ') as cutarjeta," 
 				sqlmatriz(8)=" ifnull(cu.fecha,' ') as cufecha, ifnull(cu.vencimiento,' ') as cuvence, ifnull(cu.importe,0) as cuimporte, ifnull(cu.titular,' ') as cutitular, ifnull(cu.dni,' ') as cudni, ifnull(cu.codautoriz,' ') as codautori "
 				sqlmatriz(9)=" from detallepagos dcp  left join comprobantes cc on cc.idcomproba = dcp.idcomproba and cc.tabla ='cajaie' "
@@ -19815,32 +19963,58 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				sqlmatriz(16)="	left join cobropagolink clk on clk.tablacp = 'detallepagos' and clk.registrocp = dcp.iddetapago "
 				sqlmatriz(17)=" left join cheques ch on ch.idcheque = clk.idregistro and clk.tabla = 'cheques' "
 				sqlmatriz(18)=" left join cupones cu on cu.idcupon = clk.idregistro and clk.tabla = 'cupones' "		
-				sqlmatriz(19)=" where cc.tabla = 'cajaie' and c.detallecp = 'detallepagos' order by fecha, numero) "
-
-			
-			CASE ALLTRIM(p_tablaccb) == 'PAGOSPROV'
-			
-				***********************
-				**** TABLA PAGOSPROV****
-				***********************
 				
-				v_tablapagosprov = ALLTRIM(v_r_CtaCteBancos)+"_pagosprov"
-			
-				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablapagosprov)
-				MESSAGEBOX(sqlmatriz(1))
-				verror=sqlrun(vconeccionF,"existe_tabla")
+				sqlmatriz(20)= " order by fecha, numero) "
+		
+				verror=sqlrun(vconeccionF,"r_ctactebancos_cajaegreso_sql")
 				IF verror=.f.
 					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
 			
-				sqlmatriz(1)=" create table "+ALLTRIM(v_tablapagosprov)+" as (Select dcp.iddetapago, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+			CASE ALLTRIM(p_tablaccb) == 'PAGOSPROV'
+		
+				***********************
+				**** TABLA PAGOSPROV****
+				***********************
+				
+				v_tablapagosprov = ALLTRIM(v_r_CtaCteBancos)+"pagosprov"
+				
+				IF p_idregistroccb > 0 && Inserta en la tabla esa combinación de parámetros
+			
+					sqlmatriz(1)= "delete from  "+ALLTRIM(v_tablapagosprov) + " where idpago = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+				
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					sqlmatriz(1)=" insert into "+ALLTRIM(v_tablapagosprov)+" (Select dcp.iddetapago, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'pagosprov' and c.idpago = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and dcp.idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+				ELSE && Regenera la tabla resultado para esa tabla 
+					sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablapagosprov)
+					
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" create table "+ALLTRIM(v_tablapagosprov)+" as (Select dcp.iddetapago, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)="where cc.tabla = 'pagosprov' "
+				ENDIF 
+				
+				
+			
+				
 				sqlmatriz(2)=" c.*, e.cuit, cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia,   "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, pv.pventa, tp.detalle as detapagos, "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
-				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuit, ifnull(ch.cuenta,' ') as cuenta,"
+				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
 				sqlmatriz(7)=" ifnull(cu.idcupon,0) as idcupon , ifnull(cu.idtarjeta, 0) as idtarjeta, ifnull(cu.numero,0) as cunumero, ifnull(cu.tarjeta,' ') as cutarjeta," 
 				sqlmatriz(8)=" ifnull(cu.fecha,' ') as cufecha, ifnull(cu.vencimiento,' ') as cuvence, ifnull(cu.importe,0) as cuimporte, ifnull(cu.titular,' ') as cutitular, ifnull(cu.dni,' ') as cudni, ifnull(cu.codautoriz,' ') as codautori "
 				sqlmatriz(9)=" from detallepagos dcp left join comprobantes cc on cc.idcomproba = dcp.idcomproba and cc.tabla ='pagosprov' "
@@ -19853,33 +20027,64 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				sqlmatriz(16)="	left join cobropagolink clk on clk.tablacp = 'detallepagos' and clk.registrocp = dcp.iddetapago "
 				sqlmatriz(17)=" left join cheques ch on ch.idcheque = clk.idregistro and clk.tabla = 'cheques' "
 				sqlmatriz(18)=" left join cupones cu on cu.idcupon = clk.idregistro and clk.tabla = 'cupones' "		
-				sqlmatriz(19)="where cc.tabla = 'pagosprov'  order by fecha, numero) "
+				
+				sqlmatriz(20) =  " order by fecha, numero) "
 
-				
-			CASE ALLTRIM(p_tablaccb) == 'TRANSFERENCIASD'		
-			
-				***********************
-				**** TABLA TRANSFERENCIASD****
-				***********************
-				
-				v_tablatransferenciasd = ALLTRIM(v_r_CtaCteBancos)+"_transferenciasd"
-			
-				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablatransferenciasd)
-				MESSAGEBOX(sqlmatriz(1))
-				verror=sqlrun(vconeccionF,"existe_tabla")
+				verror=sqlrun(vconeccionF,"r_ctactebancos_pagosprov_sql")
 				IF verror=.f.
 					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
 					= abreycierracon(vconeccionF,"")
 					RETURN .F. 
 				ENDIF 
 				
+			CASE ALLTRIM(p_tablaccb) == 'TRANSFERENCIASD'		
+		
+				***********************
+				**** TABLA TRANSFERENCIASD****
+				***********************
 				
-				sqlmatriz(1)=" create table "+ALLTRIM(v_tablatransferenciasd)+" as (Select dcp.iddetacobro, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+				v_tablatransferenciasd = ALLTRIM(v_r_CtaCteBancos)+"transferenciasd"
+				
+				IF p_idregistroccb > 0 && Inserta en la tabla esa combinación de parámetros
+			
+					sqlmatriz(1)= "delete from  "+ALLTRIM(v_tablatransferenciasd) + " where idtransfe = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+				
+					
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" insert into "+ALLTRIM(v_tablatransferenciasd)+" (Select dcp.iddetacobro, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'transferencias'  and c.idtransfe = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and dcp.idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+				
+					
+				ELSE && Regenera la tabla resultado para esa tabla 
+					sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablatransferenciasd)
+				
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+				
+					sqlmatriz(1)=" create table "+ALLTRIM(v_tablatransferenciasd)+" as (Select dcp.iddetacobro, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)="where cc.tabla = 'transferencias'  "
+					
+				ENDIF 
+				
+				
+				
+				
+				
 				sqlmatriz(2)=" c.*, '             ' AS cuit, cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia,   "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, pv.pventa, tp.detalle as detapagos, cbo.detalle as detactao, cbd.detalle as detactad, "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, cbo.detalle as detactao, cbd.detalle as detactad, "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
-				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuit, ifnull(ch.cuenta,' ') as cuenta,"
+				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
 				sqlmatriz(7)=" ifnull(cu.idcupon,0) as idcupon , ifnull(cu.idtarjeta, 0) as idtarjeta, ifnull(cu.numero,0) as cunumero, ifnull(cu.tarjeta,' ') as cutarjeta," 
 				sqlmatriz(8)=" ifnull(cu.fecha,' ') as cufecha, ifnull(cu.vencimiento,' ') as cuvence, ifnull(cu.importe,0) as cuimporte, ifnull(cu.titular,' ') as cutitular, ifnull(cu.dni,' ') as cudni, ifnull(cu.codautoriz,' ') as codautori "
 				sqlmatriz(9)=" from detallecobros dcp left join comprobantes cc on cc.idcomproba = dcp.idcomproba and cc.tabla ='transferencias' "
@@ -19892,19 +20097,10 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				sqlmatriz(16)="	left join cobropagolink clk on clk.tablacp = 'detallecobros' and clk.registrocp = dcp.iddetacobro "
 				sqlmatriz(17)=" left join cheques ch on ch.idcheque = clk.idregistro and clk.tabla = 'cheques' "
 				sqlmatriz(18)=" left join cupones cu on cu.idcupon = clk.idregistro and clk.tabla = 'cupones' "		
-				sqlmatriz(19)="where cc.tabla = 'transferencias'  order by fecha, numero) "
 				
-			CASE ALLTRIM(p_tablaccb) == 'TRANSFERENCIASO'		
-			
-				***********************
-				**** TABLA TRANSFERENCIASO****
-				***********************
+				sqlmatriz(20)=" order by fecha, numero) "
 				
-				v_tablatransferenciaso = ALLTRIM(v_r_CtaCteBancos)+"_transferenciaso"
-			
-				sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablatransferenciaso)
-				MESSAGEBOX(sqlmatriz(1))
-				verror=sqlrun(vconeccionF,"existe_tabla")
+				verror=sqlrun(vconeccionF,"r_ctactebancos_transferenciasd_sql")
 				IF verror=.f.
 					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
 					= abreycierracon(vconeccionF,"")
@@ -19912,13 +20108,52 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				ENDIF 
 				
 				
+			CASE ALLTRIM(p_tablaccb) == 'TRANSFERENCIASO'		
+			
+				***********************
+				**** TABLA TRANSFERENCIASO****
+				***********************
 				
-				sqlmatriz(1)=" create table "+ALLTRIM(v_tablatransferenciasd)+" as (Select dcp.iddetapago, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+				v_tablatransferenciaso = ALLTRIM(v_r_CtaCteBancos)+"transferenciaso"
+				
+				IF p_idregistroccb > 0 && Inserta en la tabla esa combinación de parámetros
+					sqlmatriz(1)= "delete from  "+ALLTRIM(v_tablatransferenciaso) + " where idtransfe = "+ALLTRIM(STR(p_idregistroccb)) + IIF(p_idcuentaccb>0," and idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+				
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" insert into "+ALLTRIM(v_tablatransferenciaso)+" (Select dcp.iddetapago, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'transferencias' and c.idtransfe = "+ALLTRIM(STR(p_idregistroccb))+ IIF(p_idcuentaccb>0," and dcp.idcuenta = "+ALLTRIM(STR(p_idcuentaccb)),"")
+					
+				ELSE && Regenera la tabla resultado para esa tabla 
+					sqlmatriz(1)= "drop table if exists "+ALLTRIM(v_tablatransferenciaso)
+		
+					verror=sqlrun(vconeccionF,"existe_tabla")
+					IF verror=.f.
+						MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+						= abreycierracon(vconeccionF,"")
+						RETURN .F. 
+					ENDIF 
+					
+					sqlmatriz(1)=" create table "+ALLTRIM(v_tablatransferenciaso)+" as (Select dcp.iddetapago, dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+					sqlmatriz(19)=" where cc.tabla = 'transferencias'  "
+					
+					
+				ENDIF 
+				
+				
+				
+				
+				
 				sqlmatriz(2)=" c.*, '             ' AS cuit, cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia, "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, pv.pventa, tp.detalle as detapagos, cbo.detalle as detactao, cbd.detalle as detactad, "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, cbo.detalle as detactao, cbd.detalle as detactad, "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
-				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuit, ifnull(ch.cuenta,' ') as cuenta,"
+				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
 				sqlmatriz(7)=" ifnull(cu.idcupon,0) as idcupon , ifnull(cu.idtarjeta, 0) as idtarjeta, ifnull(cu.numero,0) as cunumero, ifnull(cu.tarjeta,' ') as cutarjeta," 
 				sqlmatriz(8)=" ifnull(cu.fecha,' ') as cufecha, ifnull(cu.vencimiento,' ') as cuvence, ifnull(cu.importe,0) as cuimporte, ifnull(cu.titular,' ') as cutitular, ifnull(cu.dni,' ') as cudni, ifnull(cu.codautoriz,' ') as codautori "
 				sqlmatriz(9)=" from detallepagos dcp left join comprobantes cc on cc.idcomproba = dcp.idcomproba and cc.tabla ='transferencias' "
@@ -19931,20 +20166,25 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				sqlmatriz(16)="	left join cobropagolink clk on clk.tablacp = 'detallepagos' and clk.registrocp = dcp.iddetapago "
 				sqlmatriz(17)=" left join cheques ch on ch.idcheque = clk.idregistro and clk.tabla = 'cheques' "
 				sqlmatriz(18)=" left join cupones cu on cu.idcupon = clk.idregistro and clk.tabla = 'cupones' "		
-				sqlmatriz(19)=" where cc.tabla = 'transferencias'  order by fecha, numero) "
+				
+				sqlmatriz(20)=" order by fecha, numero) "
 
 
-
-
+				verror=sqlrun(vconeccionF,"r_ctactebancos_transferenciaso_sql")
+				IF verror=.f.
+					MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+					= abreycierracon(vconeccionF,"")
+					RETURN .F. 
+				ENDIF 
 			OTHERWISE
 				RETURN .F.
 			ENDCASE
 			
 			RETURN .T.
 		
-		ENDIF 
+		
 	ELSE && Regenera la tabla completa si existe, sino la crea
-	
+
 		*** Regenero para cada tabla ** 
 
 
@@ -19990,15 +20230,11 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 	ENDIF 
 
 
-	
-	
 ELSE
 	
 	RETURN .T.
 
 ENDIF 
-
-
 
 
 
