@@ -3608,25 +3608,39 @@ IF !v_error THEN
 	ENDCASE 
 ELSE
 
+	ipadd = ""
+	hostn = ID()
+	
 	v_error = .f.
 	ON ERROR v_error = .t.
-	oWMI = getobject("winmgmts:")
-	ON ERROR 
+  	lowsock = CREATEOBJECTEX("{248DD896-BB45-11CF-9ABC-0080C7E7B78D}", "", "")
+ 	ON ERROR 
+ 	RELEASE lowsock
 	IF !v_error THEN 
+		ipadd = lowsock.LocalIP
+*!*		v_error = .f.
+*!*		ON ERROR v_error = .t.
+*!*		oWMI = getobject("winmgmts:")
+*!*		oAdapters = oWMI.ExecQuery("SELECT * FROM Win32_NetworkAdapterConfiguration",,48)
+*!*		ON ERROR 
+*!*		MESSAGEBOX(v_error)
 
-		oAdapters = oWMI.ExecQuery("Select * from Win32_NetworkAdapterConfiguration where IPEnabled=True")
-		ipadd = ""
-		hostn = ""
-		for each oAdapter in oAdapters
-			if not isnull(oAdapter.ipaddress)
-				for each cAddress in oAdapter.ipaddress
-					IF ATC('.',cAddress)>0 AND EMPTY(ipadd) THEN 
-						ipadd = oAdapter.ipaddress
-						hostn  = oAdapter.DNSHostName
-					ENDIF 
-				NEXT 
-			endif
-		NEXT  
+*!*			ipadd = ""
+*!*			hostn = ""
+*!*			MESSAGEBOX(TYPE("oAdapters"))
+*!*			for each oAdapter in oAdapters
+*!*				MESSAGEBOX(TYPE("oAdapter"))
+*!*				if not isnull(oAdapter.ipaddress)
+*!*					for each cAddress in oAdapter.ipaddress
+*!*						IF ATC('.',cAddress)>0 AND EMPTY(ipadd) THEN 
+*!*							ipadd = oAdapter.ipaddress
+*!*							hostn  = oAdapter.DNSHostName
+*!*						ENDIF 
+*!*					NEXT 
+*!*				endif
+*!*			NEXT  
+	
+	ELSE
 		
 		DO CASE 
 			CASE pdato = 1 
@@ -3636,11 +3650,11 @@ ELSE
 			OTHERWISE 
 				retorno = ''
 		ENDCASE 
-		RELEASE oWMI
-	ELSE
-		retorno = ''
+*!*			RELEASE oWMI
+*!*			retorno = ''
 	ENDIF 
 ENDIF 
+
 
 RELEASE oWS
 RETURN retorno
@@ -12737,15 +12751,41 @@ PARAMETERS p_fechahisto,p_tablahisto, p_coneccion
 		pv_coneccion = abreycierracon(0,_SYSSCHEMA)
 	ENDIF 
 	
-	sqlmatriz(1)=" select * from articostos where concat( articulo,'-',fecha )  in ( select concat(articulo,'-',max(fecha)) as fecha "
-	sqlmatriz(2)=" from articostos where mid(fecha,1,8) <= '"+ALLTRIM(p_fechahisto)+"'  group by articulo ) order by articulo"
+*!*		sqlmatriz(1)=" select * from articostos where concat( articulo,'-',fecha )  in ( select concat(articulo,'-',max(fecha)) as fecha "
+*!*		sqlmatriz(2)=" from articostos where mid(fecha,1,8) <= '"+ALLTRIM(p_fechahisto)+"'  group by articulo ) order by articulo"
+*!*		verror=sqlrun(pv_coneccion,"costoart_sql")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Costos de Artículos a Fecha ",0+48+0,"Error")
+*!*		    RETURN "" 
+*!*		ENDIF	
+
+	sqlmatriz(1)="create temporary table tmarti select concat( articulo,'-',MAX(fecha) ) as artifecha from articostos "
+	sqlmatriz(2)="where mid(fecha,1,8) <= '"+ALLTRIM(p_fechahisto)+"' group by articulo"
+	verror=sqlrun(vconeccionF,"tmanulados_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Estados de anulados ...",0+48+0,"Error")
+	ENDIF 
+	sqlmatriz(1)="ALTER TABLE tmarti ADD INDEX artifecha (artifecha)"
+	verror=sqlrun(vconeccionF,"indice_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Estados de anulados ...",0+48+0,"Error")
+	ENDIF 
+	
+	
+*!*		sqlmatriz(1)=" select * from articostos where idartcosto  in ( select MAX(idartcosto) as idartcosto "
+*!*		sqlmatriz(2)=" from articostos where mid(fecha,1,8) <= '"+ALLTRIM(p_fechahisto)+"'  group by articulo ) order by articulo"
+
+	sqlmatriz(1)=" select * from articostos a "
+	sqlmatriz(2)=" left join tmarti t on t.artifecha = concat(a.articulo,'-',a.fecha) "
+	sqlmatriz(3)=" where ifnull(t.artifecha,'')<>'' "
 	verror=sqlrun(pv_coneccion,"costoart_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Costos de Artículos a Fecha ",0+48+0,"Error")
 	    RETURN "" 
 	ENDIF	
+
 	SELECT * FROM costoart_sql INTO TABLE &p_tablahisto
-	SELECT &p_tablahisto
+	SELECT &p_tablahisto	
 	USE 
 
 	IF (UPPER(type("p_coneccion"))='I' or UPPER(type("p_coneccion"))='N')  THEN 
@@ -17980,7 +18020,8 @@ PARAMETERS p_Enti, p_tablareto, p_cone
 	sqlmatriz(13)= " left join comprobantes c on re.idcomproba = c.idcomproba "
 	sqlmatriz(14)= " left join tipocompro t on t.idtipocompro = c.idtipocompro "
 	sqlmatriz(15)= " left join puntosventa p on p.pventa = re.pventa "
-	sqlmatriz(16)= " where re.entidad = "+STR(p_Enti)+" and r.saldo > 0 ) "
+	sqlmatriz(16)= " left join ultimoestado u on u.tabla = 'recibos' and u.id = re.idrecibo "
+	sqlmatriz(17)= " where re.entidad = "+STR(p_Enti)+" and u.idestador <> 2 and r.saldo > 0 ) "
 	
 	verror=sqlrun(vconeccionFv,"saldos_sql")
 	IF verror=.f.  
@@ -20916,4 +20957,66 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 	ENDIF 
 ***
 
+ENDFUNC 
+
+
+
+
+FUNCTION GetMiembroGrupo
+PARAMETERS pl_TipoGrupo, pl_NomGrupo, pl_conexion
+
+*#/----------------------------------------
+* Devuelve los miembros que pertenecen a un Grupo Cuya descripcion se Recibe como parametro
+* la Tabla devuelve los miembros del Grupo recibido
+* Devuelve "" si no puede calcular, sino devuelve el nombre de la tabla con los miembros del grupo recibido 
+*#/----------------------------------------
+
+	IF TYPE("pl_TipoGrupo") = 'N' THEN 
+		IF pl_TipoGrupo = 0 OR EMPTY(ALLTRIM(pl_NomGrupo)) THEN && No se definieron Grupos 
+			RETURN ""
+		ENDIF 
+	ELSE
+		RETURN ""
+	ENDIF 
+
+	IF pl_conexion> 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionLP = pl_conexion
+	ELSE 
+		vconeccionLP = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 	
+
+	** busca los Miembros del Grupo de Lista pasado como parámetro
+	sqlmatriz(1)=" select o.idgrupobj, o.idgrupo, o.idmiembro, o.fecha, g.idtipogrupo, g.nombre, g.describir "
+	sqlmatriz(2)=" from grupoobjeto o left join grupos g on g.idgrupo = o.idgrupo "
+	sqlmatriz(3)=" where g.idtipogrupo = "+ALLTRIM(STR(pl_TipoGrupo))+" and " 
+	sqlmatriz(4)=" TRIM(LOWER(g.nombre)) = '"+LOWER(ALLTRIM(pl_NomGrupo))+"'"
+	verror=sqlrun(vconeccionLP ,"listasgrupo_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Listas de Precios en el Grupo... ",0+48+0,"Error")
+		IF pl_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			= abreycierracon(vconeccionLP,"")
+		ENDIF 	
+	    RETURN "" 
+	ENDIF
+	SELECT listasgrupo_sql
+	GO TOP 
+	IF EOF() THEN 
+		IF pl_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			= abreycierracon(vconeccionLP,"")
+		ENDIF 	
+		RETURN ""
+	ENDIF 
+	vlistaspregr = 'listaspregr'+frandom()
+	SELECT * FROM listasgrupo_sql INTO TABLE &vlistaspregr
+	SELECT listasgrupo_sql
+	SELECT &vlistaspregr
+	USE IN &vlistaspregr
+
+
+	IF pl_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		=abreycierracon(vconeccionLP,"")
+	ENDIF 	
+	
+	RETURN vlistaspregr
+	
 ENDFUNC 
