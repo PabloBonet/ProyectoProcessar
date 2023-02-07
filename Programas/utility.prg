@@ -8742,7 +8742,8 @@ IF vtmp_recalcular = .t. THEN
 		fvlistasartp = 'listasartp'+vtmp 
 		fvarticulos = 'articulos'+vtmp 
 
-		SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.idlistap, p.actualiza, l.idlistah, ;  
+
+		SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.habilita, p.idlistap, p.actualiza, l.idlistah, ;  
 			a.articulo, SUBSTR(a.detalle+SPACE(200),1,200) as detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea,a.idsublinea,a.sublinea, a.ctrlstock, a.ocultar, ;
 			a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
 			a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact ;
@@ -8761,6 +8762,7 @@ IF vtmp_recalcular = .t. THEN
 			LEFT JOIN &fvarticulosimp_sql i  ON ALLTRIM(a.articulo) == ALLTRIM(i.articulo) ;
 			INTO TABLE &fvarticulos
 
+
 		SELECT &fvlistasart
 		APPEND FROM &fvarticulos  
 		INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
@@ -8773,6 +8775,7 @@ IF vtmp_recalcular = .t. THEN
 		INDEX on STR(idlista)+'#'+ALLTRIM(articulo) TAG idlisarti
 		SELECT &fvlistasart
 		SET RELATION TO STR(idlistap)+'#'+ALLTRIM(articulo) INTO &fvlistasartp 
+
 
 
 
@@ -14769,7 +14772,7 @@ PARAMETERS p_ListaP
 		SELECT &p_ListaPA
 		GO TOP 
 
-		SELECT idlista, detallep, vigedesde, vigehasta, margenp, condvta, idlistap, actualiza,idlistah, articulo, ;
+		SELECT idlista, detallep, vigedesde, vigehasta, margenp, condvta, habilita, idlistap, actualiza,idlistah, articulo, ;
 			detalle, unidad, abrevia, codbarra, costoa, linea, detalinea, idsublinea, sublinea, ctrlstock, ocultar, stockmin, stocktot, ;
 			desc1, desc2, desc3,  desc4, desc5, moneda, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact ;
 		from &p_ListaPA INTO TABLE p_listaPACSV
