@@ -1,0 +1,45 @@
+-- ENTIDAD
+ALTER TABLE `estadosreg` ADD INDEX `tabla`(`tabla`), ADD INDEX `campo`(`campo`), ADD INDEX `id`(`id`);
+ALTER TABLE `facturas` ADD INDEX `entidad`(`entidad`), ADD INDEX `idcomproba`(`idcomproba`), ADD INDEX `idperiodo`(`idperiodo`);
+ALTER TABLE `recibos` ADD INDEX `entidad`(`entidad`), ADD INDEX `idcomproba`(`idcomproba`);
+ALTER TABLE `np` ADD INDEX `entidad`(`entidad`), ADD INDEX `idcomproba`(`idcomproba`);
+ALTER TABLE `cajaie` ADD INDEX `entidad`(`entidad`), ADD INDEX `idcomproba`(`idcomproba`);
+ALTER TABLE `factuprove` ADD INDEX `entidad`(`entidad`), ADD INDEX `idcomproba`(`idcomproba`), ADD INDEX `idtipocompro`(`idtipocompro`); 
+ALTER TABLE `pagosprov` ADD INDEX `entidad`(`entidad`), ADD INDEX `idcomproba`(`idcomproba`);
+ALTER TABLE `presupu` ADD INDEX `entidad`(`entidad`), ADD INDEX `idcomproba`(`idcomproba`);
+ALTER TABLE `ajustestockp` ADD INDEX `entidad`(`entidad`), ADD INDEX `idcomproba`(`idcomproba`);
+ALTER TABLE `oc` ADD INDEX `entidad`(`entidad`),  ADD INDEX `idcomproba`(`idcomproba`);;
+
+--IDASIENTO
+ALTER TABLE `asientosg` ADD INDEX `idasiento`(`idasiento`);
+ALTER TABLE `asientoscompro` ADD INDEX `idasiento`(`idasiento`), ADD INDEX `tabla`(`tabla`), ADD INDEX `idregicomp`(`idregicomp`);
+
+-- IDCUENTA 
+ALTER TABLE `detallecobros` ADD INDEX `idcomproba`(`idcomproba`), ADD INDEX `idregistro`(`idregistro`), ADD INDEX `idcuenta`(`idcuenta`), ADD INDEX `idtipopago`(`idtipopago`);
+
+ALTER TABLE `detallepagos` ADD INDEX `idcomproba`(`idcomproba`), ADD INDEX `idregistro`(`idregistro`), ADD INDEX `idcuenta`(`idcuenta`), ADD INDEX `idtipopago`(`idtipopago`);
+
+-- ESTADOSREG
+ALTER TABLE `estadosreg` ADD INDEX `tabla`(`tabla`), ADD INDEX `campo`(`campo`), ADD INDEX `id`(`id`);
+ALTER TABLE `facturascta` ADD INDEX `idfactura`(`idfactura`);
+
+
+ALTER TABLE `cobros` ADD INDEX `idfactura`(`idfactura`), ADD INDEX `idcuotafc`(`idcuotafc`), ADD INDEX `idregipago`(`idregipago`), ADD INDEX `idcomproba`(`idcomproba`);
+ALTER TABLE `pagosprovfc` ADD INDEX `idpago`(`idpago`), ADD INDEX `idfactprove`(`idfactprove`), ADD INDEX `idcomproba`(`idcomproba`);
+
+ALTER TABLE `cobropagolink` ADD INDEX `tablacp`(`tablacp`), ADD INDEX `campocp`(`campocp`), ADD INDEX `registrocp`(`registrocp`), ADD INDEX `tabla`(`tabla`), ADD INDEX `idregistro`(`idregistro`), ADD INDEX `campo`(`campo`);
+
+ALTER TABLE `articostos` ADD INDEX `articulo`(`articulo`), ADD INDEX `fecha`(`fecha`);
+
+ALTER TABLE `ajustestockh` ADD INDEX `idajuste`(`idajuste`), ADD INDEX `articulo`(`articulo`), ADD INDEX `deposito`(`deposito`),ADD INDEX `idtipomov`(`idtipomov`);
+
+ALTER TABLE `listaprecioh` ADD INDEX `idlista`(`idlista`);
+ALTER TABLE `listapreciop` ADD INDEX `idlistap`(`idlistap`);
+ALTER TABLE `listaprecioc` ADD INDEX `idlista`(`idlista`);
+
+
+ALTER TABLE`r_listaprea` ADD COLUMN `habilita` CHAR(1) NOT NULL AFTER `fechaact`;
+
+ALTER TABLE `articulosf` ADD INDEX `articulo`(`articulo`);
+
+

@@ -8426,6 +8426,9 @@ FUNCTION obtenerCorreos
 * Retorno: Lista de Emails separados por ';'
 *#/----------------------------------------
 
+	IF TYPE("pIdEntidad")='C' THEN 
+		pIdEntidad = INT(VAL(pIdEntidad))
+	ENDIF 
 	
 	v_retorno	= ""
 	
@@ -8440,7 +8443,6 @@ FUNCTION obtenerCorreos
 	
 	sqlmatriz(1)=" select apellido,nombre, email from entidades where entidad = "+ALLTRIM(STR(v_identidad))
 
-
 	verror=sqlrun(vconeccionM,"entidades_sql_uti")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los correos de las entidades",0+48+0,"Error")
@@ -8453,23 +8455,20 @@ FUNCTION obtenerCorreos
 	
 	SELECT entidades_sql_uti
 	GO TOP 
-
-		v_email1	= entidades_sql_uti.email
-		v_email2	= entidades_sql_utiv.email2
+	v_email1	= entidades_sql_uti.email
+	v_retorno	= v_email1
 			
-		IF EMPTY(v_email2)
-			v_retorno	= v_email1
-		ELSE
-			IF EMPTY(v_email1)
-				v_retorno	= v_email2
-			ELSE
-				v_retorno	= v_email1+";"+v_email2
-			ENDIF 
-		ENDIF  
-			
-		
-		
-		return v_retorno
+*!*			IF EMPTY(v_email2)
+*!*				v_retorno	= v_email1
+*!*			ELSE
+*!*				IF EMPTY(v_email1)
+*!*					v_retorno	= v_email2
+*!*				ELSE
+*!*					v_retorno	= v_email1+";"+v_email2
+*!*				ENDIF 
+*!*			ENDIF  
+	USE IN entidades_sql_uti			
+	return v_retorno
 		
 		
 ENDFUNC 
@@ -8743,10 +8742,10 @@ IF vtmp_recalcular = .t. THEN
 		fvarticulos = 'articulos'+vtmp 
 
 
-		SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta, p.habilita, p.idlistap, p.actualiza, l.idlistah, ;  
+		SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta,  p.idlistap, p.actualiza, l.idlistah, ;  
 			a.articulo, SUBSTR(a.detalle+SPACE(200),1,200) as detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea,a.idsublinea,a.sublinea, a.ctrlstock, a.ocultar, ;
 			a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.moneda, ;
-			a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact ;
+			a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact, p.habilita ;
 		 	FROM &fvlistaprecioh_sql l ;
 			LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
 			LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
@@ -14772,9 +14771,9 @@ PARAMETERS p_ListaP
 		SELECT &p_ListaPA
 		GO TOP 
 
-		SELECT idlista, detallep, vigedesde, vigehasta, margenp, condvta, habilita, idlistap, actualiza,idlistah, articulo, ;
+		SELECT idlista, detallep, vigedesde, vigehasta, margenp, condvta,  idlistap, actualiza,idlistah, articulo, ;
 			detalle, unidad, abrevia, codbarra, costoa, linea, detalinea, idsublinea, sublinea, ctrlstock, ocultar, stockmin, stocktot, ;
-			desc1, desc2, desc3,  desc4, desc5, moneda, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact ;
+			desc1, desc2, desc3,  desc4, desc5, moneda, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact, habilita ;
 		from &p_ListaPA INTO TABLE p_listaPACSV
 		
 		SELECT p_listaPACSV
