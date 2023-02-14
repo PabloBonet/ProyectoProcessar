@@ -7658,7 +7658,8 @@ PARAMETERS p_idpagoProv
 
 		SELECT pagoprov_sql_u
 		GO TOP 
-				
+		v_idcomproba = pagoprov_sql_u.idcomproba
+		
 		SELECT iddetap FROM pagoprov_sql_u WHERE ALLTRIM(tipopago) == "CUPONES" OR ALLTRIM(tipopago) == "CHEQUE" INTO TABLE detallepagosid_sql
 		
 		v_iddetpagos =""
@@ -7694,6 +7695,40 @@ PARAMETERS p_idpagoProv
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del recibo",0+48+0,"Error")
 			ENDIF
 		
+		**** Obtengo las retenciones asociadas al comprobante ***
+		tipoPagoObjtmp 	= CREATEOBJECT('tipospagosclass')
+		v_idtipoPagRet = tipoPagoObjtmp.getTiposPagos("RETENCION")
+			
+*!*				
+
+*!*			sqlmatriz(1)= " select l.idlinkcomp, l.idcomprobaa as idcompag, l.idregistroa as idregpag, l.idcomprobab as idcompret, l.idregistrob as idregret, r.importe,d.idtipopago,d.idcuenta,h.detalle,d.iddetapago "
+*!*			sqlmatriz(2)= " from detallepagos d left join linkcompro l on d.idcomproba = l.idcomprobaa and d.idregistro = l.idregistroa "
+*!*			sqlmatriz(3)=" left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join impuretencionh h on r.idreten = h.idreten "
+*!*			sqlmatriz(4)=" where d.idcomproba = "+ALLTRIM(STR(v_idcomproba)) + " and d.idregistro = "+ALLTRIM(STR(v_idpagoProv))+" and  d.idtipopago= "+ALLTRIM(STR(v_idtipoPagRet ))+ " and l.idregistroa = " +ALLTRIM(STR(v_idpagoProv))
+*!*			sqlmatriz(5)=" group by idregret "
+*!*			
+
+			sqlmatriz(1)=" select * from detallepagos d left join linkcompro l on d.idcomproba = l.idcomprobaa and d.idregistro = l.idregistroa left join retenciones r on l.idregistrob = r.idreten and l.idcomprobab = r.idcomproba "
+			sqlmatriz(2)=" left join impuretencionh h on r.idreten = h.idreten "
+			sqlmatriz(3)=" where d.idcomproba = "+ALLTRIM(STR(v_idcomproba)) + " and d.idregistro = "+ALLTRIM(STR(v_idpagoProv))+" and  d.idtipopago= "+ALLTRIM(STR(v_idtipoPagRet ))
+			sqlmatriz(4)=" group by r.idreten "
+
+
+
+*!*				sqlmatriz(1)=" select * from impuretencionh where idreten in (select ifnull(r.idreten,0) as idreten  from detallepagos d left join linkcompro l on d.idcomproba = l.idcomprobaa and d.idregistro = l.idregistroa left join retenciones r on l.idregistrob = r.idreten and l.idcomprobab = r.idcomproba "
+*!*				sqlmatriz(2)=" where d.idcomproba = "+ALLTRIM(STR(v_idcomproba)) + " and d.idregistro = "+ALLTRIM(STR(v_idpagoProv))+" and  d.idtipopago= "+ALLTRIM(STR(v_idtipoPagRet ))
+*!*				sqlmatriz(3)=" group by idreten) "
+
+			verror=sqlrun(vconeccionF,"detRetImp_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de las retenciones a imprimir ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+			
+
+		SELECT detRetImp_sql
+		GO TOP 
+		
 		
 		SELECT che_cup_sql
 		GO top
@@ -7719,7 +7754,27 @@ PARAMETERS p_idpagoProv
 			
 			ENDIF 
 			
-		
+				
+*!*				IF ALLTRIM(v_tipopago) == "RETENCION"
+*!*					
+*!*					v_idtipopago = pagoprov_sql_u.idtipopago
+*!*					v_idcuenta	 = pagoprov_sql_u.idcuenta
+*!*					v_iddetapago = pagoprov_sql_u.iddetap
+*!*					
+*!*					MESSAGEBOX(v_idtipopago)
+*!*					MESSAGEBOX(v_idcuenta)
+*!*					MESSAGEBOX(v_iddetapago)
+*!*					
+*!*					SELECT detRetImp_sql
+*!*					GO TOP 
+*!*					LOCATE FOR idtipopago = v_idtipopago AND idcuenta = v_idcuenta AND iddetapago = v_iddetapago 
+*!*	*				LOCATE FOR idtipopago = v_idtipopago AND idcuenta = v_idcuenta AND importe = v_importe 
+*!*					
+*!*					
+*!*					SELECT pagoprov_sql_u
+*!*					replace tipopago WITH "RETENCION - "+ ALLTRIM(detRetImp_sql.detalle)
+*!*				ENDIF  
+*!*				
 		
 			SELECT pagoprov_sql_u
 			SKIP 1
@@ -7727,6 +7782,47 @@ PARAMETERS p_idpagoProv
 		ENDDO 
 		
 		
+			SELECT detRetImp_sql
+			GO TOP 
+			v_idtipopago = detRetImp_sql.idtipopago
+			DO WHILE NOT EOF()
+			
+				SELECT pagoprov_sql_u
+				GO TOP 
+				
+				LOCATE FOR idtipopago = v_idtipopago AND ALLTRIM(tipopago) == "RETENCION"
+				
+				SELECT pagoprov_sql_u 
+				
+				replace tipopago WITH "RETENCION - "+ ALLTRIM(detRetImp_sql.detalle)
+				
+				
+				SELECT detRetImp_sql
+				SKIP 1
+			ENDDO
+
+		
+		
+*!*			IF ALLTRIM(v_tipopago) == "RETENCION"
+*!*					
+*!*					v_idtipopago = pagoprov_sql_u.idtipopago
+*!*					v_idcuenta	 = pagoprov_sql_u.idcuenta
+*!*					v_iddetapago = pagoprov_sql_u.iddetap
+*!*					
+*!*					MESSAGEBOX(v_idtipopago)
+*!*					MESSAGEBOX(v_idcuenta)
+*!*					MESSAGEBOX(v_iddetapago)
+*!*					
+*!*					SELECT detRetImp_sql
+*!*					GO TOP 
+*!*					LOCATE FOR idtipopago = v_idtipopago AND idcuenta = v_idcuenta AND iddetapago = v_iddetapago 
+*!*	*				LOCATE FOR idtipopago = v_idtipopago AND idcuenta = v_idcuenta AND importe = v_importe 
+*!*					
+*!*					
+*!*					SELECT pagoprov_sql_u
+*!*					replace tipopago WITH "RETENCION - "+ ALLTRIM(detRetImp_sql.detalle)
+*!*				ENDIF  
+*!*			
 		
 		
 
