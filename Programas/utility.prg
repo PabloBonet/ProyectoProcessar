@@ -7707,9 +7707,10 @@ PARAMETERS p_idpagoProv
 *!*			sqlmatriz(4)=" where d.idcomproba = "+ALLTRIM(STR(v_idcomproba)) + " and d.idregistro = "+ALLTRIM(STR(v_idpagoProv))+" and  d.idtipopago= "+ALLTRIM(STR(v_idtipoPagRet ))+ " and l.idregistroa = " +ALLTRIM(STR(v_idpagoProv))
 *!*			sqlmatriz(5)=" group by idregret "
 *!*			
-
-			sqlmatriz(1)=" select * from detallepagos d left join linkcompro l on d.idcomproba = l.idcomprobaa and d.idregistro = l.idregistroa left join retenciones r on l.idregistrob = r.idreten and l.idcomprobab = r.idcomproba "
-			sqlmatriz(2)=" left join impuretencionh h on r.idreten = h.idreten "
+ 
+			*sqlmatriz(1)=" select * from detallepagos d left join linkcompro l on d.idcomproba = l.idcomprobaa and d.idregistro = l.idregistroa left join retenciones r on l.idregistrob = r.idreten and l.idcomprobab = r.idcomproba "
+			sqlmatriz(1)=" select d.*,ifnull(l.idlinkcomp,0) as idlinkcomp,l.idcomprobaa, l.idregistroa,l.idcomprobab, l.idregistrob, r.*, h.* from detallepagos d left join linkcompro l on d.idcomproba = l.idcomprobaa and d.idregistro = l.idregistroa "
+			sqlmatriz(2)=" left join retenciones r on l.idregistrob = r.idreten and l.idcomprobab = r.idcomproba left join impuretencionh h on r.idreten = h.idreten "
 			sqlmatriz(3)=" where d.idcomproba = "+ALLTRIM(STR(v_idcomproba)) + " and d.idregistro = "+ALLTRIM(STR(v_idpagoProv))+" and  d.idtipopago= "+ALLTRIM(STR(v_idtipoPagRet ))
 			sqlmatriz(4)=" group by r.idreten "
 
@@ -7719,12 +7720,39 @@ PARAMETERS p_idpagoProv
 *!*				sqlmatriz(2)=" where d.idcomproba = "+ALLTRIM(STR(v_idcomproba)) + " and d.idregistro = "+ALLTRIM(STR(v_idpagoProv))+" and  d.idtipopago= "+ALLTRIM(STR(v_idtipoPagRet ))
 *!*				sqlmatriz(3)=" group by idreten) "
 
-			verror=sqlrun(vconeccionF,"detRetImp_sql")
+			verror=sqlrun(vconeccionF,"detRetImp_sqla")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de las retenciones a imprimir ",0+48+0,"Error")
 			    RETURN 
 			ENDIF
 			
+
+
+
+		SELECT detRetImp_sqla
+			GO TOP 
+
+			SELECT * FROM detRetImp_sqla INTO TABLE detRetImp_sql
+			GO TOP 
+			
+			ALTER TABLE detRetImp_sql alter COLUMN idlinkcomp I
+			
+			v_conLinkc = .F.
+			
+			SELECT * from detRetImp_sql WHERE idlinkcomp = 0 INTO CURSOR sinLinkc
+			
+			SELECT sinLinkc
+			GO TOP 
+			
+			IF NOT EOF()
+				v_conLinkc  = .F.
+			ELSE
+				v_conLinkc = .T.
+			
+			ENDIF 
+
+
+
 
 		SELECT detRetImp_sql
 		GO TOP 
@@ -7781,7 +7809,7 @@ PARAMETERS p_idpagoProv
 		
 		ENDDO 
 		
-		
+		IF v_conLinkc = .T.
 			SELECT detRetImp_sql
 			GO TOP 
 			v_idtipopago = detRetImp_sql.idtipopago
@@ -7800,6 +7828,9 @@ PARAMETERS p_idpagoProv
 				SELECT detRetImp_sql
 				SKIP 1
 			ENDDO
+		ENDIF 
+			
+			
 
 		
 		
@@ -18935,42 +18966,7 @@ ENDIF
 		
 						*** Inserto los detalles de la retención ***
 						
-						DIMENSION lamatrizr3(7,2)
-
-						p_tipoope     = 'I'
-						p_condicion   = ''
-						v_titulo      = " EL ALTA "
-						p_tabla     = 'impuretencionh'
-						p_matriz    = 'lamatrizr3'
-						p_conexion  = vconeccionF
-
-
-						SELECT impuret_sql
-						v_idimpureth = 0
-						v_detalle = ALLTRIM(impuret_sql.detalle)
-						v_baseimpon = impuret_sql.baseimpon
-						v_idtipopago = impuret_sql.idtipopago
-						v_funcion = impuret_sql.funcion
-
-						lamatrizr3(1,1)='idimpuret'
-						lamatrizr3(1,2)=ALLTRIM(STR(v_idimpureth))
-						lamatrizr3(2,1)='detalle'
-						lamatrizr3(2,2)="'"+ALLTRIM(v_detalle)+"'"
-						lamatrizr3(3,1)='idafipesc'
-						lamatrizr3(3,2)=ALLTRIM(STR(v_idafipesc))
-						lamatrizr3(4,1)='baseimpon'
-						lamatrizr3(4,2)=ALLTRIM(STR(v_baseimpon,13,2))
-						lamatrizr3(5,1)='idtipopago'
-						lamatrizr3(5,2)=ALLTRIM(STR(v_idtipopago))
-						lamatrizr3(6,1)='funcion'
-						lamatrizr3(6,2)="'"+ALLTRIM(v_funcion)+"'"
-						lamatrizr3(7,1)='idreten'
-						lamatrizr3(7,2)=ALLTRIM(STR(v_idretenr))																		
 						
-						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-						    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar impuretencionh",0+48+0,"Error")
-							RETURN .f.
-						ENDIF 
 	
 						
 						SELECT afipescalas_sql
@@ -19017,6 +19013,65 @@ ENDIF
 							    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar impuretencionh",0+48+0,"Error")
 								RETURN .f.
 							ENDIF 
+							
+							
+							sqlmatriz(1)=" select last_insert_id() as maxid "
+							verror=sqlrun(vconeccionF,"ultimoId")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+								=abreycierracon(vconeccionF,"")	
+							    RETURN .F.
+							ENDIF 
+							SELECT ultimoId
+							GO TOP 
+							v_idcompro_Ultimo = VAL(ultimoId.maxid)
+							USE IN ultimoId
+
+							v_idafipesch = v_idcompro_Ultimo
+											
+							
+							
+							
+							
+							DIMENSION lamatrizr3(7,2)
+
+							p_tipoope     = 'I'
+							p_condicion   = ''
+							v_titulo      = " EL ALTA "
+							p_tabla     = 'impuretencionh'
+							p_matriz    = 'lamatrizr3'
+							p_conexion  = vconeccionF
+
+
+							SELECT impuret_sql
+							v_idimpureth = 0
+							v_detalle = ALLTRIM(impuret_sql.detalle)
+							v_baseimpon = impuret_sql.baseimpon
+							v_idtipopago = impuret_sql.idtipopago
+							v_funcion = impuret_sql.funcion
+
+							lamatrizr3(1,1)='idimpuret'
+							lamatrizr3(1,2)=ALLTRIM(STR(v_idimpureth))
+							lamatrizr3(2,1)='detalle'
+							lamatrizr3(2,2)="'"+ALLTRIM(v_detalle)+"'"
+							lamatrizr3(3,1)='idafipesc'
+							lamatrizr3(3,2)=ALLTRIM(STR(v_idafipesch))
+							lamatrizr3(4,1)='baseimpon'
+							lamatrizr3(4,2)=ALLTRIM(STR(v_baseimpon,13,2))
+							lamatrizr3(5,1)='idtipopago'
+							lamatrizr3(5,2)=ALLTRIM(STR(v_idtipopago))
+							lamatrizr3(6,1)='funcion'
+							lamatrizr3(6,2)="'"+ALLTRIM(v_funcion)+"'"
+							lamatrizr3(7,1)='idreten'
+							lamatrizr3(7,2)=ALLTRIM(STR(v_idretenr))																		
+							
+							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+							    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar impuretencionh",0+48+0,"Error")
+								RETURN .f.
+							ENDIF 
+							
+							
+							
 						
 						ELSE
 							RETURN .F.
