@@ -7894,6 +7894,7 @@ ENDFUNC
 
 
 
+
 FUNCTION getSectorUsu
 PARAMETERS p_usuario
 *#/----------------------------------------
@@ -8744,6 +8745,7 @@ ELSE
 ENDIF 
 
 
+
 IF vtmp_recalcular = .t. THEN 
 
 
@@ -8822,7 +8824,10 @@ IF vtmp_recalcular = .t. THEN
 			MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
 			RETURN 
 		ENDIF 
-		sqlmatriz(1)="select l.*, c.habilitado from listaprecioc l left join financiacion c on l.idfinancia = c.idfinancia  " 
+*!*			sqlmatriz(1)="select l.*, c.habilitado from listaprecioc l left join financiacion c on l.idfinancia = c.idfinancia  " 
+*!*			sqlmatriz(2)=" left join listapreciop p on l.
+		sqlmatriz(1)= " select l.*, c.habilitado, ifnull(p.habilita,'N') as habilita from listaprecioc l left join financiacion c on l.idfinancia = c.idfinancia"
+		sqlmatriz(2)= " left join listapreciop p on l.idlista = p.idlista"
 		verror=sqlrun(vconeccionF,fvlistaprecioc_sql)
 		IF verror=.f.
 			MESSAGEBOX("No se puede obtener Cuotas de Listas de Precios ",0+16,"Advertencia")
@@ -8836,7 +8841,6 @@ IF vtmp_recalcular = .t. THEN
 		fvlistasart = 'listasart'+vtmp 
 		fvlistasartp = 'listasartp'+vtmp 
 		fvarticulos = 'articulos'+vtmp 
-
 
 		SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta,  p.idlistap, p.actualiza, l.idlistah, ;  
 			a.articulo, SUBSTR(a.detalle+SPACE(200),1,200) as detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea,a.idsublinea,a.sublinea, a.ctrlstock, a.ocultar, ;
@@ -8922,7 +8926,7 @@ IF vtmp_recalcular = .t. THEN
 		USE IN maximolis
 		
 		SELECT * FROM &fvlistasart 			INTO TABLE syslistaprea	
-		SELECT idlistac, idlista, SUBSTR(detalle+SPACE(200),1,200) as detalle, cuotas, razon, idfinancia, habilitado   FROM &fvlistaprecioc_sql  	INTO TABLE syslistapreb	
+		SELECT idlistac, idlista, SUBSTR(detalle+SPACE(200),1,200) as detalle, cuotas, razon, idfinancia, habilitado, habilita   FROM &fvlistaprecioc_sql  	INTO TABLE syslistapreb	
 
 		USE IN &fvlistas  
 		USE IN &fvlistasart  
