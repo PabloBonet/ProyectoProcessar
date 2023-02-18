@@ -1256,6 +1256,8 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 	v_autorizar = .F.
 	v_objconfigurado = .F.
 	v_idcomproba	= p_idcomproba
+	v_error = .F.
+LOCAL loException AS Exception
 
 
 	*** COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO **
@@ -1382,14 +1384,24 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 			
 		IF p_nomsg = .f. THEN 
 *			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
-			MESSAGEBOX(loException.message,0+48+0,"Se produjo un Error")
+
+
+			
+			    
+      MESSAGEBOX(ALLTRIM(loException.MESSAGE),0+48+0,"Se produjo un Error")
+      
 		ENDIF 
+
 		v_autorizar = .F.
-		RETURN v_autorizar
+		v_error = .T.
+
 
 	ENDTRY	
-						
-						
+
+	IF v_error = .T.
+
+		RETURN .F.
+	ENDIF 
 					
 	*** Armo el archivo XML para mandarlo a autorizar ***
 
