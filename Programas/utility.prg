@@ -10285,6 +10285,13 @@ PARAMETERS pan_idcomproba, pan_idregistro
 ******************************************************
 *#/----------------------------------------
 
+	v_chAnular= CHAnularCMP (pan_idcomproba, pan_idregistro,0)
+	IF v_chAnular = .f. THEN 
+		MESSAGEBOX(" No se puede Anular el Comprobante,: "+CHR(13)+" Pertenece a otra Caja o se transfirieron los Valores o Cupones...",16,"Anular Comprobantes")
+		RETURN .f. 
+	ENDIF 
+
+
 	estadosRP	= CREATEOBJECT('estadosclass')
 	v_estadoRPAnulado = estadosRP.getIdestado("ANULADO")
 	RELEASE estadosRP
@@ -13956,6 +13963,29 @@ PARAMETERS pIdregistro
 *!*		RELEASE estadosRP
 *!*		
 	vconeccionAn = abreycierracon(0,_SYSSCHEMA)
+
+
+	** Obtengo el Comprobante para ver si puedo anularlo **
+	sqlmatriz(1)=" select * from cajaie  where idcajaie = "+ALLTRIM(STR(pIdregistro))
+	verror=sqlrun(vconeccionAn ,"cieAnul")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del comprobante a anular ",0+48+0,"Error")
+		=abreycierracon(vconeccionAn ,"")	
+	    RETURN -1  
+	ENDIF	 
+	SELECT cieAnul
+	GO TOP 	
+
+	vcieidcompro = cieAnul.idcomproba
+	vcieidcaja	 = cieAnul.idcajaie
+	USE IN cieAnul
+	v_CHAnular = CHAnularCMP ( vcieidcompro , vcieidcaja, vconeccionAn )
+	IF v_CHAnular = .f. THEN 
+		MESSAGEBOX(" No se puede Anular el Comprobante,: "+CHR(13)+" Pertenece a otra Caja o se transfirieron los Valores o Cupones...",16,"Anular Comprobantes")
+		=abreycierracon(vconeccionAn ,"")		
+	    RETURN -1  		
+	ENDIF 
+	
 	
 	* Busco el comprobante a anular para saber si anulo un recibo o un pago a proveedor 
 *!*		sqlmatriz(1)=" select c.*, t.opera, p.pventa from comprobantes c left join tipocompro t on c.idtipocompro = t.idtipocompro "
@@ -21188,4 +21218,194 @@ PARAMETERS pl_TipoGrupo, pl_NomGrupo, pl_conexion
 	
 	RETURN vlistaspregr
 	
+ENDFUNC 
+
+
+FUNCTION CHAnularCMP
+PARAMETERS pa_idcomproba, pa_id, pa_conexion
+*#/----------------------------------------
+* Chequea si el Comprobante recibido como parámetro se puede anular o no
+* Fundamentalmente para Recibos, Ordenes de Pago y Caja Ingreso los que solo se pueden anular desde la Caja en la que se Realizaron
+* la Función devuelve Verdadero o Falso segun sea que se puede o no Anular
+*#/----------------------------------------
+
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion> 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionAn = pa_conexion
+		ELSE 
+			vconeccionAn = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionAn = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+	** busca los Miembros del Grupo de Lista pasado como parámetro
+	sqlmatriz(1)=" select cm.tabla, cr.idcajareca  from cajarecaudah cr   "
+	sqlmatriz(2)=" left join comprobantes cm on cm.idcomproba = cr.idcomproba "
+	sqlmatriz(3)=" where cr.idcomproba = "+ALLTRIM(STR(pa_idcomproba))+" and idregicomp = "+ ALLTRIM(STR(pa_id))
+	verror=sqlrun(vconeccionAn ,"comproanu_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda Comprobante para chequear Anulación... ",0+48+0,"Error")
+		IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			= abreycierracon(vconeccionAn ,"")
+		ENDIF 	
+	    RETURN .f. 
+	ENDIF
+	SELECT comproanu_sql
+	GO TOP 
+	IF EOF() THEN 
+		IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			= abreycierracon(vconeccionAn ,"")
+		ENDIF 	
+		USE IN comproanu_sql 
+		RETURN .f.
+	ENDIF 
+	v_tablaanular = ALLTRIM(comproanu_sql.tabla)
+	v_cajacompro  = comproanu_sql.idcajareca
+	USE IN comproanu_sql 
+
+	v_puedeanular = .t.
+
+*!*			select  dc.iddetacobro, dc.idcuenta, dc.idtipopago, dc.importe as dcimporte, ifnull(cl.tabla,'') as tabla , ifnull(cl.idregistro,0) as clidregi,
+*!*			ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,'') as serie, ifnull(ch.numero,'') as numero,
+*!*			ifnull(cah.idcajareca,0) as idcajareca, ifnull(cah.usuario,0) as usuario,
+*!*			ifnull(umch.idcajareca,0) as idcajach, ifnull(umch.movimiento,'') as movimch,
+*!*			ifnull(umcu.idcajareca,0) as idcajacu, ifnull(umcu.movimiento,'') as movimcu,
+*!*			sum(ifnull(cah.idcajareca,0) - ifnull(umch.idcajareca,0) -ifnull(umcu.idcajareca,0))  as didcaja,
+*!*			r.idrecibo, r.entidad from recibos r
+*!*			left join detallecobros dc on r.idrecibo = dc.idregistro and r.idcomproba = dc.idcomproba
+*!*			left join cobropagolink cl on cl.tablacp = 'detallecobros' and cl.registrocp = dc.iddetacobro
+*!*			left join cheques ch on ch.idcheque = cl.idregistro and cl.tabla = 'cheques'
+*!*			left join cupones cu on cu.idcupon = cl.idregistro and cl.tabla = 'cupones'
+*!*			left join cajarecaudah cah on cah.idcomproba = r.idcomproba and cah.idregicomp = r.idrecibo
+*!*			left join ultimomovitpago umch on umch.tabla = 'cheques' and umch.idregistro = ch.idcheque
+*!*			left join ultimomovitpago umcu on umcu.tabla = 'cupones' and umcu.idregistro = cu.idcupon
+*!*			where r.idrecibo = 2009 and ( cl.tabla = 'cheques' or cl.tabla = 'cupones' ) group by r.idrecibo
+	
+	IF v_cajacompro <> _SYSCAJARECA THEN && no se puede anular porque es de otra caja 
+		v_puedeanular = .f.
+	ENDIF 
+
+	IF LOWER(ALLTRIM(v_tablaanular))=='recibos' AND v_puedeanular  THEN && control de anulacion para Recibos en la misma caja 
+	
+		
+		sqlmatriz(1)= " select  sum( ABS( ifnull(cah.idcajareca,0) - ifnull(umch.idcajareca,0) - ifnull(umcu.idcajareca,0) ) )  as difidcaja from recibos r "
+		sqlmatriz(2)= " left join detallecobros dc on r.idrecibo = dc.idregistro and r.idcomproba = dc.idcomproba "
+		sqlmatriz(3)= " left join cobropagolink cl on cl.tablacp = 'detallecobros' and cl.registrocp = dc.iddetacobro "
+		sqlmatriz(4)= " left join cheques ch on ch.idcheque = cl.idregistro and cl.tabla = 'cheques' "
+		sqlmatriz(5)= " left join cupones cu on cu.idcupon = cl.idregistro and cl.tabla = 'cupones' "
+		sqlmatriz(6)= " left join cajarecaudah cah on cah.idcomproba = r.idcomproba and cah.idregicomp = r.idrecibo "
+		sqlmatriz(7)= " left join ultimomovitpago umch on umch.tabla = 'cheques' and umch.idregistro = ch.idcheque "
+		sqlmatriz(8)= " left join ultimomovitpago umcu on umcu.tabla = 'cupones' and umcu.idregistro = cu.idcupon "
+		sqlmatriz(9)= " where r.idrecibo = "+ALLTRIM(STR(pa_id))+" and ( cl.tabla = 'cheques' or cl.tabla = 'cupones' ) group by r.idrecibo"
+
+		verror=sqlrun(vconeccionAn ,"anularcm_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de las condiciones para Anular... ",0+48+0,"Error")
+			IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+				= abreycierracon(vconeccionAn ,"")
+			ENDIF 	
+		    RETURN .f. 
+		ENDIF
+	ENDIF && fin de control de anulacion de recibos en la misma caja 
+	
+	
+
+	IF LOWER(ALLTRIM(v_tablaanular))=='pagosprov' AND v_puedeanular  THEN && control de anulacion para Pagos a Proveedores en la misma caja 
+	
+		sqlmatriz(1)= " select  sum( ABS( ifnull(cah.idcajareca,0) - ifnull(umch.idcajareca,0) - ifnull(umcu.idcajareca,0) ) )  as difidcaja from pagosprov r "
+		sqlmatriz(2)= " left join detallepagos dc on r.idpago = dc.idregistro and r.idcomproba = dc.idcomproba "
+		sqlmatriz(3)= " left join cobropagolink cl on cl.tablacp = 'detallepagos' and cl.registrocp = dc.iddetapago "
+		sqlmatriz(4)= " left join cheques ch on ch.idcheque = cl.idregistro and cl.tabla = 'cheques' "
+		sqlmatriz(5)= " left join cupones cu on cu.idcupon = cl.idregistro and cl.tabla = 'cupones' "
+		sqlmatriz(6)= " left join cajarecaudah cah on cah.idcomproba = r.idcomproba and cah.idregicomp = r.idpago "
+		sqlmatriz(7)= " left join ultimomovitpago umch on umch.tabla = 'cheques' and umch.idregistro = ch.idcheque "
+		sqlmatriz(8)= " left join ultimomovitpago umcu on umcu.tabla = 'cupones' and umcu.idregistro = cu.idcupon "
+		sqlmatriz(9)= " where r.idpago = "+ALLTRIM(STR(pa_id))+" and ( cl.tabla = 'cheques' or cl.tabla = 'cupones' ) group by r.idpago"
+
+		verror=sqlrun(vconeccionAn ,"anularcm_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de las condiciones para Anular... ",0+48+0,"Error")
+			IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+				= abreycierracon(vconeccionAn ,"")
+			ENDIF 	
+		    RETURN .f. 
+		ENDIF
+	ENDIF && fin de control de anulacion de Pagos a Proveedores en la misma caja 
+
+
+
+	IF LOWER(ALLTRIM(v_tablaanular))=='cajaie' AND v_puedeanular THEN && control de anulacion para Caja Ingreso y Caja Egreso 
+
+		** Busca El comprobante para ver si es un Caja Ingreso o Caja Egreso
+		sqlmatriz(1)=" select * from cajaie  "
+		sqlmatriz(2)=" where idcomproba = "+ALLTRIM(STR(pa_idcomproba))
+		verror=sqlrun(vconeccionAn ,"cajaieanu_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Comprobante de cajaie Para chequear Anulación... ",0+48+0,"Error")
+			IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+				= abreycierracon(vconeccionAn ,"")
+			ENDIF 	
+		    RETURN .f. 
+		ENDIF
+		SELECT cajaieanu_sql
+		GO TOP 
+		IF EOF() THEN 
+			IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+				= abreycierracon(vconeccionAn ,"")
+			ENDIF 	
+			USE IN cajaieanu_sql
+			RETURN .f.
+		ENDIF 
+		SELECT cajaieanu_sql
+		v_detalle_anu = ALLTRIM(cajaieanu_sql.detallecp)
+		v_iddetalle_anu = IIF(ALLTRIM(v_detalle_anu)=='detallecobros','iddetacobro','iddetapago')
+		USE IN cajaieanu_sql
+	
+	
+		sqlmatriz(1)= " select sum( ABS( ifnull(cah.idcajareca,0) - ifnull(umch.idcajareca,0) - ifnull(umcu.idcajareca,0) ) )  as difidcaja from cajaie r "
+		sqlmatriz(2)= " left join "+v_detalle_anu+" dc on r.idcajaie = dc.idregistro and r.idcomproba = dc.idcomproba "
+		sqlmatriz(3)= " left join cobropagolink cl on cl.tablacp = '"+v_detalle_anu+"' and cl.registrocp = "+v_iddetalle_anu+" "
+		sqlmatriz(4)= " left join cheques ch on ch.idcheque = cl.idregistro and cl.tabla = 'cheques' "
+		sqlmatriz(5)= " left join cupones cu on cu.idcupon = cl.idregistro and cl.tabla = 'cupones' "
+		sqlmatriz(6)= " left join cajarecaudah cah on cah.idcomproba = r.idcomproba and cah.idregicomp = r.idcajaie "
+		sqlmatriz(7)= " left join ultimomovitpago umch on umch.tabla = 'cheques' and umch.idregistro = ch.idcheque "
+		sqlmatriz(8)= " left join ultimomovitpago umcu on umcu.tabla = 'cupones' and umcu.idregistro = cu.idcupon "
+		sqlmatriz(9)= " where r.idcajaie = "+ALLTRIM(STR(pa_id))+" and ( cl.tabla = 'cheques' or cl.tabla = 'cupones' ) group by r.idcajaie"
+
+		verror=sqlrun(vconeccionAn ,"anularcm_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de las condiciones para Anular... ",0+48+0,"Error")
+			IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+				= abreycierracon(vconeccionAn ,"")
+			ENDIF 	
+		    RETURN .f. 
+		ENDIF
+		
+	ENDIF && fin de control de anulacion de Caja Ingreso en la misma caja 
+
+
+
+	
+	if	v_puedeanular AND USED("anularcm_sql")= .T.  THEN 
+		SELECT anularcm_sql
+		GO TOP 
+		IF !EOF() THEN 
+			v_dife 		= anularcm_sql.difidcaja
+			IF TYPE("v_dife")="C" THEN 
+				v_dife = VAL(v_dife)
+			ENDIF 
+			IF v_dife <> 0 THEN  && controla que los cupones y cheques esten en la caja y el comprobante sea de la caja
+				v_puedeanular = .f. 
+			ENDIF 
+		ENDIF 
+		USE IN anularcm_sql
+	ENDIF 
+	
+	IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		= abreycierracon(vconeccionAn ,"")
+	ENDIF 	
+
+	
+	RETURN v_puedeanular 
 ENDFUNC 
