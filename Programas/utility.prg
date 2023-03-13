@@ -13388,8 +13388,9 @@ PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe
 			RETURN .f.
 		ENDIF 
 		USE IN tablav_sql 
-				v_vinculocomp_numero 	 = maxnumerocom(v_vinculocomp_idcomproba ,v_vinculocomp_pventa ,1)
-
+		v_vinculocomp_numero 	 = maxnumerocom(v_vinculocomp_idcomproba ,v_vinculocomp_pventa ,1)
+		v_comproa= ALLTRIM(SUBSTR((v_comproa+SPACE(200)),1,200))
+		v_comprob= ALLTRIM(SUBSTR((v_comprob+SPACE(200)),1,200))
 	
 		DIMENSION lamatrizV(18,2)
 				

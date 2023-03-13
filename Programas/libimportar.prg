@@ -137,7 +137,6 @@ FUNCTION CargaHuawei
 			endif
 		endif
 
-		MESSAGEBOX(_syspulso)
 		
 		V_archillamadas=HWDETBANDA(p_archivo, _SYSPULSO)
 	
@@ -4972,3 +4971,115 @@ PARAMETERS p_idimportap
 	=abreycierracon(vconeccionF,"")	
 	
 ENDFUNC 
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION ViewExternas
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Crea Vistas de Consultas con Tablas pertenecientes a Schemmas Externos  
+*/ Genera un vinculo a tablas de otros esquemas para utilizarlas como Vistas dentro del Schemma Actual
+*/ Formato archivo csv serparado por ; ( schemma c(50) , tabla c(50), vista c(50)), si vista esta vacio entonces
+*/ crea la vista en el schemma con el nombre de la tabla 			
+*#/----------------------------------------
+
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Ejecuta la Creación de las Vistas a partir del archivo recibido -
+		p_archivo = alltrim(p_archivo)
+
+
+		if file(".\vistas.dbf") THEN
+			if used("vistas") then
+				sele vistas
+				use
+			endif
+			DELETE FILE .\vistas.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\vistas FREE ( schemma c(50) , tabla c(50), vista c(50))
+		SELE vistas
+		APPEND FROM &p_archivo TYPE CSV 
+		GO TOP 
+		IF EOF() THEN 
+			USE 
+			RETURN 0
+		ENDIF 
+		v_validar = .t.
+		DO WHILE !EOF() AND v_validar = .t.  
+			IF ALLTRIM(vistas.schemma)==ALLTRIM(_SYSSCHEMA) OR EMPTY(ALLTRIM(tabla))THEN 
+				v_validar = .f.
+			ENDIF 
+			SKIP 
+		ENDDO 
+		
+		IF v_validar = .f. THEN 		
+			MESSAGEBOX("No se Pueden Aplicar las Modificaciones Solicitadas... Error en el Archivo de ingreso o BD equivocada")		
+			RETURN 0
+		ENDIF 
+
+		* Generacion de las Vistas 
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		SELECT vistas 
+		GO TOP 
+		WAIT windows "Procesando Creación de Vistas Remotas..." NOWAIT 
+		DO WHILE !EOF() 
+			vschem =  ALLTRIM(vistas.schemma)
+			vtabla = ALLTRIM(vistas.tabla)
+			vvista = LOWER(IIF(EMPTY(ALLTRIM(vistas.vista)),ALLTRIM(vistas.tabla),ALLTRIM(vistas.vista)))
+			veje_DropTable = " DROP TABLE IF EXISTS "+ALLTRIM(vvista)
+			veje_DropView  = " DROP VIEW IF EXISTS  "+ALLTRIM(vvista)
+			veje_CreaView  = " CREATE VIEW "+ALLTRIM(vvista)+" AS SELECT * FROM "+ALLTRIM(vschem)+"."+ALLTRIM(vtabla)
+
+			sqlmatriz(1)= veje_DropTable 
+			verror=sqlrun(vconeccionF,"drop_tabla")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de la Tabla local para vista... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+			sqlmatriz(1)= veje_DropView
+			verror=sqlrun(vconeccionF,"drop_view")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de la Vista local para vista... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+
+			sqlmatriz(1)= veje_CreaView 
+			verror=sqlrun(vconeccionF,"crea_tabla")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Creación de la Vista ... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+
+			SKIP 
+		ENDDO 
+
+		=abreycierracon(vconeccionF,"")	
+		WAIT CLEAR 
+
+	ENDIF 	&& 1- Generación de Vistas  -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	MESSAGEBOX("Proceso de Creación de Vistas Remotas Finalizado ...",64,"Creación de Vistas Remotas")
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
