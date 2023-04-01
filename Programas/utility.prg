@@ -6954,6 +6954,8 @@ SELECT * FROM tablacampo INTO TABLE tablacampo00
 	 SELECT AstoFinalA0 
 	 replace ALL debe WITH IIF(deoha >= 0, deoha, 0.00 ), haber WITH IIF(deoha <= 0, -deoha, 0.00 )
 	 SELECT  idastomode, codigocta, debe, haber, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo, nombrecta FROM AstoFinalA0 INTO TABLE &vpar_tablaret 
+	
+	 SELECT &vpar_tablaret 
 	 
 	 COPY TO &vpar_tablaret DELIMITED WITH ""
 	
@@ -6965,8 +6967,14 @@ SELECT * FROM tablacampo INTO TABLE tablacampo00
 	 USE IN AstoFinalA
 	 USE IN tablacuenta
 	 USE IN tablacampo
+
+	 SELECT &vpar_tablaret 
+	 GO TOP 
+	 IF !EOF() THEN 
+	 	var_retorno = vpar_tablaret 	 
+	 ENDIF 
 	 USE IN &vpar_tablaret 
-	 var_retorno = vpar_tablaret 	 
+*	 var_retorno = vpar_tablaret 	 
 	 RETURN var_retorno 
 	
 ENDFUNC 
@@ -9962,8 +9970,7 @@ PARAMETERS pcont_tabla, pcont_id, pcont_conex
 						ret_idasiento = -2
 				ELSE 
 
-							
-					rettabla=GenAstoContable(para_modelo, para_tabla, para_registro,para_filtro,1,1,para_tablaret)
+					rettabla=GenAstoContable(para_modelo, para_tabla, para_registro,para_filtro,1,1,para_tablaret)					
 					IF !EMPTY(rettabla) THEN 
 						var_grabo = IncerAstoContable(rettabla) && Graba el Asiento recibido como parametro 
 						ret_idasiento = var_grabo
@@ -9982,6 +9989,7 @@ PARAMETERS pcont_tabla, pcont_id, pcont_conex
 
 	IF (_SYSCONTABLE = 1 OR _SYSCONTABLE = 3) AND ret_idasiento = 0 THEN 
 		ret_idasiento = -1
+		
 	ENDIF 
 
 	RETURN ret_idasiento
