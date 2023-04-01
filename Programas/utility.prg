@@ -18271,6 +18271,7 @@ PARAMETERS P_libreriasprg
 	v_filas=ALEN(arrayprg,1)
 	FOR i = 1 TO v_filas 
 		v_libreria = ALLTRIM(UPPER(arrayprg(i,1)))
+		v_funcproc = ""
 		IF ATC(ALLTRIM(UPPER(arrayprg(i,1))),ALLTRIM(UPPER(P_libreriasprg)))>0 THEN 
 
 			PUNTERO = FOPEN(ALLTRIM(UPPER(arrayprg(i,1))),0)
@@ -18283,6 +18284,9 @@ PARAMETERS P_libreriasprg
 						v_comentario = !v_comentario
 						v_comentlinea = 0
 					ENDIF 
+					IF SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'        '),1,8)="FUNCTION" OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'         '),1,9)="PROCEDURE" THEN 
+						v_funcproc = ALLTRIM(v_LineaLeida)
+					ENDIF 
 					IF SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'        '),1,8)="FUNCTION" OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'         '),1,9)="PROCEDURE" OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'         '),1,9)="PARAMET" OR v_comentario ;
 						OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'   '),1,3)="*#/" THEN 
 						IF SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'        '),1,8)="FUNCTION" OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'         '),1,9)="PROCEDURE"  OR SUBSTR((UPPER(ALLTRIM(v_LineaLeida))+'         '),1,7)="PARAMET" THEN 
@@ -18293,10 +18297,10 @@ PARAMETERS P_libreriasprg
 							vpyc = ';'
 						ENDIF 
 						IF v_comentario = .f. THEN 
-							=FPUTS(H,ALLTRIM(v_libreria)+vpyc+v_LineaLeida)
+							=FPUTS(H,ALLTRIM(v_libreria)+';'+v_funcproc+vpyc+v_LineaLeida)
 						ENDIF 
 						IF v_comentario = .t. AND v_comentlinea <= 30 THEN 
-							=FPUTS(H,ALLTRIM(v_libreria)+vpyc+v_LineaLeida)
+							=FPUTS(H,ALLTRIM(v_libreria)+';'+v_funcproc+vpyc+v_LineaLeida)
 							v_comentlinea = v_comentlinea + 1
 						ENDIF 
 					ENDIF
