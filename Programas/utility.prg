@@ -18745,25 +18745,6 @@ v_importeTot = 0.00
 			RETURN -1
 		endif
 	
-
-*!*		 v_sentenciaCrea = "create table "+ALLTRIM(p_nomTabRes)+" (idimpuret I,importeTot Y,impARet Y,totpagmes Y,totRetmes)"
-*!*		 &v_sentenciaCrea
-*!*		 
-*!*		SELECT entidadret_sql
-*!*		GO TOP 
-*!*		
-*!*		DO WHILE NOT EOF()
-*!*			
-*!*			v_idimpuret = entidadret_sql.idimpuret
-*!*				
-*!*			
-*!*			INSERT INTO &p_nomTabRes VALUES (v_idimpuret,v_importeTot,0.00,0.00,0.00)
-*!*			
-*!*			SELECT entidadret_sql
-*!*			
-*!*			SKIP 1
-
-*!*		ENDDO
 		USE IN entidadret_sql
 
 
@@ -19020,10 +19001,7 @@ ENDIF
 					IF NOT EOF()
 		
 						*** Inserto los detalles de la retención ***
-						
-						
-	
-						
+												
 						SELECT afipescalas_sql
 						GO TOP 
 						IF NOT EOF()
@@ -19084,11 +19062,8 @@ ENDIF
 
 							v_idafipesch = v_idcompro_Ultimo
 											
-							
-							
-							
-							
-							DIMENSION lamatrizr3(7,2)
+														
+							DIMENSION lamatrizr3(8,2)
 
 							p_tipoope     = 'I'
 							p_condicion   = ''
@@ -19104,6 +19079,10 @@ ENDIF
 							v_baseimpon = impuret_sql.baseimpon
 							v_idtipopago = impuret_sql.idtipopago
 							v_funcion = impuret_sql.funcion
+							
+							v_regDetalle = impuret_sql.detalle
+							v_regimen = IIF(ISNULL(impuret_sql.regimen),0,impuret_sql.regimen)
+							
 
 							lamatrizr3(1,1)='idimpuret'
 							lamatrizr3(1,2)=ALLTRIM(STR(v_idimpureth))
@@ -19118,7 +19097,9 @@ ENDIF
 							lamatrizr3(6,1)='funcion'
 							lamatrizr3(6,2)="'"+ALLTRIM(v_funcion)+"'"
 							lamatrizr3(7,1)='idreten'
-							lamatrizr3(7,2)=ALLTRIM(STR(v_idretenr))																		
+							lamatrizr3(7,2)=ALLTRIM(STR(v_idretenr))	
+							lamatrizr3(8,1)='regimen'
+							lamatrizr3(8,2)=ALLTRIM(STR(v_regimen))																	
 							
 							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 							    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar impuretencionh",0+48+0,"Error")
@@ -21421,4 +21402,274 @@ PARAMETERS pa_idcomproba, pa_id, pa_conexion
 
 	
 	RETURN v_puedeanular 
+ENDFUNC 
+
+
+FUNCTION exportarRetenciones
+PARAMETERS p_idcomproba,p_desde,p_hasta
+*#/----------------------------------------
+* Función para exportar las retenciones 
+* Parámetros: 	p_idcomproba: ID del comprobante de retención, si el parámetro es CERO -> busca para todos los comprobantes
+*				p_desde: Fecha de Inicio del periodo de búsqueda
+*				p_hasta: Fecha de Fin del periodo de búsqueda
+* La Función recibe el id del comprobante para el cuál se va a buscar las retenciones y un periodo de búsqueda.
+* Retorna true si se exporta correctamente, falso en otro caso
+*#/----------------------------------------
+
+	v_retorno = .T.
+	
+	** Valido parametros **
+	
+	IF TYPE('p_idcomproba') <> 'N'
+		RETURN .f.
+	ENDIF 
+	
+	IF TYPE('P_desde') <> 'C' OR TYPE('p_hasta') <> 'C'
+		RETURN .F.
+	ENDIF 
+	
+	IF P_idcomproba < 0
+		RETURN .F.
+	ENDIF 
+	
+	IF p_desde > p_hasta
+		RETURN .F.
+	ENDIF 
+		
+		
+	create table RetenAfip FREE (CodComp c(2), FecComp c(10), NroComp c(16), ImpComp c(16), ;
+                           CodImp c(4), Regimen C(3), Operacion c(1), BaseCalc c(14), ;
+                           Fecha C(10), CodCondi c(2), CodSujSus c(1), Monto C(14), PorceExcl c(6), ;
+                           FecBoletin c(10), Tipoiden C(2), Identi C(20), NroCertOri c(14), ;
+                           denoorde c(30), acrecenta c(1), cuitpaisre c(11), cuitorde c(11) )
+                                        
+                                        
+	** Me conecto a la base de datos **
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+	** Traigo las retenciones de la BD **	
+*	SELECT * FROM retenciones r left join linkcompro l on r.idcomproba = l.idcomprobab and r.idreten = l.idregistrob left join pagosprov p on l.idcomprobaa = p.idcomproba and l.idregistroa = p.idpago;
+
+	
+	sqlmatriz(1)= " select p.fecha, p.numero,p.importe as imp_total,h.regimen, h.regimen,r.sujarete,r.fecha as fecharet,r.importe as importeret,e.cuit " 
+	sqlmatriz(2)= " from retenciones r left join linkcompro l on r.idcomproba = l.idcomprobab and r.idreten = l.idregistrob "
+	sqlmatriz(3)= " left join pagosprov p on l.idcomprobaa = p.idcomproba and l.idregistroa = p.idpago left join entidades e on p.entidad = e.entidad "
+	sqlmatriz(4)= "  left join impuretencionh h on r.idreten = h.idreten where r.fecha >= '"+ALLTRIM(P_desde)+"' and r.fecha <= '"+ALLTRIM(P_hasta)+"' "
+	
+	IF p_idcomproba > 0
+		sqlmatriz(5)=" and r.idcomproba = "+ALLTRIM(STR(p_idcomproba))
+	ELSE
+		sqlmatriz(5)=" "	
+	ENDIF 
+	
+		verror=sqlrun(vconeccionF,"retenciones_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los datos de las Retenciones",0+48+0,"Error")
+				= abreycierracon(vconeccionF,"")
+		    RETURN .f. 
+		ENDIF
+		
+
+
+	**	 Blanqueo la tabla por si tiene datos **
+	ZAP IN RetenAfip
+	
+	
+	** Agrego los datos a la tabla temporal, que luego se exportará como archivo **
+	SELECT retenciones_sql
+	GO TOP 
+	
+	DO WHILE NOT EOF()
+	
+		**** Campos del archivo ****
+		* Código de comprobante
+			V_CodComp    = '06' && Orden de Pago	
+		* Fecha de emisión del comprobante
+			V_FecComp    = SUBSTR(retenciones_sql.fecha,7,2)+"/"+SUBSTR(retenciones_sql.fecha,5,2)+"/"+SUBSTR(retenciones_sql.fecha,1,4)
+		* Nro. de comprobante
+			V_NroComp    = ALLTRIM(STRTRAN(STR(retenciones_sql.numero,16)," ","0"))
+		* Importe comprobante
+			V_ImpComp    = strtran(strtran(str(retenciones_sql.imp_total,16,2),'.',',')," ","0")
+		* Código de impuesto
+			V_CodImp     = '0217' && Impuesto a las ganancias
+		* Código de régimen
+			V_Regimen    = ALLTRIM(STRTRAN(STR(retenciones_sql.regimen,3)," ","0"))
+		* Operación
+			V_Operacion  = '1' && 1: Retención
+		* Base de cálculo
+			V_BaseCalc   = strtran(strtran(str(retenciones_sql.sujarete,14,2),'.',',')," ","0")
+		* Fecha de emisión de la retención
+			V_Fecha      = SUBSTR(retenciones_sql.fecharet,7,2)+"/"+SUBSTR(retenciones_sql.fecharet,5,2)+"/"+SUBSTR(retenciones_sql.fecharet,1,4)
+		* Código de condición
+			V_CodCondi   = '01' && 1: Inscripto
+		* Retención aplicada a sujetos suspendidos según; 0: ninguno, 1: articulo 40 inciso A, articulo 40 inciso B
+		    V_CodSujSus  = '0'
+		* Importe de Retención
+		    V_Monto      = strtran(strtran(str(retenciones_sql.importeret,14,2),'.',',')," ","0")
+		* Porcentaje de Exlusión
+		    V_PorceExcl  = '000,00'
+		* Fecha de emisión del boletín
+		    V_FecBoletin = '          '
+		* Tipo de documento
+		    V_Tipoiden   = '80' && 80: CUIT
+		* Número de documento
+		    V_Identi     = strtran(retenciones_sql.cuit,"-","")+space(9)
+		* SOLO PARA EL CASO DE BENEFICIARIOS DEL EXTERIOS, además, podrán importarse los siguientes registros:
+		* Número de certificado original
+			V_NroCertOri = '00000000000000'
+		* Denominación del ordenante
+			V_denoorde   = space(30)
+		* Acrecentamiento
+			V_acrecenta  = '0'
+		* CUIT del pais del retenido
+			V_cuitpaisre = space(11)
+		* CUIT del ordenante
+			V_cuitorde   = space(11)	
+					    
+					   
+					    
+					   
+							
+		IF retenciones_sql.importeret> 0 THEN 
+			* grabo en el Archivo Temporal para SIAP
+			INSERT INTO RetenAfip(CodComp,FecComp,NroComp,ImpComp,CodImp,Regimen,Operacion,BaseCalc,Fecha,CodCondi,CodSujSus,;
+			                      Monto,PorceExcl,FecBoletin,Tipoiden,Identi,NroCertOri,denoorde,acrecenta,cuitpaisre,cuitorde);
+			            VALUES (V_CodComp,V_FecComp,V_NroComp,V_ImpComp,V_CodImp,V_Regimen,V_Operacion,V_BaseCalc,V_Fecha,V_CodCondi,;
+			                    V_CodSujSus,V_Monto,V_PorceExcl,V_FecBoletin,V_Tipoiden,V_Identi,V_NroCertOri,V_denoorde,V_acrecenta,;
+			                    V_cuitpaisre,V_cuitorde)
+		ENDIF  
+	
+		SELECT retenciones_sql
+		SKIP 1
+
+	ENDDO
+	
+	
+		** Exporto la tabla como archivo TXT **
+	
+		SET DEFAULT TO C:\
+		v_archivo=PUTFILE('Guardar Archivo para SIAP','Retencion_GANANCIAS','TxT')
+		IF EMPTY(v_archivo) THEN 
+			MESSAGEBOX("NO SE HA ELEGIDO Ningún Nombre para Guardar el Archivo de Importación.",0+48+0,"Aviso del Sistema")
+			RETURN .F.
+		ELSE
+			SELECT RetenAfip
+			GO TOP 
+			COPY TO (v_archivo) sdf
+			MESSAGEBOX("El Archivo de Importación se ha Generado con Éxito.",0+64+0,"Aviso del Sistema")
+			
+		ENDIF 
+	SET DEFAULT TO &_SYSESTACION 
+
+	
+	
+*!*		
+*!*				v_fecha      = CTOD( SUBSTR(percep.fecha,7,2)+"/"+SUBSTR(percep.fecha,5,2)+"/"+SUBSTR(percep.fecha,1,4) )				
+*!*						v_compro     = "RE   0001-"+STRTRAN(STR(percep.numero,9,0)," ","0")				
+*!*						v_alicuota   = percep.alicuota
+*!*						v_montoimpo  = percep.sujaperc
+*!*						v_basecalc   = percep.sujaperc
+*!*						v_percepcion = percep.impperc
+*!*						v_cuit       = percep.cuit
+*!*						v_nombre     = percep.nomb_fanta
+*!*						v_inscrip    = ALLTRIM(STRTRAN(percep.nroinscrip2,'-',''))
+*!*						v_domicilio  = percep.domi_fanta
+*!*						v_cp         = percep.cp_fanta
+*!*						
+*!*						SELECT localidad
+*!*						GO TOP 
+*!*						LOCATE FOR localidad = percep.loc_fanta
+*!*						IF FOUND() THEN 
+*!*							v_localidad = ALLTRIM(localidad.nombre)
+*!*						ELSE
+*!*							v_localidad = ''
+*!*						ENDIF 
+*!*						
+*!*						SELECT provincias
+*!*						GO top
+*!*						LOCATE FOR provincia = percep.prov_fanta
+*!*						IF FOUND() THEN 
+*!*							v_Provincia  = ALLTRIM(provincias.nombre)
+*!*						ELSE 
+*!*							v_Provincia  = ''
+*!*						ENDIF 
+*!*						v_iva       = percep.iva
+*!*						v_i_iva_g   = 0
+*!*						v_imp_total = percep.imp_total
+*!*						
+*!*						* grabo en el Archivo Temporal para Listado
+*!*						INSERT INTO TmpReten (fecha,compro,alicuota,montoimpo,basecalc, percepcion,cuit,nombre,inscrip,;
+*!*						                       domicilio,cp,localidad,Provincia,iva,i_iva_g,imp_total);
+*!*							VALUES (v_fecha,v_compro,v_alicuota,v_montoimpo,v_basecalc,v_percepcion,v_cuit,v_nombre,v_inscrip,;
+*!*							        v_domicilio,v_cp,v_localidad,v_Provincia,v_iva,v_i_iva_g,v_imp_total)		
+*!*		
+
+
+
+*!*					SELECT TmpReten
+*!*					SET ORDER TO fecha
+*!*					GO TOP 
+*!*					IF EOF() AND RECNO()=1
+*!*						MESSAGEBOX("No Existen Retenciones de GANANCIAS con los parámetros de búsqueda ingresados",0+48+0,"Aviso del Sistema")
+*!*						RETURN 
+*!*					ENDIF 
+
+*!*					ZAP IN RetenAfip
+
+*!*					SELECT TmpReten
+*!*					SET ORDER TO fecha
+*!*					GO TOP 
+*!*					DO WHILE NOT EOF()
+*!*						V_CodComp    = '06'
+*!*						V_FecComp    = DTOC(TmpReten.fecha)
+*!*						V_NroComp    = strtran(STR(VAL(SUBSTR(TmpReten.compro,11,9)),16)," ","0")
+*!*						V_ImpComp    = strtran(strtran(str(TmpReten.imp_total,16,2),'.',',')," ","0")
+*!*						V_CodImp     = '0217'
+*!*						V_Regimen    = '078'
+*!*						V_Operacion  = '1'
+*!*						V_BaseCalc   = strtran(strtran(str(TmpReten.basecalc,14,2),'.',',')," ","0")
+*!*						V_Fecha      = DTOC(TmpReten.fecha)
+*!*						V_CodCondi   = '01'
+*!*					    V_CodSujSus  = '0'
+*!*					    V_Monto      = strtran(strtran(str(TmpReten.percepcion,14,2),'.',',')," ","0")
+*!*					    V_PorceExcl  = '000,00'
+*!*					    V_FecBoletin = '          '
+*!*					    V_Tipoiden   = '80'
+*!*					    V_Identi     = strtran(TmpReten.cuit,"-","")+space(9)
+*!*					    V_NroCertOri = '00000000000000'
+*!*					    V_denoorde   = space(30)
+*!*					    V_acrecenta  = '0'
+*!*					    V_cuitpaisre = space(11)
+*!*					    V_cuitorde   = space(11)
+*!*							
+*!*						IF TmpReten.percepcion > 0 THEN 
+*!*							* grabo en el Archivo Temporal para SIAP
+*!*							INSERT INTO RetenAfip(CodComp,FecComp,NroComp,ImpComp,CodImp,Regimen,Operacion,BaseCalc,Fecha,CodCondi,CodSujSus,;
+*!*							                      Monto,PorceExcl,FecBoletin,Tipoiden,Identi,NroCertOri,denoorde,acrecenta,cuitpaisre,cuitorde);
+*!*							            VALUES (V_CodComp,V_FecComp,V_NroComp,V_ImpComp,V_CodImp,V_Regimen,V_Operacion,V_BaseCalc,V_Fecha,V_CodCondi,;
+*!*							                    V_CodSujSus,V_Monto,V_PorceExcl,V_FecBoletin,V_Tipoiden,V_Identi,V_NroCertOri,V_denoorde,V_acrecenta,;
+*!*							                    V_cuitpaisre,V_cuitorde)
+*!*						ELSE 
+*!*							MESSAGEBOX("El comprobante "+ALLTRIM(TmpPercep.compro)+" de fecha "+v_fecharet+ CHR(13)+;
+*!*							           "del cliente "+ALLTRIM(TmpPercep.nombre)+" tiene una retencion menor que cero."+ CHR(13)+;
+*!*							           "Este comprobante no será incorporado al archivo de importación. Deberá ingresarse manualmente.",0+48+0,"ERROR")
+*!*						ENDIF 
+*!*							
+*!*						SELECT TmpReten
+*!*						SKIP 1 	
+*!*					ENDDO 
+
+*!*					SET DEFAULT TO C:\
+*!*					v_archivo=PUTFILE('Guardar Archivo para SIAP','Retencion_GANANCIAS','TxT')
+*!*					IF EMPTY(v_archivo) THEN 
+*!*						MESSAGEBOX("NO SE HA ELEGIDO Ningún Nombre para Guardar el Archivo de Importación.",0+48+0,"Aviso del Sistema")
+*!*					ELSE
+*!*						SELECT RetenAfip
+*!*						GO TOP 
+*!*						COPY TO (v_archivo) sdf
+*!*						MESSAGEBOX("El Archivo de Importación se ha Generado con Éxito.",0+64+0,"Aviso del Sistema")
+*!*					ENDIF 
+*!*					SET DEFAULT TO &MIESTACION	
+
+	RETURN v_retorno
 ENDFUNC 
