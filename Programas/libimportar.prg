@@ -1828,6 +1828,13 @@ FUNCTION CargaSubEntidades
 			    RETURN 
 			ENDIF
 
+			sqlmatriz(1)=" delete from gruposepelio "
+			verror=sqlrun(vconeccionF,"gruposep")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Grupos de Sepelio... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+
 			sqlmatriz(1)=" delete from entidadesd "
 			verror=sqlrun(vconeccionF,"entidadd")
 			IF verror=.f.  
@@ -1971,6 +1978,168 @@ ENDFUNC
 */------------------------------------------------------------------------------------------------------------
 */ FINAL  Sub-Entidades - Cuentas
 */------------------------------------------------------------------------------------------------------------
+
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaGrupoSep
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Grupos de Sepelio
+*	Formato archivo de carga : grsepeliocar FREE (entidad I, servicio I, cuenta I, dni I, tipodoc c(3), apellido C(100), nombre c(100), ;
+*                          fechanac C(8), parentezco C(100), fechaalta C(8), fechabaja C(8), diasvigen I, sexo c(1), idgruposep I)			
+*
+*#/----------------------------------------
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Grupos de Sepelio -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+		if file(".\grsepeliocar.dbf") THEN
+			if used("grsepeliocar") then
+				sele grsepeliocar
+				use
+			endif
+			DELETE FILE .\grsepeliocar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\grsepeliocar FREE (entidad I, servicio I , cuenta I , dni I, tipodoc c(3), apellido C(100), nombre c(100), ;
+                          				  fechanac C(8), parentesco C(100), fechaalta C(8), fechabaja C(8), diasvigen I, sexo c(1), idgruposep I )
+                          				  			
+                          				  
+                          
+					
+		SELECT grsepeliocar 
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+
+		COUNT TO v_registros 
+		IF v_registros > 0 THEN 
+			*Elimino los Grupos que tenga el sistema
+			*La carga debe hacerce con la tabla vacia
+			sqlmatriz(1)=" delete from gruposepelio "
+			verror=sqlrun(vconeccionF,"gruposepelio")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Grupos de Sepelio... ",0+48+0,"Error")
+			    RETURN 
+			ENDIF		
+		ENDIF 
+
+		
+		SELECT grsepeliocar 
+		replace ALL idgruposep WITH RECNO()
+		
+		DIMENSION lamatriz(12,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		GO TOP 
+		DO WHILE !EOF()
+		
+			sqlmatriz(1)="SELECT identidadh  FROM entidadesh where entidad = "+ALLTRIM(STR(grsepeliocar.entidad))+" and servicio = "+ALLTRIM(STR(grsepeliocar.servicio))+" and cuenta = "+ALLTRIM(STR(grsepeliocar.cuenta))+" "
+			verror=sqlrun(vconeccionF,"entidadh_sep")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la EntidadH  ",0+48+0,"Error")
+			ENDIF 
+			SELECT entidadh_sep
+			GO TOP 
+			IF !EOF() THEN 
+			
+				v_entidadh = entidadh_sep.identidadh
+			
+				lamatriz(1,1) = 'dni'
+				lamatriz(1,2) = ALLTRIM(STR(grsepeliocar.dni))
+				lamatriz(2,1) = 'tipodoc'
+				lamatriz(2,2) = "'"+ALLTRIM(grsepeliocar.tipodoc)+"'"
+				lamatriz(3,1) = 'apellido'
+				lamatriz(3,2) = "'"+ALLTRIM(grsepeliocar.apellido)+"'"
+				lamatriz(4,1) = 'nombre'
+				lamatriz(4,2) = "'"+ALLTRIM(grsepeliocar.nombre)+"'"
+				lamatriz(5,1) = 'fechanac'
+				lamatriz(5,2) = "'"+ALLTRIM(grsepeliocar.fechanac)+"'"
+				lamatriz(6,1) = 'parentesco'
+				lamatriz(6,2) = "'"+ALLTRIM(grsepeliocar.parentesco)+"'"
+				lamatriz(7,1) = 'fechaalta'
+				lamatriz(7,2) = "'"+ALLTRIM(grsepeliocar.fechaalta)+"'"
+				lamatriz(8,1) = 'fechabaja'
+				lamatriz(8,2) = "'"+ALLTRIM(grsepeliocar.fechabaja)+"'"
+				lamatriz(9,1) = 'diasvigen'
+				lamatriz(9,2) = ALLTRIM(STR(grsepeliocar.diasvigen))
+				lamatriz(10,1) = 'sexo'
+				lamatriz(10,2) = "'"+ALLTRIM(grsepeliocar.sexo)+"'"
+				lamatriz(11,1) = 'identidadh'
+				lamatriz(11,2) = ALLTRIM(STR(v_entidadh ))
+				lamatriz(12,1) = 'idgruposep'
+				lamatriz(12,2) = ALLTRIM(STR(grsepeliocar.idgruposep))
+
+				p_tabla     = 'gruposepelio'
+				p_matriz    = 'lamatriz'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Entidades ",0+48+0,"Error")
+				ENDIF 
+				
+
+	*!*						sqlmatriz(1)="SELECT identidacr AS maxi FROM entidadescr ORDER BY identidacr DESC LIMIT 1  "
+	*!*						verror=sqlrun(vconeccionF,"maximo")
+	*!*						IF verror=.f.  
+	*!*						    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo código  ",0+48+0,"Error")
+	*!*						ENDIF 
+	*!*						v_maximo = maximo.maxi
+	*!*						SELECT maximo
+	*!*						GO TOP 
+	*!*						IF EOF() AND RECNO()=1 THEN 
+	*!*							v_maximonew = 1
+	*!*						ELSE
+	*!*							v_maximonew = v_maximo + 1
+	*!*						ENDIF 
+	*!*						USE IN maximo
+
+			ENDIF 			
+			
+			SELECT grsepeliocar 
+			SKIP 					
+		ENDDO 
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	RELEASE lamatriz
+	SELECT grsepeliocar 
+	USE IN grsepeliocar 
+	ENDIF 	&& 1- Carga de Archivo de CPP -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos de Claro
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
+
+
+
 
 
 
@@ -5080,6 +5249,100 @@ FUNCTION ViewExternas
 	ENDIF && 2- Visualiza Datos de CPP -
 */**************************************************************
 	MESSAGEBOX("Proceso de Creación de Vistas Remotas Finalizado ...",64,"Creación de Vistas Remotas")
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION MarcaFacturarSer
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Marcar Sub-Cuentas para Facturar en los Servicios  
+*/ Marca colocando no facturar en entidadesh para aquellas cuentas que no esten en los archivos pasados como cuentas a facturar
+*/ Formato archivo csv serparado por ; ( entidad i , servicio i, cuenta i )
+*/ aquellos codigos que no estan en las listas les pone No Facturar
+*#/----------------------------------------
+
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Ejecuta la Creación de las Vistas a partir del archivo recibido -
+		p_archivo = alltrim(p_archivo)
+
+
+		if file(".\facturarser.dbf") THEN
+			if used("facturarser") then
+				sele facturarser
+				use
+			endif
+			DELETE FILE .\facturarser.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\facturarser FREE ( entidad i , servicio i, cuenta i )
+		SELE facturarser 
+		APPEND FROM &p_archivo TYPE CSV 
+		GO TOP 
+		IF EOF() THEN 
+			USE 
+			RETURN 0
+		ENDIF 
+
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)
+		sqlmatriz(1)= "update entidadesh set facturar = 'N' "
+		verror=sqlrun(vconeccionF,"update_entidadesh")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion de Entidadesh ",0+48+0,"Error")
+		    RETURN 0
+		ENDIF
+
+			
+		SELECT facturarser 
+		GO TOP 
+		WAIT windows "Marcando Cuentas a Facturar..." NOWAIT 
+		DO WHILE !EOF() 
+			vf_entidad  = facturarser.entidad 
+			vf_servicio = facturarser.servicio
+			vf_cuenta   = facturarser.cuenta
+
+			sqlmatriz(1)= "update entidadesh set facturar = 'S' where entidad = "+ALLTRIM(STR(vf_entidad)) + " and servicio = "+ALLTRIM(STR(vf_servicio)) + " and cuenta = "+ALLTRIM(STR(vf_cuenta)) 
+			verror=sqlrun(vconeccionF,"update_entidadesh")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion de Entidadesh ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+			
+			SELECT facturarser
+			SKIP 
+		ENDDO 
+
+		=abreycierracon(vconeccionF,"")	
+		WAIT CLEAR 
+
+	ENDIF 	&& 1- Generación de Vistas  -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	MESSAGEBOX("Proceso de Actualizacion de Cuentas a Facturar ...",64,"Cuentas a Facturar")
 	lreto = p_func
 	RETURN lreto
 ENDFUNC  

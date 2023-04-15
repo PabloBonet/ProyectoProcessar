@@ -292,7 +292,7 @@ CREATE TABLE `cbcomprobantes` (
 
 DROP TABLE IF EXISTS `maxcbcomplote`;
 DROP VIEW IF EXISTS `maxcbcomplote`;
-CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `maxcbcomplote` AS select max(`c`.`lote`) AS `lote`,concat(`a`.`empresaid`,`a`.`subcodid`,`c`.`idcomp`) AS `codigo` from (`cbcomprobantes` `c` left join `cbasociadas` `a` on((`c`.`idcbasoci` = `a`.`idcbasoci`))) group by concat(`a`.`empresaid`,`a`.`subcodid`,`c`.`idcomp`);
+CREATE ALGORITHM=UNDEFINED DEFINER=`processaradmin`@`%` SQL SECURITY DEFINER VIEW `maxcbcomplote` AS select max(`c`.`lote`) AS `lote`,concat(`a`.`empresaid`,`a`.`subcodid`,`c`.`idcomp`) AS `codigo` from (`cbcomprobantes` `c` left join `cbasociadas` `a` on((`c`.`idcbasoci` = `a`.`idcbasoci`))) group by concat(`a`.`empresaid`,`a`.`subcodid`,`c`.`idcomp`);
 
 --
 -- Definition of view `ultcbcomplote`
@@ -300,7 +300,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `maxcb
 
 DROP TABLE IF EXISTS `ultcbcomplote`;
 DROP VIEW IF EXISTS `ultcbcomplote`;
-CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `ultcbcomplote` AS select `c`.`idcbcompro` AS `idcbcompro`,`c`.`idcbasoci` AS `idcbasoci`,`c`.`narchivo` AS `narchivo`,`c`.`lote` AS `lote`,`c`.`eperiodo` AS `eperiodo`,`c`.`esecuencia` AS `esecuencia`,`c`.`total1` AS `total1`,`c`.`vence1` AS `vence1`,`c`.`total2` AS `total2`,`c`.`vence2` AS `vence2`,`c`.`total3` AS `total3`,`c`.`vence3` AS `vence3`,`c`.`bc` AS `bc`,`c`.`timestamp` AS `timestamp`,`m`.`codigo` AS `codigo`,`c`.`entidad` AS `entidad`,`c`.`servicio` AS `servicio`,`c`.`cuenta` AS `cuenta`,`c`.`descrip` AS `descrip`,`c`.`descripen` AS `descripen` from (`maxcbcomplote` `m` left join (`cbcomprobantes` `c` left join `cbasociadas` `a` on((`c`.`idcbasoci` = `a`.`idcbasoci`))) on(((`m`.`codigo` = concat(`a`.`empresaid`,`a`.`subcodid`,`c`.`idcomp`)) and (`m`.`lote` = `c`.`lote`))));
+CREATE ALGORITHM=UNDEFINED DEFINER=`processaradmin`@`%` SQL SECURITY DEFINER VIEW `ultcbcomplote` AS select `c`.`idcbcompro` AS `idcbcompro`,`c`.`idcbasoci` AS `idcbasoci`,`c`.`narchivo` AS `narchivo`,`c`.`lote` AS `lote`,`c`.`eperiodo` AS `eperiodo`,`c`.`esecuencia` AS `esecuencia`,`c`.`total1` AS `total1`,`c`.`vence1` AS `vence1`,`c`.`total2` AS `total2`,`c`.`vence2` AS `vence2`,`c`.`total3` AS `total3`,`c`.`vence3` AS `vence3`,`c`.`bc` AS `bc`,`c`.`timestamp` AS `timestamp`,`m`.`codigo` AS `codigo`,`c`.`entidad` AS `entidad`,`c`.`servicio` AS `servicio`,`c`.`cuenta` AS `cuenta`,`c`.`descrip` AS `descrip`,`c`.`descripen` AS `descripen` from (`maxcbcomplote` `m` left join (`cbcomprobantes` `c` left join `cbasociadas` `a` on((`c`.`idcbasoci` = `a`.`idcbasoci`))) on(((`m`.`codigo` = concat(`a`.`empresaid`,`a`.`subcodid`,`c`.`idcomp`)) and (`m`.`lote` = `c`.`lote`))));
 
 
 

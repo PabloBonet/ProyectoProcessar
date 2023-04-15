@@ -3802,9 +3802,12 @@ PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
 		
 		SELECT grupotipocampo_sql
 		GO TOP  
+
 		
 		SELECT * FROM miembrosgru_sql INTO TABLE .\&par_alias
+
 		
+		ALTER table &par_alias ALTER COLUMN  miembros c(200)
 		ALTER table &par_alias add idgrupo i
 		ALTER table &par_alias add nombreg char(100)
 		ALTER table &par_alias add tabla char(50)
