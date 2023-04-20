@@ -21676,3 +21676,240 @@ PARAMETERS p_idcomproba,p_desde,p_hasta
 
 	RETURN v_retorno
 ENDFUNC 
+
+FUNCTION abconceptos
+PARAMETERS p_identidadh, p_idcateser, p_operacion
+*#/----------------------------------------
+* Función para Agregar o Quitar conceptos asociados a una entidad 
+* Parámetros: 	p_identidadh: ID identidadh
+*				p_idcateser: ID de la Categoria asociada a los conceptos que se van a agregar o quitar. Si es Cero y la operación es '-' se eliminan todos los conceptos
+*				p_operacion: '+': Agrega conceptos de la categoria indicada, '-': Quita conceptos de la categoria indicada
+* Retorna true si terminó correctamente, falso en otro caso
+*#/----------------------------------------
+
+	v_retorno = .T.
+	
+	** Valido parametros **
+	
+	IF TYPE('p_identidadh') <> 'N'
+		RETURN .f.
+	ENDIF 
+		
+	IF TYPE('p_idcateser') <> 'N'
+		RETURN .f.
+	ENDIF 	
+	
+	
+	IF ALLTRIM(p_operacion) == '+' OR ALLTRIM(p_operacion) == '-' 
+	
+	ELSE
+		RETURN .F.
+	ENDIF 
+		
+	DO CASE
+		CASE ALLTRIM(p_operacion) == '+'
+                       
+			** Me conecto a la base de datos **
+				vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+			sqlmatriz(1)=" select c.idconcepto,c.concepto,c.detalle,c.abrevia,c.importe as unitario,(c.importe*c.cantidad*r.cantidad) as importe,c.unidad,c.facturar,c.padron,e.identidadh,0 as identidadd,r.servicio,r.idcateser,r.cantidad"
+			sqlmatriz(2)=" FROM entidadesh e left join rscconceptos r on e.servicio = r.servicio left join conceptoser c on r.idconcepto = c.idconcepto "
+			sqlmatriz(3)=" where e.identidadh = "+ALLTRIM(STR(p_identidadh))+" and r.idcateser = "+ALLTRIM(STR(p_idcateser))
+
+
+					verror=sqlrun(vconeccionF,"rscconceptos_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los datos las relaciones de conceptos",0+48+0,"Error")
+							= abreycierracon(vconeccionF,"")
+					    RETURN .f. 
+					ENDIF
+
+					DIMENSION lamatriz(14,2)
+					
+					SELECT rscconceptos_sql
+					GO TOP 
+					
+					DO WHILE NOT EOF()
+					
+							p_tipoope     = 'I'
+							p_condicion   = ''
+							v_titulo      = " EL ALTA "
+							v_identidadd  = 0
+					
+							v_idconcepto	= rscconceptos_sql.idconcepto
+							v_concepto 		= rscconceptos_sql.concepto
+							v_detalle		= rscconceptos_sql.detalle
+							v_abrevia		= rscconceptos_sql.abrevia
+							v_unidad		= rscconceptos_sql.unidad
+							v_unitario		= rscconceptos_sql.unitario
+							v_neto			= rscconceptos_sql.importe
+							v_identidadh	= rscconceptos_sql.identidadh
+							v_mensual		= "S"
+							v_facturar		= rscconceptos_sql.facturar
+							v_padron		= rscconceptos_sql.padron
+							v_cantidad		= rscconceptos_sql.cantidad
+							v_idlista		= 1
+							v_identidadd	= 0
+								
+							lamatriz(1,1) = 'idconcepto'
+							lamatriz(1,2) = ALLTRIM(STR(v_idconcepto))
+							lamatriz(2,1) = 'articulo'	
+							lamatriz(2,2) = "'"+ALLTRIM(v_concepto)+"'"
+							lamatriz(3,1) = 'detalle'
+							lamatriz(3,2) = "'"+ALLTRIM(v_detalle)+"'"
+							lamatriz(4,1) = 'abreviado'
+							lamatriz(4,2) = "'"+ALLTRIM(v_abrevia)+"'"
+							lamatriz(5,1) = 'unidad'
+							lamatriz(5,2) = "'"+ALLTRIM(v_unidad)+"'"
+							lamatriz(6,1) = 'unitario'
+							lamatriz(6,2) = ALLTRIM(STR(v_unitario,12,4))
+							lamatriz(7,1) = 'neto'
+							lamatriz(7,2) =  ALLTRIM(STR(v_neto,12,4))
+							lamatriz(8,1) = 'identidadh'
+							lamatriz(8,2) = ALLTRIM(STR(v_identidadh))
+							lamatriz(9,1) = 'mensual'
+							lamatriz(9,2) =  "'"+alltrim(v_mensual)+"'"
+							lamatriz(10,1) = 'facturar'
+							lamatriz(10,2) = "'"+ALLTRIM(v_facturar)+"'"
+							lamatriz(11,1) = 'padron'
+							lamatriz(11,2) = ALLTRIM(STR(v_padron))
+							lamatriz(12,1) = 'cantidad'
+							lamatriz(12,2) = ALLTRIM(STR(v_cantidad,12,4))
+							lamatriz(13,1) = 'idlista'
+							lamatriz(13,2) = ALLTRIM(STR(v_idlista))
+							lamatriz(14,1) = 'identidadd'
+							lamatriz(14,2) = ALLTRIM(STR(v_identidadd))
+
+							p_tabla     = 'entidadesd'
+							p_matriz    = 'lamatriz'
+							p_conexion  = vconeccionF
+							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+							    MESSAGEBOX("Ha Ocurrido un Error en Grabación"+v_titulo,0+48+0,"Error")
+							ELSE 
+
+							ENDIF 
+					
+						SELECT rscconceptos_sql
+						SKIP 1
+
+					ENDDO
+				
+					** Cierra conexión
+					= abreycierracon(vconeccionF,"")
+					
+		CASE ALLTRIM(p_operacion) == '-' 
+			** Quito los conceptos de la entidad asociados a la categoria.
+				
+				** Me conecto a la base de datos **
+				vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+				sqlmatriz(1)=" delete from entidadesd "
+				sqlmatriz(2)=" where identidadh = "+ALLTRIM(STR(p_identidadh))+" and idconcepto in (select r.idconcepto from entidadesh h " 
+				sqlmatriz(3)=" left join rscconceptos r on h.servicio = r.servicio "
+				IF p_idcateser > 0
+					sqlmatriz(4)= " where r.idcateser = "+ALLTRIM(STR(p_idcateser))+" and h.identidadh = "+ALLTRIM(STR(p_identidadh))+") "
+				ELSE
+					sqlmatriz(4)= " where  h.identidadh = "+ALLTRIM(STR(p_identidadh))+") "
+				ENDIF 
+						verror=sqlrun(vconeccionF,"borroconceptos_sql")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error en la eliminación de conceptos asociados ",0+48+0,"Error")
+								= abreycierracon(vconeccionF,"")
+						    RETURN .f. 
+						ENDIF
+					** Cierra conexión
+					= abreycierracon(vconeccionF,"")
+			
+		OTHERWISE
+			RETURN .F.
+
+	ENDCASE
+                                       
+ RETURN .T.                                       
+	
+ENDFUNC 
+
+
+FUNCTION agregarconceptos
+PARAMETERS p_identidadh, p_idcateser
+*#/----------------------------------------
+* Función para Agregar conceptos asociados a una entidad 
+* Parámetros: 	p_identidadh: ID identidadh
+*				p_idcateser: ID de la Categoria asociada a los conceptos que se van a agregar.
+* Retorna true si terminó correctamente, falso en otro caso
+*#/----------------------------------------
+
+	v_retorno = .T.
+	
+	** Valido parametros **
+	
+	IF TYPE('p_identidadh') <> 'N'
+		RETURN .f.
+	ENDIF 
+		
+	IF TYPE('p_idcateser') <> 'N'
+		RETURN .f.
+	ENDIF 	
+	
+
+	IF p_idcateser <= 0
+	
+		RETURN .F.
+	
+	ENDIF 
+	
+	IF p_identidadh <= 0
+		RETURN .F.
+	ENDIF 
+	
+	v_ret =	abconceptos(p_identidadh, p_idcateser, "-")
+	
+	
+	IF v_ret = .T.
+		v_retorno = abconceptos(p_identidadh, p_idcateser, "+")
+	ELSE
+		RETURN .F.
+	ENDIF 
+	
+	RETURN v_retorno
+ENDFUNC 
+
+
+
+
+FUNCTION quitarconceptos
+PARAMETERS p_identidadh, p_idcateser
+*#/----------------------------------------
+* Función para Quitar conceptos asociados a una entidad 
+* Parámetros: 	p_identidadh: ID identidadh
+*				p_idcateser: ID de la Categoria asociada a los conceptos que se van a agregar.
+* Retorna true si terminó correctamente, falso en otro caso
+*#/----------------------------------------
+
+	v_retorno = .T.
+	
+	** Valido parametros **
+	
+	IF TYPE('p_identidadh') <> 'N'
+		RETURN .f.
+	ENDIF 
+		
+	IF TYPE('p_idcateser') <> 'N'
+		RETURN .f.
+	ENDIF 	
+	
+
+	IF p_idcateser <= 0
+	
+		RETURN .F.
+	
+	ENDIF 
+	
+	IF p_identidadh <= 0
+		RETURN .F.
+	ENDIF 
+	
+	v_retorno =	abconceptos(p_identidadh, p_idcateser, "-")
+		
+	RETURN v_retorno
+ENDFUNC 
