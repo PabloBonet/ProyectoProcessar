@@ -151,7 +151,7 @@ PARAMETERS par_idperiodo
 	*/
 	sqlmatriz(1)=" Select e.idperiodoe, h.*, a.codafip from factulotese e left join entidadesh h on h.identidadh = e.identidadh "
 	sqlmatriz(2)=" left join afiptipodocu a on a.idafiptipod = h.tipodoc "
-	sqlmatriz(3)=" where e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(3)=" where h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	verror=sqlrun(vconeFacturar,"entidadeshf_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
@@ -169,8 +169,8 @@ PARAMETERS par_idperiodo
 	*/*************
 	* Obtengo las Bocas de Servicios 
 	*/
-	sqlmatriz(1)=" Select e.idperiodoe, b.* from bocaservicios b left join factulotese e on e.identidadh = b.identidadh "
-	sqlmatriz(2)=" where b.facturar = 'S'  and e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(1)=" Select e.idperiodoe, b.* from bocaservicios b left join factulotese e on e.identidadh = b.identidadh left join entidadesh h on h.identidadh = b.identidadh "
+	sqlmatriz(2)=" where  b.facturar = 'S'  and h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	verror=sqlrun(vconeFacturar,"bocaserviciosf_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
