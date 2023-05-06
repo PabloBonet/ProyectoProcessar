@@ -14957,7 +14957,7 @@ PARAMETERS p_ListaP
 		GO TOP 
 
 		SELECT idlista, detallep, vigedesde, vigehasta, margenp, condvta,  idlistap, actualiza,idlistah, articulo, ;
-			detalle, unidad, abrevia, codbarra, costoa, linea, detalinea, idsublinea, sublinea, ctrlstock, ocultar, stockmin, stocktot, ;
+			detalle, unidad, abrevia, codbarra, costoa, linea, detalinea, idsublinea, sublinea, ctrlstock, ocultar, stockmin, IIF(ISNULL(stocktot),0,stocktot) as stocktot, ;
 			desc1, desc2, desc3,  desc4, desc5, moneda, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact, habilita ;
 		from &p_ListaPA INTO TABLE p_listaPACSV
 		
@@ -18125,7 +18125,9 @@ FUNCTION Aso_StockArt
 		    RETURN ""
 		ENDIF 		
 		SELECT * FROM r_articulostock_asql INTO TABLE r_articulostocksql
-	
+		SELECT r_articulostocksql
+		replace stocktot WITH 0 FOR ISNULL(stocktot)
+		
 		SELECT stockreto
 		APPEND FROM .\r_articulostocksql
 		USE IN r_articulostocksql
@@ -18140,7 +18142,7 @@ FUNCTION Aso_StockArt
 
 	
 	SET ENGINEBEHAVIOR 70
-	SELECT articulo, SUM(stocktot) as stock FROM stockreto INTO TABLE &v_stockreto GROUP BY articulo 
+	SELECT articulo, SUM(IIF(ISNULL(stocktot),0,stocktot)) as stock FROM stockreto INTO TABLE &v_stockreto GROUP BY articulo 
 	SET ENGINEBEHAVIOR 90
 	
 	USE IN stockreto

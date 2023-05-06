@@ -11,6 +11,9 @@ PARAMETERS par_idperiodo
 *#/----------------------------------------
 	WAIT WINDOWS "Generando Facturación, Aguarde... " NOWAIT 
 
+	vs_db_sysbgproce = _SYSBGPROCE 
+	_SYSBBPROCE = 0 && detiene la ejecucion de procesos de Relojes en Segundo Plano
+
 	vartmp = frandom()
 	var_retorno = 0
 
@@ -569,6 +572,8 @@ PARAMETERS par_idperiodo
 	USE IN &vbocaserviciosftmp 
 
 	WAIT CLEAR 
+
+	_SYSBGPROCE = vs_db_sysbgproce
 	
 	var_retorno = 1
 	RETURN var_retorno 

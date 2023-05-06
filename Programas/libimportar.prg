@@ -3003,6 +3003,9 @@ ENDIF
 
 ******************************************************************************************************
 	SELECT * FROM entidades0_sql INTO TABLE entidades_sql
+	
+	
+	
 	ALTER table entidades_sql alter COLUMN servicio i
 	ALTER table entidades_sql alter COLUMN cuenta i
 	ALTER table entidades_sql alter COLUMN ruta1 i
@@ -3091,7 +3094,7 @@ ENDIF
 					v_iva = entidades_sql.iva
 					v_cuit = entidades_sql.cuit
 					v_docTipo = '80'
-					v_dni = entidades_sql.dni
+					v_dni = ABS(entidades_sql.dni)
 					v_telefono = entidades_sql.telefono
 					v_cp = entidades_sql.cp
 					v_fax = entidades_sql.fax
@@ -3122,7 +3125,7 @@ ENDIF
 					v_iva = entidades_sql.ivah
 					v_cuit = entidades_sql.cuith
 					v_docTipo = '80'
-					v_dni = entidades_sql.dnih
+					v_dni = ABS(entidades_sql.dnih)
 					v_telefono = entidades_sql.telefonoh
 					v_cp = entidades_sql.cph
 					v_fax = entidades_sql.faxh
@@ -3372,6 +3375,7 @@ ENDIF
 				
 					v_montocta = ctasctesentcard.monto
 					a_cuota    = ctasctesentcard.cuota
+					a_vtocta   = ctasctesentcard.vtocta
 					v_idcuotafc = maxnumeroidx("idcuotafc", "I", "facturascta",1)
 
 					p_tipoope     = 'I'
