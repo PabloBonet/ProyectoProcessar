@@ -2,7 +2,7 @@
 
 
 FUNCTION GenerarFacturas
-PARAMETERS par_idperiodo
+PARAMETERS par_idperiodo, par_ordenfa
 *#/----------------------------------------
 */ Generacion de Facturas para un Período determinado
 */ Recibe como parametro el período para el cual se debe generar la Facturación 
@@ -16,7 +16,12 @@ PARAMETERS par_idperiodo
 
 	vartmp = frandom()
 	var_retorno = 0
-
+	
+	IF !(TYPE("par_ordenfa")="C") THEN 
+		vpar_ordenfa = "AP"
+	ELSE
+		vpar_ordenfa = par_ordenfa
+	ENDIF 
 
 	*/***********************
 	*/Obtengo las Listas de Precios de Artículos
@@ -441,6 +446,10 @@ PARAMETERS par_idperiodo
 	UPDATE &vdetafactutmp SET total = ( impuestos + neto )
 	COUNT TO vCantidad_D	
 
+
+
+	**/ Cabecera Temporal de facturacion para Ordenar
+	vfacturastmp0 ='facturastmp0'+vartmp
 	**/ Cabecera para Facturacion 
 	vfacturastmp = 'facturastmp'+vartmp 
 	SELECT h.* , h.identidadh as idfactura, h.identidadh as idcomproba, h.identidadh as pventa, h.identidadh as numero, 'X' as tipo,   ;
@@ -449,8 +458,26 @@ PARAMETERS par_idperiodo
 			&vfactulotes_sql..cesp as cespcae, &vfactulotes_sql..cespvence as caevence, &vfactulotes_sql..interesd as interesd, ; 
 			1 as idtipopera, SUM(d.neto) as neto, SUM(d.neto) as subtotal, 0 as descuento, 0 as recargo, SUM(d.total) as total, ;
 			SUM(d.impuestos) as totalimpu, 'N' as operexenta, 'N' as anulado, "" as observa1, "" as observa2, "" as observa3, "" as observa4 ;
-		FROM &vdetafactutmp d LEFT JOIN &ventidadeshf_sql h ON h.identidadh = d.identidadh INTO TABLE &vfacturastmp ORDER BY h.identidadh GROUP BY h.identidadh
+		FROM &vdetafactutmp d LEFT JOIN &ventidadeshf_sql h ON h.identidadh = d.identidadh INTO TABLE &vfacturastmp0 ORDER BY h.identidadh GROUP BY h.identidadh
 	
+	**/ Establezco el orden de generacion de facturas 
+	vsetorden = " "
+	DO CASE 
+		CASE vpar_ordenfa = "AP"
+			vsetorden = " ALLTRIM(apellido)+ALLTRIM(nombre)+ALLTRIM(compania)"
+		CASE vpar_ordenfa = "R1"
+			vsetorden = " STR(ruta1)+STR(ruta1) "
+		CASE vpar_ordenfa = "R2"
+			vsetorden = " STR(ruta2)+STR(ruta2) "
+	ENDCASE 
+	
+	SELECT *, &vsetorden as orden  FROM &vfacturastmp0 INTO TABLE &vfacturastmp ORDER BY orden 
+	
+	SELECT &vfacturastmp0
+	USE IN &vfacturastmp0
+
+	SELECT &vfacturastmp
+
 	COUNT TO vCantidad_F	
 		
 		
@@ -495,7 +522,6 @@ PARAMETERS par_idperiodo
 *	sqlmatriz(2)=" where b.facturar = 'S'  and e.idperiodo = "+STR(par_idperiodo)
 	SELECT b.* , f.idfactura FROM &vbocaserviciosf_sql b LEFT JOIN &vfacturastmp f ON f.identidadh = b.identidadh INTO TABLE &vbocaserviciosftmp WHERE !ISNULL(f.idfactura)  && ORDER BY h.identidadh GROUP BY h.identidadh
     
-    *** ACA SIGO MAÑANA ***
     **CREO QUE ACA PUEDO AGREGAR TODO EL CONSUMO DE MSERVICIOS ***
 	GO TOP 
 	ALTER TABLE &vbocaserviciosftmp ADD manterior n(10,2)
