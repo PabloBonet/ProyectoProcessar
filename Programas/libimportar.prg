@@ -5350,3 +5350,91 @@ FUNCTION MarcaFacturarSer
 	lreto = p_func
 	RETURN lreto
 ENDFUNC  
+
+
+
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION ActLinSubLinArti
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Actualiza la tabla de articulos Cargando Lineas y Sub-Lineas desde un archivo externo que contiene
+*/ el código de artículo y la linea y sub-Linea que le corresponde 
+*/ Formato archivo csv serparado por ; ( articulo c(20) , detalle c(100), linea c(20), idsublinea i)
+*#/----------------------------------------
+
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Ejecuta la Creación de las Vistas a partir del archivo recibido -
+		p_archivo = alltrim(p_archivo)
+
+
+		if file(".\lineasublinea.dbf") THEN
+			if used("lineasublinea") then
+				sele lineasublinea
+				use
+			endif
+			DELETE FILE .\lineasublinea.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\lineasublinea FREE ( articulo c(20) , detalle c(100), linea c(20), idsublinea i)
+		SELE lineasublinea
+		APPEND FROM &p_archivo TYPE CSV 
+		GO TOP 
+		IF EOF() THEN 
+			USE 
+			RETURN 0
+		ENDIF 
+
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+			
+		SELECT lineasublinea 
+		GO TOP 
+		WAIT windows "Cargando Lineas y Sublineas ..." NOWAIT 
+		DO WHILE !EOF() 
+			vf_articulo  	= ALLTRIM(lineasublinea.articulo)
+			vf_linea 		= ALLTRIM(lineasublinea.linea)
+			vf_idsublinea   = lineasublinea.idsublinea
+
+			sqlmatriz(1)= "update articulos set linea = '"+ALLTRIM(vf_linea)+"', idsublinea = "+ALLTRIM(STR(vf_idsublinea))+" where articulo = '"+ALLTRIM(vf_articulo)+ "' "
+			verror=sqlrun(vconeccionF,"update_articulos")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion de Articulos ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+			
+			SELECT lineasublinea 
+			SKIP 
+		ENDDO 
+
+		=abreycierracon(vconeccionF,"")	
+		WAIT CLEAR 
+
+	ENDIF 	&& 1- Generación de Vistas  -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	MESSAGEBOX("Proceso de Actualizacion de Lineas y Sub_lineas de Artículos ... ",64,"Cuentas a Facturar")
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  

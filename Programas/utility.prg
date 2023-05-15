@@ -12996,10 +12996,10 @@ PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_ins
 	pv_tmp = IIF(EMPTY(pv_tmp),"","tmp")
 
 
-
 	*Si recibo un idfactura reemplazo las entidades recibidas por la de la factura 
 	IF pv_idfactura > 0 THEN 
 		* Obtengo el registro de la factura a la cual asociar la deuda
+
 		sqlmatriz(1)=" select entidad, servicio, cuenta, fecha from facturas"+ALLTRIM(pv_tmp)+" where idfactura = "+ALLTRIM(STR(pv_idfactura))
 		verror=sqlrun(pv_coneccion,"facturad_sql")
 		IF verror=.f.  
@@ -13018,13 +13018,12 @@ PARAMETERS pv_entidad, pv_servicio, pv_cuenta, pv_fechaven, pv_idfactura, pv_ins
 	
 	v_deudareto = "deuda_fcadeuda.csv"
 
-
 	* traigo solo una vez la vista de deudas de todas las facturas*
 	IF USED('alldeudas') THEN 
 	
 	ELSE 
 		IF file("alldeudas.dbf") THEN 
-			USE alldeudas IN 0 
+			USE alldeudas IN 0  EXCLUSIVE 
 		ELSE
 			* Obtengo la deuda todos los comprobantes 
 			sqlmatriz(1)=" select s.idfactura, s.saldof, f.fecha, f.fechavenc1, f.fechavenc2, f.fechavenc3, f.entidad, f.servicio, f.cuenta, "

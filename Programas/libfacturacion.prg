@@ -391,7 +391,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 		ENDSCAN 
 		
 	ENDFOR 
-	
+
+
 	SELECT &ventidadesdf
 	GO TOP 
 	UPDATE &ventidadesdf SET unitario=netocuota, cantidad=1 WHERE idcuotasd > 0
@@ -543,7 +544,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	ENDDO 
 
 
-    
+ 
     
     *****************************
     
@@ -621,13 +622,16 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		vconeccionFa = pcone
 	ENDIF 
 
+
 	p_tipoope     = 'I'
 	p_condicion   = ''
 	v_titulo      = " EL ALTA "
 	
 	SELECT &pfacturas
+
 	GO TOP 
 	DIMENSION lamatriz1(55,2)
+
 
 	DO WHILE !EOF() 
 	
@@ -752,17 +756,21 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		    RETURN 
 		ENDIF  
 
+
 		varchi = FCAdeudadas ( 0, 0, 0, ALLTRIM(&pfacturas..fecha), &pfacturas..idfactura, "I", "tmp", vconeccionFa )
+
 
 
 		SELECT &pfacturas
 		SKIP 
 	ENDDO 
 
+
 	IF USED('alldeudas') THEN 
 		SELECT alldeudas
 		USE IN alldeudas 
 	ENDIF 
+
 	
 	SELECT &pdetafactu
 	GO TOP 
@@ -824,6 +832,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		SELECT &pdetafactu
 		SKIP 
 	ENDDO 
+
 	
 	SELECT &pfacturasimp
 	GO TOP 
@@ -857,6 +866,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		SELECT &pfacturasimp
 		SKIP 		
 	ENDDO 		
+
 
 	SELECT &pbocaservi
 	GO TOP 
@@ -909,6 +919,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		SELECT &pbocaservi
 		SKIP 		
 	ENDDO 		
+
 	
 	RELEASE lamatriz1
 	RELEASE lamatriz2
@@ -1185,7 +1196,7 @@ PARAMETERS pcon_idperiodo
 	
 
 ********************************************************************************
-	** Iserto desde las tablas temporarias en facturas, detafactu, facturasimp, facturasbser, facturasd
+	** Iserto desde las tablas temporarias en facturas, detafactu, facturasimp, facturasbser, facturasd, entidadesdc
 
 	sqlmatriz(1)=" insert into facturas ( idfactura, idcomproba, pventa, numero, tipo, fecha, entidad, servicio, cuenta, apellido, "
 	sqlmatriz(2)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
@@ -1216,6 +1227,30 @@ PARAMETERS pcon_idperiodo
 		RETURN vretorno	
 	ENDIF 
 
+*!*		  *corrijo en el detalle de las cuotas facturadas si hubiere el vinculo con la factura generada 
+	sqlmatriz(1)=" select idfactura, idcuotasd from detatmpt where idcuotasd > 0   "
+	verror=sqlrun(vcone,"selctast_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Cuotas Temporarias del Período a Facturar ",0+48+0,"Error")
+		=abreycierracon(vcone,"")
+		RETURN vretorno	
+	ENDIF 
+	SELECT selctast_sql 
+	GO TOP 
+	DO WHILE !EOF()
+		sqlmatriz(1)=" update entidadesdc set idfactura= "+ALLTRIM(STR(selctast_sql.idfactura))+" where idcuotasd = "+ALLTRIM(STR(selctast_sql.idcuotasd))
+		verror=sqlrun(vcone,"selctast_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Cuotas Temporarias del Período a Facturar ",0+48+0,"Error")
+			=abreycierracon(vcone,"")
+			RETURN vretorno	
+		ENDIF 
+		SELECT selctast_sql 
+		SKIP 
+	ENDDO 
+	USE IN selctast_sql 
+	
+	
 
 	sqlmatriz(1)=" insert into facturasimp ( idfactura, impuesto, detalle, neto, razon, importe, articulo, idconcepto ) "
 	sqlmatriz(2)=" select idfactura, impuesto, detalle, neto, razon, importe, articulo, idconcepto from imputmpt  "

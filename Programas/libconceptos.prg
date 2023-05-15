@@ -352,6 +352,7 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 	
 	vreto = ALLTRIM(STR(vexedente,12,2))+';'+ALLTRIM(STR(vtotalm3,12,4))
 	
+	
 	RETURN vreto
 	
 ENDFUNC 
