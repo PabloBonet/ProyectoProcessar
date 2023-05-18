@@ -18711,7 +18711,7 @@ v_importeTot = 0.00
 		vconeccion=abreycierracon(0,_SYSSCHEMA)	
 
 		 
-		sqlmatriz(1)=" select e.identret,e.entidad,e.idimpuret,e.enconvenio, i.detalle,i.razonin,i.baseimpon, i.idtipopago, i.funcion, i.razonnin "
+		sqlmatriz(1)=" select e.identret,e.entidad,e.idimpuret,e.enconvenio, i.detalle,i.razonin,i.baseimpon, i.idtipopago, i.funcion, i.razonnin,i.regimen "
 		sqlmatriz(2)=" from entidadret e left join impuretencion i on e.idimpuret = i.idimpuret "
 		sqlmatriz(3)=" where e.entidad = "+ALLTRIM(STR(p_entidad))
 		verror=sqlrun(vconeccion,"entidadret_sql")
@@ -18737,14 +18737,14 @@ v_importeTot = 0.00
 			ALTER table &p_nomTabRes ADD COLUMN totapagmes Y
 			ALTER table &p_nomTabRes ADD COLUMN totretmes Y
 			ALTER table &p_nomTabRes ADD COLUMN sel I
-			ALTER table &p_nomTabRes ADD sujarete Y
-			ALTER table &p_nomTabRes ADD idafipesc I
+			ALTER table &p_nomTabRes ADD COLUMN sujarete Y
+			ALTER table &p_nomTabRes ADD COLUMN idafipesc I
+			ALTER table &p_nomTabRes ADD COLUMN fecha C(8)
 			
 			SELECT &p_nomTabRes
 			GO TOP 
 			
-			replace ALL impTot WITH v_importeTot, impAret WITH 0.00, totAPagMes WITH 0.00, totRetMes WITH 0.00, sel WITH 0, sujarete WITH 0.00, idafipesc WITH 0
-			
+			replace ALL impTot WITH v_importeTot, impAret WITH 0.00, totAPagMes WITH 0.00, totRetMes WITH 0.00, sel WITH 0, sujarete WITH 0.00, idafipesc WITH 0, fecha WITH DTOS(p_fecha)
 		ELSE
 			RETURN -1
 		endif

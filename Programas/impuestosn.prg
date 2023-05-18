@@ -1,7 +1,7 @@
 
 
 FUNCTION RET_GANANCIAS_IFN
-PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
+PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 *#/****************************
 *** FUNCIÓN PARA EL CALCULO DEL MONTO A RETENER DE GANANCIAS ***
 ****************************************************************
@@ -10,6 +10,7 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 *				P_fecha: Fecha para el cálculo de la rentención
 *				P_entidad: Entidad a la cual se le va a calcular la retención
 *				p_nomTabRes: Nombre de la tabla donde se va a entregar el resultado, la cual inclura: idimpuret,netoTotal,importeARetener,totpagosmes,totRetenmes )
+*				p_regimen: Regimen utilizado en la regimen
 * La función recibe los parametros indicados y en función de eso y las tablas de retenciones calcula cuanto debe retenerse para la entidad y el importe dado
 ****************************************************************
 ** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
@@ -94,11 +95,12 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 *!*	sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
 *!*	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  R.idimpuret = "+ALLTRIM(STR(P_idimpuret)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad,r.idimpuret "
   
-  	sqlmatriz(1)= " SELECT p.entidad, ifnull(i.idimpuret, 0) as idimpuret, SUM(p.importe) as pagosmes, ifnull(sum(r.importe),0.00) as impret   FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
+  	sqlmatriz(1)= " SELECT p.entidad, ifnull(i.idimpuret, 0) as idimpuret, SUM(p.importe) as pagosmes, ifnull(sum(r.importe),0.00) as impret, i.regimen   FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
 	sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join impuretencionh i on r.idreten = i.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
-	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  i.idimpuret = "+ALLTRIM(STR(P_idimpuret)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad,i.idimpuret "
+*	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  i.idimpuret = "+ALLTRIM(STR(P_idimpuret)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad,i.idimpuret "
+	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  i.regimen = "+ALLTRIM(STR(P_regimen)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad "
 
- 
+ 	
 	verror=sqlrun(varconexionF,"totpagosRet0")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias (0)",0+16+0,"")
@@ -111,9 +113,11 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 	ALTER table totpagosret alter COLUMN idimpuret I
 	ALTER table totpagosret alter COLUMN impret Y
 	
+	
 	ZAP IN totpagos
 	SELECT totpagosRet
 	GO TOP 
+	
 	IF EOF() && Si es Fin de archivo: es porque no se realizaron retenciones en el mes, guardo el monto en Cero.
 		v_cod_socio = p_entidad
 		v_pagosmes  = 0.00
@@ -121,18 +125,31 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 
 	ELSE && Se realizaron retenciones en el mes
 	
-		DO WHILE NOT EOF()
-			v_cod_socio = totpagosRet.entidad
-			v_pagosmes  = totpagosRet.pagosmes
-			
-			v_pagosmes  = v_pagosmes  / v_divisorParaNeto
-			
-			INSERT INTO totpagos (entidad,pagosmes) VALUES (v_cod_socio,v_pagosmes)
-			
-			SELECT totpagosRet
-			SKIP 1
-		ENDDO 
+	
+		SELECT entidad, (pagosmes/v_divisorParaNeto) as pagosmes FROM totpagosRet INTO TABLE  totpagos
 		
+*!*				v_cod_socio = totpagosRet.entidad
+*!*				v_pagosmes  = totpagosRet.pagosmes
+*!*				
+*!*				v_pagosmes  = v_pagosmes  / v_divisorParaNeto
+*!*				MESSAGEBOX(v_pagosmes)
+*!*				** En caso de que haya retenciones actualizo **
+*!*				SELECT totpagos 
+*!*				replace pagosmes WITH pagosmes + v_pagosmes ADDITIVE FOR entidad = v_cod_socio
+*!*				
+*!*				
+*!*	*!*			DO WHILE NOT EOF()
+*!*	*!*				v_cod_socio = totpagosRet.entidad
+*!*	*!*				v_pagosmes  = totpagosRet.pagosmes
+*!*	*!*				
+*!*	*!*				v_pagosmes  = v_pagosmes  / v_divisorParaNeto
+*!*	*!*				
+*!*	*!*				INSERT INTO totpagos (entidad,pagosmes) VALUES (v_cod_socio,v_pagosmes)
+*!*	*!*				
+*!*	*!*				SELECT totpagosRet
+*!*	*!*				SKIP 1
+*!*	*!*			ENDDO 
+*!*			
 	ENDIF 
 *	USE IN totpagos0 
 
@@ -145,7 +162,6 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 	sqlmatriz(3) = "    WHERE p.fecha between "+v_desde+" and "+v_hasta+" and "
 	sqlmatriz(4) = "    	     p.entidad = "+ALLTRIM(STR(p_entidad)) +" and u.idestador != " +ALLTRIM(STR(v_estadoAnulado))
 	sqlmatriz(5) = "    group BY p.entidad having isnull(i.idimpuret) "			
-
 
 
 	verror=sqlrun(varconexionF,"totpagos0")
@@ -234,7 +250,9 @@ SELECT totpagos
 *** Obtengo el total de retenciones realizadas en el mes para la entidad
 ****
 	
-	SELECT entidad, impret as retenmes FROM totpagosRet WHERE idimpuret = p_idimpuret INTO TABLE totreten0
+	SELECT totpagosRet 
+	*	SELECT entidad, impret as retenmes FROM totpagosRet WHERE idimpuret = p_idimpuret INTO TABLE totreten0
+	SELECT entidad, impret as retenmes FROM totpagosRet WHERE regimen = p_regimen  INTO TABLE totreten0
 	
 		
 	ZAP IN totreten
@@ -247,9 +265,21 @@ SELECT totpagos
 			v_retenmes = 0.00
 			INSERT INTO totreten (entidad, retenmes) VALUES (p_entidad,v_retenmes)
 		ELSE 
+		
+		SELECT entidad,retenmes FROM totreten0 INTO TABLE totreten 
+*!*			
+*!*				v_cod_socio = totreten0.entidad
+*!*				v_retensmes  = totreten0.retenmes
+*!*									
+*!*				** En caso de que haya retenciones actualizo **
+*!*				SELECT totreten
+*!*				replace retenmes WITH retenmes + v_retensmes ADDITIVE FOR entidad = v_cod_socio
+*!*	*!*				
+*!*	*!*			
+*!*	*!*			
 
-			v_retenmes   = totreten0.retenmes 
-			INSERT INTO totreten (entidad ,retenmes) VALUES (p_entidad,v_retenmes)
+*!*	*!*				v_retenmes   = totreten0.retenmes 
+*!*	*!*				INSERT INTO totreten (entidad ,retenmes) VALUES (p_entidad,v_retenmes)
 		ENDIF 		
 		SELECT totreten0
 		SKIP 1
@@ -281,14 +311,14 @@ SELECT totpagos
 		
 			SELECT totPagos
 			GO TOP 
-			
+						
 			IF NOT EOF()
 				v_pago_total_retener = (totPagos.pagosmes) + p_importe
 			ELSE
 				v_pago_total_retener = p_importe
 			ENDIF 
 			
-			
+		
 *******************
 **** 2- Calculo las retenciones para el monto sujeto a retener
 *******************
@@ -334,9 +364,10 @@ SELECT totpagos
 					v_totalRetencionesRealizadas =0.00
 				ENDIF 
 
+
+
 				v_retencion = v_retener*(v_razon/100) + v_valfijo - v_totalRetencionesRealizadas 
-		
-			
+
 ****
 *** Controlo que el monto a retener sea mayor al mínimo de retenciones por impuesto
 ****			
@@ -372,7 +403,7 @@ SELECT totpagos
 				v_idimpuret = P_idimpuret
 				v_impTotal = P_importe
 				v_impARet = v_retencion
-				
+				*v_impARet = v_totRetMes - v_retencion
 				SELECT impureten 
 				
 				v_idtipopago = impureten.idtipopago
