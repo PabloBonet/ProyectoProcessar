@@ -630,7 +630,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 	SELECT &pfacturas
 
 	GO TOP 
-	DIMENSION lamatriz1(55,2)
+	DIMENSION lamatriz1(56,2)
 
 
 	DO WHILE !EOF() 
@@ -746,6 +746,8 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		lamatriz1(54,2)= ALLTRIM(STR(&pfacturas..identidadh))
 		lamatriz1(55,1)='interesd'
 		lamatriz1(55,2)= ALLTRIM(STR(&pfacturas..interesd,13,2))
+		lamatriz1(56,1)='idtipocli'
+		lamatriz1(56,2)= ALLTRIM(STR(&pfacturas..idtipocli))
 
 
 		p_tabla     = 'facturastmp'
@@ -1202,12 +1204,12 @@ PARAMETERS pcon_idperiodo
 	sqlmatriz(2)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
 	sqlmatriz(3)=" stock, idtipoopera, neto, subtotal, descuento, recargo, total, totalimpu, operexenta, anulado, observa1, observa2, "
 	sqlmatriz(4)=" observa3, observa4, idperiodo, ruta1, folio1, ruta2, folio2, fechavenc1, fechavenc2, fechavenc3, proxvenc, confirmada, "
-	sqlmatriz(5)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd )"
+	sqlmatriz(5)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd, idtipocli )"
 	sqlmatriz(6)=" select idfactura, idcomproba, pventa, numero, tipo, fecha, entidad, servicio, cuenta, apellido, "
 	sqlmatriz(7)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
 	sqlmatriz(8)=" stock, idtipoopera, neto, subtotal, descuento, recargo, total, totalimpu, operexenta, anulado, observa1, observa2, "
 	sqlmatriz(9)=" observa3, observa4, idperiodo, ruta1, folio1, ruta2, folio2, fechavenc1, fechavenc2, fechavenc3, proxvenc, confirmada, "
-	sqlmatriz(10)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd from factutmpt  "
+	sqlmatriz(10)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd, idtipocli from factutmpt  "
 	verror=sqlrun(vcone,"selfcpt_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")

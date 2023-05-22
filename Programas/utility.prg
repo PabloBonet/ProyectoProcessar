@@ -8849,16 +8849,18 @@ IF vtmp_recalcular = .t. THEN
 		fvlistaprecioh_sql 	= 'listaprecioh_sql'+vtmp 
 		fvlistaprecioc_sql 	= 'listaprecioc_sql'+vtmp 
 		fvarticulosimp_sql	= 'articulosimp_sql'+vtmp
+		
 
 		sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea  from articulos a "
 		sqlmatriz(2)=" left join lineas l on l.linea = a.linea left join sublineas sl on sl.idsublinea = a.idsublinea "
-		sqlmatriz(3)=" left join r_articulostock s on s.articulo = a.articulo left join ultimoartcosto u on a.articulo = u.articulo " 
+		sqlmatriz(3)=" left join r_articulostock s on s.articulo = a.articulo  left join ultimoartcosto u on a.articulo = u.articulo " 
 		verror=sqlrun(vconeccionF,fvarticulos_sql)
 		IF verror=.f.
 			MESSAGEBOX("No se puede obtener  Articulos ",0+16,"Advertencia")
 			RETURN 
 		ENDIF 
 
+		
 		sqlmatriz(1)="select * from listapreciop   " 
 		verror=sqlrun(vconeccionF,fvlistapreciop_sql)
 		IF verror=.f.
@@ -8872,6 +8874,7 @@ IF vtmp_recalcular = .t. THEN
 			RETURN 
 		ENDIF 
 	*	sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto group by a.articulo " 
+
 		sqlmatriz(1)="select a.articulo, SUM(i.razon) as razon  from articulosimp a left join impuestos i on a.impuesto = i.impuesto where a.iva = "+ALLTRIM(STR(v_condfis))+" group by a.articulo " 
 		verror=sqlrun(vconeccionF,fvarticulosimp_sql)
 		IF verror=.f.
