@@ -297,9 +297,17 @@ PARAMETERS par_idperiodo, par_ordenfa
 	SET RELATION TO identidadd INTO &ventidadesdcf ADDITIVE 
 	
 	GO TOP 
-	replace ALL detalle WITH &vlistasprea..detalle, unidad WITH &vlistasprea..unidad , unitario WITH &vlistasprea..pventa, ;
+	
+		*!*	antes de corregir para mantener el valor si fijarvalor = 'S'
+*!*		replace ALL detalle WITH &vlistasprea..detalle, unidad WITH &vlistasprea..unidad , unitario WITH &vlistasprea..pventa, ;
+*!*						nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
+*!*						netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd FOR idconcepto = 0
+
+	* Corregido para mantener el valor si fijarvalor es = 'S'
+	replace ALL detalle WITH &vlistasprea..detalle, unidad WITH &vlistasprea..unidad ,unitario WITH IIF(ALLTRIM(fijarvalor)='S',&ventidadesdcf..unitario,&vlistasprea..pventa), ;
 					nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
 					netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd FOR idconcepto = 0
+
 
 
 	
@@ -328,7 +336,9 @@ PARAMETERS par_idperiodo, par_ordenfa
 				imp_unitario = 0					
 				IF  ( &vconceptoser..vigencia = '1' ) OR  ( &vconceptoser..vigencia = '2' AND &vconceptoser..vigedesde<=v_fechaemite AND v_fechaemite <= &vconceptoser..vigehasta )  THEN 			
 					C   = &vconceptoser..cantidad
-					I   = &vconceptoser..importe 
+					* Corregido para respetar si el importe está fijado
+*!*						I   = &vconceptoser..importe 
+					I   = IIF(ALLTRIM(&ventidadesdf..fijarvalor) = 'S', &ventidadesdf..unitario, &vconceptoser..importe) 				
 					Fun = &vconceptoser..funcion
 					IF !EMPTY(Fun) THEN 
 					

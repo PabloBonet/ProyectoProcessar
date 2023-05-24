@@ -11655,7 +11655,7 @@ ENDFUNC
 
 
 FUNCTION FindInTables
-PARAMETERS fi_tabla, fi_campo, fi_valor, fi_modo
+PARAMETERS fi_tabla, fi_campo, fi_valor, fi_modo, fi_excluidas
 *#/----------------------------------------
 *---VERIFICA AL INTEGRIDAD REFERENCIA DE DATOS-----------------------
 *- Busqueda de un valor y un campo dado en una tabla en 
@@ -11666,22 +11666,34 @@ PARAMETERS fi_tabla, fi_campo, fi_valor, fi_modo
 *-			   campo: nombre del campo 
 *-             valor: valor del campo a buscar,
 *-              modo: modo de busqueda, 0 busca todas las ocurrencias, 1 busca la primer ocurrencia
+*-		   excluidas: tablas excluidas , tablas en las que no debe controlar la existencia del valor a eliminar
+*-                    formato de fi_excluidas = "'tabla1','tabla2','tabla3',...etc'"
 *--------------------------------------------------------------------
 *#/----------------------------------------	
+	
+	IF !(TYPE("fi_excluidas")="C") THEN 
+		fi_excluidas = "''"
+	ENDIF 
+
+
 	ptablareto = ""
 
 	vconeccionF=abreycierracon(0,_SYSSCHEMA)
 
-	sqlmatriz(1)= " SELECT TABLE_NAME as tablash FROM information_schema.columns where TRIM(TABLE_SCHEMA) = '"+_SYSSCHEMA+"' and TRIM(TABLE_NAME) <> '"+ALLTRIM(fi_tabla)+"' AND TRIM(COLUMN_NAME)= '"+ALLTRIM(fi_campo)+"'" 
-	sqlmatriz(2)= " and TRIM(TABLE_NAME) not in ( SELECT TRIM(TABLE_NAME) FROM information_schema.tables WHERE TRIM(TABLE_TYPE)='VIEW') "
+	sqlmatriz(1)= " SELECT TABLE_NAME as tablash FROM information_schema.columns where TRIM(TABLE_SCHEMA) = '"+ALLTRIM(_SYSSCHEMA)+"' and TRIM(TABLE_NAME) <> '"+ALLTRIM(fi_tabla)+"' AND TRIM(COLUMN_NAME)= '"+ALLTRIM(fi_campo)+"'" 
+	sqlmatriz(2)= " and TRIM(TABLE_NAME) not in ( SELECT TRIM(TABLE_NAME) FROM information_schema.tables "
+	sqlmatriz(3)= " WHERE TRIM(TABLE_SCHEMA) = '"+alltrim(_SYSSCHEMA)+"' and ( TRIM(TABLE_TYPE)='VIEW' or TRIM(TABLE_NAME) like 'r_%' or TRIM(TABLE_NAME) in ("+ALLTRIM(fi_excluidas)+") )  ) "
+	
 	verror=sqlrun(vconeccionF,"tablas_hijas")
 	IF verror=.f.
-		MESSAGEBOX("No se puede obtener las Tablas de "+_SYSSCHEMA,0+16,"Advertencia")
+		MESSAGEBOX("No se puede obtener las Tablas de "+alltrim(_SYSSCHEMA),0+16,"Advertencia")
 		RETURN 
 	ENDIF 
 	
 	SELECT tablas_hijas
 	GO TOP 
+
+	fi_cantidad = 0 
 	DO WHILE !EOF()	
 		sqlmatriz(1)="SELECT "+fi_campo+" FROM "+ALLTRIM(tablas_hijas.tablash)+" where "+fi_campo+"= "+IIF(TYPE("fi_valor")="C","'"+ALLTRIM(fi_valor)+"'",ALLTRIM(STR(fi_valor)))
 		verror=sqlrun(vconeccionF,"existe")
@@ -11693,10 +11705,11 @@ PARAMETERS fi_tabla, fi_campo, fi_valor, fi_modo
 		GO TOP 
 		IF !EOF() THEN 
 			ptablareto = ptablareto + ';'+ALLTRIM(tablas_hijas.tablash)
+			fi_cantidad = fi_cantidad + 1
 		ENDIF  
 		USE IN existe 
 		SELECT tablas_hijas
-		IF fi_modo > 0 THEN 
+		IF fi_modo > 0 AND fi_cantidad > 0 THEN 
 			GO BOTTOM 			
 		ENDIF 
 		SKIP 
@@ -21917,6 +21930,7 @@ PARAMETERS p_identidadh, p_idcateser
 		
 	RETURN v_retorno
 ENDFUNC 
+
 
 
 FUNCTION esArticuloCompuesto
