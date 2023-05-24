@@ -21917,3 +21917,54 @@ PARAMETERS p_identidadh, p_idcateser
 		
 	RETURN v_retorno
 ENDFUNC 
+
+
+FUNCTION esArticuloCompuesto
+PARAMETERS p_codigoAM, p_tipo 
+*#/----------------------------------------
+* Función que indica si el articulo o material pasado como parámetro es un articulo compuesto
+* Parámetros: 	p_codigoAM: Codigo del material o articulo
+*				p_tipo: Indica si es del tipo A: articulo o M: material
+* Retorna 1  si el articulo o material es un compuesto, 0 en caso de no serlo; -1 en caso de error
+*#/----------------------------------------
+	
+	IF TYPE('p_codigoAM') <> 'C'
+	
+		MESSAGEBOX("El código del articulo/material es inválido, se esperaba una cadena de caracteres",0+16+256,"Función: esArticuloCompuesto")
+		RETURN -1
+	ENDIF 
+
+	DO CASE
+	CASE p_tipo = 'A'
+		** Me conecto a la base de datos **
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+		sqlmatriz(1)=" select idarticmp from articuloscmp "
+		sqlmatriz(2)=" where articulo = '"+ALLTRIM(p_codigoAM)+"'" 
+		
+		verror=sqlrun(vconeccionF,"articuloscmpValidar_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los componentes del articulo/material",0+48+0,"Error")
+				= abreycierracon(vconeccionF,"")
+		    RETURN -1 
+		ENDIF
+		** Cierra conexión
+		= abreycierracon(vconeccionF,"")
+		
+		SELECT articuloscmpValidar_sql
+		GO TOP 
+		IF NOT EOF()
+			RETURN 1
+		ELSE
+			RETURN 0
+		ENDIF 
+				
+	CASE p_tipo = 'M' && Material
+		* Hasta el momento ningun material es compuesto. Solo los articulos tiene componentes
+		RETURN 0
+	OTHERWISE 
+		RETURN -1
+	ENDCASE
+	
+	RETURN -1
+ENDFUNC 
