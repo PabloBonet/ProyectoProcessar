@@ -10288,7 +10288,6 @@ PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movim
 ENDFUNC 
 
 
-
 ******************************************************
 
 FUNCTION AnularRP
@@ -10662,6 +10661,115 @@ PARAMETERS pan_idcomproba, pan_idregistro
 				= EliminaVinculo(v_tablaPor,pan_idregistro)
 				*************************************************************************************		
 				*************************************************************************************				
+			
+				
+				*** Elimino las retenciones realizadas para el caso de las ordenes de pago ***
+				IF v_tablaPor = "pagosprov"
+					
+					comproObjtmp		= CREATEOBJECT('comprobantesClass')
+					v_idcomprobar =  comproObjtmp.getidcomprobante("RETENCION")
+				
+					sqlmatriz(1)=" select * from linkcompro where idcomprobaa = "+ALLTRIM(STR(pan_idcomproba))+" and idregistroa = "+ALLTRIM(STR(pan_idregistro))
+				
+					
+					verror=sqlrun(vconeccionAn ,"linkcompro_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de las retenciones asociadas",0+48+0,"Error")
+						=abreycierracon(vconeccionAn ,"")	
+					ENDIF
+				
+					SELECT linkcompro_sql
+					GO TOP 
+					
+					
+					DO WHILE NOT EOF()
+						v_idlinkcomp = linkcompro_sql.idlinkcomp
+						v_idcomprobab = linkcompro_sql.idcomprobab
+						v_idregistrob = linkcompro_sql.idregistrob
+												
+						IF v_idcomprobar = v_idcomprobab
+						
+							** Elimino el enlace **
+							
+							sqlmatriz(1)=" delete from linkcompro where idlinkcomp = "+ALLTRIM(STR(v_idlinkcomp))
+						
+							verror=sqlrun(vconeccionAn ,"delreten")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de la retención",0+48+0,"Error")
+							
+							ELSE
+							
+							
+							
+								** Elimino la retencion**
+								sqlmatriz(1)=" delete from retenciones where idreten = "+ALLTRIM(STR(v_idregistrob))
+								
+								verror=sqlrun(vconeccionAn ,"delreten")
+								IF verror=.f.  
+								    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de la retención",0+48+0,"Error")
+								
+								ELSE
+								
+									
+									
+									sqlmatriz(1)=" select * from impuretencionh where idreten = "+ALLTRIM(STR(v_idregistrob))
+						
+									verror=sqlrun(vconeccionAn ,"impuretencionh_sql")
+									IF verror=.f.  
+									    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion del estado de la retención",0+48+0,"Error")
+									ELSE
+									
+										select impuretencionh_sql
+										GO TOP 
+										
+										DO WHILE NOT EOF()
+										
+											v_idafipesc = impuretencionh_sql.idafipesc
+											** Elimino afipescalash **
+											
+											sqlmatriz(1)=" delete from afipescalash where idafipesc = "+ALLTRIM(STR(v_idafipesc))
+										
+											verror=sqlrun(vconeccionAn ,"delafipescalash ")
+											IF verror=.f.  
+											    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de las retenciones",0+48+0,"Error")																						
+											ENDIF 
+										
+											SELECT impuretencionh_sql
+											SKIP 1
+
+										ENDDO
+									ENDIF 	
+									** Elimino impuretencionh **
+									sqlmatriz(1)=" delete from  impuretencionh where idreten = "+ALLTRIM(STR(v_idregistrob))
+									
+									verror=sqlrun(vconeccionAn ,"delimpuretencionh ")
+									IF verror=.f.  
+									    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de las retenciones",0+48+0,"Error")																						
+									ENDIF
+									
+									
+									** Elimino los estados de la retención **
+									sqlmatriz(1)=" delete from estadosreg where tabla = 'retenciones' and campo = 'idreten' and id = "+ALLTRIM(STR(v_idregistrob))
+								
+									verror=sqlrun(vconeccionAn ,"delretenest")
+									IF verror=.f.  
+									    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion del estado de la retención",0+48+0,"Error")
+									ENDIF 						
+								
+								ENDIF
+							ENDIF 
+													
+						
+						ENDIF 
+
+	
+						SELECT linkcompro_sql
+						SKIP 1
+					ENDDO 
+										
+				
+				ENDIF 
+				
 		ELSE
 				
 			=abreycierracon(vconeccionAn ,"")	
@@ -10676,6 +10784,8 @@ PARAMETERS pan_idcomproba, pan_idregistro
 	ENDIF 
 
 ENDFUNC 
+
+
 
 
 
