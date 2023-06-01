@@ -8850,6 +8850,14 @@ IF vtmp_recalcular = .t. THEN
 		fvlistaprecioc_sql 	= 'listaprecioc_sql'+vtmp 
 		fvarticulosimp_sql	= 'articulosimp_sql'+vtmp
 		
+		* Elimina de listaprecioh si hubiere algun registro cuyo articulo se elimino de la tabla de articulos
+		* puede haber quedado colgado algun registro 
+		sqlmatriz(1)=" delete from listaprecioh where articulo not in ( select articulo from articulos )   " 
+		verror=sqlrun(vconeccionF,"borra_sql")
+		IF verror=.f.
+			MESSAGEBOX("No se puede obtener Articulos de Listas de Precios " ,0+16,"Advertencia")
+			RETURN 
+		ENDIF 
 
 		sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea  from articulos a "
 		sqlmatriz(2)=" left join lineas l on l.linea = a.linea left join sublineas sl on sl.idsublinea = a.idsublinea "
