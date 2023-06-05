@@ -882,7 +882,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 
 	SELECT &pbocaservi
 	GO TOP 
-	DIMENSION lamatriz4(17,2)
+	DIMENSION lamatriz4(18,2)
 	DO WHILE !EOF() 
 	
 		lamatriz4(1,1)='idfacbser'
@@ -919,6 +919,8 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		lamatriz4(16,2)= ALLTRIM(STR(&pbocaservi..consumo,12,2))
 		lamatriz4(17,1)= 'idcateser'
 		lamatriz4(17,2)= ALLTRIM(STR(&pbocaservi..idcateser))
+		lamatriz4(18,1)= 'dataextra'
+		lamatriz4(18,2)= "'"+ALLTRIM(&pbocaservi..dataextra)+"'"
 
 						
 		p_tabla     = 'facturasbsertmp'
@@ -1274,8 +1276,8 @@ PARAMETERS pcon_idperiodo
 	ENDIF 
 
 
-	sqlmatriz(1)=" insert into facturasbser ( idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser ) "
-	sqlmatriz(2)=" select 0 as idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser from bsertmpt  "
+	sqlmatriz(1)=" insert into facturasbser ( idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser,dataextra ) "
+	sqlmatriz(2)=" select 0 as idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser, dataextra from bsertmpt  "
 	verror=sqlrun(vcone,"selfcpt_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
