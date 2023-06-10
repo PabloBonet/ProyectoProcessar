@@ -17147,6 +17147,446 @@ RETURN rt_idnp
 
 
 
+
+
+FUNCTION GenerarNotaProduccion
+PARAMETERS pp_idnp
+*#/----------------------------------------
+****************************************************************************************************************
+*** Generación de una Nota de Producción (NPr) a partir de una Nota de Pedido (NP) *********************************************
+*** Genera una nota de Producción (es un comprobante del tipo de Nota de Pedido).
+*** La Función recibe como parámetro una nota de pedido, si la nota de pedido tiene articulos compuestos; generará una Nota de Fabricación,
+*** La cuál va a estar compuesta por los articulos compuestos de la NP original.
+*** NOTA: La Nota de fabricación se guardara dentro de la tabla np, y tendrá el mismo comportamiento que una nota de pedido
+*** PARAMETRO: 
+*** pp_idnp : ID de la nota de pedido que se va a generar una nota de fabricación
+*** retorna el idnp: de la nota de Producción, si no lo genera retorna 0
+************************************************************************************************************
+*#/----------------------------------------
+
+	rt_idnp = 0 
+	v_tmp = frandom()
+	v_tipoOF = 'NOTA DE PRODUCCION'	
+
+	
+	**** 1.- Obtengo los Datos de la NP para generar la NPr
+	*** Me conecto a la base de datos
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)="SELECT * FROM np WHERE idnp = " + ALLTRIM(STR(pp_idnp))
+	verror=sqlrun(vconeccionF,"np_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la NP: "+ STR(pp_idpresupu),0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 	rt_idnp  
+	ENDIF 
+	SELECT np_sql
+	GO TOP 
+	IF EOF() THEN 
+		USE IN np_sql
+		=abreycierracon(vconeccionF,"")
+		RETURN rt_idnp 
+	ENDIF 
+	
+	SELECT np_sql
+	v_pventaNP = np_sql.pventa
+	v_numeroNP = np_sql.numero
+	v_puntoV = np_sql.puntov
+	
+	
+	
+	v_numeroNP = ALLTRIM(STRTRAN(STR(v_numeroNP,8,0),' ','0'))
+	
+	
+	v_sino = MESSAGEBOX("¿Desea crear una Nota de Producción con los componentes de la NP: "+v_puntoV+" - "+v_numeroNP ,4+32+256,"Crear Nota de Producción")
+	
+	IF v_sino <> 6
+	
+		RETURN rt_idnp 
+	ENDIF 
+			
+			
+			
+	** Actualizo los precios ***
+	vlistaspretmp = 'listaspretmp'
+	GetListasPrecios(vlistaspretmp)
+	
+	vlistaPrecio = vlistaspretmp+'a'
+	SELECT &vlistaPrecio 
+	GO TOP 
+
+	
+	
+	*** Busco el a 	
+	comprobanteObj 	= CREATEOBJECT('comprobantesclass')
+	v_idComproOF = comprobanteObj.getIdComprobante("NOTA DE PRODUCCION")
+	
+		
+	sqlmatriz(1)=" SELECT c.idcomproba, a.pventa FROM comprobantes c "
+	sqlmatriz(2)=" LEFT JOIN compactiv a ON a.idcomproba = c.idcomproba "
+	sqlmatriz(4)=" WHERE c.tabla = 'np' and c.idcomproba = " +ALLTRIM(STR(v_idComproOF))+" and a.pventa = "+ALLTRIM(STR(v_pventaNP))
+
+	verror=sqlrun(vconeccionF,"comproof_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Comprobantes de OF ... ",0+48+0,"Error")
+	    RETURN rt_idnp
+	ENDIF	
+
+
+
+	***	Buso las OT de las NP que tengan articulos compuestos **
+	
+	sqlmatriz(1)="SELECT * FROM ot WHERE idnp = " + ALLTRIM(STR(pp_idnp))+ " and articulo in (select articulo from articuloscmp) "
+	verror=sqlrun(vconeccionF,"ot_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del DETALLE de la NP: "+ STR(pp_idpresupu),0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN rt_idnp 
+	ENDIF 
+	
+	
+	** Busco el tipo de NP ***
+	sqlmatriz(1)="SELECT * FROM tiponp WHERE descpe = '"+ALLTRIM(v_tipoOF )+"'"
+	verror=sqlrun(vconeccionF,"tipoOF_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del tipo de la OF: "+ STR(pp_idpresupu),0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN rt_idnp 
+	ENDIF 
+	
+
+	*** Grabo la Nota de Producción y sus Tablas Asociadas de acuerdo a la NP
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+
+
+
+	SELECT np_sql
+	GO TOP 
+	IF !EOF() THEN && Si existe la NP entonces Genero la Nota de Producción
+	
+		*** Comprueba que tengan componentes ***
+		
+		v_tablaCompuestosTMP = "compuestosOTTMP"
+		
+	
+		CREATE TABLE otComponentes FREE (idtipoot I, articulo C(50),detalle C(254),cantidad N(13,2), unidad C(50), unitario N(13,2),observa C(254), ;
+		 fechaentre C(8), cantidadfc N(13,2), unidadfc C(50), neto N(13,2), impuestos N(13,2), impuesto I, razonimp N(13,2), total N(13,2), idmate I, idtiponp I, imprimir C(1))
+		
+		SELECT ot_sql
+		GO top
+		
+		DO WHILE NOT eof()
+			** Busco lo componentes para cada articulo y lo agrego a la tabla otComponentes ***
+			v_artOT = ot_sql.articulo
+			v_cantOT = ot_sql.cantidad
+			v_ret = componentesArticulo (v_artOT, v_tablaCompuestosTMP)
+			
+			SELECT tipoOF_sql
+			GO TOP 
+			IF NOT EOF()
+				v_idtipoNP = tipoOF_sql.idtiponp
+			ELSE
+			 v_idtipoNP = 1
+			ENDIF 
+			IF v_ret = .T.
+			
+				SELECT &v_tablaCompuestosTMP 
+				GO TOP 
+				
+				DO WHILE NOT EOF()
+				
+				v_idtipoot		= 1
+						v_articulo 		= &v_tablaCompuestosTMP..articulo
+				
+						v_sentencia = "SELECT * FROM "+ ALLTRIM(vlistaPrecio)+" WHERE articulo = v_articulo  INTO table artTmp"
+						
+						&v_sentencia
+						
+						SELECT artTmp
+						GO TOP 
+						
+						
+						
+				
+						
+						v_detalle 		= &v_tablaCompuestosTMP..detalle
+						v_cantidad 		= (&v_tablaCompuestosTMP..cantidad)*v_cantOT 
+						v_unidad 		= &v_tablaCompuestosTMP..unidad
+						v_idmate	 	= &v_tablaCompuestosTMP..idmate
+						IF v_idmate > 0
+						v_unitario 		= &v_tablaCompuestosTMP..costo
+						ELSE
+						v_unitario		= artTmp.pventa
+						ENDIF 
+*								
+						
+						
+						v_observa		= &v_tablaCompuestosTMP..observa
+						v_fechaentre 	= DTOS(DATE())
+						v_cantidadFC 	= 0.00
+						v_unidadFC 	 	= ''
+						v_impuestos	 	= artTmp.impuestos
+						v_impuesto	 	= 1
+						v_neto		 	= v_unitario 
+						v_razonimp	 	= artTmp.razonimpu
+						v_total		 	= v_cantidad * v_unitario
+						
+						v_idtiponpot 	= v_idtipoNP 
+						v_impr		 	= 'S'
+						
+					
+						INSERT INTO otComponentes VALUES (v_idtipoot, v_articulo,v_detalle,v_cantidad, v_unidad, v_unitario,v_observa, ;
+		 				v_fechaentre,v_cantidadfc,v_unidadfc, v_neto, v_impuestos, v_impuesto, v_razonimp, v_total,  v_idmate, v_idtiponp, v_impr)
+		
+				
+				
+					SELECT &v_tablaCompuestosTMP 
+					SKIP 1
+
+				ENDDO
+			
+			ENDIF 
+			
+		
+			SELECT ot_sql
+			SKIP 1
+
+		ENDDO
+		
+		SELECT  otComponentes
+		GO TOP 
+		
+		SELECT  otComponentes
+		GO TOP 
+		IF EOF() && La NP no tiene componentes -> Retorno 0
+			RETURN rt_idnp		
+		ENDIF 
+	
+		** Grabo la Cabecera de la Nota de Pedido **
+			
+		v_idnp = 0
+		v_idnp = maxnumeroidx("idnp","I","np",1)
+		IF v_idnp <= 0
+			MESSAGEBOX("No se pudo recuperar el ultimo indice de la NP",0+16,"Error")
+			RETURN rt_idnp 
+		ENDIF 
+		
+			cnp_idcomproba	= comproof_sql.idcomproba
+			cnp_pventa		= comproof_sql.pventa
+			cnp_numero		= maxnumerocom(cnp_idcomproba,cnp_pventa,1)
+			
+		
+		SELECT np_sql
+		GO TOP 
+		
+		v_idcomprobaNP = np_sql.idcomproba
+		v_vendedor = np_sql.vendedor
+		v_transporte = np_sql.transporte
+		v_nombretran = np_sql.nombretran
+		v_entidad = np_sql.entidad
+		v_nombre = np_sql.nombre
+		cnp_observa 	= "Nota de Producción asociada a NP: "+ALLTRIM(v_puntov)+'-'+v_numeroNP+'   '+ALLTRIM(STR(v_entidad))+'-'+ALLTRIM(v_nombre)
+		v_tiponp = 4 && NOTA DE PRODUCCIÓN
+		v_fechaEntre = np_sql.fechaentre
+		
+
+		DIMENSION lamatriz1(16,2)
+		DIMENSION lamatriz2(20,2)
+					
+		lamatriz1(1,1)='idnp'
+		lamatriz1(1,2)= ALLTRIM(STR(v_idnp))
+		lamatriz1(2,1)='puntov'
+		lamatriz1(2,2)="'"+ALLTRIM(v_puntov)+"'"
+		lamatriz1(3,1)='numero'
+		lamatriz1(3,2)= ALLTRIM(STR(cnp_numero))
+		lamatriz1(4,1)='fecha'
+		lamatriz1(4,2)= "'"+ALLTRIM(DTOS(DATE()))+"'"
+		lamatriz1(5,1)='hora'
+		lamatriz1(5,2)= "'"+ALLTRIM(SUBSTR(TTOC(DATETIME(),3),12,9))+"'"
+		lamatriz1(6,1)='usuario'
+		lamatriz1(6,2)="'"+ALLTRIM(_SYSUSUARIO)+"'"
+		lamatriz1(7,1)='vendedor'
+		lamatriz1(7,2)= ALLTRIM(STR(v_vendedor ))
+		lamatriz1(8,1)='transporte'
+		lamatriz1(8,2)= ALLTRIM(STR(v_transporte))
+		lamatriz1(9,1)='nombretran'
+		lamatriz1(9,2)="'"+ALLTRIM(v_nombretran)+"'"
+		lamatriz1(10,1)='entidad'
+		lamatriz1(10,2)=ALLTRIM(STR(v_entidad))
+		lamatriz1(11,1)='nombre'
+		lamatriz1(11,2)="'"+alltrim(v_nombre)+"'"
+		lamatriz1(12,1)='observa'
+		lamatriz1(12,2)="'"+ALLTRIM(cnp_observa)+"'"
+		lamatriz1(13,1)='idtiponp'
+		lamatriz1(13,2)= ALLTRIM(STR(v_tiponp))
+		lamatriz1(14,1)='idcomproba'
+		lamatriz1(14,2)=ALLTRIM(STR(cnp_idcomproba))
+		lamatriz1(15,1)='pventa'
+		lamatriz1(15,2)=ALLTRIM(STR(cnp_pventa))
+		lamatriz1(16,1)='fechaentre'
+		lamatriz1(16,2)= "'"+ALLTRIM(v_fechaEntre)+"'"
+
+		p_tabla     = 'np'
+		p_matriz    = 'lamatriz1'
+		p_conexion  = vconeccionF
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+STR(cnp_numero),0+48+0,"Error")
+		ENDIF  	
+		RELEASE lamatriz1
+		
+
+		** Grabo el Detalle de la Nota de Producción a partir de la NP **
+
+		SELECT otComponentes
+		GO TOP 
+
+		DO WHILE NOT EOF()
+		 				
+			v_id_ot 		= maxnumeroidx("idot","I","ot",1)
+			v_idtipoot		= otComponentes.idtipoot
+			v_articulo 		= otComponentes.articulo
+			v_detalle 		= otComponentes.detalle
+			v_cantidad 		= otComponentes.cantidad
+			v_unidad 		= otComponentes.unidad
+			v_unitario 		= otComponentes.unitario		
+			v_observa		= otComponentes.observa
+			v_fechaentre 	= otComponentes.fechaentre
+			v_cantidadFC 	= otComponentes.cantidadFc
+			v_unidadFC 	 	= otComponentes.unidadFc
+			v_impuestos	 	= otComponentes.impuestos
+			v_impuesto	 	= otComponentes.impuesto
+			v_neto		 	= otComponentes.neto
+			v_razonimp	 	= otComponentes.razonimp
+			v_total		 	= otComponentes.total
+			v_idmate	 	= otComponentes.idmate
+			v_idtiponpot 	= otComponentes.idtiponp
+			v_impr		 	= otComponentes.imprimir
+
+			lamatriz2(1,1)='idnp'
+			lamatriz2(1,2)=ALLTRIM(STR(v_idnp))
+			lamatriz2(2,1)='idot'
+			lamatriz2(2,2)=ALLTRIM(STR(v_id_ot))
+			lamatriz2(3,1)='idtipoot'
+			lamatriz2(3,2)=ALLTRIM(STR(v_idtipoot))
+			lamatriz2(4,1)='articulo'
+			lamatriz2(4,2)="'"+ALLTRIM(v_articulo)+"'"
+			lamatriz2(5,1)='detalle'
+			lamatriz2(5,2)= "'"+ALLTRIM(v_detalle)+"'"
+			lamatriz2(6,1)='cantidad'
+			lamatriz2(6,2)=ALLTRIM(STR(v_cantidad,13,4))
+			lamatriz2(7,1)='unidad'
+			lamatriz2(7,2)="'"+alltrim(v_unidad )+"'"
+			lamatriz2(8,1)='unitario'
+			lamatriz2(8,2)=ALLTRIM(STR(v_unitario,13,4))
+			lamatriz2(9,1)='observa'
+			lamatriz2(9,2)="'"+ALLTRIM(v_observa)+"'"
+			lamatriz2(10,1)='fechaentre'
+			lamatriz2(10,2)="'"+ALLTRIM(v_fechaentre)+"'"
+			lamatriz2(11,1)='cantidadfc'
+			lamatriz2(11,2)=ALLTRIM(STR(v_cantidadFC ,13,4))
+			lamatriz2(12,1)='unidadfc'
+			lamatriz2(12,2)="'"+ALLTRIM(v_unidadFC )+"'"
+			lamatriz2(13,1)='impuestos'
+			lamatriz2(13,2)=ALLTRIM(STR(v_impuestos,13,4))
+			lamatriz2(14,1)='total'
+			lamatriz2(14,2)=ALLTRIM(STR(v_total,13,4))
+			lamatriz2(15,1)='impuesto'
+			lamatriz2(15,2)=ALLTRIM(STR(v_impuesto))
+			lamatriz2(16,1)='razonimp'
+			lamatriz2(16,2)=ALLTRIM(STR(v_razonimp,13,4))
+			lamatriz2(17,1)='neto'
+			lamatriz2(17,2)=ALLTRIM(STR(v_neto,13,4))
+			lamatriz2(18,1)='idmate'
+			lamatriz2(18,2)=ALLTRIM(STR(v_idmate))
+			lamatriz2(19,1)='idtiponp'
+			lamatriz2(19,2)=ALLTRIM(STR(v_idtiponpot))
+			lamatriz2(20,1)='imprimir'
+			lamatriz2(20,2)="'"+ALLTRIM(v_impr)+"'"
+
+			p_tabla     = 'ot'
+			p_matriz    = 'lamatriz2'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+			ENDIF						
+			
+			
+			SELECT otComponentes
+			SKIP 1
+		ENDDO	
+		RELEASE lamatriz2
+
+
+
+		*** Registro la relación de los comprobantes- En caso que tenga ***
+		DIMENSION lamatrizli(5,2)
+
+		v_idlinkcomp	= 0
+		v_idregistroa	= pp_idnp
+		v_idcomprobaa	= v_idcomprobaNP
+		v_idregistrob 	= v_idnp
+		v_idcomprobab	= cnp_idcomproba
+			
+		lamatrizli(1,1)='idlinkcomp'
+		lamatrizli(1,2)= ALLTRIM(STR(v_idlinkcomp))
+		lamatrizli(2,1)= 'idregistroa'
+		lamatrizli(2,2)= ALLTRIM(STR(v_idregistroa))
+		lamatrizli(3,1)= 'idcomprobaa'
+		lamatrizli(3,2)= ALLTRIM(STR(v_idcomprobaa))
+		lamatrizli(4,1)= 'idregistrob'
+		lamatrizli(4,2)= ALLTRIM(STR(v_idregistrob))
+		lamatrizli(5,1)= 'idcomprobab'
+		lamatrizli(5,2)= ALLTRIM(STR(v_idcomprobab))
+
+		p_tabla     = 'linkcompro'
+		p_matriz    = 'lamatrizli'
+		p_conexion  = vconeccionF
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
+		ENDIF			
+		RELEASE lamatrizli
+		
+		
+		
+		RELEASE lamatriz
+		RELEASE lamatriz2
+
+
+		
+		*********************************************************
+		*** REGISTRO estado activo ***
+		registrarEstado("np","idnp",v_idnp,"I","ACTIVO")
+			
+		*** ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO  ***
+		guardaCajaRecaH (cnp_idcomproba, v_idnp)
+		
+		rt_idnp = v_idnp
+	
+	ENDIF
+*!*		
+*!*		USE IN presupu_sql
+*!*		USE IN presupuh_sql
+*!*		USE IN datosextra_sql
+*!*		USE IN datosanexo_sql 
+	=abreycierracon(vconeccionF,"")	
+	
+	IF rt_idnp > 0 THEN 
+		IF MESSAGEBOX("¿Desea Imprimir la Nota de Producción Generada ?",4+32,"Imprimir Nota de Producción") = 6 THEN 
+			=imprimirNP(rt_idnp)
+		ENDIF 
+	ENDIF 
+
+RETURN rt_idnp 
+
+
+
+
+
 FUNCTION obtenerContribuyente 
 PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 *#/----------------------------------------
@@ -22100,3 +22540,85 @@ PARAMETERS p_codigoAM, p_tipo
 	
 	RETURN -1
 ENDFUNC 
+
+
+
+
+
+FUNCTION componentesArticulo
+PARAMETERS p_articulo, p_nombreTablaRet
+*#/----------------------------------------
+* Función que retorna una lista de los componentes y sus respectivas cantidades del articulo pasado como parámetro
+* Parámetros: 	p_articulo: Codigo articulo compuesto
+*				p_nombreTablaRet: Nombre de la tabla retorno
+* 	Retorna .T. si no hubo errores .F. en otro caso
+*#/----------------------------------------
+	
+	IF TYPE('p_articulo') <> 'C'
+			MESSAGEBOX("El código del articulo es inválido, se esperaba una cadena de caracteres",0+16+256,"Función: componentesArticulo")
+		RETURN .F.
+	ENDIF 
+	
+	
+	IF TYPE('p_nombreTablaRet') <> 'C'
+			MESSAGEBOX("EL nombre de la tabla es inválida, se esperaba una cadena de caracteres",0+16+256,"Función: componentesArticulo")
+		RETURN .F.
+	ENDIF 
+
+	
+ 	create table componentesTmp FREE (idarticmp I, idmate I, articulo C(50),cantidad N(13,2), detalle C(254), unidad C(50), costo N(13,2), linea C(10), observa C(254))
+ 	
+*	CREATE TABLE temp (idmate I, articulo C(50),cantidad N(13,2), detalle C(254), unidad C(50), costo(13,2), linea C(10), unitario N(13,2),observa C(254), impuestos N(13,2), razonimp N(13,2),neto N(13,2))
+
+
+
+	*** Busco los componentes 
+
+	** Me conecto a la base de datos **
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+
+	sqlmatriz(1)= " SELECT a.*,r.detalle, r.unidad, r.costo as importe, r.linea, r.observa,a.articulo as codarti  FROM articuloscmp a left join articulos r on a.articuloc = r.articulo where a.articulo = '"+ALLTRIM(p_articulo)+"' and a.articuloc <> 0 "
+	sqlmatriz(2)= " union "
+	sqlmatriz(3)=" SELECT a.*,m.detalle, m.unidad, m.impuni as importe, m.linea, m.observa, m.codigomat as codarti FROM articuloscmp a left join otmateriales m on a.idmate = m.idmate where a.articulo = '"+ALLTRIM(p_articulo)+"' and a.idmate > 0  "
+	
+	verror=sqlrun(vconeccionF,"componentes_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los componentes del articulo",0+48+0,"Error")
+			= abreycierracon(vconeccionF,"")
+	    RETURN .F. 
+	ENDIF
+	** Cierra conexión
+	= abreycierracon(vconeccionF,"")
+	
+		
+	SELECT componentes_sql
+	GO TOP 
+	DO WHILE NOT EOF()
+	
+		v_idarticmp = componentes_sql.idarticmp
+		v_idmate = componentes_sql.idmate 
+		v_articulo = ALLTRIM(componentes_sql.codarti)
+		v_cantidad = componentes_sql.cantidad 
+		v_detalle = ALLTRIM(componentes_sql.detalle)
+		v_unidad = ALLTRIM(componentes_sql.unidad)
+		v_importe = componentes_sql.importe
+		v_linea = ALLTRIM(componentes_sql.linea)
+		v_observa = ALLTRIM(componentes_sql.observa)
+	
+		INSERT INTO componentesTmp VALUES (v_idarticmp, v_idmate, v_articulo, v_cantidad, v_detalle, v_unidad, v_importe, v_linea, v_observa)
+	
+	
+		SELECT componentes_sql
+		SKIP 1
+
+	ENDDO
+	
+	
+	SELECT * FROM componentesTmp INTO TABLE  &p_nombreTablaRet
+	
+	
+	 RETURN .T.
+	
+ENDFUNC 
+
