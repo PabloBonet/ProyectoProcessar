@@ -340,6 +340,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 *!*						I   = &vconceptoser..importe 
 					I   = IIF(ALLTRIM(&ventidadesdf..fijarvalor) = 'S', &ventidadesdf..unitario, &vconceptoser..importe) 				
 					Fun = &vconceptoser..funcion
+					
 					IF !EMPTY(Fun) THEN 
 					
 	*********************************************************				
@@ -392,15 +393,16 @@ PARAMETERS par_idperiodo, par_ordenfa
 						netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd, cantidad WITH ( cantidad * imp_cantidad )
 					
 				ELSE 
-					replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
+					replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
 				ENDIF 
 			ELSE 
-				replace articulo WITH concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
+				replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
 			ENDIF 
 		
 		ENDSCAN 
 		
 	ENDFOR 
+
 
 
 	SELECT &ventidadesdf
