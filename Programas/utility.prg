@@ -17181,6 +17181,7 @@ PARAMETERS pp_idnp
 		=abreycierracon(vconeccionF,"")
 	    RETURN 	rt_idnp  
 	ENDIF 
+	
 	SELECT np_sql
 	GO TOP 
 	IF EOF() THEN 
@@ -17193,29 +17194,8 @@ PARAMETERS pp_idnp
 	v_pventaNP = np_sql.pventa
 	v_numeroNP = np_sql.numero
 	v_puntoV = np_sql.puntov
-	
-	
-	
-	v_numeroNP = ALLTRIM(STRTRAN(STR(v_numeroNP,8,0),' ','0'))
-	
-	
-	v_sino = MESSAGEBOX("¿Desea crear una Nota de Producción con los componentes de la NP: "+v_puntoV+" - "+v_numeroNP ,4+32+256,"Crear Nota de Producción")
-	
-	IF v_sino <> 6
-	
-		RETURN rt_idnp 
-	ENDIF 
-			
-			
-			
-	** Actualizo los precios ***
-	vlistaspretmp = 'listaspretmp'
-	GetListasPrecios(vlistaspretmp)
-	
-	vlistaPrecio = vlistaspretmp+'a'
-	SELECT &vlistaPrecio 
-	GO TOP 
 
+	v_numeroNP = ALLTRIM(STRTRAN(STR(v_numeroNP,8,0),' ','0'))
 	
 	
 	*** Busco el a 	
@@ -17232,9 +17212,7 @@ PARAMETERS pp_idnp
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Comprobantes de OF ... ",0+48+0,"Error")
 	    RETURN rt_idnp
 	ENDIF	
-
-
-
+	
 	***	Buso las OT de las NP que tengan articulos compuestos **
 	
 	sqlmatriz(1)="SELECT * FROM ot WHERE idnp = " + ALLTRIM(STR(pp_idnp))+ " and articulo in (select articulo from articuloscmp) "
@@ -17246,7 +17224,7 @@ PARAMETERS pp_idnp
 	    RETURN rt_idnp 
 	ENDIF 
 	
-	
+
 	** Busco el tipo de NP ***
 	sqlmatriz(1)="SELECT * FROM tiponp WHERE descpe = '"+ALLTRIM(v_tipoOF )+"'"
 	verror=sqlrun(vconeccionF,"tipoOF_sql")
@@ -17256,14 +17234,6 @@ PARAMETERS pp_idnp
 		=abreycierracon(vconeccionF,"")
 	    RETURN rt_idnp 
 	ENDIF 
-	
-
-	*** Grabo la Nota de Producción y sus Tablas Asociadas de acuerdo a la NP
-	p_tipoope     = 'I'
-	p_condicion   = ''
-	v_titulo      = " EL ALTA "
-
-
 
 	SELECT np_sql
 	GO TOP 
@@ -17272,14 +17242,38 @@ PARAMETERS pp_idnp
 		*** Comprueba que tengan componentes ***
 		
 		v_tablaCompuestosTMP = "compuestosOTTMP"
-		
+	
 	
 		CREATE TABLE otComponentes FREE (idtipoot I, articulo C(50),detalle C(254),cantidad N(13,2), unidad C(50), unitario N(13,2),observa C(254), ;
 		 fechaentre C(8), cantidadfc N(13,2), unidadfc C(50), neto N(13,2), impuestos N(13,2), impuesto I, razonimp N(13,2), total N(13,2), idmate I, idtiponp I, imprimir C(1))
-		
+		 
+	
 		SELECT ot_sql
 		GO top
+		IF NOT EOF()
 		
+			v_sino = MESSAGEBOX("¿Desea crear una Nota de Producción con los componentes de la NP: "+v_puntoV+" - "+v_numeroNP ,4+32+256,"Crear Nota de Producción")
+		
+			IF v_sino <> 6
+			
+				RETURN rt_idnp 
+			ENDIF 
+		ELSE
+		
+				RETURN rt_idnp 	
+		ENDIF 
+
+		** Actualizo los precios ***
+		vlistaspretmp = 'listaspretmp'
+		GetListasPrecios(vlistaspretmp)
+		
+		vlistaPrecio = vlistaspretmp+'a'
+		SELECT &vlistaPrecio 
+		GO TOP 
+
+
+		SELECT ot_sql
+		GO top
 		DO WHILE NOT eof()
 			** Busco lo componentes para cada articulo y lo agrego a la tabla otComponentes ***
 			v_artOT = ot_sql.articulo
@@ -17368,7 +17362,10 @@ PARAMETERS pp_idnp
 		ENDIF 
 	
 		** Grabo la Cabecera de la Nota de Pedido **
-			
+			*** Grabo la Nota de Producción y sus Tablas Asociadas de acuerdo a la NP
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
 		v_idnp = 0
 		v_idnp = maxnumeroidx("idnp","I","np",1)
 		IF v_idnp <= 0
@@ -22578,7 +22575,7 @@ PARAMETERS p_articulo, p_nombreTablaRet
 	vconeccionF=abreycierracon(0,_SYSSCHEMA)
 
 
-	sqlmatriz(1)= " SELECT a.*,r.detalle, r.unidad, r.costo as importe, r.linea, r.observa,a.articulo as codarti  FROM articuloscmp a left join articulos r on a.articuloc = r.articulo where a.articulo = '"+ALLTRIM(p_articulo)+"' and a.articuloc <> 0 "
+	sqlmatriz(1)= " SELECT a.*,r.detalle, r.unidad, r.costo as importe, r.linea, r.observa,a.articuloc as codarti  FROM articuloscmp a left join articulos r on a.articuloc = r.articulo where a.articulo = '"+ALLTRIM(p_articulo)+"' and a.articuloc <> 0 "
 	sqlmatriz(2)= " union "
 	sqlmatriz(3)=" SELECT a.*,m.detalle, m.unidad, m.impuni as importe, m.linea, m.observa, m.codigomat as codarti FROM articuloscmp a left join otmateriales m on a.idmate = m.idmate where a.articulo = '"+ALLTRIM(p_articulo)+"' and a.idmate > 0  "
 	
