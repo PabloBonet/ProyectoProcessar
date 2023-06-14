@@ -14649,22 +14649,21 @@ GO TOP
 			p_matriz    = 'lamatriz7'
 			p_conexion  = vconeccionF
 
-							lamatriz7(1,1)='idlinkcomp'
-							lamatriz7(1,2)=ALLTRIM(STR(v_idlinkComp))
-							lamatriz7(2,1)='idcomprobaa'
-							lamatriz7(2,2)=ALLTRIM(STR(v_idcomprobaa))
-							lamatriz7(3,1)='idregistroa'
-							lamatriz7(3,2)=ALLTRIM(STR(v_idregistroa))
-							lamatriz7(4,1)='idcomprobab'
-							lamatriz7(4,2)=ALLTRIM(STR(v_idcomprobab))
-							lamatriz7(5,1)='idregistrob'
-							lamatriz7(5,2)=ALLTRIM(STR(v_idregistrob))
+			lamatriz7(1,1)='idlinkcomp'
+			lamatriz7(1,2)=ALLTRIM(STR(v_idlinkComp))
+			lamatriz7(2,1)='idcomprobaa'
+			lamatriz7(2,2)=ALLTRIM(STR(v_idcomprobaa))
+			lamatriz7(3,1)='idregistroa'
+			lamatriz7(3,2)=ALLTRIM(STR(v_idregistroa))
+			lamatriz7(4,1)='idcomprobab'
+			lamatriz7(4,2)=ALLTRIM(STR(v_idcomprobab))
+			lamatriz7(5,1)='idregistrob'
+			lamatriz7(5,2)=ALLTRIM(STR(v_idregistrob))
 														
 							
-							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-							    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar linkcompro",0+48+0,"Error")
-							
-							ENDIF 
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar linkcompro",0+48+0,"Error")				
+			ENDIF 
 	
 						
 				*Registracion Contable del Caja Ingreso/Egreso	
@@ -21156,7 +21155,7 @@ ENDIF
 
 
 FUNCTION GenerarFDC
-PARAMETERS p_tablaarti, p_cone
+PARAMETERS p_tablaarti, p_cone, p_idvincular
 *#/ ------------------------------
 * Crea un Comprobante de facturacion a partir de los articulos recibidos en la tabla pasada como parámetros
 * PARAMETROS : 
@@ -21166,6 +21165,16 @@ PARAMETERS p_tablaarti, p_cone
 * 	retorna el idfactura del comprobante generado
 *   Si hay error retorna 0
 *#/--------------------------------
+	IF !(TYPE('p_idvincular')='N') THEN 
+		p_idvincular = 0 
+	ENDIF 
+	* Variables para Vinculos si se recibe parametro de vinculación
+	v_idcompro_va	= 0
+	v_idregistro_va	= 0
+	v_idcompro_vb	= 0
+	v_idregistro_vb	= p_idvincular
+	
+
 	v_retornoidfactura = 0
 	IF p_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
 		vconeccionL = p_cone
@@ -21368,6 +21377,10 @@ PARAMETERS p_tablaarti, p_cone
 			p_condicion   = ''
 			v_titulo      = " EL ALTA "
 	
+			* datos para vinculos de comprobantes
+			v_idcompro_va   = v_idcom
+			v_idregistro_va = v_idfactura
+	
 			DIMENSION lamatriz1(53,2)
 			
 			lamatriz1(1,1)='idfactura'
@@ -21518,6 +21531,21 @@ PARAMETERS p_tablaarti, p_cone
 				=abreycierracon(vconeccionL ,"")
 			    RETURN 0
 			ENDIF 
+
+			** SI RECIBIO PARAMETRO PARA VINCULAR BUSCO LOS DATOS PARA HACER EL VINCULO
+			IF p_idvincular > 0 THEN 
+				sqlmatriz(1)="SELECT idcomproba, idfactura from facturas where idfactura = "+ALLTRIM(STR(p_idvincular))
+				verror=sqlrun(vconeccionL ,"fcvincular_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA la Factura  ",0+48+0,"Error")
+				*** me desconecto	
+					=abreycierracon(vconeccionL ,"")
+				    RETURN 0
+				ENDIF 			
+				v_idcompro_vb = fcvincular_sql.idcomproba
+			ENDIF 
+
+
 			=abreycierracon(vconeccionL,"")
 			v_totalfactu = totalf_sql.total
 			USE IN totalf_sql
@@ -21534,11 +21562,16 @@ PARAMETERS p_tablaarti, p_cone
 			guardaCajaRecaH (v_idcomag, v_idfacturaag)
 
 
-		*** AUTORIZO COMPROBANTE ***
-			IF v_electroag = 'S' THEN
-					
-				vauto = autorizarCompFE(v_idfacturaag,v_idcomag)
+			** REGISTRO EL VINCULO SI RECIBIO COMPROBANTE PARA VINCULAR ( para el caso de NC o ND)
+			IF v_idcompro_va > 0 AND v_idregistro_va > 0  AND  v_idcompro_vb > 0 AND v_idregistro_vb  > 0 THEN 
+				=ABLinkCompro(v_idcompro_va ,v_idregistro_va ,v_idcompro_vb ,v_idregistro_vb,'+')
+			ENDIF 
 
+
+
+		*** AUTORIZO COMPROBANTE ***
+			IF v_electroag = 'S' THEN					
+				vauto = autorizarCompFE(v_idfacturaag,v_idcomag)
 			ENDIF 
 			*** CONTABILIZO  EL COMPROBANTE ***
 			v_cargo = ContabilizaCompro('facturas', v_idfacturaag, 0, v_totalfactu)
@@ -21595,7 +21628,7 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 		RETURN 0
 	ENDIF 
 	
-	
+	 	
 	IF p_ImporteRec <= 0 OR P_EntidadRec <= 0 THEN 
 		RETURN 0
 	ENDIF 
@@ -21611,6 +21644,8 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 
 	V_PidcomprobaRec = P_idcomprobaRec
 	v_pventaRec 	 = p_pventaRec
+	
+	v_IDfacturaVin = 0
 	
 
 * Obtengo el Impuesto del Artículo para descontarlo del importe ya que tengo que pasar el valor neto
@@ -21634,6 +21669,7 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 	V_idcomproRERec = 0
 	V_SaldoREcibo   = 0.00
 	IF 	P_IdReciboRec > 0 THEN 
+
 	
 		sqlmatriz(1)="SELECT r.*, s.saldo from recibos r left join r_recibossaldo s on s.idrecibo = r.idrecibo where r.idrecibo = "+ALLTRIM(STR(P_IdReciboRec))
 		verror=sqlrun(vconeccionR ,"reciborec_sql")
@@ -21648,10 +21684,40 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 		V_idcomproRERec = reciborec_sql.idcomproba
 		USE IN reciborec_sql
 		
+	**********************************************	
+		*Obtengo la factura asociada a la ND desde el recibo pasado como parametro
+		* Es obligatorio enviar una factura asociada a la ND por Recargos
+
+		sqlmatriz(1)=" SELECT idfactura, recargo FROM cobros  "
+		sqlmatriz(5)=" WHERE  idregipago = "+ALLTRIM(STR(P_IdReciboRec))+" and  idcomproba = "+ALLTRIM(STR(V_idcomproRERec))+" and  recargo > 0"
+		verror=sqlrun(vconeccionR ,"FacturasRec_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las Facturas asociadas a la ND  ",0+48+0,"Error")
+		*** me desconecto	
+			=abreycierracon(vconeccionR ,"")
+		    RETURN 0
+		ENDIF 
+		SELECT FacturasRec_sql
+
+
+		GO TOP 
+		IF EOF() THEN 
+			MESSAGEBOX("Error al obtener las Facturas Asociadas a la ND",0+48+0,"Error")
+			=abreycierracon(vconeccionR,"")
+			RETURN 0
+		ENDIF 
+		SELECT FacturasRec_sql
+		GO TOP 
+		v_IDfacturaVin =  FacturasRec_sql.idfactura 
+
+		USE IN FacturasRec_sql
+
 	ENDIF 
-**********************************************	
+
+
 	
-	
+**********************************************
+*************************************************	
 	IF V_PidcomprobaRec = 0 OR p_pventaRec = 0 THEN 
 		v_canlineas = ALINES(arrcompro,_SYSNDRECARGOS,1,';')
 		v_pventaRec 	 = INT(VAL(SUBSTR(_SYSNDRECARGOS,1,2)))	
@@ -21708,9 +21774,9 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 	CREATE TABLE tmpndinteres (entidad i , servicio i, cuenta i, articulo c(20), cantidad y, unitario y, fecha c(8), idcomproba i, pventa i)
 	INSERT  INTO tmpndinteres VALUES (P_EntidadREc,0,0,'ND RECARGOS',1,v_imponetouni,DTOS(DATE()),V_PidcomprobaRec, V_pventaREc)
 
-	USE IN tmpndinteres 
-	v_idndRec = GenerarFDC("tmpndinteres",0)
 
+	USE IN tmpndinteres 
+	v_idndRec = GenerarFDC("tmpndinteres",0,v_IDfacturaVin )
 	
 	IF v_idndRec > 0 AND P_IdReciboRec > 0 AND V_idcomproRERec > 0 AND V_SaldoREcibo > 0 THEN 
 		v_importecancela = p_ImporteRec
@@ -22619,3 +22685,92 @@ PARAMETERS p_articulo, p_nombreTablaRet
 	
 ENDFUNC 
 
+
+
+
+FUNCTION ABLinkCompro 
+PARAMETERS pcl_idcomprobaa, pcl_idregistroa, pcl_idcomprobab, pcl_idregistrob, pcl_opera
+*#/----------------------------------------
+* Función que agrega (Alta) o quita (Baja) un vinculo entre comprobantes en la tabla linkcompro
+* Parámetros: 	pcl_idcomprobaa = idcomproba del comprobante A
+*			    pcl_idregistroa = idregistro del comprobante A
+*				pcl_idcomprobab = idcomproba del comprobante B
+*				pcl_idregistrob = idregistro del comprobante B
+*				pcl_opera		= + su agrega - si elimina el registro
+* 	Retorna el idlinkcompro del comprobante agregado o eliminado, o 0 si no pudo completar la operacion
+*#/----------------------------------------
+	v_reto = -1
+	IF pcl_idcomprobaa > 0 AND pcl_idregistroa > 0 AND  pcl_idcomprobab > 0 AND pcl_idregistrob > 0  THEN 
+		
+		IF pcl_opera = '+' THEN  
+		
+			** Me conecto a la base de datos **
+			vconeccionPCL=abreycierracon(0,_SYSSCHEMA)
+			DIMENSION lamatriz7(5,2)
+			v_idlinkComp  = 0
+			v_idcomprobaa = pcl_idcomprobaa 
+			v_idregistroa = pcl_idregistroa
+			v_idcomprobab = pcl_idcomprobab 
+			v_idregistrob = pcl_idregistrob
+			
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+			p_tabla       = 'linkcompro'
+			p_matriz      = 'lamatriz7'
+			p_conexion    = vconeccionPCL
+
+			lamatriz7(1,1)='idlinkcomp'
+			lamatriz7(1,2)=ALLTRIM(STR(v_idlinkComp))
+			lamatriz7(2,1)='idcomprobaa'
+			lamatriz7(2,2)=ALLTRIM(STR(v_idcomprobaa))
+			lamatriz7(3,1)='idregistroa'
+			lamatriz7(3,2)=ALLTRIM(STR(v_idregistroa))
+			lamatriz7(4,1)='idcomprobab'
+			lamatriz7(4,2)=ALLTRIM(STR(v_idcomprobab))
+			lamatriz7(5,1)='idregistrob'
+			lamatriz7(5,2)=ALLTRIM(STR(v_idregistrob))
+																		
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar linkcompro",0+48+0,"Error")				
+			ENDIF 
+			
+			sqlmatriz(1)=" select last_insert_id() as maxid "
+			verror=sqlrun(vconeccionF,"ultimoId")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+				=abreycierracon(vconeccionPCL,"")	
+			    RETURN -1
+			ENDIF 
+			SELECT ultimoId
+			GO TOP 
+			v_reto = VAL(ultimoId.maxid)
+			USE IN ultimoId
+							
+			** Cierra conexión
+			= abreycierracon(vconeccionPCL,"")
+			
+		ENDIF 
+		
+		IF pcl_opera = '-' THEN 
+
+			** Me conecto a la base de datos **
+			vconeccionPCL=abreycierracon(0,_SYSSCHEMA)
+			
+			sqlmatriz(1)= " delete from linkcompro where idcomprobaa = "+ALLTRIM(STR(pcl_idcomprobaa))+" and  idregistroa = "+ALLTRIM(STR(pcl_idregistroa))
+			sqlmatriz(2)= " and idcomprobab = "+ALLTRIM(STR(pcl_idcomprobab))+" and  idregistrob = "+ALLTRIM(STR(pcl_idregistrob))
+			verror=sqlrun(vconeccionPCL,"dellinkcompro_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los componentes del articulo",0+48+0,"Error")
+					= abreycierracon(vconeccionPCL,"")
+			    RETURN -1 
+			ENDIF
+			
+			** Cierra conexión
+			= abreycierracon(vconeccionPCL,"")
+					
+		ENDIF 
+		
+	ENDIF 
+	RETURN v_reto
+ENDFUNC 
