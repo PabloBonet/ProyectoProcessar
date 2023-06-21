@@ -1505,3 +1505,32 @@ PARAMETERS paut_idperiodo
 ENDFUNC 
 
 
+
+
+
+FUNCTION QuitaDNoMensual
+*#/----------------------------------------
+*/** Elimina los conceptos cargados y que no son Mensualizados es decir MENSUAL = 'N'
+*/   Consulta al operador antes de eliminarlos y solo elimina aquellos que pertenecen al lote pasado como parámetro
+*/   No se eliminan aquellos que tienen cuotas por mas que sean no mensualizados
+*#/----------------------------------------
+PARAMETERS p_idperiodo
+
+	IF  MESSAGEBOX("Se Eliminarán los Conceptos Facturados NO MENSUALIZADOS del Lote ..."+CHR(13)+"Esta operación no se puede revertir..."+CHR(13)+" ¿ Desea Continuar con la Eliminación ?",4+48+256,"Eliminar Detalles No Mensualizados") = 7 THEN 
+		RETURN 
+	ENDIF 
+	vconeccion = abreycierracon(0,_SYSSCHEMA)
+
+	* Traigo los detalles de las Entidades h que están en el Lote pasado como parametro 
+	sqlmatriz(1)=" delete from from entidadesd d where d.identidadd in "
+	sqlmatriz(2)=" ( select dd.identidadd from factulotese e left join entidadesd dd on dd.identidadh = e.identidadh "
+	sqlmatriz(4)="  where e.idperiodo = "+STR(p_idperiodo)+" and dd.mensual = 'N' ) and d.identidadd not in ( select identidadd from entidadesdc )"
+	verror=sqlrun(vconeccion,"deletenm_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Detalles para Eliminar no Mensuales ",0+48+0,"Error")
+	ENDIF 
+
+ 	=abreycierracon(vconeccion,"")
+
+
+ENDFUNC 
