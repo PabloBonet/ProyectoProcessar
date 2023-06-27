@@ -2348,13 +2348,13 @@ PARAMETERS p_idpresupu
 
 
 	v_idpresupu = p_idpresupu
-
-
+	comproObjtmp		= CREATEOBJECT('comprobantesClass')
+	v_idcomprobSol =  comproObjtmp.getidcomprobante("SOLICITUD DE PRESUPUESTO")
+	
 	IF v_idpresupu > 0
 		
-		v_imprimeMonto	= 1
-		
-		
+		v_imprimeMonto = 1
+			
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
 
@@ -2402,12 +2402,27 @@ PARAMETERS p_idpresupu
 			
 			SELECT presupu_impr
 			GO TOP 
+			
+			v_idcomproba 	= presupu_impr.idcomproba
+		
+			IF v_idcomproba == v_idcomprobSol && Si el comprobante es Solicitud de presupuesto no debe mostrar los montos
+				v_imprimeMonto = 0
+			ELSE
+				v_imprimeMonto = 1
+			ENDIF 
+			
+			
+			
+			
+			SELECT presupu_impr
+			GO TOP 
 			replace ALL imprMonto WITH v_imprimeMonto, otvincula WITH v_otvincula
+			
 			
 			SELECT presupu_impr
 			GO TOP 
 			
-			v_idcomproba 	= presupu_impr.idcomproba
+			
 			v_tipoCompAfip	= ALLTRIM(presupu_impr.tipcomAFIP)
 			v_codBarra		= ""
 			v_codBarraD 	= ""
