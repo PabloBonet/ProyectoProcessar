@@ -5438,3 +5438,299 @@ FUNCTION ActLinSubLinArti
 	lreto = p_func
 	RETURN lreto
 ENDFUNC  
+
+
+
+
+************************************************************************************
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaEtiquetas
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Etiquetas ya generadas o ingresadas desde archivo externo 
+*#/----------------------------------------
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Etiquetas -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+		if file(".\etiquetascar.dbf") THEN
+			if used("etiquetascar") then
+				sele etiquetascar
+				use
+			endif
+			DELETE FILE .\etiquetascar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\etiquetascar0 FREE ( etiqueta I, fechaalta C(8) ,codigo C(50), articulo c(20), timestamp c(16), tabla c(50), campo c(50) , idregistro i, detalle c(200), detalleb  c(200), sucursal c(3) )
+
+		SELECT etiquetascar0 
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+		SET ENGINEBEHAVIOR 70
+		SELECT * FROM etiquetascar0 INTO TABLE etiquetascar GROUP BY etiqueta
+		SET ENGINEBEHAVIOR 90
+		USE IN etiquetascar0
+		SELECT etiquetascar
+
+		COUNT TO v_registros 
+		IF v_registros > 0 THEN 
+			*Elimino las Etiquetas que tenga el sistema
+			*La carga debe hacerce con la tabla vacia
+			sqlmatriz(1)=" delete from etiquetas "
+			verror=sqlrun(vconeccionF,"etiq")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Etiquetas Existentes... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+		ENDIF 		
+	
+	
+		SELECT etiquetascar 		
+		GO TOP 
+		DIMENSION lamatriz1(10,2)
+	
+		DO WHILE !EOF()
+		
+			IF etiquetascar.etiqueta > 0 THEN 
+				
+				a_etiqueta		= etiquetascar.etiqueta
+				a_fechaalta		= etiquetascar.fechaalta
+				a_codigo		= etiquetascar.codigo
+				a_articulo		= etiquetascar.articulo
+				a_timestamp		= TTOC(DATETIME())
+				a_tabla 		= etiquetascar.tabla
+				a_campo 		= etiquetascar.campo
+				a_idregistro	= etiquetascar.idregistro
+				a_detalle 		= etiquetascar.detalle
+				a_detalleb		= etiquetascar.detalleb
+							
+
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+		
+				
+				lamatriz1(1,1)='etiqueta'
+				lamatriz1(1,2)= ALLTRIM(STR(a_etiqueta))
+				lamatriz1(2,1)='fechaalta'
+				lamatriz1(2,2)="'"+ALLTRIM(a_fechaalta)+"'"
+				lamatriz1(3,1)='codigo'
+				lamatriz1(3,2)= "'"+ALLTRIM(a_codigo)+"'"
+				lamatriz1(4,1)='articulo'
+				lamatriz1(4,2)="'"+ALLTRIM(a_articulo)+"'"
+				lamatriz1(5,1)='timestamp'
+				lamatriz1(5,2)="'"+ALLTRIM(a_timestamp)+"'"
+				lamatriz1(6,1)='tabla'
+				lamatriz1(6,2)="'"+ALLTRIM(a_tabla)+"'"
+				lamatriz1(7,1)='campo'
+				lamatriz1(7,2)="'"+ALLTRIM(a_campo)+"'"
+				lamatriz1(8,1)='idregistro'
+				lamatriz1(8,2)= ALLTRIM(STR(a_idregistro))
+				lamatriz1(9,1)='detalle'
+				lamatriz1(9,2)= "'"+ALLTRIM(a_detalle)+"'"
+				lamatriz1(10,1)='detalleb'
+				lamatriz1(10,2)= "'"+ALLTRIM(a_detalleb)+"'"
+		
+				p_tabla     = 'etiquetas'
+				p_matriz    = 'lamatriz1'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en Importación y Carga de Etiquetas ",0+48+0,"Error")
+				    RETURN 0
+				ENDIF  
+				
+			ENDIF 
+				
+			SELECT etiquetascar 
+			SKIP 					
+			
+		ENDDO 
+		RELEASE lamatriz1
+		
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT etiquetascar 
+	USE IN etiquetascar 
+	
+	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaCostosArti
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Costos de Articulos desde un archivo .csv
+*/ Formato del archivo .csv 
+*/   articulo c(20), costo N(13,2) , desc1 n(13,2), desc2 n(13,2), desc3 n(13,2), desc4 n(13,2), desc5 n(13,2)
+*/  
+*#/----------------------------------------
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de Etiquetas -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+		if file(".\costosarticar.dbf") THEN
+			if used("costosarticar") then
+				sele costosarticar
+				use
+			endif
+			DELETE FILE .\costosarticar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\costosarticar FREE (  articulo c(20), costo N(13,2), desc1 n(13,2), desc2 n(13,2), desc3 n(13,2), desc4 n(13,2), desc5 n(13,2) )
+
+		SELECT costosarticar 
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+		SELECT costosarticar 
+
+		COUNT TO v_registros 
+		IF v_registros > 0 THEN 
+			*Elimino las Etiquetas que tenga el sistema
+			*La carga debe hacerce con la tabla vacia
+			sqlmatriz(1)=" select * from articulos  "
+			verror=sqlrun(vconeccionF,"costos_arti")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Articulos... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+		ENDIF 	
+		** selecciono los articulos que vienen en el costo y no están cargados en la tabla de articulos ***
+		SELECT * FROM costosarticar INTO TABLE articulosnovale WHERE ALLTRIM(articulo) NOT in ( SELECT ALLTRIM(articulo) FROM costos_arti )
+		SELECT articulosnovale 
+		COPY TO articulosnovale.csv TYPE CSV 
+		USE IN articulosnovale
+		USE IN costos_arti
+	
+	
+		SELECT costosarticar 		
+		GO TOP 
+
+		DIMENSION lamatriz1(7,2)
+		
+		a_diahora = DTOS(DATE())+TIME()
+
+		DO WHILE !EOF()
+		
+			IF !EMPTY(ALLTRIM(costosarticar.articulo))  THEN 
+				
+				a_articulo		= costosarticar.articulo
+				a_costo		    = costosarticar.costo
+				a_desc1			= costosarticar.desc1
+				a_desc2			= costosarticar.desc2
+				a_desc3			= costosarticar.desc3
+				a_desc4			= costosarticar.desc4
+				a_desc5			= costosarticar.desc5
+				
+				p_tipoope     = 'U'
+				p_condicion   = " trim(articulo)='"+ALLTRIM(a_articulo)+"' and costo < "+STR(a_costo,13,2)
+				v_titulo      = " EL ACTUALIZA "
+		
+				
+				lamatriz1(1,1)='articulo'
+				lamatriz1(1,2)= "'"+ALLTRIM(a_articulo)+"'"
+				lamatriz1(2,1)='costo'
+				lamatriz1(2,2)=ALLTRIM(STR(a_costo,13,2))
+				lamatriz1(3,1)='desc1'
+				lamatriz1(3,2)=ALLTRIM(STR(a_desc1,13,2))
+				lamatriz1(4,1)='desc2'
+				lamatriz1(4,2)=ALLTRIM(STR(a_desc2,13,2))
+				lamatriz1(5,1)='desc3'
+				lamatriz1(5,2)=ALLTRIM(STR(a_desc3,13,2))
+				lamatriz1(6,1)='desc4'
+				lamatriz1(6,2)=ALLTRIM(STR(a_desc4,13,2))
+				lamatriz1(7,1)='desc5'
+				lamatriz1(7,2)=ALLTRIM(STR(a_desc5,13,2))
+				
+		
+				p_tabla     = 'articulos'
+				p_matriz    = 'lamatriz1'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en Importación y Carga de Etiquetas ",0+48+0,"Error")
+				    RETURN 0
+				ENDIF  
+				
+				sqlmatriz(1)=" insert into articostos values (0,'"+ALLTRIM(a_articulo)+"', "+ALLTRIM(STR(a_costo,13,2))+", "+a_diahora+")"
+				verror=sqlrun(vconeccionF,"costos_arti")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Articulos... ",0+48+0,"Error")
+				    RETURN 0
+				ENDIF
+
+				
+			ENDIF 
+				
+			SELECT costosarticar
+			SKIP 					
+			
+		ENDDO 
+		RELEASE lamatriz1
+		
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT costosarticar
+	USE IN costosarticar
+	
+	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
