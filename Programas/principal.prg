@@ -38,8 +38,10 @@ SET CLASSLIB TO util.vcx ADDITIVE
 
 vrand = RAND(-100.001)
 
-PUBLIC toolbarsys
+PUBLIC toolbarsys, onactivitictrl
 toolbarsys = CREATEOBJECT('toolbarsys')
+
+
 
 WAIT windows "Verificando Conexion con Base de Datos... Aguarde..." NOWAIT 
 
@@ -127,6 +129,16 @@ ENDIF
 *!*	****************
 
 =DEFVARPUBLICAS ('varpublicas')
+
+IF !(TYPE("_SYSTMRCHKTIME") = "U") THEN 
+	IF _SYSTMRCHKTIME > 0 THEN 	
+		PUBLIC TMRCHECK 
+		_TMRCHECK = CREATEOBJECT("DetectActivity")
+		_TMRCHECK.interval = 1800000 
+		_TMRCHECK.InactivityInterval = _SYSTMRCHKTIME
+		_TMRCHECK.LASTACTIVITY = DATETIME()
+	ENDIF 
+ENDIF 
 
 
 _SYSSERVIDOR 	= FULLPATH(CURDIR())
