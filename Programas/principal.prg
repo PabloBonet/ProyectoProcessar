@@ -1,3 +1,4 @@
+PARAMETERS _PPARAMETROS
 _screen.Visible = .t.
 SET SYSMENU OFF
 CLEAR
@@ -26,7 +27,9 @@ ON KEY LABEL CTRL+F4 DO SALIRMENU
 ON KEY LABEL ESC DO SETEO_ESC 
 ON KEY LABEL CTRL+F11 MESSAGEBOX(_screen.ActiveForm.name)
 
-PUBLIC _SYSLIBRERIAS
+PUBLIC _SYSLIBRERIAS, _VPARAMETROS
+_VPARAMETROS = _PPARAMETROS
+
 _SYSLIBRERIAS = " UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg , ftp_class.prg, libconceptos.prg, foxbarcodeqr.prg, modulocb.prg, libweb.prg, impuestosn.prg "
 SET PROCEDURE TO &_SYSLIBRERIAS &&UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg , ftp_class.prg, libconceptos.prg, foxbarcodeqr.prg, modulocb.prg, libweb.prg
 SET CLASSLIB TO  toolbarsys.vcx

@@ -14957,7 +14957,7 @@ FUNCTION variables_sys
 		p=FCREATE("variables._s1")
 		GO TOP 
 		DO WHILE !EOF()
-			v_var = ALLTRIM(variables)
+			v_var = ALLTRIM(variables)	
 			v_linea = ALLTRIM(variables)+"="+IIF(TYPE(v_var)='C','"'+ALLTRIM(&v_var)+'"',ALLTRIM(STR(&v_var,12,2)))
 			IF LEN(ALLTRIM(v_linea))<50 THEN 
 				FPUTS(p,v_linea)
@@ -14965,10 +14965,10 @@ FUNCTION variables_sys
 			SELECT varpublicas_sys 	
 			SKIP 
 		ENDDO 
+		
 		FCLOSE(p)
 		v_variables_b64 = STRCONV(FILETOSTR("variables._s1"),13)
-		STRTOFILE(v_variables_b64,"variables._c")
-		
+		STRTOFILE(v_variables_b64,"variables._c")	
 		SELECT varpublicas_sys
 		USE IN varpublicas_sys
 		DELETE FILE varpublicas_sys.dbf
@@ -22788,4 +22788,31 @@ PARAMETERS pcl_idcomprobaa, pcl_idregistroa, pcl_idcomprobab, pcl_idregistrob, p
 		
 	ENDIF 
 	RETURN v_reto
+ENDFUNC 
+
+
+FUNCTION FDiaVenceCta 
+PARAMETERS pfd_fecha, pfd_periodo
+*#/----------------------------------------
+* Función que calcula la fecha de vencimiento de Cuotas de acuerdo a la fecha recibida y el periodo para el vencimiento
+* Parámetros: 	pfd_fecha	= idcomproba del comprobante A
+*			    pfd_periodo	= idregistro del comprobante A
+* 	Retorna la Fecha de Vencimiento propuesta para la cuota
+*#/----------------------------------------
+	f_vencimiento = pfd_fecha + pfd_periodo
+	fv_vencimiento = f_vencimiento 
+	
+	IF TYPE("_SYSDIASCUOTAS")='C' THEN 
+		dia_vence = INT(VAL(SUBSTR(_SYSDIASCUOTAS,1,2)))
+		IF dia_vence > 0 THEN 	
+			dia_limite= INT(VAL(SUBSTR(_SYSDIASCUOTAS,4,2)))
+			dia_fecha = DAY(pfd_fecha)
+			fv_vencimiento = DATE(YEAR(f_vencimiento), MONTH(f_vencimiento), dia_vence)
+			IF ( dia_fecha > dia_limite ) OR ( MONTH(f_vencimiento) = MONTH(pfd_fecha) AND pfd_periodo >= 30 ) THEN 
+				fv_vencimiento = GOMONTH(fv_vencimiento,1)
+			ENDIF 
+		ENDIF 
+	ENDIF 
+			
+RETURN fv_vencimiento
 ENDFUNC 
