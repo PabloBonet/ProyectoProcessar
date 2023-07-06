@@ -1770,18 +1770,33 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 		
 
 
+			v_idcomproba = factu.idcomproba
 
-			ALTER table factu ADD COLUMN codBarra	 C(42)
+			ALTER table factu ADD COLUMN codBarra C(42)
 			ALTER table factu ADD COLUMN codQR C(100)
 			ALTER table factu ADD COLUMN apeynom C(200)
+			ALTER table factu ADD COLUMN totalletra C(254)
+			ALTER table factu ADD COLUMN compAso C(254)
 
-	** AGREGO OBSERVACIONES FIJAS EN EL COMPROBANTE SEGÚN CONDICIONES EN LA TABLA observacond *
+	** Agrego el importe total en letras **
+		SELECT factu
+		v_totalFactura = factu.total
+		v_totalEnLetras = enletras(v_totalFactura)
+	
+	
+	** Agrego comprobantes asociados **
+	
+	 	v_comproAso = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF)
+		 	
+	 	
+	 
+	** AGREGO OBSERVACIONES FIJAS EN EL COMPROBANTE SEGÚN CONDICIONES EN LA TABLA observacond  y el total en letras *
 	
 			ALTER table factu ADD COLUMN obsfijo C(250)
 			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.F.)
 			SELECT factu 
 			GO TOP 
-			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre))
+			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso)
 
 	** AGREGO EL CALCULO PARA LOS RECARGOS PARA AQUELLAS FACTURAS QUE TIENEN VENCIMIENTOS 1 2 Y 3
 			ALTER table factu ADD COLUMN recargo1 n(13,2)
@@ -1895,6 +1910,10 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 				v_codQRImg= poFbc.FullQRCodeImage(ALLTRIM(v_codigo),v_ubicacionImgen,250)
 				
 				v_ubicacionImgen = v_ubicacionImgen+".bmp"
+				
+			
+				
+				
 				SELECT factu 
 				GO TOP 
 				replace ALL codqr WITH v_ubicacionImgen
@@ -9117,7 +9136,7 @@ PARAMETERS p_idFactura
 			
 		
 			
-			SELECT f.*,f.cuit as nrodoccli, f.neto as netocomp,i.impuesto,i.detalle, i.neto as netoimpu ,i.razon, i.importe,i.codigoafip,i.tipoafip,i.detafip ;
+			SELECT f.*,IIF(EMPTY(ALLTRIM(f.cuit)),f.dni,f.cuit) as nrodoccli, f.neto as netocomp,i.impuesto,i.detalle, i.neto as netoimpu ,i.razon, i.importe,i.codigoafip,i.tipoafip,i.detafip ;
 			FROM factu_sql f LEFT JOIN factImp_sql i ON f.idfactura = i.idfactura INTO TABLE tablaFactura
 
 
@@ -9232,7 +9251,6 @@ PARAMETERS p_idFactura
 	
 			ENDIF 
 	
-				
 			*** BUSCO COMPROBANTE ASOCIADO PARA NOTA DE CREDITO O NOTA DE DEBITO ***
 			
 			SELECT tablaFactura
@@ -9246,7 +9264,6 @@ PARAMETERS p_idFactura
 			
 			v_ubicacionXMLAso	= ""
 
-			
 			DO CASE 
 				** COMPROBANTES 'A' **	
 				CASE v_idtipocomp == tipoCompObj.getIdTipoCompro("NOTA DE CREDITO A")
@@ -9294,12 +9311,10 @@ PARAMETERS p_idFactura
 										
 			ENDCASE 
 
-			
 			IF EMPTY(v_ubicacionXMLAso) = .F.
 				v_ubicacionXML = ALLTRIM(v_ubicacionXML)+";"+ALLTRIM(v_ubicacionXMLAso)
 			ENDIF 
-			
-	
+
 			
 			RETURN v_ubicacionXML 
 			
@@ -22815,4 +22830,127 @@ PARAMETERS pfd_fecha, pfd_periodo
 	ENDIF 
 			
 RETURN fv_vencimiento
+ENDFUNC 
+
+
+
+FUNCTION comprobantesAsociados 
+PARAMETERS p_idcompro, p_idregi, p_cone
+*#/ ------------------------------
+* Obtiene una cadena de caracteres con los comprobantes asociados al comprobante pasado como parámetro
+* PARAMETROS : 
+*	p_idcompro: idcomproba que identifica el comprobante para el cual se quiere saber sus vinculos 
+*   p_idregi :  id que identifica univocamente el comprobante para el cual se quiere saber sus vinculos
+* RETORNO: 
+* 	una cadena de caracteres con los comprobantes vinculados al recibido como parámetro si los hubiere.
+*   Si hay error retorna una cadena vacia
+*#/--------------------------------
+
+	v_retornoAsociados = ""
+	IF p_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionL = p_cone
+	ELSE 
+		vconeccionL = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 	
+
+	v_tablaAso = GetLinkCompro(p_idcompro, p_idregi, vconeccionL)
+	
+	
+	
+	IF EMPTY(ALLTRIM(v_tablaAso)) = .F.
+		
+		USE &v_tablaAso IN 0
+	
+		SELECT &v_tablaAso 
+		GO TOP 
+		DO WHILE NOT EOF()
+		
+			**idlinkcomp i , idcomproa i , idrega i , idcomprob i , idregb i , tablaa c(30), operaa i , tablab c(30), operab i
+		
+			v_idcomprobaA = &v_tablaAso..idcomproa 
+			v_idregA = &v_tablaAso..idrega 
+			v_tablaA =&v_tablaAso..tablaa 
+			v_idcomprobaB = &v_tablaAso..idcomprob 
+			v_idregB = &v_tablaAso..idregb 
+			v_tablaB =&v_tablaAso..tablab 
+			
+			v_BuscaT = "" && Tabla a buscar
+			v_BuscaC = 0 && ID comprobante a buscar
+			v_BuscaR = 0 && ID Registro a buscar
+			
+			IF p_idcompro == v_idcomprobaA AND p_idregi == v_idregA && El comprobante recibido es el comprobante A en la relación
+				v_BuscaT = ALLTRIM(v_tablaB)
+				v_BuscaC = v_idcomprobaB
+				v_BuscaR = v_idregB
+			ELSE
+				IF p_idcompro == v_idcomprobaB AND p_idregi == v_idregB && El comprobante recibido es el comprobante B en la relación
+					v_BuscaT = ALLTRIM(v_tablaA)
+					v_BuscaC = v_idcomprobaA
+					v_BuscaR = v_idregA
+				ELSE && El comprobante recibido no coincide con el comprobante A ni B
+					v_BuscaT = "" 
+					v_BuscaC = 0 
+					v_BuscaR = 0 
+				ENDIF 
+			ENDIF 
+			
+			
+			IF EMPTY(ALLTRIM(v_buscaT))=.F. AND v_buscaC > 0 AND v_BuscaR > 0
+						
+				v_campoIndice = obtenerCampoIndice(v_buscaT, .F., vconeccionL)
+
+				IF EMPTY(ALLTRIM(v_campoIndice))=.F.
+				
+				DO CASE
+				CASE ALLTRIM(v_buscaT) = "factuprove"
+					sqlmatriz(1)=" select * from "+ALLTRIM(v_buscaT)+" t left join comprobantes c on t.idcomproba = c.idcomproba "
+					sqlmatriz(2)=" where t.idcomproba = "+ALLTRIM(STR(v_buscaC))+" and t."+(v_campoIndice)+"="+ALLTRIM(STR(v_BuscaR))
+				OTHERWISE
+					sqlmatriz(1)=" select * from "+ALLTRIM(v_buscaT)+" t left join comprobantes c on t.idcomproba = c.idcomproba left join puntosventa p on t.pventa = p.pventa "
+					sqlmatriz(2)=" where t.idcomproba = "+ALLTRIM(STR(v_buscaC))+" and t."+(v_campoIndice)+"="+ALLTRIM(STR(v_BuscaR))
+				ENDCASE
+										
+					verror=sqlrun(vconeccionL,"compAsociado_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la búsqueda del comprobante asociado... ",0+48+0,"Error")
+					ELSE
+					
+						SELECT compAsociado_sql
+						GO top
+						IF NOT EOF()
+							v_comprobante = ""
+							DO CASE
+							CASE ALLTRIM(v_buscaT) = "factuprove"
+								v_Comprobante = ALLTRIM(compAsociado_sql.abrevia)+" "+ALLTRIM(compAsociado_sql.tipo)+" "+STRTRAN(STR(compAsociado_sql.actividad,4),' ','0')+" - "+STRTRAN(STR(compAsociado_sql.numero,8),' ','0')
+							OTHERWISE
+								v_Comprobante = ALLTRIM(compAsociado_sql.abrevia)+" "+ALLTRIM(compAsociado_sql.tipo)+" "+ALLTRIM(compAsociado_sql.puntov)+" - "+STRTRAN(STR(compAsociado_sql.numero,8),' ','0')
+							ENDCASE
+						
+						
+						ENDIF     
+						
+						
+						
+						IF EMPTY(ALLTRIM(v_retornoAsociados))=.T.
+							v_retornoAsociados = ALLTRIM(v_comprobante)
+						ELSE
+							v_retornoAsociados = v_retornoAsociados+"; "+ALLTRIM(v_comprobante)
+						ENDIF 
+						
+					ENDIF
+								
+			
+				ENDIF 
+				
+			ENDIF 
+			
+			
+		
+			SELECT &v_tablaAso 
+			skip 1
+
+		ENDDO
+	ENDIF 
+	
+	RETURN v_retornoAsociados 
 ENDFUNC 
