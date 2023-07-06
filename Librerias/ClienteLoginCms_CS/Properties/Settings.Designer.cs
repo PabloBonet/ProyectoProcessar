@@ -81,5 +81,15 @@ namespace ClienteLoginCms_CS.Properties {
                 return ((string)(this["ClienteLoginCms_CS_ar_gov_afip_personaws_PersonaServiceA5"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.WebServiceUrl)]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://wswhomo.afip.gov.ar/wsfe/service.asmx")]
+        public string ClienteLoginCms_CS_ar_gov_afip_wswhomo1_Service {
+            get {
+                return ((string)(this["ClienteLoginCms_CS_ar_gov_afip_wswhomo1_Service"]));
+            }
+        }
     }
 }

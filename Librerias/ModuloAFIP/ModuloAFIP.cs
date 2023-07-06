@@ -293,8 +293,11 @@ namespace ModuloAFIP
                 if (ticket_acceso == null || ticket_acceso.Length == 0) { return false; }
                 if (nombre_empresa == null || nombre_empresa.Length == 0) { return false; }
                 if (cuit_empresa == null || cuit_empresa.Length == 0) { return false; }
-                if (serv_contrib == null || serv_contrib.Length == 0) { return false; }
-                if (servicioper == null || servicioper.Length == 0) { return false; }
+                //if (serv_contrib == null || serv_contrib.Length == 0) { return false; }
+                //if (servicioper == null || servicioper.Length == 0) { return false; }
+
+                if (serv_contrib == null) { return false; }
+                if (servicioper == null) { return false; }
 
                 _strIdServicioNegocio = servicio;
                 _strIdServicioPersona = servicioper;
@@ -610,15 +613,29 @@ namespace ModuloAFIP
                     // Cargo el ticket de Acceso
 
                     _ticketAcceso = _gestionFE.ObtenerTicketAcceso(_strTicketAcceso, _strIdServicioNegocio, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
-                    _ticketAccesoContrib = _gestionFE.ObtenerTicketAcceso(_strTicketAcceso+"_C", _strIdServicioPersona, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
 
+
+                    // Cargo ticket de acceso para servicio de contribuyentes 
+                    if (_strIdServicioPersona.Trim().Length == 0 || _strServContrib.Trim().Length == 0)
+                    {
+                        // No se carga el servicio de contribuyentes
+                        _ticketAccesoContrib = null;
+                        string mensaje = "Falta el Nombre del serivio para Constancia de Inscripción Contribuyente \n";
+
+                        UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
+
+                    }
+                    else
+                    {
+                        _ticketAccesoContrib = _gestionFE.ObtenerTicketAcceso(_strTicketAcceso + "_C", _strIdServicioPersona, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
+                    }
 
                     _observaciones.AddRange(_gestionFE.ListaObservaciones);
                     if (_ticketAcceso != null)
                     {
                         string fecha_expiracion = _ticketAcceso.ExpirationTime.ToString();
 
-                        string mensaje = "Ticket de Acceso obtenido, válido hasta: " + fecha_expiracion + "\n";
+                        string mensaje = "Ticket de Acceso obtenido para facturación Electrónica, válido hasta: " + fecha_expiracion + "\n";
                         //agregarObservaciones(mensaje, true);
                         //  UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
                         UtilClass.EscribirArchivoLog(mensaje,  _strLog, true);
@@ -626,7 +643,7 @@ namespace ModuloAFIP
                     }
                     else
                     {
-                        string mensaje = "No se pudo obtener el Ticket de acceso\n";
+                        string mensaje = "No se pudo obtener el Ticket de acceso para la facturación Electrónica\n";
                         //agregarObservaciones(mensaje, true);
                         //UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
                         UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
@@ -646,7 +663,7 @@ namespace ModuloAFIP
                     }
                     else
                     {
-                        string mensaje = "No se pudo obtener el Ticket de acceso\n";
+                        string mensaje = "No se pudo obtener el Ticket de acceso del servicio Constancia de Inscripción Contribuyente\n";
                         //agregarObservaciones(mensaje, true);
                         //UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
                         UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
@@ -751,7 +768,7 @@ namespace ModuloAFIP
                     _gestionFE = new FEClass(_strServAFIP, _strCuit, _strLog);
                     _gestionContribuyente = new ContribuyenteClass(_strServContrib, _strCuit, _strLog);
 
-                    // Cargo el ticket de Acceso
+                    // Cargo el ticket de Acceso para servicio de facturación
 
                     _ticketAcceso = _gestionFE.ObtenerTicketAcceso(_strTicketAcceso, _strIdServicioNegocio, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
        
@@ -760,7 +777,7 @@ namespace ModuloAFIP
                     {
                         string fecha_expiracion = _ticketAcceso.ExpirationTime.ToString();
 
-                        string mensaje = "Ticket de Acceso obtenido, válido hasta: " + fecha_expiracion + "\n";
+                        string mensaje = "Ticket de Acceso obtenido para facturación electrónica, válido hasta: " + fecha_expiracion + "\n";
                         //agregarObservaciones(mensaje, true);
                         //  UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
                         UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
@@ -775,27 +792,43 @@ namespace ModuloAFIP
                         retorno = false;
                     }
 
-                    _ticketAccesoContrib = _gestionFE.ObtenerTicketAcceso(_strTicketAcceso + "_C", _strIdServicioPersona, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
 
-                    _observaciones.AddRange(_gestionFE.ListaObservaciones);
-                    if (_ticketAccesoContrib != null)
+                    // Cargo ticket de acceso para servicio de contribuyentes 
+                    if (_strIdServicioPersona.Trim().Length == 0 || _strServContrib.Trim().Length == 0)
                     {
-                        string fecha_expiracion = _ticketAccesoContrib.ExpirationTime.ToString();
-
-                        string mensaje = "Ticket de Acceso obtenido, válido hasta: " + fecha_expiracion + "\n";
-                        //agregarObservaciones(mensaje, true);
-                        //  UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                        // No se carga el servicio de contribuyentes
+                        _ticketAccesoContrib = null;
+                        string mensaje = "Falta el Nombre del serivio para Constancia de Inscripción Contribuyente  \n";
+                      
                         UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
-                        retorno = true;
+
                     }
                     else
                     {
-                        string mensaje = "No se pudo obtener el Ticket de acceso\n";
-                        //agregarObservaciones(mensaje, true);
-                        // UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
-                        UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
-                        retorno = false;
+                        _ticketAccesoContrib = _gestionFE.ObtenerTicketAcceso(_strTicketAcceso + "_C", _strIdServicioPersona, _strUrlWsaaWsdl, _strRutaCertSigner, _strPasswordSecureString, _strProxy, _strProxyUser, _strProxyPassword);
+
+                        _observaciones.AddRange(_gestionFE.ListaObservaciones);
+                        if (_ticketAccesoContrib != null)
+                        {
+                            string fecha_expiracion = _ticketAccesoContrib.ExpirationTime.ToString();
+
+                            string mensaje = "Ticket de Acceso obtenido para constancia de inscripción Contribuyente, válido hasta: " + fecha_expiracion + "\n";
+                            //agregarObservaciones(mensaje, true);
+                            //  UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                            UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
+                            retorno = true;
+                        }
+                        else
+                        {
+                            string mensaje = "No se pudo obtener el Ticket de acceso para constancia de inscripción Contribuyente\n";
+                            //agregarObservaciones(mensaje, true);
+                            // UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog, true);
+                            UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
+                            retorno = false;
+                        }
                     }
+
+                    
 
                 }
                 else
@@ -1026,6 +1059,14 @@ namespace ModuloAFIP
                 else
                 {
 
+                  if (_ticketAccesoContrib == null)
+                    {
+                        _error = true;
+                        string mensaje = "No se encuentra cargado el ticket de acceso para el servicio Constancia de Inscripción Contribuyentes \n";
+                        _errores.Add(mensaje);
+                        UtilClass.EscribirArchivoLog(mensaje, _strLog);
+                        retorno = false;
+                    }
 
 
                    bool obtuvoContrib = _gestionContribuyente.obtenerContribuyente(_ticketAccesoContrib, cuitContrib, ubicacionXMLContrib);

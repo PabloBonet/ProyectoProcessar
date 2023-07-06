@@ -52,9 +52,11 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Security">
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Web.Services">
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
@@ -79,6 +81,11 @@
       <DependentUpon>Reference.map</DependentUpon>
     </Compile>
     <Compile Include="Web References\ar.gov.afip.servicios1\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.map</DependentUpon>
+    </Compile>
+    <Compile Include="Web References\ar.gov.afip.wsfehomo\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.map</DependentUpon>
@@ -196,6 +203,29 @@
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
     <None Include="Web References\ar.gov.afip.servicios1\service.wsdl" />
+    <None Include="Web References\ar.gov.afip.wsfehomo\DummyResponse.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\ar.gov.afip.wsfehomo\FEConsultaCAEResponse.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\ar.gov.afip.wsfehomo\FERecuperaLastCMPResponse.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\ar.gov.afip.wsfehomo\FERecuperaQTYResponse.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\ar.gov.afip.wsfehomo\FEResponse.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\ar.gov.afip.wsfehomo\FEUltNroResponse.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\ar.gov.afip.wsfehomo\Reference.map">
+      <Generator>MSDiscoCodeGenerator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <None Include="Web References\ar.gov.afip.wsfehomo\service.wsdl" />
     <None Include="Web References\ar.gov.afip.wswhomo\CbteTipoResponse.datasource">
       <DependentUpon>Reference.map</DependentUpon>
     </None>
@@ -309,6 +339,17 @@
       <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
       <CachedSettingsPropName>ClienteLoginCms_CS_Wsaa_LoginCMSService</CachedSettingsPropName>
     </WebReferenceUrl>
+    <WebReferenceUrl Include="https://wswhomo.afip.gov.ar/wsfe/service.asmx">
+      <UrlBehavior>Dynamic</UrlBehavior>
+      <RelPath>Web References\ar.gov.afip.wsfehomo\</RelPath>
+      <UpdateFromURL>https://wswhomo.afip.gov.ar/wsfe/service.asmx</UpdateFromURL>
+      <ServiceLocationURL>
+      </ServiceLocationURL>
+      <CachedDynamicPropName>
+      </CachedDynamicPropName>
+      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
+      <CachedSettingsPropName>ClienteLoginCms_CS_ar_gov_afip_wswhomo1_Service</CachedSettingsPropName>
+    </WebReferenceUrl>
     <WebReferenceUrl Include="https://wswhomo.afip.gov.ar/wsfev1/service.asmx%3fop= FECAESolicitar">
       <UrlBehavior>Dynamic</UrlBehavior>
       <RelPath>Web References\ar.gov.afip.wswhomo\</RelPath>
@@ -326,6 +367,9 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Web References\ar.gov.afip.wsfehomo\service.disco" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

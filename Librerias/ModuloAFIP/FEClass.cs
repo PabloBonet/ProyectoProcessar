@@ -691,21 +691,43 @@ namespace ModuloAFIP
 
                 detReq.Concepto = 1; //1: Productos
                 long v_docNro = 0;
+                /*
+                                if (comprobante.DocTipoCliente == 80)
+                                {
+                                    string cuitSinGuiones = UtilClass.CambiarFormatoCuitSinGuiones(comprobante.NroDocCliente);
+                                    long.TryParse(cuitSinGuiones, out v_docNro);
+                                }
+                                else
+                                {
+                                    Exception e = new Exception("El tipo de documento del cliente no es CUIT (80). ");
+
+                                    throw e;
+                                }
+                  */
+
+                string inf = "DOC TIPO: " + comprobante.DocTipoCliente;
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+
+                 inf = "Nro doc: " + comprobante.NroDocCliente;
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);
 
                 if (comprobante.DocTipoCliente == 80)
                 {
                     string cuitSinGuiones = UtilClass.CambiarFormatoCuitSinGuiones(comprobante.NroDocCliente);
                     long.TryParse(cuitSinGuiones, out v_docNro);
+                    detReq.DocTipo = comprobante.DocTipoCliente;
                 }
                 else
                 {
-                    Exception e = new Exception("El tipo de documento del cliente no es CUIT (80). ");
-
-                    throw e;
+                    long.TryParse(comprobante.NroDocCliente, out v_docNro);
+                    detReq.DocTipo = comprobante.DocTipoCliente;
                 }
-                
+
+                inf = "Nro doc conv: " + v_docNro;
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);
                 detReq.DocNro = v_docNro; //Nro documento
-                detReq.DocTipo = 80; //CUIT: documento tipo 80
+                // detReq.DocTipo = 80; //CUIT: documento tipo 80
 
                 detReq.CbteDesde = numUltComp + 1; //Numero de ultimo comprobante + 1
                 detReq.CbteHasta = numUltComp + 1; //Numero de ultimo comprobante + 1
@@ -963,7 +985,7 @@ namespace ModuloAFIP
 
                 detReq.Concepto = 1; //1: Productos
                 long v_docNro = 0;
-
+/*
                 if (comprobante.DocTipoCliente == 80)
                 {
                     string cuitSinGuiones = UtilClass.CambiarFormatoCuitSinGuiones(comprobante.NroDocCliente);
@@ -974,10 +996,22 @@ namespace ModuloAFIP
                     Exception e = new Exception("El tipo de documento del cliente no es CUIT (80). ");
 
                     throw e;
+                }*/
+
+                if (comprobante.DocTipoCliente == 80)
+                {
+                    string cuitSinGuiones = UtilClass.CambiarFormatoCuitSinGuiones(comprobante.NroDocCliente);
+                    long.TryParse(cuitSinGuiones, out v_docNro);
+                    detReq.DocTipo = comprobante.DocTipoCliente;
+                }
+                else
+                {
+                    long.TryParse(comprobante.NroDocCliente, out v_docNro);
+                    detReq.DocTipo = comprobante.DocTipoCliente;
                 }
 
-                detReq.DocNro = v_docNro; //Nro documento
-                detReq.DocTipo = 80; //CUIT: documento tipo 80
+             //   detReq.DocNro = v_docNro; //Nro documento
+               // detReq.DocTipo = 80; //CUIT: documento tipo 80
 
                 detReq.CbteDesde = numUltComp + 1; //Numero de ultimo comprobante + 1
                 detReq.CbteHasta = numUltComp + 1; //Numero de ultimo comprobante + 1
@@ -1738,7 +1772,6 @@ namespace ModuloAFIP
             }
             return razon;
         }
-
 
     }
 
