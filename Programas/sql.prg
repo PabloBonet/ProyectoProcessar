@@ -7,6 +7,7 @@ PARAMETERS co,conex
 * Recibe como parametros el nombre de la base de datos 
 * Si lo que se desea es cerrar la conexion, recibe como parametro
 * "co" = al numero de la conexión y "conex" = ""
+
 conectar = 0
 IF !(ALLTRIM(conex) == "") then
 	ccDataBaseSQL = conex
@@ -286,7 +287,6 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 
 		 	logSistema(p_tabla, p_matriz, p_tipoope,p_conexion)
 		 	
-		 	
 *!*			 	MESSAGEBOX(sqlmatriz(1)+ ;
 *!*			 				sqlmatriz(2)+ ;
 *!*			 				sqlmatriz(3)+ ;
@@ -355,7 +355,7 @@ ENDFUNC
 *----------------------------------------------------------------
 FUNCTION logSistema
 PARAMETERS p_tablalog, p_matrizlog, p_tipoopelog,p_conexiconlog
-	
+
 	IF _SYSSCHEMA = 'admindb' THEN 
 		RETURN 
 	ENDIF 
@@ -388,23 +388,26 @@ PARAMETERS p_tablalog, p_matrizlog, p_tipoopelog,p_conexiconlog
     ELSE
     	SELECT seteoCur
     	GO TOP 
+    	
     	IF EOF()
 	    	RETURN 
     	ENDIF 
+
     	v_campo = seteoCur.campo
     	v_tipo	= seteoCur.tipo
     
  		v_elementosm = ALEN(&p_matrizlog,1)
-    	
-
+   
+		v_valorsq = ""
     	FOR fila = 1 TO v_elementosm 
     		v_campoMat = &p_matrizlog(fila,1)
    
     		IF v_campoMat = ALLTRIM(v_campo)
-       			v_valor		=  &p_matrizlog(fila,2)
+       			v_valorsq	=  &p_matrizlog(fila,2)
     			fila = v_elementosm
     		ENDIF  
     	ENDFOR 
+
     	
     	
     	*** Inserto los campos en la tabla logsystem ***
@@ -414,6 +417,7 @@ PARAMETERS p_tablalog, p_matrizlog, p_tipoopelog,p_conexiconlog
 	*INTEGER
 	v_tipocampo = "I"
 	V_consulta="UPDATE tablasidx set maxvalori = ( maxvalori + 1 ) WHERE campo = 'idlog' and tabla = 'logsystem' and tipocampo = 'I'"
+
 	
 	r=SQLEXEC(p_conexiconlog,V_consulta,"ActuCur")
 		IF r < 0
@@ -454,6 +458,7 @@ PARAMETERS p_tablalog, p_matrizlog, p_tipoopelog,p_conexiconlog
 			ErrorSql=.t.
 			
 		ENDIF 
+
 	
 	SELECT maxCur
 	v_maximo = IIF(ISNULL(maxCur.maxnro),0,maxCur.maxnro)
@@ -470,11 +475,13 @@ PARAMETERS p_tablalog, p_matrizlog, p_tipoopelog,p_conexiconlog
     	v_ip		= _SYSIP
     	v_host		= _SYSHOST
  
+
     	v_sentencia = "INSERT INTO logsystem values ("+ALLTRIM(STR(v_idlog))+",'"+ALLTRIM(v_fechalogsys)+"','"+ALLTRIM(v_usuario)+"','"+ ;
-    	ALLTRIM(p_tabla)+"','"+ALLTRIM(v_campo)+"','"+ALLTRIM(v_tipo)+"','"+ALLTRIM(STRTRAN(v_valor,"'",""))+"','"+ALLTRIM(p_tipoopelog)+"','"+ALLTRIM(v_ip)+"','"+ALLTRIM(v_host)+"'"
+    	ALLTRIM(p_tabla)+"','"+ALLTRIM(v_campo)+"','"+ALLTRIM(v_tipo)+"','"+ALLTRIM(STRTRAN(v_valorsq,"'",""))+"','"+ALLTRIM(p_tipoopelog)+"','"+ALLTRIM(v_ip)+"','"+ALLTRIM(v_host)+"'"
 	
 		*r=SQLEXEC(p_conexicon,v_sentencia+",'"+SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20)+"')","InsertCur")
 		r=SQLEXEC(p_conexiconlog,v_sentencia+",'"+STRTRAN(SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20),"'","")+"')","InsertCur")
+
 		IF r < 0
 		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+v_sentencia,0+64,'SQLRUN')
 		  IF AERROR(laError) > 0
