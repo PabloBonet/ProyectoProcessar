@@ -139,26 +139,29 @@ FUNCTION Valicuit (NRO_CUIT)
 IF NRO_CUIT='  -        - ' OR NRO_CUIT='             ' THEN 
 	RETURN .T.
 ENDIF	
-IF LEN(ALLTRIM(NRO_CUIT)) < 13 THEN 
+VNRO_CUIT = STRTRAN(NRO_CUIT,'-','')
+IF LEN(ALLTRIM(VNRO_CUIT)) < 11 THEN 
 	RETURN .F.
 ENDIF	
-A = VAL(SUBSTR(NRO_CUIT,1,1)) * 5
-B = VAL(SUBSTR(NRO_CUIT,2,1)) * 4
-C = VAL(SUBSTR(NRO_CUIT,4,1)) * 3
-D = VAL(SUBSTR(NRO_CUIT,5,1)) * 2
-E = VAL(SUBSTR(NRO_CUIT,6,1)) * 7
-F = VAL(SUBSTR(NRO_CUIT,7,1)) * 6
-G = VAL(SUBSTR(NRO_CUIT,8,1)) * 5
-H = VAL(SUBSTR(NRO_CUIT,9,1)) * 4
-I = VAL(SUBSTR(NRO_CUIT,10,1)) * 3
-J = VAL(SUBSTR(NRO_CUIT,11,1)) * 2
 
-DV_NRO = VAL(SUBSTR(NRO_CUIT,13,1)) 
+A = VAL(SUBSTR(VNRO_CUIT,1,1)) * 5
+B = VAL(SUBSTR(VNRO_CUIT,2,1)) * 4
+C = VAL(SUBSTR(VNRO_CUIT,3,1)) * 3
+D = VAL(SUBSTR(VNRO_CUIT,4,1)) * 2
+E = VAL(SUBSTR(VNRO_CUIT,5,1)) * 7
+F = VAL(SUBSTR(VNRO_CUIT,6,1)) * 6
+G = VAL(SUBSTR(VNRO_CUIT,7,1)) * 5
+H = VAL(SUBSTR(VNRO_CUIT,8,1)) * 4
+I = VAL(SUBSTR(VNRO_CUIT,9,1)) * 3
+J = VAL(SUBSTR(VNRO_CUIT,10,1)) * 2
+
+DV_NRO = VAL(SUBSTR(VNRO_CUIT,11,1)) 
 SUMA = A + B + C + D + E + F + G + H + I + J
 
 RESTO = MOD(SUMA,11)
 
 DV = 11 - RESTO
+
 IF RESTO = 0 OR RESTO = 1 THEN
 	IF DV_NRO = 0 THEN
 		RETURN .T.
@@ -22954,3 +22957,72 @@ PARAMETERS p_idcompro, p_idregi, p_cone
 	
 	RETURN v_retornoAsociados 
 ENDFUNC 
+
+
+
+********************************************************************************************************
+********************************************************************************************************
+********************************************************************************************************
+FUNCTION GeneraCUIT (NRO_DOCU)
+*#/----------------------------------------
+*** Genera CUITs Válidos a partir de un Documento Recibido
+*** Devuelve una lista de posibles cuits separados por coma
+*#/----------------------------------------
+
+IF EMPTY(NRO_DOCU) THEN 
+	RETURN ""
+ENDIF	
+
+VCUIT_RET = ""
+
+FOR ij = 1 TO 2 
+	IF ij = 1 THEN 
+		hm = "20"
+	ELSE
+		hm = "27"
+	ENDIF 
+	
+	VNRO_CUIT = hm+SUBSTR(ALLTRIM(STR(100000000+NRO_DOCU)),2,8)
+	A = VAL(SUBSTR(VNRO_CUIT,1,1)) * 5
+	B = VAL(SUBSTR(VNRO_CUIT,2,1)) * 4
+	C = VAL(SUBSTR(VNRO_CUIT,3,1)) * 3
+	D = VAL(SUBSTR(VNRO_CUIT,4,1)) * 2
+	E = VAL(SUBSTR(VNRO_CUIT,5,1)) * 7
+	F = VAL(SUBSTR(VNRO_CUIT,6,1)) * 6
+	G = VAL(SUBSTR(VNRO_CUIT,7,1)) * 5
+	H = VAL(SUBSTR(VNRO_CUIT,8,1)) * 4
+	I = VAL(SUBSTR(VNRO_CUIT,9,1)) * 3
+	J = VAL(SUBSTR(VNRO_CUIT,10,1)) * 2
+
+*!*		DV_NRO = VAL(SUBSTR(VNRO_CUIT,11,1)) 
+	SUMA = A + B + C + D + E + F + G + H + I + J
+
+	RESTO = MOD(SUMA,11)
+
+
+	DV = 11 - RESTO
+
+
+	IF RESTO = 0 OR RESTO = 1 THEN
+		IF DV_NRO = 0 THEN
+			VCUIT_RET = VCUIT_RET+VNRO_CUIT+ALLTRIM(STR(DV))+";"
+	*		RETURN .T.
+		ELSE
+	*		RETURN .F.
+		ENDIF
+	ELSE
+		VCUIT_RET = VCUIT_RET+VNRO_CUIT+ALLTRIM(STR(DV))+";"
+	ENDIF
+ENDFOR 
+IF !empty(VCUIT_RET) THEN
+	VCUIT_RET = SUBSTR(vcuit_ret,1,LEN(vcuit_ret)-1)
+ENDIF  
+
+RETURN VCUIT_RET 
+ENDFUNC
+
+
+
+********************************************************************************************************
+********************************************************************************************************
+********************************************************************************************************
