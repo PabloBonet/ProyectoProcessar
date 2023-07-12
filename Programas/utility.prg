@@ -4286,76 +4286,97 @@ PARAMETERS  para_aliasd
 ***			tiporeg c(1) 'M'=Miembro, 'G'=Grupo 'T'=Tipo Grupo
 *#/----------------------------------------
 
-p_aliasreto  = ""
+	
+	p_aliasreto  = ""
 
 	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
-	
-	sqlmatriz(1)=" Select g.idgrupo, g.idtipogrupo, g.nombre as nombreg, "
-	sqlmatriz(2)=" t.detalle as nombretipo, t.tabla, t.campo, t.tipoc " 
-	sqlmatriz(3)=" from grupos g left join tipogrupos t on t.idtipogrupo = g.idtipogrupo "
-	sqlmatriz(4)=" order by g.idtipogrupo, g.idgrupo "
 
-	verror=sqlrun(vconeccionF,"gruposall_sql")
+
+	sqlmatriz(1)=" Select * from r_gruposall "
+	verror=sqlrun(vconeccionF,"r_gruposall_sql")
 	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la union de tablas de grupos... ",0+48+0,"Error")
+	    MESSAGEBOX("Ha Ocurrido un Error busqueda de r_gruposall_sql ... ",0+48+0,"Error")
 	    RETURN p_aliasreto  
 	ENDIF
-	=abreycierracon(vconeccionF,"")	
+	SELECT r_gruposall_sql
+	
+	IF !EOF() THEN
 
-	SELECT gruposall_sql
-	GO TOP 
-	IF EOF()
+		=abreycierracon(vconeccionF,"")	
+		SELECT * FROM r_gruposall_sql INTO TABLE .\&para_aliasd
+		USE IN r_gruposall_sql
+	ELSE  
 
-		RETURN p_aliasreto  
-	ENDIF
-	v_nomtabla = "grupotmp0"
-	DO WHILE !EOF()
-		=obtienegrupo(gruposall_sql.idtipogrupo,gruposall_sql.idgrupo,"grupotmp")
-		SELECT miembros, SUBSTR((IIF(tipoc='C',ALLTRIM(idmiembro),alltrim(str(idmiembro)))+REPLICATE(' ',20)),1,20) as idmiembro , ;
-				 idgrupo, nombreg, tabla, campo, tipoc, idtipogrup, nombretipo, 'M' as tiporeg FROM grupotmp ;
-			INTO TABLE .\&v_nomtabla WHERE pertenece = 'S'
-		IF v_nomtabla = "grupotmp0" THEN 
-			v_nomtabla = "grupotmp1"
-		ELSE
-			SELECT grupotmp0
-			APPEND FROM .\grupotmp1
-		ENDIF 	
+		sqlmatriz(1)=" Select g.idgrupo, g.idtipogrupo, g.nombre as nombreg, "
+		sqlmatriz(2)=" t.detalle as nombretipo, t.tabla, t.campo, t.tipoc " 
+		sqlmatriz(3)=" from grupos g left join tipogrupos t on t.idtipogrupo = g.idtipogrupo "
+		sqlmatriz(4)=" order by g.idtipogrupo, g.idgrupo "
+
+		verror=sqlrun(vconeccionF,"gruposall_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la union de tablas de grupos... ",0+48+0,"Error")
+		    RETURN p_aliasreto  
+		ENDIF
+		=abreycierracon(vconeccionF,"")	
+
 		SELECT gruposall_sql
-		skip
-	ENDDO 
-	SELECT grupotmp0
-	ALTER table grupotmp0 ADD codarbol c(15)
-	ALTER table grupotmp0 ADD codpadre c(15)
-	GO TOP 
-	replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)+ ;
-								ALLTRIM(REPLICATE('0',(9-LEN(ALLTRIM(idmiembro))))+ALLTRIM(idmiembro)), ;
-				codpadre WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)
-	
-	SET ENGINEBEHAVIOR 70 
-	
-	SELECT * FROM grupotmp0 INTO TABLE .\grupotmpgru GROUP BY idgrupo
-	replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3), ;
-				codpadre WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3), ;
-				miembros WITH SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)+" - "+ALLTRIM(nombreg), idmiembro WITH "", tiporeg WITH "G"
-	
-	SELECT * FROM grupotmp0 INTO TABLE .\grupotmptip GROUP BY idtipogrup
-	replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3), ;
-				codpadre WITH "0_" , ;
-				miembros WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+" - "+ALLTRIM(nombretipo), idmiembro WITH "", idgrupo with 0 , nombreg with "", tiporeg WITH "T"
-	SET ENGINEBEHAVIOR 90 
-				
-	SELECT grupotmp0
-	APPEND FROM .\grupotmpgru
-	APPEND FROM .\grupotmptip
-	
-	SELECT * FROM grupotmp0 INTO TABLE .\&para_aliasd
+		GO TOP 
+		IF EOF()
 
-	USE IN grupotmp0
-	IF USED("grupotmp1") THEN 
-		USE IN grupotmp1
+			RETURN p_aliasreto  
+		ENDIF
+		v_nomtabla = "grupotmp0"
+		DO WHILE !EOF()
+			=obtienegrupo(gruposall_sql.idtipogrupo,gruposall_sql.idgrupo,"grupotmp")
+			SELECT miembros, SUBSTR((IIF(tipoc='C',ALLTRIM(idmiembro),alltrim(str(idmiembro)))+REPLICATE(' ',20)),1,20) as idmiembro , ;
+					 idgrupo, nombreg, tabla, campo, tipoc, idtipogrup, nombretipo, 'M' as tiporeg FROM grupotmp ;
+				INTO TABLE .\&v_nomtabla WHERE pertenece = 'S'
+			IF v_nomtabla = "grupotmp0" THEN 
+				v_nomtabla = "grupotmp1"
+			ELSE
+				SELECT grupotmp0
+				APPEND FROM .\grupotmp1
+			ENDIF 	
+			SELECT gruposall_sql
+			skip
+		ENDDO 
+		SELECT grupotmp0
+		ALTER table grupotmp0 ADD codarbol c(15)
+		ALTER table grupotmp0 ADD codpadre c(15)
+		GO TOP 
+		replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)+ ;
+									ALLTRIM(REPLICATE('0',(9-LEN(ALLTRIM(idmiembro))))+ALLTRIM(idmiembro)), ;
+					codpadre WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)
+		
+		SET ENGINEBEHAVIOR 70 
+		
+		SELECT * FROM grupotmp0 INTO TABLE .\grupotmpgru GROUP BY idgrupo
+		replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3), ;
+					codpadre WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3), ;
+					miembros WITH SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)+" - "+ALLTRIM(nombreg), idmiembro WITH "", tiporeg WITH "G"
+		
+		SELECT * FROM grupotmp0 INTO TABLE .\grupotmptip GROUP BY idtipogrup
+		replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3), ;
+					codpadre WITH "0_" , ;
+					miembros WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+" - "+ALLTRIM(nombretipo), idmiembro WITH "", idgrupo with 0 , nombreg with "", tiporeg WITH "T"
+		SET ENGINEBEHAVIOR 90 
+					
+		SELECT grupotmp0
+		APPEND FROM .\grupotmpgru
+		APPEND FROM .\grupotmptip
+		
+		SELECT * FROM grupotmp0 INTO TABLE .\&para_aliasd
+
+
+		USE IN grupotmp0
+		IF USED("grupotmp1") THEN 
+			USE IN grupotmp1
+		ENDIF 
+		USE IN gruposall_sql 
+		
+		=ActualizaGruposR("grupotmp0")
 	ENDIF 
-*!*		USE IN grupotmp1
-	USE IN gruposall_sql 
+	
 	p_aliasreto  = para_aliasd
 	RETURN p_aliasreto  
 ENDFUNC 
@@ -23026,3 +23047,84 @@ ENDFUNC
 ********************************************************************************************************
 ********************************************************************************************************
 ********************************************************************************************************
+
+
+
+
+FUNCTION ActualizaGruposR
+PARAMETERS p_Grupos
+*#/----------------------------------------
+* Funcion de Actualizacion de Grupos Resultados 
+* - Calculos de Grupos Finalizadas - 
+* - Tablas actualizadas : r_gruposall (contienes grupos finales)
+* PARAMETROS: p_Grupos : Si está vacío entonces elimina los registros del Calculo Actual (Vacia la Tabla r_gruposall )
+*#/----------------------------------------
+
+	IF !(TYPE("p_Grupos")="C") THEN 
+		p_Grupos= ""
+	ENDIF 
+	
+	
+	IF !EMPTY(p_Grupos) THEN 
+		vcerrar_locales = .f.
+		IF !USED(p_Grupos) THEN 
+			USE &p_Grupos IN 0
+			vcerrar_locales = .t.
+		ENDIF 
+
+		** Abro la Conexión
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+		** Elimino si hubiere algún cálculo de Listas de Precios 
+		sqlmatriz(1)=" delete from r_gruposall "
+		verror=sqlrun(vconeccionF,"r_gruposall")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Grupos Resultado ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+
+		* Cargo el Nuevo Calculo de Grupos 
+		SELECT &p_Grupos
+		GO TOP 
+
+		p_archivocsv= STRTRAN(_sysestacion,'\','/')+"/p_gruposall"+frandom()+".csv"
+		COPY TO &p_archivocsv DELIMITED WITH ";"
+		
+		sqlmatriz(1)=" LOAD DATA LOCAL INFILE '"+p_archivocsv+"'"
+		sqlmatriz(2)=" INTO TABLE r_gruposall fields terminated by ',' "
+		sqlmatriz(3)=" ENCLOSED BY ';' "
+		sqlmatriz(4)=" LINES TERMINATED BY '\r\n' "
+
+		verror=sqlrun(vconeccionF,"loadlp")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Carga de Grupos (LOAD DATA ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+
+		** Cierro la Conexion
+		=abreycierracon(vconeccionF,"")	
+		
+		IF vcerrar_locales = .t. THEN 
+			SELE &p_Grupos
+			USE 
+		ENDIF 
+		
+
+	ELSE && Elimino las Listas Calculadas Guardadas
+
+		** Compruebo que no esté anulado
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+		sqlmatriz(1)=" delete from r_gruposall "
+		verror=sqlrun(vconeccionF,"r_gruposall")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Grupos Resultados ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+		** Cierro la Conexion
+		=abreycierracon(vconeccionF,"")	
+	
+	ENDIF 	
+
+RETURN 
+
