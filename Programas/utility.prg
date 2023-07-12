@@ -139,29 +139,26 @@ FUNCTION Valicuit (NRO_CUIT)
 IF NRO_CUIT='  -        - ' OR NRO_CUIT='             ' THEN 
 	RETURN .T.
 ENDIF	
-VNRO_CUIT = STRTRAN(NRO_CUIT,'-','')
-IF LEN(ALLTRIM(VNRO_CUIT)) < 11 THEN 
+IF LEN(ALLTRIM(NRO_CUIT)) < 13 THEN 
 	RETURN .F.
 ENDIF	
+A = VAL(SUBSTR(NRO_CUIT,1,1)) * 5
+B = VAL(SUBSTR(NRO_CUIT,2,1)) * 4
+C = VAL(SUBSTR(NRO_CUIT,4,1)) * 3
+D = VAL(SUBSTR(NRO_CUIT,5,1)) * 2
+E = VAL(SUBSTR(NRO_CUIT,6,1)) * 7
+F = VAL(SUBSTR(NRO_CUIT,7,1)) * 6
+G = VAL(SUBSTR(NRO_CUIT,8,1)) * 5
+H = VAL(SUBSTR(NRO_CUIT,9,1)) * 4
+I = VAL(SUBSTR(NRO_CUIT,10,1)) * 3
+J = VAL(SUBSTR(NRO_CUIT,11,1)) * 2
 
-A = VAL(SUBSTR(VNRO_CUIT,1,1)) * 5
-B = VAL(SUBSTR(VNRO_CUIT,2,1)) * 4
-C = VAL(SUBSTR(VNRO_CUIT,3,1)) * 3
-D = VAL(SUBSTR(VNRO_CUIT,4,1)) * 2
-E = VAL(SUBSTR(VNRO_CUIT,5,1)) * 7
-F = VAL(SUBSTR(VNRO_CUIT,6,1)) * 6
-G = VAL(SUBSTR(VNRO_CUIT,7,1)) * 5
-H = VAL(SUBSTR(VNRO_CUIT,8,1)) * 4
-I = VAL(SUBSTR(VNRO_CUIT,9,1)) * 3
-J = VAL(SUBSTR(VNRO_CUIT,10,1)) * 2
-
-DV_NRO = VAL(SUBSTR(VNRO_CUIT,11,1)) 
+DV_NRO = VAL(SUBSTR(NRO_CUIT,13,1)) 
 SUMA = A + B + C + D + E + F + G + H + I + J
 
 RESTO = MOD(SUMA,11)
 
 DV = 11 - RESTO
-
 IF RESTO = 0 OR RESTO = 1 THEN
 	IF DV_NRO = 0 THEN
 		RETURN .T.
@@ -4263,7 +4260,6 @@ PARAMETERS pr_claverepo
 	RETURN v_idcomproreret 
 
 ENDFUNC 
-
 
 
 FUNCTION obtieneallgrupos
@@ -17754,7 +17750,7 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
     
 				
 				v_sentencia1 = " CREATE TABLE "+ ALLTRIM(p_tablaRetorno)+" FREE (apellido C(100), nombre C(100),cp C(50), "
-				v_sentencia2 = " nomprov C(20), direccion C(200), nomLoc C(200),tipoDoc C(20), documento C(20),razonSoc C(100), iva I) "
+				v_sentencia2 = " nomprov C(60), direccion C(200), nomLoc C(200),tipoDoc C(20), documento C(20),razonSoc C(100), iva I) "
 
 				v_sentencia = v_sentencia1 + v_sentencia2
 				&v_sentencia 
@@ -18536,9 +18532,9 @@ PARAMETERS p_nomLoc, p_cp, p_nomProv, p_nomPais
 	IF NOT EOF()
 	
 		
-		** Existe la localidad **
-		MESSAGEBOX("La localidad que intenta ingresar ya se encuentra cargada",0+48+0,"Cargar localidad")
-		
+*!*			** Existe la localidad **
+*!*			MESSAGEBOX("La localidad que intenta ingresar ya se encuentra cargada",0+48+0,"Cargar localidad")
+*!*			
 		v_idloc = localidad_sql.localidad
 	
 		* me desconecto	
@@ -22981,6 +22977,7 @@ ENDFUNC
 
 
 
+
 ********************************************************************************************************
 ********************************************************************************************************
 ********************************************************************************************************
@@ -23047,7 +23044,6 @@ ENDFUNC
 ********************************************************************************************************
 ********************************************************************************************************
 ********************************************************************************************************
-
 
 
 
@@ -23127,4 +23123,3 @@ PARAMETERS p_Grupos
 	ENDIF 	
 
 RETURN 
-
