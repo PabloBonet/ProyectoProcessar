@@ -17646,7 +17646,8 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 
 	v_retorno = .F.
 
-	TRY 
+
+TRY 
 
 			v_tipoObj = TYPE("objModuloAFIP")
 			
@@ -17719,23 +17720,9 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 					
 				ENDIF 
 			ENDIF 
-					
-			
-			
+						
 		
-		CATCH TO loException
-				
-			IF p_nomsg = .f. THEN 
-	*			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
-				MESSAGEBOX(loException.message,0+48+0,"Se produjo un Error")
-			ENDIF 
-			v_autorizar = .F.
-			RETURN v_autorizar
-
-		ENDTRY	
-							
-							
-		v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(p_cuitContrib,'-',''))
+			v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(p_cuitContrib,'-',''))
 
 
 			v_ubicacionXML = _SYSESTACION+"\"+"contrib_"+ALLTRIM(v_cuitSinGuiones)+".xml"
@@ -17757,14 +17744,14 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 				
 				SELECT &p_tablaRetorno
 				
-*!*	Un ejemplo rápido de uso, del objto XMLDOMDocument
+				*!*	Un ejemplo rápido de uso, del objto XMLDOMDocument
 
-*!*	?oDocumento.XML (contenido del documento)
-*!*	?oDocumento.documentElement.nodeName (nombre del root)
-*!*	?oDocumento.documentElement.hasChildNode (nodos hijos)
-*!*	?oDocumento.documentElement.nextNode.nodeName (siguiente nivel, nombre del nodo)
-*!*	?oDocumento.documentElement.childNodes.length (total de nodos hijos)
-*!*	?oDocumento.documentElement.childNodes.Item(0).attributes(1).Text (dato contenido en el nodo)
+				*!*	?oDocumento.XML (contenido del documento)
+				*!*	?oDocumento.documentElement.nodeName (nombre del root)
+				*!*	?oDocumento.documentElement.hasChildNode (nodos hijos)
+				*!*	?oDocumento.documentElement.nextNode.nodeName (siguiente nivel, nombre del nodo)
+				*!*	?oDocumento.documentElement.childNodes.length (total de nodos hijos)
+				*!*	?oDocumento.documentElement.childNodes.Item(0).attributes(1).Text (dato contenido en el nodo)
 
 				oDocumento = CREATEOBJECT("msxml.domdocument")
 				oDocumento.Load(v_ubicacionXML)
@@ -17772,8 +17759,10 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 				IF v_tamError > 0
 					** Si existe un error o un problema con el contribuyente lo muestra y retorna Falso
 					v_error = oDocumento.getElementsByTagName("error").item(0).text
+					IF p_nomsg = .F.
+						MESSAGEBOX(ALLTRIM(v_error),0+16+0,"Error al obtener el contribuyente")
+					ENDIF 
 					
-					MESSAGEBOX(ALLTRIM(v_error),0+16+0,"Error al obtener el contribuyente")
 					RETURN .F.
 							
 				ENDIF 
@@ -17849,6 +17838,8 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 				verror=sqlrun(vconimp,"impuestoAfip_Sql")
 				IF verror=.f.  
 				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los tipos de Impuestos ",0+48+0,"Error")
+				    v_autorizar = .F.
+					RETURN v_autorizar
 				ENDIF 
 
 				SELECT  impuestoAfip_Sql
@@ -17891,9 +17882,46 @@ PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
 				
 				v_retorno = .F.
 			ENDIF 
- 
+		
+		
+		
+		
+		
+*!*			
+*!*			CATCH TO loException
+			
+ 				
+			IF p_nomsg = .f. THEN 
+	*			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+	*			MESSAGEBOX(loException.message,0+48+0,"Se produjo un Error")
+			ENDIF
+			
+*!*				THROW loException
+*!*				
+*!*				FINALLY 
 
+*!*				v_autorizar = .F.
+*!*				RETURN v_autorizar
+*!*						    								
+*!*			ENDTRY 
+							
+							
+							
+												
+	CATCH TO loException
+				
+			IF p_nomsg = .f. THEN 
+	*			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+				MESSAGEBOX(loException.message,0+48+0,"Se produjo un Error")
+			ENDIF 
+			v_autorizar = .F.
+*!*				RETURN v_autorizar
 
+	
+			
+*!*		FINALLY
+*!*			RETURN v_autorizar
+	ENDTRY	
 	RETURN v_retorno
 
 
