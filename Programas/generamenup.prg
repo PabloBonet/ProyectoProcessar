@@ -121,14 +121,16 @@ ENDIF
 		ENDIF  	
 		
 		IF TABMENU.nivel = "H" THEN 
-			\DEFINE BAR <<nBarNivel>> OF <<cPadNameNivel>> <<cTagImagen>> PROMPT "<<cTagBar>>"   
-			cTagCom = ALLTRIM(tabmenu.comando)
+			ctagComW=IIF(AT('DO FORM',UPPER(tabmenu.comando))=0,""," SKIP FOR WEXIST('"+ALLTRIM(  SUBSTR(STRTRAN(UPPER(tabmenu.comando),'DO FORM ',''),1, AT(' ',STRTRAN(UPPER(tabmenu.comando),'DO FORM ','')) )  ) +"')")
+			\DEFINE BAR <<nBarNivel>> OF <<cPadNameNivel>> <<cTagImagen>> PROMPT "<<cTagBar>>"  <<cTagComW>>
+			cTagCom = ALLTRIM(tabmenu.comando) 
+			&& ACA INTERVINE
 *!*				cTagCom = "f_ejecutar('"+ALLTRIM(tabmenu.arranque)+"','"+ALLTRIM(tabmenu.comando)+"', '"+tabmenu.pusu+"', '"+tabmenu.opcion+"', '"+ALLTRIM(tabmenu.prun)+"')"
 			\ON SELECTION BAR <<nBarNivel>> OF <<cPadNameNivel>> <<cTagCom>>
 		ELSE 
 			*NIVEL I DENTRO DE UN NIVEL P			
-	        \DEFINE BAR <<nBarNivel>> OF <<cPadNameNivel>>  <<cTagImagen>> PROMPT "<<cTagBar>>"	  
-		    cTagCom = ALLTRIM(tabmenu.comando)
+	        \DEFINE BAR <<nBarNivel>> OF <<cPadNameNivel>>  <<cTagImagen>> PROMPT "<<cTagBar>>"	 
+		    cTagCom = ALLTRIM(tabmenu.comando) 
 		    \ON BAR <<nBarNivel>> OF <<cPadNameNivel>> <<cTagCom>>	
 		ENDIF 
 	ELSE 
@@ -147,8 +149,8 @@ ENDIF
 				REPLACE tpopup WITH ALLTRIM(cPadNameNivel)
 			ENDIF 
 			
-			\DEFINE BAR <<nBarNivel>> OF <<cPadNameNivel>>  <<cTagImagen>> PROMPT "<<cTagBar>>"
-			cTagCom = ALLTRIM(tabmenu.comando)
+			\DEFINE BAR <<nBarNivel>> OF <<cPadNameNivel>>  <<cTagImagen>> PROMPT "<<cTagBar>>" 
+			cTagCom = ALLTRIM(tabmenu.comando) 
 			\ON BAR <<nBarNivel>> OF <<cPadNameNivel>> <<cTagCom>>
 			
 		 ELSE
@@ -169,7 +171,9 @@ ENDIF
 		IF tabmenu.nivel = 'H' THEN 			  	
 		 	*>2 NIVEL = H
 			cTagCom = ALLTRIM(tabmenu.comando)
-			\DEFINE BAR <<nBarNivel>> OF <<cPadNameNivel>>  <<cTagImagen>> PROMPT "<<cTagBar>>"
+			ctagComW=IIF(AT('DO FORM',UPPER(tabmenu.comando))=0,""," SKIP FOR WEXIST('"+ALLTRIM(  SUBSTR(STRTRAN(UPPER(tabmenu.comando),'DO FORM ',''),1, AT(' ',STRTRAN(UPPER(tabmenu.comando),'DO FORM ','')) )  ) +"')")
+			
+			\DEFINE BAR <<nBarNivel>> OF <<cPadNameNivel>>  <<cTagImagen>> PROMPT "<<cTagBar>>"  <<cTagComW>>
 			\ON SELECTION BAR <<nBarNivel>> OF <<cPadNameNivel>> <<cTagCom>>
 		ENDIF 
 	ENDIF 

@@ -109,6 +109,14 @@ FUNCTION CIERRAAPP
 *** Función de Cierre del Sistema, Segun la variable _SYSPAPELERA = "S / N"
 *** Elimina o deja los archivos temporales generados durante la Ejecución del Sistema
 *#/----------------------------------------
+
+*-- Cerrar Forms abiertos
+vformCount = _SCREEN.FormCount
+FOR i_vform = vformCount  TO 1 STEP -1
+    _SCREEN.Forms(i_vform).Release() 			
+ENDFOR
+
+CLEAR EVENTS 
 CLOSE ALL 
 CLOSE TABLES ALL 
 SET SAFETY OFF 
@@ -12394,8 +12402,6 @@ ENDFUNC
 
 
 
-
-
 FUNCTION PreciosArticulo
 PARAMETERS  pv_articulos
 *#/----------------------------------------
@@ -12405,6 +12411,17 @@ PARAMETERS  pv_articulos
 
 
 	pv_articulos = STRTRAN(STRTRAN(STRTRAN(pv_articulos,"´","'"),"(","'"),")","'")
+	
+
+	CREATE CURSOR myarticulos (articulo C(20))
+	=ALINES(arrpv_articulos,STRTRAN(pv_articulos,"'",""),1,",")
+	SELECT myarticulos
+	FOR ia = 1 TO ALEN(arrpv_articulos,1)
+		APPEND BLANK 
+		replace articulo WITH ALLTRIM(arrpv_articulos(ia))
+	ENDFOR 
+
+	
 	* controlo si ya se genero la lista de precios actual, sino la genero
 	pvtmp = frandom()
 	vprecioarti = 'precioarti'+pvtmp 
@@ -12438,18 +12455,33 @@ PARAMETERS  pv_articulos
 		v_condicion = ""
 	ELSE
 		v_condicion = " and trim(articulo) in ( "+pv_articulos+" ) "
+		v_condicion1 = " and trim(articulo) in ( select ALLTRIM(articulo) from myarticulos ) "
 	ENDIF 
 	
 	
 *	SELECT * FROM syslistaprea INTO TABLE &vprecioartic WHERE ALLTRIM(articulo) in ( &pv_articulos ) ORDER BY articulo GROUP BY articulo 
-	SELECT * FROM syslistaprea INTO TABLE &vprecioartic WHERE 1 = 1 &v_condicion ORDER BY articulo GROUP BY articulo 
+	SELECT a.* FROM syslistaprea a LEFT JOIN myarticulos m ON ALLTRIM(a.articulo)==ALLTRIM(m.articulo) INTO TABLE &vprecioartic ;
+			WHERE 1 = 1 AND !ISNULL(m.articulo) ORDER BY a.articulo GROUP BY a.articulo 
 
-	SELECT * FROM syslistaprea INTO TABLE &vprecioartia WHERE 1 = 1 AND idlista > 0 &v_condicion ORDER BY idlista 
+
+
+
+	SELECT a.* FROM syslistaprea a LEFT JOIN myarticulos m ON ALLTRIM(a.articulo)==ALLTRIM(m.articulo) INTO TABLE &vprecioartia  ;
+	 	WHERE 1 = 1 AND idlista > 0  AND !ISNULL(m.articulo)  ORDER BY idlista 
+
+
 	
-	SELECT a.idlistah, a.articulo, a.detalle as detalleart, a.pventa as pventaa, a.impuestos as impuestosa, a.pventatot as pventatota,a.detallep as detalista,  b.*, razon as pventa, razon as impuestos, razon as pventatot, ;
+	SELECT a.idlistah, a.articulo, a.detalle as detalleart, a.pventa as pventaa, a.impuestos as impuestosa, a.pventatot as pventatota,a.detallep as detalista, ;
+			b.*, razon as pventa, razon as impuestos, razon as pventatot, ;
 			razon as entrega, razon as impcuota ;
-		FROM syslistapreb b LEFT JOIN syslistaprea a ON  a.idlista = b.idlista INTO TABLE &vprecioartib WHERE b.idlista in ( SELECT idlista FROM &vprecioartia ) ;
-		AND b.habilitado = 'S' AND ALLTRIM(a.articulo) in ( SELECT ALLTRIM(articulo) FROM &vprecioartia ) ORDER BY  b.idlista , b.cuotas
+		FROM syslistapreb b LEFT JOIN syslistaprea a ON  a.idlista = b.idlista ;
+		LEFT JOIN &vprecioartia p ON ALLTRIM(a.articulo) == ALLTRIM(p.articulo) AND b.idlista = p.idlista ;
+		INTO TABLE &vprecioartib WHERE b.habilitado = 'S' AND !ISNULL(p.articulo) ORDER BY  b.idlista , b.cuotas
+
+		
+*		INTO TABLE &vprecioartib WHERE b.idlista in ( SELECT idlista FROM &vprecioartia ) ;
+*		AND b.habilitado = 'S' AND !ISNULL(p.articulo) ORDER BY  b.idlista , b.cuotas
+*		AND b.habilitado = 'S' AND ALLTRIM(a.articulo) in ( SELECT ALLTRIM(articulo) FROM &vprecioartia ) ORDER BY  b.idlista , b.cuotas
 
 
 	SET ENGINEBEHAVIOR 90
@@ -12492,16 +12524,120 @@ PARAMETERS  pv_articulos
 	USE IN &vprecioartic 
 	USE IN &vprecioartid 
 
-*		SELECT &vprecioartia 
-*		INDEX on idlistah TAG idlista 
-*!*		
-*!*		SELECT &vprecioartib 
-*!*		SET RELATION TO idlista INTO &vprecioartia
-*!*		SET RELATION TO 
 	
 	RETURN vprecioarti	
 	
 ENDFUNC 
+
+
+
+
+*!*	FUNCTION PreciosArticulo
+*!*	PARAMETERS  pv_articulos
+*!*	*#/----------------------------------------
+*!*	** Obtiene todas las cotizaciones y precios segun listas y cuotas para un artículo determinado 
+*!*	** Parámetros:  p_articulos  - Lista de Articulos a mostrar
+*!*	*#/----------------------------------------
+
+
+*!*		pv_articulos = STRTRAN(STRTRAN(STRTRAN(pv_articulos,"´","'"),"(","'"),")","'")
+*!*		* controlo si ya se genero la lista de precios actual, sino la genero
+*!*		pvtmp = frandom()
+*!*		vprecioarti = 'precioarti'+pvtmp 
+*!*		vprecioartia = vprecioarti+'a'
+*!*		vprecioartib = vprecioarti+'b'
+*!*		vprecioartic = vprecioarti+'c'
+*!*		vprecioartid = vprecioarti+'d'
+
+*!*		IF EMPTY(_SYSLISTAPRECIO)  THEN 
+*!*			* Obtengo los Articulos de Cada Lista Seleccionada 
+*!*			=GetListasPrecios(vprecioarti)
+*!*			SELECT &vprecioartia
+*!*			USE 
+*!*			SELECT &vprecioartib
+*!*			USE 
+*!*		ENDIF 
+
+
+*!*		*** obtengo los precios del articulo pasado como parametro en las distintas listas de precios
+*!*		IF !USED('syslistaprea') THEN 
+*!*			USE syslistaprea IN 0
+*!*		ENDIF 
+*!*		IF !USED('syslistapreb') THEN 
+*!*			USE syslistapreb IN 0 
+*!*		ENDIF 
+
+*!*		SET ENGINEBEHAVIOR 70
+
+*!*		
+*!*		IF EMPTY(pv_articulos) THEN 
+*!*			v_condicion = ""
+*!*		ELSE
+*!*			v_condicion = " and trim(articulo) in ( "+pv_articulos+" ) "
+*!*		ENDIF 
+*!*		
+*!*		
+*!*	*	SELECT * FROM syslistaprea INTO TABLE &vprecioartic WHERE ALLTRIM(articulo) in ( &pv_articulos ) ORDER BY articulo GROUP BY articulo 
+*!*		SELECT * FROM syslistaprea INTO TABLE &vprecioartic WHERE 1 = 1 &v_condicion ORDER BY articulo GROUP BY articulo 
+
+*!*		SELECT * FROM syslistaprea INTO TABLE &vprecioartia WHERE 1 = 1 AND idlista > 0 &v_condicion ORDER BY idlista 
+*!*		
+*!*		SELECT a.idlistah, a.articulo, a.detalle as detalleart, a.pventa as pventaa, a.impuestos as impuestosa, a.pventatot as pventatota,a.detallep as detalista,  b.*, razon as pventa, razon as impuestos, razon as pventatot, ;
+*!*				razon as entrega, razon as impcuota ;
+*!*			FROM syslistapreb b LEFT JOIN syslistaprea a ON  a.idlista = b.idlista INTO TABLE &vprecioartib WHERE b.idlista in ( SELECT idlista FROM &vprecioartia ) ;
+*!*			AND b.habilitado = 'S' AND ALLTRIM(a.articulo) in ( SELECT ALLTRIM(articulo) FROM &vprecioartia ) ORDER BY  b.idlista , b.cuotas
+
+
+*!*		SET ENGINEBEHAVIOR 90
+
+
+*!*		SELECT &vprecioartia 
+*!*		ALTER table &vprecioartib alter COLUMN idlistah i 
+*!*		SELECT &vprecioartib 
+*!*		ALTER table &vprecioartib alter COLUMN idlistah i 
+*!*		INDEX on idlistah TAG idlistah
+*!*		replace ALL pventa WITH ( pventaa * (1+razon/100) ) , impuestos WITH ( impuestosa * (1+razon/100) ), ;
+*!*				 pventatot WITH ( pventatota * (1+razon/100)), entrega WITH 0, impcuota WITH (( pventatota * (1+razon/100))/ cuotas )
+*!*		
+*!*		
+*!*		INDEX on STR(idlista)+STR(cuotas)+STR(idfinancia)+articulo TAG indice1 
+*!*			
+*!*				 
+*!*		** Me conecto a la base de datos
+*!*		vconeccionD = abreycierracon(0,_SYSSCHEMA)
+*!*			
+*!*	*	sqlmatriz(1)=" SELECT * FROM depostock where TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
+*!*		sqlmatriz(1)=" SELECT s.*, d.detalle as nombredep FROM r_depostock s left join depositos d on s.deposito = d.deposito where 1 = 1 "+v_condicion  &&TRIM(articulo) in ( "+ALLTRIM(pv_articulos)+" ) "
+*!*		verror=sqlrun(vconeccionD ,"depostock_sql")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Stock por Depósitos... ",0+48+0,"Error")
+*!*		    RETURN .F.
+*!*		ENDIF
+*!*		=abreycierracon(vconeccionD ,"")	
+
+
+*!*		SELECT * FROM depostock_sql INTO TABLE &vprecioartid  ORDER BY articulo , deposito
+*!*		SELECT &vprecioartid
+*!*		ALTER TABLE &vprecioartid alter articulo c(20)
+*!*		INDEX on ALLTRIM(articulo) TAG articulo 
+*!*		
+*!*		USE IN depostock_sql			 
+
+*!*		USE IN &vprecioartia
+*!*		USE IN &vprecioartib 
+*!*		USE IN &vprecioartic 
+*!*		USE IN &vprecioartid 
+
+*!*	*		SELECT &vprecioartia 
+*!*	*		INDEX on idlistah TAG idlista 
+*!*	*!*		
+*!*	*!*		SELECT &vprecioartib 
+*!*	*!*		SET RELATION TO idlista INTO &vprecioartia
+*!*	*!*		SET RELATION TO 
+*!*		
+*!*		RETURN vprecioarti	
+*!*		
+*!*	ENDFUNC 
 
 
 
