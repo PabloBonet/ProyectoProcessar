@@ -21903,7 +21903,7 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 		* Es obligatorio enviar una factura asociada a la ND por Recargos
 
 		sqlmatriz(1)=" SELECT idfactura, recargo FROM cobros  "
-		sqlmatriz(5)=" WHERE  idregipago = "+ALLTRIM(STR(P_IdReciboRec))+" and  idcomproba = "+ALLTRIM(STR(V_idcomproRERec))+" and  recargo > 0"
+		sqlmatriz(5)=" WHERE  idregipago = "+ALLTRIM(STR(P_IdReciboRec))+" and  idcomproba = "+ALLTRIM(STR(V_idcomproRERec))+" "
 		verror=sqlrun(vconeccionR ,"FacturasRec_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las Facturas asociadas a la ND  ",0+48+0,"Error")
