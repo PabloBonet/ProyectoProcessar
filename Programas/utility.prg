@@ -1250,7 +1250,65 @@ ENDFUNC
 
 
 
+FUNCTION validarCompAutorizado
+PARAMETERS p_idcomprobante
+*#/----------------------------------------
+* FUNCIÓN PARA VALIDAR COMPROBANTES AUTORIZADOS
+* PARAMETROS: P_IDCOMPROBANTE
+* RETORNO: Retorna True si el comprobante NO está autorizado, False en caso de que esté autorizado
+*#/----------------------------------------
+IF TYPE('p_idcomprobante') = 'N'
 
+	vconeccion=abreycierracon(0,_SYSSCHEMA)	
+			
+			sqlmatriz(1)="Select f.* from facturasfe f  "
+			sqlmatriz(2)=" where f.idfactura = "+ ALLTRIM(STR(v_idcomprobante))
+
+			verror=sqlrun(vconeccion,"factufe_sql")
+			IF verror=.f.  
+				IF p_nomsg = .f. THEN 
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la facturasFE",0+48+0,"Error")
+			   	ENDIF 
+			    v_autorizar = .F.
+			    RETURN v_autorizar 
+			ELSE
+				*v_idcomproba = 0
+				v_pventa	= 0
+				
+				
+				SELECT factufe_sql
+				GO TOP 
+				
+				DO WHILE NOT EOF()
+					
+					v_resultado = factufe_sql.resultado
+					v_caecesp 	= factufe_sql.caecesp
+					
+					IF v_resultado = "A" OR v_caecesp <> ""
+					
+						IF p_nomsg = .f. THEN 
+							MESSAGEBOX("El comprobante ID: "+ALLTRIM(STR(v_idcomprobante))+" ya se encuentra autorizado",0+48+0,"Error al autorizar")
+						ENDIF 
+						v_autorizar = .F.
+						RETURN v_autorizar
+					ENDIF 
+					
+					SELECT factufe_sql
+					SKIP 1
+				
+				ENDDO 
+			ENDIF 
+			
+		=abreycierracon(vconeccion,"") && Cierro conección
+	RETURN .T.
+ELSE
+	MESSAGEBOX("Parametro incorrecto en la validación del comprobante (validarCompAutorizador)",0+16+256,"Validar comprobante")
+
+	RETURN .F.
+
+ENDIF 
+
+ENDFUNC 
 
 FUNCTION autorizarCompFE
 PARAMETERS p_idregistro, p_idcomproba, p_nomsg
@@ -1269,48 +1327,12 @@ LOCAL loException AS Exception
 
 
 	*** COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO **
+	v_validarComp =validarCompAutorizado(v_idcomprobante)
 	
-	vconeccion=abreycierracon(0,_SYSSCHEMA)	
-		
-		sqlmatriz(1)="Select f.* from facturasfe f  "
-		sqlmatriz(2)=" where f.idfactura = "+ ALLTRIM(STR(v_idcomprobante))
-
-		verror=sqlrun(vconeccion,"factufe_sql")
-		IF verror=.f.  
-			IF p_nomsg = .f. THEN 
-			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la facturasFE",0+48+0,"Error")
-		   	ENDIF 
-		    v_autorizar = .F.
-		    RETURN 
-		ELSE
-			*v_idcomproba = 0
-			v_pventa	= 0
-			
-			
-			SELECT factufe_sql
-			GO TOP 
-			
-			DO WHILE NOT EOF()
-				
-				v_resultado = factufe_sql.resultado
-				v_caecesp 	= factufe_sql.caecesp
-				
-				IF v_resultado = "A" OR v_caecesp <> ""
-				
-					IF p_nomsg = .f. THEN 
-						MESSAGEBOX("El comprobante ID: "+ALLTRIM(STR(v_idcomprobante))+" ya se encuentra autorizado",0+48+0,"Error al autorizar")
-					ENDIF 
-					v_autorizar = .F.
-					RETURN v_autorizar
-				ENDIF 
-				
-				SELECT factufe_sql
-				SKIP 1
-			
-			ENDDO 
-		ENDIF 
-		
-	=abreycierracon(vconeccion,"") && Cierro conección
+	IF v_validarComp = .F.
+		RETURN .F. 
+	ENDIF 
+	
 	
 	TRY 
 		v_tipoObj = TYPE("objModuloAFIP")
@@ -1417,6 +1439,12 @@ LOCAL loException AS Exception
 
 	*** Mando a autorizar el comprobante pasandole la ubicación del archivo  y el ID ***
 
+		*** COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO **
+			v_validarComp =validarCompAutorizado(v_idcomprobante)
+			
+			IF v_validarComp = .F.
+				RETURN .F. 
+			ENDIF 
 		v_respuesta = objModuloAFIP.AutorizarComp(v_ubicacionXML,v_idComprobante)
 			
 				
@@ -18662,7 +18690,7 @@ ENDFUNC
 
 
 FUNCTION cargarLocalidad
-PARAMETERS p_nomLoc, p_cp, p_nomProv, p_nomPais
+PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 *#/----------------------------------------
 **** FUNCION PARA CARGAR UNA LOCALIDAD POR NOMBRE DE LOCALIDAD, PROVINCIA y CP ****
 ** PARAMETROS:
@@ -18674,24 +18702,24 @@ PARAMETERS p_nomLoc, p_cp, p_nomProv, p_nomPais
 *#/----------------------------------------
 
 
-	IF TYPE('p_nomPais') <> 'C'
+	IF TYPE('p_nomPais_car') <> 'C'
 		p_nomPais = "ARGENTINA"
 	ENDIF 
 	* Me conecto a la base de datos *
-	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+	vconeccion_car=abreycierracon(0,_SYSSCHEMA)	
 		
 	sqlmatriz(1)=" Select l.localidad, l.nombre as nomLoc, l.cp, pr.provincia, pr.nombre as nomProv, pa.pais, pa.nombre as nomPais "
 	sqlmatriz(2)=" from paises pa left join provincias pr on pa.pais = pr.pais left join localidades l  on pr.provincia = l.provincia "
-	sqlmatriz(3)=" where pa.nombre = '"+ALLTRIM(p_nomPais)+"' and pr.nombre = '"+ALLTRIM(p_nomProv) + "' and l.nombre = '"+ALLTRIM(p_nomLoc)+"'"
+	sqlmatriz(3)=" where pa.nombre = '"+ALLTRIM(p_nomPais_car)+"' and pr.nombre = '"+ALLTRIM(p_nomProv_car) + "' and l.nombre = '"+ALLTRIM(p_nomLoc_car)+"'"
 
-	verror=sqlrun(vconeccionF,"localidad_sql")
+	verror=sqlrun(vconeccion_car,"localidad_sql_car")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la comprobanción de la localidad ",0+48+0,"Error")
 	    
 	    RETURN 0
 	ENDIF 
 
-	SELECT localidad_sql
+	SELECT localidad_sql_car
 	GO TOP 
 	IF NOT EOF()
 	
@@ -18699,91 +18727,91 @@ PARAMETERS p_nomLoc, p_cp, p_nomProv, p_nomPais
 *!*			** Existe la localidad **
 *!*			MESSAGEBOX("La localidad que intenta ingresar ya se encuentra cargada",0+48+0,"Cargar localidad")
 *!*			
-		v_idloc = localidad_sql.localidad
+		v_idloc_car = localidad_sql_car.localidad
 	
 		* me desconecto	
-			=abreycierracon(vconeccionF,"")
-		RETURN v_idloc	
+			=abreycierracon(vconeccion_car,"")
+		RETURN v_idloc_car	
 			
 	ELSE
 		** No existe la localidad, la puedo cargar **
 		sqlmatriz(1)=" Select pr.provincia, pr.nombre as nomProv, pa.pais, pa.nombre as nomPais "
 		sqlmatriz(2)=" from paises pa left join provincias pr on pa.pais = pr.pais "
-		sqlmatriz(3)=" where pa.nombre = '"+ALLTRIM(p_nomPais)+"' and pr.nombre = '"+ALLTRIM(p_nomProv)+"'"
+		sqlmatriz(3)=" where pa.nombre = '"+ALLTRIM(p_nomPais_car)+"' and pr.nombre = '"+ALLTRIM(p_nomProv_car)+"'"
 
-		verror=sqlrun(vconeccionF,"provPais_sql")
+		verror=sqlrun(vconeccionF,"provPais_sql_car")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la información de la Provincia-Pais",0+48+0,"Error")
 		    * me desconecto	
-			=abreycierracon(vconeccionF,"")
+			=abreycierracon(vconeccion_car,"")
 		    RETURN 0
 		ENDIF 
 		
-		SELECT provPais_sql
+		SELECT provPais_sql_car
 		GO TOP 
 		
 		IF NOT EOF()
 			*** Existe la provincia y el pais -> Creo la localidad **
 						
-			SELECT provPais_sql
-			v_provincia = provPais_sql.provincia
+			SELECT provPais_sql_car
+			v_provincia_car = provPais_sql_car.provincia
 			
 			sqlmatriz(1)="SELECT MAX(CAST(localidad as unsigned)) AS maxi FROM localidades  "
-			verror=sqlrun(vconeccionF,"maximo")
+			verror=sqlrun(vconeccionF,"maximo_car")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo código de Localidades ",0+48+0,"Error")
 			    * me desconecto	
-					=abreycierracon(vconeccionF,"")
+					=abreycierracon(vconeccion_car,"")
 				RETURN 0
 			ENDIF 
 
 			*v_cod_loc  = INT(VAL(localidades.localidad))
 
-			v_maximo = INT(VAL(maximo.maxi))
+			v_maximo_car = INT(VAL(maximo_car.maxi))
 
 
-			SELECT maximo
+			SELECT maximo_car
 			GO TOP 
 			IF EOF() AND RECNO()=1 THEN 
-				v_cod_loc = 1
+				v_cod_loc_car = 1
 			ELSE
-				v_cod_loc = v_maximo + 1
+				v_cod_loc_car = v_maximo_car + 1
 			ENDIF 
 			USE IN maximo
 			
-			p_tipoope     = 'I'
-			p_condicion   = ''
-			v_titulo      = " EL ALTA "
+			p_tipoope_car     = 'I'
+			p_condicion_car   = ''
+			v_titulo_car      = " EL ALTA "
 							
-			DIMENSION lamatriz(4,2)
+			DIMENSION lamatriz_car(4,2)
 			
 			lamatriz(1,1) = 'localidad'
-			lamatriz(1,2) = "'"+ALLTRIM(STR(v_cod_loc))+"'"
+			lamatriz(1,2) = "'"+ALLTRIM(STR(v_cod_loc_car))+"'"
 			lamatriz(2,1) = 'nombre'
-			lamatriz(2,2) = "'"+ALLTRIM(v_nomLoc)+"'"
+			lamatriz(2,2) = "'"+ALLTRIM(v_nomLoc_car)+"'"
 			lamatriz(3,1) = 'cp'
-			lamatriz(3,2) = "'"+ALLTRIM(v_cp)+"'"
+			lamatriz(3,2) = "'"+ALLTRIM(v_cp_car)+"'"
 			lamatriz(4,1) = 'provincia'
-			lamatriz(4,2) = "'"+ALLTRIM(v_provincia)+"'"
+			lamatriz(4,2) = "'"+ALLTRIM(v_provincia_car)+"'"
 
-			p_tabla     = 'localidades'
-			p_matriz    = 'lamatriz'
-			p_conexion  = vconeccionF
-			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de la Localidad "+ALLTRIM(v_cod_loc)+"-"+;
-			                ALLTRIM(thisform.tb_nombre.value),0+48+0,"Error")
+			p_tabla_car     = 'localidades'
+			p_matriz_car    = 'lamatriz_car'
+			p_conexion_car  = vconeccion_car
+			IF SentenciaSQL(p_tabla_car,p_matriz_car,p_tipoope_car,p_condicion_car,p_conexion_car) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo_car+" de la Localidad "+ALLTRIM(v_cod_loc_car)+"-"+;
+			                ALLTRIM(v_nomLoc_car),0+48+0,"Error")
 			            * me desconecto	
-			=abreycierracon(vconeccionF,"")    
-			    RETURN v_cod_loc
+			=abreycierracon(vconeccion_car,"")    
+			    RETURN v_cod_loc_car
 			ENDIF 
 			* me desconecto	
-			=abreycierracon(vconeccionF,"")
+			=abreycierracon(vconeccion_car,"")
 		
-			RETURN v_cod_loc
+			RETURN v_cod_loc_car
 		ELSE
 			MESSAGEBOX("NO se encuentra la provincia, debe cargar la provincia correspondiente",0+16+0,"Error")
 			* me desconecto	
-			=abreycierracon(vconeccionF,"")
+			=abreycierracon(vconeccion_car,"")
 		
 			RETURN 0
 			
