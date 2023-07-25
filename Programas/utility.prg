@@ -23315,3 +23315,123 @@ PARAMETERS p_Grupos
 	ENDIF 	
 
 RETURN 
+
+
+
+
+
+
+********************************************************************************************************
+********************************************************************************************************
+********************************************************************************************************
+
+
+
+FUNCTION DescuStockSN
+PARAMETERS p_tablaarticulos, pa_conexion
+*#/----------------------------------------
+* Función que devuelve verdadero o Falso si se puede descontar stock 
+* de deposito pasado como parametro en la tabla
+* - PARAMETROS p_tablaarticulos : ( articulo c(50), cantidad y, deposito I )
+* Retorna Verdadero o Falso segun se pueda hacer el descuento de stock o no en función de 
+* la existencia del artículo en Stock,
+* Basta que al menos uno no tenga disponibilidad para que devuelva falso 
+*#/----------------------------------------
+	* Si no esta hablitado el descuento de Stock devuelve siempre .t. = Puede descontar stock 
+	IF ALLTRIM(_SYSSTOCKACTRL) = 'N' THEN 
+		RETURN .T.
+	ENDIF 
+
+	LOCAL Rta_SN 
+	Rta_SN = .T.
+	
+	IF !USED(p_tablaarticulos) THEN 
+		USE &p_tablaarticulos IN 0
+	ENDIF 
+	SELECT &p_tablaarticulos 
+
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionDV = pa_conexion
+		ELSE 
+			vconeccionDV = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionDV = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+	
+	SELECT &p_tablaarticulos 
+	GO TOP 
+
+
+	DO WHILE !EOF() 
+
+		IF &p_tablaarticulos..cantidad > 0 THEN 
+		
+			*Veo si el Articulo es de Stock , si no lo es retorna .t. = hay stock suficiente ( no se controla)
+
+			sqlmatriz(1)=" select articulo, ctrlstock from articulos "
+			sqlmatriz(3)=" where TRIM(articulo) = '"+ALLTRIM(&p_tablaarticulos..articulo)+"'"
+			verror=sqlrun(vconeccionDV,"star_art")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Articulo de Stock ",0+48+0,"Error")
+			    RETURN .F.
+			ENDIF
+			
+			v_ctrlstockc = .t.
+			SELECT star_art
+			IF !EOF() THEN 
+				IF star_art.ctrlstock = 'N' THEN 
+					v_ctrlstockc = .f.
+				ENDIF 
+			ENDIF 
+			USE IN star_art		
+		
+		
+			IF v_ctrlstockc = .t. THEN  && tengo que controlar el descuento de stock 
+ 
+				sqlmatriz(1)=" select r.deposito, r.articulo, r.stock, a.ctrlstock from r_depostock r "
+				sqlmatriz(2)=" left join articulos a on TRIM(a.articulo)=TRIM(r.articulo) "
+				sqlmatriz(3)=" where TRIM(r.articulo) = '"+ALLTRIM(&p_tablaarticulos..articulo)+"' and r.deposito="+ALLTRIM(STR(&p_tablaarticulos..deposito))
+				verror=sqlrun(vconeccionDV,"stde_art")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de stock X depositos ",0+48+0,"Error")
+				    RETURN .F.
+				ENDIF
+ 
+				
+				SELECT stde_art
+				GO TOP 
+
+				IF !EOF() THEN 
+					IF ( stde_art.stock - &p_tablaarticulos..cantidad) < 0 THEN 
+						Rta_SN = .F.
+						SELECT &p_tablaarticulos
+						GO BOTT
+					ENDIF 
+				ELSE 
+					Rta_SN = .F.
+					SELECT &p_tablaarticulos
+					GO BOTT				
+				ENDIF 		
+				USE IN stde_art
+			ENDIF 
+			
+		ENDIF 		 
+		SELECT &p_tablaarticulos 
+		SKIP 
+	ENDDO 
+	
+	SELECT &p_tablaarticulos
+	USE 
+	IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		= abreycierracon(vconeccionDV ,"")
+	ENDIF 	
+
+RETURN Rta_SN
+
+
+
+
+
