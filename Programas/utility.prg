@@ -17795,7 +17795,114 @@ RETURN rt_idnp
 
 
 
+FUNCTION filtrarTexto
+PARAMETERS p_texto
+*#/----------------------------------------
+* FUNCIÓN QUE FILTRA EL TEXTO REEMPLAZANDO CARACTERES RAROS
+* PARAMETROS: 	p_texto: texto a convertir
+*				
+* RETORNO: Retorna el texto convertido o vacio en caso de error
+*#/----------------------------------------
 
+*!*	 	&#160;	
+*!*	¡	&#161;	
+*!*	¢	&#162;
+*!*	£	&#163;
+*!*	¤	&#164;
+*!*	¥	&#165;	
+*!*	¦	&#166;	A6	&brvbar;	Barra partida
+*!*	§	&#167;	A7	&sect;	Signo de sección
+*!*	¨	&#168;	A8	&uml;	Diéresis
+*!*	©	&#169;	A9	&copy;	Signo de derecho de copia (copyright)
+*!*	ª	&#170;	AA	&ordf;	Indicador de ordinal femenino
+*!*	«	&#171;	AB	&laquo;	Marca de acotación doble ángulo izquierdo
+*!*	¬	&#172;	AC	&not;	Símbolo de No
+*!*	­	&#173;	AD	&shy;	Guión suave
+*!*	®	&#174;	AE	&reg;	Símbolo de Registrado
+*!*	¯	&#175;	AF	&macr;	Acento de vocal larga (macrón)
+*!*	°	&#176;	B0	&deg;	Símbolo de Grados
+*!*	±	&#177;	B1	&plusmn;	Símbolo de más-menos
+*!*	²	&#178;	B2	&sup2;	Superscript 2 (Símbolo de "al cuadrado")
+*!*	³	&#179;	B3	&sup3;	Superscript 3 (Símbolo de "al cubo")
+*!*	´	&#180;	B4	&acute;	Acento agudo
+*!*	µ	&#181;	B5	&micro;	Símbolo de micro
+*!*	¶	&#182;	B6	&para;	Símbolo de párrafo
+*!*	·	&#183;	B7	&middot;	Punto medio
+*!*	¸	&#184	B8	&cedil;	Cedilla
+*!*	¹	&#185	B9	&sup1;	Superscript 1
+*!*	º	&#186	BA	&ordm;	Indicador ordinal masculino
+*!*	»	&#187	BB	&raquo;	Marca de acotación doble ángulo derecho
+*!*	¼	&#188	BC	&frac14;	Fracción un cuarto
+*!*	½	&#189;	BD	&frac12;	Fracción un medio
+*!*	¾	&#190;	BE	&frac34;	Fracción tres cuartos
+*!*	¿	&#191;	BF	&iquest;	Cerrar interrogación
+*!*	À	&#192;	C0	&Agrave;	Letra mayúscula A con acento grave
+*!*	Á	&#193;	C1	&Aacute;	Letra mayúscula A con acento agudo
+*!*	Â	&#194;	C2	&Acirc;	Letra mayúscula A con acento circunflejo
+*!*	Ã	&#195;	C3	&Atilde;	Letra mayúscula A con tilde
+*!*	Ä	&#196;	C4	&Auml;	Letra mayúscula A con diéresis
+*!*	Å	&#197;	C5	&Aring;	Letra mayúscula A con anillo encima
+*!*	Æ	&#198;	C6	&AElig;	Letra mayúscula AE
+*!*	Ç	&#199;	C7	&Ccedil;	Letra mayúscula C con cedilla
+*!*	È	&#200;	C8	&Egrave;	Letra mayúscula E con acento grave
+*!*	É	&#201;	C9	&Eacute;	Letra mayúscula E con acento agudo
+*!*	Ê	&#202;	CA	&Ecirc;	Letra mayúscula E con acento circunflejo
+*!*	Ë	&#203;	CB	&Euml;	Letra mayúscula E con diéresis
+*!*	Ì	&#204;	CC	&Igrave;	Letra mayúscula I con acento grave
+*!*	Í	&#205;	CD	&Iacute;	Letra mayúscula I con acento agudo
+*!*	Î	&#206;	CE	&Icirc;	Letra mayúscula I con acento circunflejo
+*!*	Ï	&#207;	CF	&Iuml;	Letra mayúscula I con diéresis
+*!*	Ð	&#208;	D0	&ETH;	Letra mayúscula Eth (Inglés, Islandés, Feroés y Escandinavo antíguos)
+*!*	Ñ	&#209;	D1	&Ntilde;	Letra mayúscula N con tilde
+*!*	Ò	&#210;	D2	&Ograve;	Letra mayúscula O con acento grave
+*!*	Ó	&#211;	D3	&Oacute;	Letra mayúscula O con acento agudo
+*!*	Ô	&#212;	D4	&Ocirc;	Letra mayúscula O con acento circunflejo
+*!*	Õ	&#213;	D5	&Otilde;	Letra mayúscula O con tilde
+*!*	Ö	&#214;	D6	&Ouml;	Letra mayúscula O con diéresis
+*!*	×	&#215;	D7	&times;	Signo de la multiplicación
+*!*	Ø	&#216;	D8	&Oslash;	Letra mayúscula O barrada
+*!*	Ù	&#217;	D9	&Ugrave;	Letra mayúscula U con acento grave
+*!*	Ú	&#218,	DA	&Uacute;	Letra mayúscula U con acento agudo
+*!*	Û	&#219;	DB	&Ucirc;	Letra mayúscula U con acento circunflejo
+*!*	Ü	&#220;	DC	&Uuml;	Letra mayúscula U con diéresis
+*!*	Ý	&#221;	DD	&Yacute;	Letra mayúscula Y con acento agudo
+*!*	Þ	&#222;	DE	&THORN;	Letra mayúscula Thorn (Inglés, Islandés, Feroés y Escandinavo antíguos)
+*!*	ß	&#223;	DF	&szlig;	Letra minúscula s picante
+*!*	à	&#224;	E0	&agrave;	Letra minúscula a con acento grave
+*!*	á	&#225;	E1	&aacute;	Letra minúscula a con acento agudo
+*!*	â	&#226;	E2	&acirc;	Letra minúscula a con acento circunflejo
+*!*	ã	&#227;	E3	&atilde;	Letra minúscula a con tilde
+*!*	ä	&#228;	E4	&auml;	Letra minúscula a con diéresis
+*!*	å	&#229;	E5	&aring;	Letra minúscula a con anillo encima
+*!*	æ	&#230;	E6	&aelig;	Letra minúscula ae
+*!*	ç	&#231;	E7	&ccedil;	Letra minúscula c con cedilla
+*!*	è	&#232;	E8	&egrave;	Letra minúscula e con acento grave
+*!*	é	&#233;	E9	&eacute;	Letra minúscula e con acento agudo
+*!*	ê	&#234;	EA	&ecirc;	Letra minúscula e con acento circunflejo
+*!*	ë	&#235;	EB	&euml;	Letra minúscula e con diéresis
+*!*	ì	&#236;	EC	&igrave;	Letra minúscula i con acento grave
+*!*	í	&#237;	ED	&iacute;	Letra minúscula i con acento agudo
+*!*	î	&#238;	EE	&icirc;	Letra minúscula i con acento circunflejo
+*!*	ï	&#239;	EF	&iuml;	Letra minúscula i con diéresis
+*!*	ð	&#240;	F0	&eth;	Letra minúscula eth
+*!*	ñ	&#241;	F1	&ntilde;	Letra minúscula n con tilde
+*!*	ò	&#242;	F2	&ograve;	Letra minúscula o con acento grave
+*!*	ó	&#243;	F3	&oacute;	Letra minúscula o con acento agudo
+*!*	ô	&#244;	F4	&ocirc;	Letra minúscula o con acento circunflejo
+*!*	õ	&#245;	F5	&otilde;	Letra minúscula o con tilde
+*!*	ö	&#246;	F6	&ouml;	Letra minúscula o con diéresis
+*!*	÷	&#247;	F7	&divide;	Signo de la división
+*!*	ø	&#248;	F8	&oslash;	Letra minúscula o barrada
+*!*	ù	&#249;	F9	&ugrave;	Letra minúscula u con acento grave
+*!*	ú	&#250;	FA	&uacute;	Letra minúscula u con acento agudo
+*!*	û	&#251;	FB	&ucirc;	Letra minúscula u con acento circunflejo
+*!*	ü	&#252;	FC	&uuml;	Letra minúscula u con diéresis
+*!*	ý	&#253;	FD	&yacute;	Letra minúscula y con acento agudo
+*!*	þ	&#254;	FE	&thorn;	Letra minúscula thorn
+*!*	ÿ	&#255	FF	&yuml;	Letra minúscula y con diéresis
+
+
+ENDFUNC 
 
 FUNCTION obtenerContribuyente 
 PARAMETERS p_tablaRetorno, p_cuitContrib, p_nomsg
@@ -18073,9 +18180,11 @@ TRY
 							
 												
 	CATCH TO loException
-				
+			
+			sqlmatriz(1) = ""	
 			IF p_nomsg = .f. THEN 
 	*			MESSAGEBOX(lcErrorMsg,0+48+0,"Se produjo un Error")
+			
 				MESSAGEBOX(loException.message,0+48+0,"Se produjo un Error")
 			ENDIF 
 			v_autorizar = .F.
@@ -23430,8 +23539,4 @@ PARAMETERS p_tablaarticulos, pa_conexion
 	ENDIF 	
 
 RETURN Rta_SN
-
-
-
-
 

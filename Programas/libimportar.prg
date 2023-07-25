@@ -1618,7 +1618,7 @@ FUNCTION CargaEntidades
 			RETURN 0
 		ENDIF
 
-		CREATE TABLE .\entidadescar FREE (entidad I, apellido C(100), nombre c(100), cargo C(100), compania C(100), cuit C(13), direccion C(100), ;
+		CREATE TABLE entidadescar FREE (entidad I, apellido C(100), nombre c(100), cargo C(100), compania C(100), cuit C(13), direccion C(100), ;
 					localidad C(10), iva I,fechaalta C(8), telefono C(50), cp C(50), fax C(50), ;
 					email C(254), web C(254), dni N(13), tipodoc C(3),  ;
 					fechanac C(8), idafiptipd I, credito n(12,2), nomloc C(254), nomprov C(254))			
@@ -1627,16 +1627,8 @@ FUNCTION CargaEntidades
 		CREATE TABLE errores free (entidad I, cuit C(13), errores C(254))
 
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+
 	
 		SELECT entidadescar 
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
@@ -1645,9 +1637,7 @@ FUNCTION CargaEntidades
 
 		COUNT TO v_registros 
 		IF v_registros > 0 THEN 
-		
-		
-		    
+				    
 			*Elimino las Entidades que tenga el sistema
 			*La carga debe hacerce con la tabla vacia
 			sqlmatriz(1)=" delete from entidades "
@@ -1665,469 +1655,94 @@ FUNCTION CargaEntidades
 			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de entidadescr... ",0+48+0,"Error")
 			    RETURN 
 			ENDIF		
-			
-			
-			
+						
 			
 			
 		ENDIF 
+		SELECT entidadescar 
+		GO top
+		v_cantAnt = RECCOUNT()
 		
-		
+		** Llama a la carga de entidades **
 
-		
-		
-		** Busco las Localidades **
-		
-		
-		*sqlmatriz(1)="Select mid(concat(TRIM(l.nombre),' - ',TRIM(pr.nombre),' - ',TRIM(pa.nombre)),1,100) as nombre , l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
-		sqlmatriz(1)="Select  l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
-
-		sqlmatriz(2)=" from localidades l left join provincias pr on l.provincia = pr.provincia left join paises pa on pa.pais = pr.pais "
-		sqlmatriz(3)=" order by l.nombre "
-
-		verror=sqlrun(vconeccionF,"localidades_sql1_a")
-		IF verror=.f.  
-		   MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Localidades ",0+48+0,"Error")
-		    
-		    	* me desconecto	
-					=abreycierracon(vconeccionF,"")
-					RETURN 
-		ENDIF 
-	
-		SELECT * FROM localidades_sql1_a INTO TABLE localidades_sql1
-
-*		ALTER table localidades_sql1 alter COLUMN nombre C(250)
-		ALTER table localidades_sql1 alter COLUMN localidad C(10)
-		ALTER table localidades_sql1 alter COLUMN cp C(50)
-		ALTER table localidades_sql1 alter COLUMN provincia C(10)
-		ALTER table localidades_sql1 alter COLUMN nomprov C(200)
-		ALTER table localidades_sql1 alter COLUMN nomloc C(200)
-		
-		
-		*** Busco los tipos de documentos ***
-		sqlmatriz(1)="Select  idafiptipod as idafipd, codafip, detalle "
-		sqlmatriz(2)=" from afiptipodocu "
-
-		verror=sqlrun(vconeccionF,"tipodocu_sql_a")
-		IF verror=.f.  
-		   MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los Tipos de documentos ",0+48+0,"Error")
-		    
-		    	* me desconecto	
-					=abreycierracon(vconeccionF,"")
-					RETURN 
-		ENDIF 
-	
-		
-		SELECT * FROM tipodocu_sql_a INTO TABLE tipodocu_sql
-		
-		ALTER table tipodocu_sql alter COLUMN idafipd I
-		ALTER table tipodocu_sql alter COLUMN codafip C(20)
-		ALTER table tipodocu_sql alter COLUMN detalle C(100)
-		
-		
-		SELECT entidadescar
-		v_cantReg = RECCOUNT()
-		
-		
-		
-		v_contador = 0
-		WAIT "Espere por Favor... ("+ALLTRIM(STR(v_contador))+" de " +ALLTRIM(STR(v_cantReg))+")" WINDOW NOWAIT 
-		
-		DIMENSION lamatriz(19,2)
-		DIMENSION lamatrizcr(5,2)
-		p_tipoope     = 'I'
-		p_condicion   = ''
-		v_titulo      = " EL ALTA "
-
-		SELECT entidadescar
-		GO TOP 
-		DO WHILE NOT EOF()
-		
-			v_contador = v_contador + 1 
-			v_errorEnIteracion = .F.
+		importarEntidades()
 			
-			*************************
-			** VALIDACIÓN DE DATOS **
-			*************************
-			v_entidadImp 	= entidadescar.entidad
-			v_apellidoImp 	= ALLTRIM(entidadescar.apellido)
-			v_nombreImp   	= ALLTRIM(entidadescar.nombre)
-			v_cargoImp		= ALLTRIM(entidadescar.cargo)
-			v_companiaImp	= ALLTRIM(entidadescar.compania)
-			v_cuitImp		= ALLTRIM(entidadescar.cuit)
-		
-			v_direccionImp	= ALLTRIM(entidadescar.direccion)
-			v_localidadImp	= ALLTRIM(entidadescar.localidad)
-			v_dniImp		= entidadescar.dni
-			v_ivaImp		= entidadescar.iva
-			v_afiptipodImp	= entidadescar.idafiptipd 
-			v_tipodocImp	= ALLTRIM(entidadescar.tipodoc)
-			v_nomLocImp		= ALLTRIM(entidadescar.nomloc)
-			v_nomprovImp	= ALLTRIM(entidadescar.nomprov)
-			v_cpIMP			= ALLTRIM(entidadescar.cp)
-
-			IF EMPTY(ALLTRIM(v_cuitImp))=.F.
-				*********
-				** Tiene asignado un CUIT
-				*********
-			
-				*********
-				** 1- Compruebo Si no tiene cargados los datos de Apellido, Nombre, Compania y/o localidad -> Busco los datos en el AFIP. **
-				*********
-				
-				IF (EMPTY(ALLTRIM(v_apellidoImp)) = .t. AND  EMPTY(ALLTRIM(v_nombreImp)) = .t. AND EMPTY(ALLTRIM(v_companiaImp)) = .t.) OR EMPTY(ALLTRIM(v_localidadImp)) = .t.
-					*********
-					** Faltan datos -> Busco el contribuyente
-					******
-*!*									TRY 
-*!*								
-								v_ret = obtenerContribuyente("tablaContrib", v_cuitImp,.t.)
-							
-*!*								CATCH TO varError
-							IF v_ret = .F.
-								*v_error = ALLTRIM(STR(varError.ErrorNo))+" - "+ALLTRIM(varError.comment)+" "+alltrim(varError.Details)+ " "+ALLTRIM(varError.MESSAGE)
-								v_error = "Error al obtener el contribuyente"
-							 	INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
-					    		v_errorEnIteracion =.t.
-					    	ENDIF 
-*!*									v_ret = .F.
-					    								
-*!*								ENDTRY 
-							
-					
 				
 				
-					IF v_ret = .F.
-					*********
-					** Hubo un problema al intentar obtner el contribuyente -> por ahora continúo igual con los demás
-					*********
-*!*							MESSAGEBOX("Hubo un problema al intentar obtener el contribuyente",0+48+0,"Obtener contribuyente")
-*!*												
-	
-						v_error = "Hubo un problema al intentar obtener el contribuyente "
-					    INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
-					    	
-						v_errorEnIteracion =.t.
-					ELSE
-							
-						SELECT tablaContrib
-						GO TOP 
-						
-						IF NOT EOF()
-							
-							*********
-							** Encontró el contribuyente en los datos del AFIP
-							*********
-							
-							v_apellido 	= tablaContrib.apellido
-							v_nombre	= tablaContrib.nombre
-							v_razonSocial 	= tablaContrib.razonSoc
-							v_cp		= tablaContrib.cp
-							v_nomprov	= tablaContrib.nomprov
-							v_direccion	= tablaContrib.direccion
-							v_nomLoc	= tablaContrib.nomLoc
-							v_tipodoc	= tablaContrib.tipodoc
-							v_documento	= tablaContrib.documento
-							v_ivaSel 	= tablaContrib.iva
-									
-							SELECT localidades_sql1 
-								GO TOP 
-							IF EMPTY(ALLTRIM(v_localidadImp)) = .T.
-							
-								SELECT * FROM localidades_sql1 WHERE ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprov)) AND ALLTRIM(UPPER(nomloc)) == ALLTRIM(UPPER(v_nomLoc)) ;
-								AND  ALLTRIM(UPPER(cp)) == ALLTRIM(UPPER(v_cp)) INTO CURSOR locSel 
-
-							
-							ELSE
-								SELECT * FROM localidades_sql1 WHERE ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprovimp)) AND ALLTRIM(UPPER(nomloc)) == ALLTRIM(UPPER(v_nomLocimp)) ;
-								AND  ALLTRIM(UPPER(cp)) == ALLTRIM(UPPER(v_cpimp)) INTO CURSOR locSel 
-
-							
-							ENDIF 
-								*********
-								** No tiene asigando el codigo de la localidad de la base de datos -> La busco.
-								*********
-							
-								*********
-								** BUsco entres las localidades cargadas
-								*********
-
-								
-
-*								SELECT * FROM localidades_sql1 WHERE ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprovImp)) AND ALLTRIM(UPPER(nomloc)) == ALLTRIM(UPPER(v_nomlocIMP)) AND cp = v_cpimp INTO CURSOR locSel 
-								
-								
-								SELECT locSel
-								GO TOP 
-															 
-								IF NOT EOF()
-									*********
-									** Encontró la localidad en la Base de Datos
-									*********
-								
-									v_localidadIMP = locSel.localidad
-									v_cpimp			= locSel.cp
-								ELSE 
-									*********
-									** No encontró la localidad. -> la cargo con los datos traidos de AFIP
-									*********
-									
-									
-									v_codLoc = cargarLocalidad(v_nomLoc, v_cp, v_nomprov)
-							
-									IF VAL(v_codLoc) > 0
-										*********
-										** Se cargó correctamente la Localidad
-										*********
-									
-										v_localidadIMP = v_codLoc
-										
-										
-										*********
-										** Actualizo la tabla local de localidad Localidades
-										*********
-			
-			
-
-											sqlmatriz(1)="Select  l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
-
-											sqlmatriz(2)=" from localidades l left join provincias pr on l.provincia = pr.provincia left join paises pa on pa.pais = pr.pais "
-											sqlmatriz(3)=" order by l.nombre "
-
-											verror=sqlrun(vconeccionF,"localidades_sql1_a")
-											IF verror=.f.  
-
-												v_error = "Ha Ocurrido un Error en la BÚSQUEDA de Localidades"
-												 INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
-											ENDIF 
-											
-												
-											SELECT * FROM localidades_sql1_a INTO TABLE localidades_sql1
-
-									*		ALTER table localidades_sql1_a alter COLUMN nombre C(250)
-											ALTER table localidades_sql1 alter COLUMN localidad C(10)
-											ALTER table localidades_sql1 alter COLUMN cp C(50)
-											ALTER table localidades_sql1 alter COLUMN provincia C(10)
-											ALTER table localidades_sql1 alter COLUMN nomprov C(200)
-											ALTER table localidades_sql1 alter COLUMN nomloc C(200)
-											
-											
-										v_cpimp	= v_cp
-										
-										SELECT localidades_sql1
-										GO TOP 
-									ELSE
-										*********
-										** NO Se cargó correctamente la Localidad
-										*********
-										v_localidadIMP = '0'
-										v_errorEnIteracion =.t.
-										
-									ENDIF
-								ENDIF 
-												
-						
-							IF EMPTY(ALLTRIM(v_apellidoImp)) = .t. AND  EMPTY(ALLTRIM(v_nombreImp)) = .t. AND EMPTY(ALLTRIM(v_companiaImp))
-								*********
-								** Si El apellido, el nombre y la compania son vacios -> Busco los datos
-								*********
-													
-								v_apellidoImp	= tablaContrib.apellido
-								v_nombreImp		= tablaContrib.nombre
-								v_companiaImp	= tablaContrib.razonSoc
-								
-							ENDIF 
-				
-							v_direccionImp	= tablaContrib.direccion
-							v_tipodocstrImp	= tablaContrib.tipodoc
-							v_documentoImp	= tablaContrib.documento
-							
-							v_ivaImp 		= tablaContrib.iva
-							
-							IF EMPTY(ALLTRIM(v_cpimp)) = .T.
-								v_cpimp = tablaContrib.cp
-							ENDIF 
-											
-				
-						ELSE
-												
-							v_errorEnIteracion = .T.
-								
-						ENDIF 
-				
-							*********
-						SELECT codafip, idafipd FROM tipodocu_sql  WHERE ALLTRIM(detalle) == ALLTRIM(v_tipodocstrImp) INTO CURSOR tipodocsel
-
-							
-						v_afiptipodImp= tipodocsel.idafipd		
-							
-						IF ALLTRIM(v_tipodocstrImp) == 'CUIT'
-												
-							v_tipodocImp = IIF(EMPTY(ALLTRIM(v_tipodocImp)) = .T.,"1",ALLTRIM(v_tipodocImp))
-						ELSE
-							v_cuitImp = ""
-							v_tipodocImp = VAL(v_afiptipodImp)
-						ENDIF 
-					ENDIF 
-
-			
-				ENDIF 
-			
-				IF v_errorEnIteracion = .F.
-					*********
-					** Si no Hubo error en la obtención de los datos -> Cargo el Contribuyente en la Base de datos
-				
-					lamatriz(1,1) = 'entidad'
-					lamatriz(1,2) = ALLTRIM(STR(v_entidadImp))
-					lamatriz(2,1) = 'apellido'
-					lamatriz(2,2) = "'"+ALLTRIM(v_apellidoImp)+"'"
-					lamatriz(3,1) = 'nombre'
-					lamatriz(3,2) = "'"+ALLTRIM(v_nombreImp)+"'"
-					lamatriz(4,1) = 'cargo'
-					lamatriz(4,2) = "'"+ALLTRIM(v_cargoImp)+"'"
-					lamatriz(5,1) = 'compania'
-					lamatriz(5,2) = "'"+ALLTRIM(v_companiaImp)+"'"
-					lamatriz(6,1) = 'cuit'
-					lamatriz(6,2) = "'"+ALLTRIM(v_cuitImp)+"'"
-					lamatriz(7,1) = 'direccion'
-					lamatriz(7,2) = "'"+ALLTRIM(v_direccionImp)+"'"
-					lamatriz(8,1) = 'localidad'
-					lamatriz(8,2) = "'"+ALLTRIM(v_localidadImp)+"'"
-					lamatriz(9,1) = 'fechaalta'
-					lamatriz(9,2) = "'"+ALLTRIM(entidadescar.fechaalta)+"'"
-					lamatriz(10,1) = 'telefono'
-					lamatriz(10,2) = "'"+ALLTRIM(entidadescar.telefono)+"'"
-					lamatriz(11,1) = 'cp'
-					lamatriz(11,2) = "'"+ALLTRIM(v_cpimp)+"'"
-					lamatriz(12,1) = 'fax'
-					lamatriz(12,2) = "'"+ALLTRIM(entidadescar.fax)+"'"
-					lamatriz(13,1) = 'email'
-					lamatriz(13,2) = "'"+ALLTRIM(entidadescar.email)+"'"
-					lamatriz(14,1) = 'web'
-					lamatriz(14,2) = "'"+ALLTRIM(entidadescar.web)+"'"
-					lamatriz(15,1) = 'dni'
-					lamatriz(15,2) = ALLTRIM(STR(v_dniImp))
-					lamatriz(16,1) = 'tipodoc'
-					lamatriz(16,2) = "'"+ALLTRIM(v_tipodocImp)+"'"
-					lamatriz(17,1) = 'iva'
-					lamatriz(17,2) = ALLTRIM(STR(v_ivaImp))
-					lamatriz(18,1) = 'fechanac'
-					lamatriz(18,2) = "'"+ALLTRIM(entidadescar.fechanac)+"'"
-					lamatriz(19,1) = 'idafiptipod'
-					lamatriz(19,2) = ALLTRIM(STR(v_afiptipodImp))
-					
-
-					p_tabla     = 'entidades'
-					p_matriz    = 'lamatriz'
-					p_conexion  = vconeccionF
-					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-					    *MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Entidades ",0+48+0,"Error")
-					     
-					     v_error = "Ha ocurrido un error en "+v_titulo+" de Importaciones de entidades"
-					     INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
-					    
-					ENDIF 
-				
-					IF entidadescar.credito > 0 THEN 
-
-							sqlmatriz(1)="SELECT identidacr AS maxi FROM entidadescr ORDER BY identidacr DESC LIMIT 1  "
-							verror=sqlrun(vconeccionF,"maximo")
-							IF verror=.f.  
-							    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo código  ",0+48+0,"Error")
-							    
-							    v_error = "Ha ocurrido un error en la Búsqueda del maximo codigo en entidadescr"
-							     INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
-							ENDIF 
-							v_maximo = maximo.maxi
-							SELECT maximo
-							GO TOP 
-							IF EOF() AND RECNO()=1 THEN 
-								v_maximonew = 1
-							ELSE
-								v_maximonew = v_maximo + 1
-							ENDIF 
-							USE IN maximo
-
-					
-						lamatrizcr(1,1) = 'entidad'
-						lamatrizcr(1,2) = ALLTRIM(STR(entidadescar.entidad))
-						lamatrizcr(2,1) = 'fecha'
-						lamatrizcr(2,2) = "'"+DTOS(DATE())+"'"
-						lamatrizcr(3,1) = 'importe'
-						lamatrizcr(3,2) = ALLTRIM(STR(entidadescar.credito,12,2))
-						lamatrizcr(4,1) = 'autorizo'
-						lamatrizcr(4,2) = "'"+ALLTRIM(_SYSUSUARIO)+"'"
-						lamatrizcr(5,1) = 'identidacr'
-						lamatrizcr(5,2) = ALLTRIM(STR(v_maximonew))
-
-						p_tabla     = 'entidadescr'
-						p_matriz    = 'lamatrizcr'
-						p_conexion  = vconeccionF
-						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*						    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Creditos de Entidades ",0+48+0,"Error")
-							v_error = "Ha ocurrido un Error en "+v_titulo+" de Importaciones de Créditos de Entidades"
-							INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
-						ENDIF 
-
-					ENDIF 
-
-				ENDIF 
-				
-			
-						
-
-				*2- Si no tiene cargados los datos de dirección y localidad: Busco los datos en el AFIP
-				
-				*3- Valido que exista la Localidad: si no existe la cargo
-				
-				*4- Si no tiene cargado el tipo de IVA: Busco los datos en el AFIP
-			
-			
-					
-			ENDIF
-			
-			IF (v_contador % 10) == 0
-			
-				WAIT CLEAR
-				
-				WAIT "Espere por Favor... ("+ALLTRIM(STR(v_contador))+" de " +ALLTRIM(STR(v_cantReg))+")" WINDOW NOWAIT 
-			
-			ENDIF 
-
-			IF v_contador == v_cantReg
-				WAIT CLEAR
-			ENDIF 
-			
-			SELECT entidadescar
-			SKIP 1					
-		ENDDO 
-		
-		
-		
-		
 		SELECT errores
 		GO TOP 
 		
 		IF NOT EOF()
-
-			MESSAGEBOX("Ocurrieron errores en la importación",0+64+256,"Importación de entidades")
 		
+			** Si hubo errores vuelve a Llamar a la carga de entidades **
+			SELECT errores 
+			GO top
+			v_cantErroneos = RECCOUNT()
 			
-			** Exporto la tabla como archivo TXT **
+*!*				MESSAGEBOX(v_cantAnt)
+*!*				MESSAGEBOX(v_cantErroneos)
 			
-				SET DEFAULT TO C:\
-				v_archivo=PUTFILE('Guardar Archivo con errores','errores_importacion','TxT')
-				IF EMPTY(v_archivo) THEN 
-					MESSAGEBOX("NO SE HA ELEGIDO Ningún Nombre para Guardar el Archivo.",0+48+0,"Aviso del Sistema")
-					
+			v_intentos = 20
+			
+			DO WHILE v_cantErroneos > 0 AND v_intentos > 0
+			
+				IF  v_cantErroneos < v_cantAnt
+						
+				v_cantAnt =v_cantErroneos 
+				
+				SELECT * FROM entidadescar WHERE entidad in (SELECT entidad FROM errores) INTO TABLE entidadesErrores
+				
+				ZAP IN entidadescar
+				ZAP IN errores
+				
+				SELECT entidadescar
+				APPEND FROM entidadesErrores
+
+				importarEntidades()
+				
+				SELECT errores 
+				GO top
+				v_cantErroneos = RECCOUNT()
+*!*					MESSAGEBOX(v_cantAnt)
+*!*				
+*!*					MESSAGEBOX(v_cantErroneos)
 				ELSE
-					SELECT errores
-					GO TOP 
-					COPY TO (v_archivo) DELIMITED WITH ';'
-					MESSAGEBOX("El Archivo de errores se ha Generado con Éxito.",0+64+0,"Aviso del Sistema")
+					v_intentos = v_intentos  -1 
 					
+				
 				ENDIF 
+					
+			ENDDO
+			
+			
+				
+			SELECT errores
+			GO TOP 
+		
+			IF NOT EOF()
+
+				MESSAGEBOX("Ocurrieron errores en la importación",0+64+256,"Importación de entidades")
+			
+				
+				** Exporto la tabla como archivo TXT **
+				
+					SET DEFAULT TO C:\
+					v_archivo=PUTFILE('Guardar Archivo con errores','errores_importacion','TxT')
+					IF EMPTY(v_archivo) THEN 
+						MESSAGEBOX("NO SE HA ELEGIDO Ningún Nombre para Guardar el Archivo.",0+48+0,"Aviso del Sistema")
+						
+					ELSE
+						SELECT errores
+						GO TOP 
+						COPY TO (v_archivo) DELIMITED WITH ';'
+						MESSAGEBOX("El Archivo de errores se ha Generado con Éxito.",0+64+0,"Aviso del Sistema")
+						
+					ENDIF 
 			SET DEFAULT TO &_SYSESTACION 
+			ELSE
+			MESSAGEBOX("La importación se generó con éxito!",0+64+256,"Importación de entidades")
+
+			ENDIF 
 		
 		ELSE
 		
@@ -6139,3 +5754,411 @@ ENDFUNC
 
 
 *******************************************************
+
+
+
+FUNCTION importarEntidades
+
+
+** Busco las Localidades **
+		
+		
+		*sqlmatriz(1)="Select mid(concat(TRIM(l.nombre),' - ',TRIM(pr.nombre),' - ',TRIM(pa.nombre)),1,100) as nombre , l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
+		sqlmatriz(1)="Select  l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
+
+		sqlmatriz(2)=" from localidades l left join provincias pr on l.provincia = pr.provincia left join paises pa on pa.pais = pr.pais "
+		sqlmatriz(3)=" order by l.nombre "
+
+		verror=sqlrun(vconeccionF,"localidades_sql1_a")
+		IF verror=.f.  
+		   MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Localidades ",0+48+0,"Error")
+		    
+		    	* me desconecto	
+					=abreycierracon(vconeccionF,"")
+					RETURN 
+		ENDIF 
+
+		SELECT * FROM localidades_sql1_a INTO TABLE localidades_sql1
+
+		ALTER table localidades_sql1 alter COLUMN localidad C(10)
+		ALTER table localidades_sql1 alter COLUMN cp C(50)
+		ALTER table localidades_sql1 alter COLUMN provincia C(10)
+		ALTER table localidades_sql1 alter COLUMN nomprov C(200)
+		ALTER table localidades_sql1 alter COLUMN nomloc C(200)
+				
+		*** Busco los tipos de documentos ***
+		sqlmatriz(1)="Select  idafiptipod as idafipd, codafip, detalle "
+		sqlmatriz(2)=" from afiptipodocu "
+
+		verror=sqlrun(vconeccionF,"tipodocu_sql_a")
+		IF verror=.f.  
+		   MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los Tipos de documentos ",0+48+0,"Error")
+		    
+		    	* me desconecto	
+					=abreycierracon(vconeccionF,"")
+					RETURN 
+		ENDIF 
+		
+		SELECT * FROM tipodocu_sql_a INTO TABLE tipodocu_sql
+		
+		ALTER table tipodocu_sql alter COLUMN idafipd I
+		ALTER table tipodocu_sql alter COLUMN codafip C(20)
+		ALTER table tipodocu_sql alter COLUMN detalle C(100)
+		
+		
+		SELECT entidadescar
+		v_cantReg = RECCOUNT()
+			
+		
+		v_contador = 0
+		WAIT "Espere por Favor... ("+ALLTRIM(STR(v_contador))+" de " +ALLTRIM(STR(v_cantReg))+")" WINDOW NOWAIT 
+		
+		DIMENSION lamatriz(19,2)
+		DIMENSION lamatrizcr(5,2)
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+
+		SELECT entidadescar
+		GO TOP 
+		DO WHILE NOT EOF()
+		
+			v_contador = v_contador + 1 
+			v_errorEnIteracion = .F.
+			
+			*************************
+			** VALIDACIÓN DE DATOS **
+			*************************
+			v_entidadImp 	= entidadescar.entidad
+			v_apellidoImp 	= ALLTRIM(entidadescar.apellido)
+			v_nombreImp   	= ALLTRIM(entidadescar.nombre)
+			v_cargoImp		= ALLTRIM(entidadescar.cargo)
+			v_companiaImp	= ALLTRIM(entidadescar.compania)
+			v_cuitImp		= ALLTRIM(entidadescar.cuit)
+		
+			v_direccionImp	= ALLTRIM(entidadescar.direccion)
+			v_localidadImp	= ALLTRIM(entidadescar.localidad)
+			v_dniImp		= entidadescar.dni
+			v_ivaImp		= entidadescar.iva
+			v_afiptipodImp	= entidadescar.idafiptipd 
+			v_tipodocImp	= ALLTRIM(entidadescar.tipodoc)
+			v_nomLocImp		= ALLTRIM(entidadescar.nomloc)
+			v_nomprovImp	= ALLTRIM(entidadescar.nomprov)
+			v_cpIMP			= ALLTRIM(entidadescar.cp)
+			
+			IF EMPTY(ALLTRIM(v_cuitImp))=.F.
+				*********
+				** Tiene asignado un CUIT
+				*********
+			
+				*********
+				** 1- Compruebo Si no tiene cargados los datos de Apellido, Nombre, Compania y/o localidad -> Busco los datos en el AFIP. **
+				*********
+
+				IF (EMPTY(ALLTRIM(v_apellidoImp)) = .t. AND  EMPTY(ALLTRIM(v_nombreImp)) = .t. AND EMPTY(ALLTRIM(v_companiaImp)) = .t.) OR EMPTY(ALLTRIM(v_localidadImp)) = .t.
+					*********
+					** Faltan datos -> Busco el contribuyente
+					******
+
+								v_ret = obtenerContribuyente("tablaContrib", v_cuitImp,.t.)
+
+							IF v_ret = .F.
+
+								v_error = "Error al obtener el contribuyente"
+							 	INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
+					    		v_errorEnIteracion =.t.
+					    	ENDIF 
+
+				
+					IF v_ret = .F.
+					*********
+					** Hubo un problema al intentar obtner el contribuyente -> por ahora continúo igual con los demás
+					*********
+	
+						v_error = "Hubo un problema al intentar obtener el contribuyente "
+					    INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
+					    	
+						v_errorEnIteracion =.t.
+					ELSE
+						SELECT tablaContrib
+						GO TOP 
+						
+						IF NOT EOF()
+							
+							*********
+							** Encontró el contribuyente en los datos del AFIP
+							*********
+							
+							v_apellido 	= tablaContrib.apellido
+							v_nombre	= tablaContrib.nombre
+							v_razonSocial 	= tablaContrib.razonSoc
+							v_cp		= tablaContrib.cp
+							v_nomprov	= tablaContrib.nomprov
+							v_direccion	= tablaContrib.direccion
+							v_nomLoc	= tablaContrib.nomLoc
+							v_tipodoc	= tablaContrib.tipodoc
+							v_documento	= tablaContrib.documento
+							v_ivaSel 	= tablaContrib.iva
+
+							SELECT localidades_sql1 
+								GO TOP 
+							TRY 
+							
+								IF EMPTY(ALLTRIM(v_localidadImp)) = .T.
+								
+									SELECT * FROM localidades_sql1 WHERE (ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprov)) AND ALLTRIM(UPPER(nomloc)) == ALLTRIM(UPPER(v_nomLoc))) OR  ;
+									(ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprov)) AND ALLTRIM(UPPER(cp)) == ALLTRIM(UPPER(v_cp))) INTO CURSOR locSel 
+
+								
+								ELSE
+									SELECT * FROM localidades_sql1 WHERE (ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprovimp)) AND ALLTRIM(UPPER(nomloc)) == ALLTRIM(UPPER(v_nomLocimp))) OR  ;
+									(ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprovimp)) AND ALLTRIM(UPPER(cp)) == ALLTRIM(UPPER(v_cpimp))) INTO CURSOR locSel 
+
+								
+								ENDIF 
+								*********
+								** No tiene asigando el codigo de la localidad de la base de datos -> La busco.
+								*********
+							
+								*********
+								** BUsco entres las localidades cargadas
+								*********
+
+								SELECT locSel
+								GO TOP 
+															 
+								IF NOT EOF()
+									*********
+									** Encontró la localidad en la Base de Datos
+									*********
+								
+									v_localidadIMP = locSel.localidad
+									v_cpimp			= locSel.cp
+								ELSE 
+									*********
+									** No encontró la localidad. -> la cargo con los datos traidos de AFIP
+									*********
+																		
+									v_codLoc = cargarLocalidad(v_nomLoc, v_cp, v_nomprov)
+								
+									v_tipo = TYPE('v_codLoc')
+									
+									v_codLoc = IIF(v_tipo=='N',STR(v_codLoc),v_codLoc)
+									
+									IF VAL(v_codLoc) > 0
+										*********
+										** Se cargó correctamente la Localidad
+										*********
+									
+										v_localidadIMP = v_codLoc
+										
+										*********
+										** Actualizo la tabla local de localidad Localidades
+										*********
+			
+											sqlmatriz(1)="Select  l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
+											sqlmatriz(2)=" from localidades l left join provincias pr on l.provincia = pr.provincia left join paises pa on pa.pais = pr.pais "
+											sqlmatriz(3)=" order by l.nombre "
+
+											verror=sqlrun(vconeccionF,"localidades_sql1_a")
+											IF verror=.f.  
+
+												v_error = "Ha Ocurrido un Error en la BÚSQUEDA de Localidades"
+												 INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
+											ENDIF 
+											
+												
+											SELECT * FROM localidades_sql1_a INTO TABLE localidades_sql1
+
+											ALTER table localidades_sql1 alter COLUMN localidad C(10)
+											ALTER table localidades_sql1 alter COLUMN cp C(50)
+											ALTER table localidades_sql1 alter COLUMN provincia C(10)
+											ALTER table localidades_sql1 alter COLUMN nomprov C(200)
+											ALTER table localidades_sql1 alter COLUMN nomloc C(200)
+																						
+										v_cpimp	= v_cp
+										
+										SELECT localidades_sql1
+										GO TOP 
+									ELSE
+										*********
+										** NO Se cargó correctamente la Localidad
+										*********
+										v_localidadIMP = '0'
+										v_errorEnIteracion =.t.
+										
+									ENDIF
+								ENDIF 
+
+							CATCH 
+								
+									v_error = "Error al obtener la localidad"
+								 	INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
+						    		v_errorEnIteracion =.t.
+					    														
+							ENDTRY 
+	
+						
+							IF EMPTY(ALLTRIM(v_apellidoImp)) = .t. AND  EMPTY(ALLTRIM(v_nombreImp)) = .t. AND EMPTY(ALLTRIM(v_companiaImp))
+								*********
+								** Si El apellido, el nombre y la compania son vacios -> Busco los datos
+								*********
+													
+								v_apellidoImp	= tablaContrib.apellido
+								v_nombreImp		= tablaContrib.nombre
+								v_companiaImp	= tablaContrib.razonSoc
+								
+							ENDIF 
+				
+							v_direccionImp	= tablaContrib.direccion
+							v_tipodocstrImp	= tablaContrib.tipodoc
+							v_documentoImp	= tablaContrib.documento
+							
+							v_ivaImp 		= tablaContrib.iva
+							
+							IF EMPTY(ALLTRIM(v_cpimp)) = .T.
+								v_cpimp = tablaContrib.cp
+							ENDIF 
+											
+						ELSE
+												
+							v_errorEnIteracion = .T.
+								
+						ENDIF 
+				
+							*********
+						SELECT codafip, idafipd FROM tipodocu_sql  WHERE ALLTRIM(detalle) == ALLTRIM(v_tipodocstrImp) INTO CURSOR tipodocsel
+
+						v_afiptipodImp= tipodocsel.idafipd		
+							
+						IF ALLTRIM(v_tipodocstrImp) == 'CUIT'
+												
+							v_tipodocImp = IIF(EMPTY(ALLTRIM(v_tipodocImp)) = .T.,"1",ALLTRIM(v_tipodocImp))
+						ELSE
+							v_cuitImp = ""
+							v_tipodocImp = VAL(v_afiptipodImp)
+						ENDIF 
+					ENDIF 
+
+			
+				ENDIF 
+			
+				IF v_errorEnIteracion = .F.
+					*********
+					** Si no Hubo error en la obtención de los datos -> Cargo el Contribuyente en la Base de datos
+				
+					lamatriz(1,1) = 'entidad'
+					lamatriz(1,2) = ALLTRIM(STR(v_entidadImp))
+					lamatriz(2,1) = 'apellido'
+					lamatriz(2,2) = "'"+ALLTRIM(v_apellidoImp)+"'"
+					lamatriz(3,1) = 'nombre'
+					lamatriz(3,2) = "'"+ALLTRIM(v_nombreImp)+"'"
+					lamatriz(4,1) = 'cargo'
+					lamatriz(4,2) = "'"+ALLTRIM(v_cargoImp)+"'"
+					lamatriz(5,1) = 'compania'
+					lamatriz(5,2) = "'"+ALLTRIM(v_companiaImp)+"'"
+					lamatriz(6,1) = 'cuit'
+					lamatriz(6,2) = "'"+ALLTRIM(v_cuitImp)+"'"
+					lamatriz(7,1) = 'direccion'
+					lamatriz(7,2) = "'"+ALLTRIM(v_direccionImp)+"'"
+					lamatriz(8,1) = 'localidad'
+					lamatriz(8,2) = "'"+ALLTRIM(v_localidadImp)+"'"
+					lamatriz(9,1) = 'fechaalta'
+					lamatriz(9,2) = "'"+ALLTRIM(entidadescar.fechaalta)+"'"
+					lamatriz(10,1) = 'telefono'
+					lamatriz(10,2) = "'"+ALLTRIM(entidadescar.telefono)+"'"
+					lamatriz(11,1) = 'cp'
+					lamatriz(11,2) = "'"+ALLTRIM(v_cpimp)+"'"
+					lamatriz(12,1) = 'fax'
+					lamatriz(12,2) = "'"+ALLTRIM(entidadescar.fax)+"'"
+					lamatriz(13,1) = 'email'
+					lamatriz(13,2) = "'"+ALLTRIM(entidadescar.email)+"'"
+					lamatriz(14,1) = 'web'
+					lamatriz(14,2) = "'"+ALLTRIM(entidadescar.web)+"'"
+					lamatriz(15,1) = 'dni'
+					lamatriz(15,2) = ALLTRIM(STR(v_dniImp))
+					lamatriz(16,1) = 'tipodoc'
+					lamatriz(16,2) = "'"+ALLTRIM(v_tipodocImp)+"'"
+					lamatriz(17,1) = 'iva'
+					lamatriz(17,2) = ALLTRIM(STR(v_ivaImp))
+					lamatriz(18,1) = 'fechanac'
+					lamatriz(18,2) = "'"+ALLTRIM(entidadescar.fechanac)+"'"
+					lamatriz(19,1) = 'idafiptipod'
+					lamatriz(19,2) = ALLTRIM(STR(v_afiptipodImp))
+
+					p_tabla     = 'entidades'
+					p_matriz    = 'lamatriz'
+					p_conexion  = vconeccionF
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					     
+					     v_error = "Ha ocurrido un error en "+v_titulo+" de Importaciones de entidades"
+					     INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
+					    
+					ENDIF 
+				
+					IF entidadescar.credito > 0 THEN 
+
+							sqlmatriz(1)="SELECT identidacr AS maxi FROM entidadescr ORDER BY identidacr DESC LIMIT 1  "
+							verror=sqlrun(vconeccionF,"maximo")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo código  ",0+48+0,"Error")
+							    
+							    v_error = "Ha ocurrido un error en la Búsqueda del maximo codigo en entidadescr"
+							     INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
+							ENDIF 
+							v_maximo = maximo.maxi
+							SELECT maximo
+							GO TOP 
+							IF EOF() AND RECNO()=1 THEN 
+								v_maximonew = 1
+							ELSE
+								v_maximonew = v_maximo + 1
+							ENDIF 
+							USE IN maximo
+
+						lamatrizcr(1,1) = 'entidad'
+						lamatrizcr(1,2) = ALLTRIM(STR(entidadescar.entidad))
+						lamatrizcr(2,1) = 'fecha'
+						lamatrizcr(2,2) = "'"+DTOS(DATE())+"'"
+						lamatrizcr(3,1) = 'importe'
+						lamatrizcr(3,2) = ALLTRIM(STR(entidadescar.credito,12,2))
+						lamatrizcr(4,1) = 'autorizo'
+						lamatrizcr(4,2) = "'"+ALLTRIM(_SYSUSUARIO)+"'"
+						lamatrizcr(5,1) = 'identidacr'
+						lamatrizcr(5,2) = ALLTRIM(STR(v_maximonew))
+
+						p_tabla     = 'entidadescr'
+						p_matriz    = 'lamatrizcr'
+						p_conexion  = vconeccionF
+						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+
+							v_error = "Ha ocurrido un Error en "+v_titulo+" de Importaciones de Créditos de Entidades"
+							INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
+						ENDIF 
+
+					ENDIF 
+
+				ENDIF 
+				
+							
+			ENDIF
+			
+			IF (v_contador % 10) == 0
+			
+				WAIT CLEAR
+				
+				WAIT "Espere por Favor... ("+ALLTRIM(STR(v_contador))+" de " +ALLTRIM(STR(v_cantReg))+")" WINDOW NOWAIT 
+			
+			ENDIF 
+
+			IF v_contador == v_cantReg
+				WAIT CLEAR
+			ENDIF 
+			
+			SELECT entidadescar
+			SKIP 1					
+		ENDDO 
+
+
+
+ENDFUNC 
