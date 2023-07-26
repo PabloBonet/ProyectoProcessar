@@ -9878,83 +9878,83 @@ PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta
 
 ENDFUNC 
 
-FUNCTION moviTipoPago
-PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movimiento,p_tablaRet
-*#/----------------------------------------
-*** Funcion de busqueda de los ultimos movimientos de Tipos de pago según los parametros pasados como parámetros
-**  Si el parámetro recibido es CERO, lo ignora en la condición trayendo todos los registros para ese parámetro
-** Parametros:
-*	p_idtipopago: ID del tipo de pago 
-* 	p_idcaja:	ID de la caja registradora
-*	p_idcuenta: ID de la cuenta
-*	p_tabla,p_campo,p_idregistro: Tabla, campo e ID del registro asociado al tipo de pago
-*	p_movimiento: movimiento registrado
-*	p_tablaRet: Nombre de la tabla de retorno
-*** Retorno: Retorna True si se obtuvo correctamente los registros del movimiento; False en otro caso.
-*#/----------------------------------------
+*!*	FUNCTION moviTipoPago
+*!*	PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movimiento,p_tablaRet
+*!*	*#/----------------------------------------
+*!*	*** Funcion de busqueda de los ultimos movimientos de Tipos de pago según los parametros pasados como parámetros
+*!*	**  Si el parámetro recibido es CERO, lo ignora en la condición trayendo todos los registros para ese parámetro
+*!*	** Parametros:
+*!*	*	p_idtipopago: ID del tipo de pago 
+*!*	* 	p_idcaja:	ID de la caja registradora
+*!*	*	p_idcuenta: ID de la cuenta
+*!*	*	p_tabla,p_campo,p_idregistro: Tabla, campo e ID del registro asociado al tipo de pago
+*!*	*	p_movimiento: movimiento registrado
+*!*	*	p_tablaRet: Nombre de la tabla de retorno
+*!*	*** Retorno: Retorna True si se obtuvo correctamente los registros del movimiento; False en otro caso.
+*!*	*#/----------------------------------------
 
 
-	tipoPagoObj 	= CREATEOBJECT('tipospagosclass')
+*!*		tipoPagoObj 	= CREATEOBJECT('tipospagosclass')
 
 
-	v_idtipoCupones = tipoPagoObj.gettipospagos("CUPONES")
-	v_idTipoCheque 	= tipoPagoObj.gettipospagos("CHEQUE")
-
-
-
-	v_registro = IIF(EMPTY(ALLTRIM(p_tabla)) = .T. or EMPTY(ALLTRIM(p_campo)) = .T. or p_idregistro = 0,.F.,.T.)
-
-	v_valorTp= IIF(P_idtipopago > 0," and u.idtipopago = "+ALLTRIM(STR(p_idtipopago)),"")
-	v_valorCa=IIF(P_idcaja > 0," and u.idcajareca = "+ALLTRIM(STR(P_idcaja)),"")
-	v_valorCu=IIF(P_idcuenta > 0," and u.idcuenta = "+ALLTRIM(STR(P_idcuenta)),"")
-	v_valorRe=IIF(p_idregistro > 0," and u.tabla = '"+ALLTRIM(p_tabla)+ "' and u.campo = '"+ALLTRIM(p_campo)+"' and u.idregistro = "+ALLTRIM(STR(p_idregistro)),"")
-	v_valorMo=IIF(EMPTY(ALLTRIM(p_movimiento)) =.F.," and u.movimiento = '"+ALLTRIM(p_movimiento)+"'","")
-
-	
-	v_condicion = ALLTRIM(v_valorTP)+ALLTRIM(v_valorCa)+ALLTRIM(v_valorCu)+ALLTRIM(v_valorRe)+ALLTRIM(v_valorMo)
-	vconeccionMo = abreycierracon(0,_SYSSCHEMA)
-	
-	DO CASE
-		CASE p_idtipopago == 0 && Todos los tipos de pagos
-			sqlmatriz(1)=" select u.* "
-			sqlmatriz(2)=" from ultimomovitpago u "
-			sqlmatriz(4)=" where 1 = 1 "+ALLTRIM(v_condicion)
-	
-		CASE v_idtipoCupones == p_idtipopago && Cupones
-
-			sqlmatriz(1)=" select u.*,c.idtarjeta,c.numero,c.tarjeta,c.fecha as fechatar, c.importe, c.vencimiento as venc, c.titular,c.codautoriz"
-			sqlmatriz(2)=" from ultimomovitpago u "
-			sqlmatriz(3)=" left join cupones c on u.idregistro = c.idcupon "
-			sqlmatriz(4)=" where 1 = 1 "+ALLTRIM(v_condicion)
-		CASE v_idTipoCheques == p_idtipopago && Cheques
-			sqlmatriz(1)=" select u.*,c.serie, c.numero,c.importe,c.fechaemisi, c.fechavence,c.alaorden,c.librador,c.loentrega,c.cuit, "
-			sqlmatriz(2)=" c.cuenta,c.idbanco,c.codcheque,c.detercero,c.lugaremi,c.domilib,c.electro "
-			sqlmatriz(3)=" from ultimomovitpago u "
-			sqlmatriz(4)=" left join cheques c on u.idregistro = c.idcheque "
-			sqlmatriz(5)=" where 1 = 1 "+ALLTRIM(v_condicion)
-		
-		OTHERWISE
-				
-			MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los movimientos ",0+48+0,"Error")
-			=abreycierracon(vconeccionMo ,"")	
-	    	RETURN .F.  
-	ENDCASE
-	
-	
+*!*		v_idtipoCupones = tipoPagoObj.gettipospagos("CUPONES")
+*!*		v_idTipoCheque 	= tipoPagoObj.gettipospagos("CHEQUE")
 
 
 
-	verror=sqlrun(vconeccionMo ,p_tablaRet)
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los movimientos ",0+48+0,"Error")
-	=abreycierracon(vconeccionMo ,"")	
-	    RETURN .F.  
-	ENDIF
-	
-	=abreycierracon(vconeccionMo ,"")	
-	RETURN .T.
+*!*		v_registro = IIF(EMPTY(ALLTRIM(p_tabla)) = .T. or EMPTY(ALLTRIM(p_campo)) = .T. or p_idregistro = 0,.F.,.T.)
 
-ENDFUNC 
+*!*		v_valorTp= IIF(P_idtipopago > 0," and u.idtipopago = "+ALLTRIM(STR(p_idtipopago)),"")
+*!*		v_valorCa=IIF(P_idcaja > 0," and u.idcajareca = "+ALLTRIM(STR(P_idcaja)),"")
+*!*		v_valorCu=IIF(P_idcuenta > 0," and u.idcuenta = "+ALLTRIM(STR(P_idcuenta)),"")
+*!*		v_valorRe=IIF(p_idregistro > 0," and u.tabla = '"+ALLTRIM(p_tabla)+ "' and u.campo = '"+ALLTRIM(p_campo)+"' and u.idregistro = "+ALLTRIM(STR(p_idregistro)),"")
+*!*		v_valorMo=IIF(EMPTY(ALLTRIM(p_movimiento)) =.F.," and u.movimiento = '"+ALLTRIM(p_movimiento)+"'","")
+
+*!*		
+*!*		v_condicion = ALLTRIM(v_valorTP)+ALLTRIM(v_valorCa)+ALLTRIM(v_valorCu)+ALLTRIM(v_valorRe)+ALLTRIM(v_valorMo)
+*!*		vconeccionMo = abreycierracon(0,_SYSSCHEMA)
+*!*		
+*!*		DO CASE
+*!*			CASE p_idtipopago == 0 && Todos los tipos de pagos
+*!*				sqlmatriz(1)=" select u.* "
+*!*				sqlmatriz(2)=" from ultimomovitpago u "
+*!*				sqlmatriz(4)=" where 1 = 1 "+ALLTRIM(v_condicion)
+*!*		
+*!*			CASE v_idtipoCupones == p_idtipopago && Cupones
+
+*!*				sqlmatriz(1)=" select u.*,c.idtarjeta,c.numero,c.tarjeta,c.fecha as fechatar, c.importe, c.vencimiento as venc, c.titular,c.codautoriz"
+*!*				sqlmatriz(2)=" from ultimomovitpago u "
+*!*				sqlmatriz(3)=" left join cupones c on u.idregistro = c.idcupon "
+*!*				sqlmatriz(4)=" where 1 = 1 "+ALLTRIM(v_condicion)
+*!*			CASE v_idTipoCheques == p_idtipopago && Cheques
+*!*				sqlmatriz(1)=" select u.*,c.serie, c.numero,c.importe,c.fechaemisi, c.fechavence,c.alaorden,c.librador,c.loentrega,c.cuit, "
+*!*				sqlmatriz(2)=" c.cuenta,c.idbanco,c.codcheque,c.detercero,c.lugaremi,c.domilib,c.electro "
+*!*				sqlmatriz(3)=" from ultimomovitpago u "
+*!*				sqlmatriz(4)=" left join cheques c on u.idregistro = c.idcheque "
+*!*				sqlmatriz(5)=" where 1 = 1 "+ALLTRIM(v_condicion)
+*!*			
+*!*			OTHERWISE
+*!*					
+*!*				MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los movimientos ",0+48+0,"Error")
+*!*				=abreycierracon(vconeccionMo ,"")	
+*!*		    	RETURN .F.  
+*!*		ENDCASE
+*!*		
+*!*		
+
+
+
+*!*		verror=sqlrun(vconeccionMo ,p_tablaRet)
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de los movimientos ",0+48+0,"Error")
+*!*		=abreycierracon(vconeccionMo ,"")	
+*!*		    RETURN .F.  
+*!*		ENDIF
+*!*		
+*!*		=abreycierracon(vconeccionMo ,"")	
+*!*		RETURN .T.
+
+*!*	ENDFUNC 
 
 
 
@@ -10345,22 +10345,34 @@ PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movim
 
 	DO CASE
 		CASE p_idtipopago == 0 && Todos los tipos de pagos
-			sqlmatriz(1)=" select u.* "
+			sqlmatriz(1)=" select u.*, '  '  as histocajas "
 			sqlmatriz(2)=" from ultimomovitpago u "
 			sqlmatriz(4)=" where 1 = 1 "+ALLTRIM(v_condicion)
 	
 		CASE v_idtipoCupones == p_idtipopago && Cupones
 
-			sqlmatriz(1)=" select u.*,c.idtarjeta,c.numero,c.tarjeta,c.fecha as fechatar, c.importe, c.vencimiento as venc, c.titular,c.codautoriz"
+*!*				sqlmatriz(1)=" select u.*,c.idtarjeta,c.numero,c.tarjeta,c.fecha as fechatar, c.importe, c.vencimiento as venc, c.titular,c.codautoriz"
+*!*				sqlmatriz(2)=" from ultimomovitpago u "
+*!*				sqlmatriz(3)=" left join cupones c on u.idregistro = c.idcupon "
+*!*				sqlmatriz(4)=" where 1 = 1 "+ALLTRIM(v_condicion)
+
+			sqlmatriz(1)=" select u.*,c.idtarjeta,c.numero,c.tarjeta,c.fecha as fechatar, c.importe, c.vencimiento as venc, c.titular,c.codautoriz,  group_concat(cr.detalle order by m.idmovitp ) as histocajas "
 			sqlmatriz(2)=" from ultimomovitpago u "
 			sqlmatriz(3)=" left join cupones c on u.idregistro = c.idcupon "
-			sqlmatriz(4)=" where 1 = 1 "+ALLTRIM(v_condicion)
+			sqlmatriz(4)=" left join movitpago m on m.tabla = 'cupones' and m.idregistro = c.idcupon "
+			sqlmatriz(5)=" left join cajarecauda cr on m.idcajareca = cr.idcajareca "
+			sqlmatriz(6)=" where 1 = 1 "+ALLTRIM(v_condicion)+" group by c.idcupon "
+
+
 		CASE v_idTipoCheque == p_idtipopago && Cheques
-			sqlmatriz(1)=" select u.*,c.serie, c.numero,c.importe,c.fechaemisi, c.fechavence,c.alaorden,c.librador,c.loentrega,c.cuit, "
-			sqlmatriz(2)=" c.cuenta,c.idbanco,c.codcheque,c.detercero,c.lugaremi,c.domilib,c.electro "
+
+			sqlmatriz(1)=" select u.*,c.serie, c.numero,c.importe,c.fechaemisi, c.fechavence,c.alaorden,c.librador,c.loentrega,c.cuit,  "
+			sqlmatriz(2)=" c.cuenta,c.idbanco,c.codcheque,c.detercero,c.lugaremi,c.domilib,c.electro, group_concat(cr.detalle order by m.idmovitp ) as histocajas "
 			sqlmatriz(3)=" from ultimomovitpago u "
 			sqlmatriz(4)=" left join cheques c on u.idregistro = c.idcheque "
-			sqlmatriz(5)=" where 1 = 1 "+ALLTRIM(v_condicion)
+			sqlmatriz(5)=" left join movitpago m on m.tabla = 'cheques' and m.idregistro = c.idcheque "
+			sqlmatriz(6)=" left join cajarecauda cr on m.idcajareca = cr.idcajareca "
+			sqlmatriz(7)=" where 1 = 1 "+ALLTRIM(v_condicion)+" group by c.idcheque "
 		
 		OTHERWISE
 		
@@ -10381,6 +10393,8 @@ PARAMETERS p_idtipopago,p_idcaja,p_idcuenta,p_tabla,p_campo,p_idregistro,p_movim
 
 ENDFUNC 
 
+
+******************************************************
 
 ******************************************************
 
