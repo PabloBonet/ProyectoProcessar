@@ -346,9 +346,29 @@ namespace ModuloAFIP
                 if (!_produccion)
                 {
                     ClienteLoginCms_CS.ar.gov.afip.personawshomo.personaReturn contribuyente = _servicioPrueba.getPersona(ticket.Token, ticket.Sign, cuitEmisorlg, cuitContriblg);
-
+                    
                     if (contribuyente != null)
                     {
+                        // UtilClass.EscribirArchivoLog(contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
+
+                        string apellido = contribuyente.datosGenerales.apellido;
+                        string nombre = contribuyente.datosGenerales.nombre;
+                        string descripProv = contribuyente.datosGenerales.domicilioFiscal.descripcionProvincia;
+                        string direccion = contribuyente.datosGenerales.domicilioFiscal.direccion;
+                        string localidad = contribuyente.datosGenerales.domicilioFiscal.localidad;
+                        string razonSocial = contribuyente.datosGenerales.razonSocial;
+
+                        // contribuyente.datosGenerales.domicilioFiscal.direccion = decodificado;
+                        contribuyente.datosGenerales.apellido = System.Net.WebUtility.HtmlDecode(apellido);
+                        contribuyente.datosGenerales.nombre = System.Net.WebUtility.HtmlDecode(nombre);
+                        contribuyente.datosGenerales.domicilioFiscal.descripcionProvincia = System.Net.WebUtility.HtmlDecode(descripProv);
+                        contribuyente.datosGenerales.domicilioFiscal.direccion = System.Net.WebUtility.HtmlDecode(direccion);
+                        contribuyente.datosGenerales.domicilioFiscal.localidad = System.Net.WebUtility.HtmlDecode(localidad);
+                        contribuyente.datosGenerales.razonSocial = System.Net.WebUtility.HtmlDecode(razonSocial);
+
+
+                        //  UtilClass.EscribirArchivoLog(contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
+
                         return contribuyente;
                     }
                     else
@@ -402,7 +422,20 @@ namespace ModuloAFIP
 
 
                     XmlSerializer serializer = new XmlSerializer(typeof(ClienteLoginCms_CS.ar.gov.afip.personaws.personaReturn));
-                    using (var sww = new StringWriter())
+                    /* using (var sww = new StringWriter())
+                     {
+                         using (XmlWriter writer = XmlWriter.Create(sww))
+                         {
+                             serializer.Serialize(writer, contribuyente);
+                             contribstr = sww.ToString(); // Your XML
+                         }
+                     }
+
+                     */
+                    
+                    //UtilClass.EscribirArchivoLog("DOMICILIO-CONTRIB:" + contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
+                    
+                    using (var sww = new UtilClass.Utf8StringWriter())
                     {
                         using (XmlWriter writer = XmlWriter.Create(sww))
                         {
@@ -410,9 +443,6 @@ namespace ModuloAFIP
                             contribstr = sww.ToString(); // Your XML
                         }
                     }
-
-
-
 
                     //   UtilClass.EscribirArchivoLog(contribxml, _strLog);
 
@@ -456,9 +486,23 @@ namespace ModuloAFIP
 
 
                    XmlSerializer serializer = new XmlSerializer(typeof(ClienteLoginCms_CS.ar.gov.afip.personawshomo.personaReturn));
-                    using (var sww = new StringWriter())
+
+                    /*  using (var sww = new StringWriter())
+                      {
+                          using (XmlWriter writer = XmlWriter.Create(sww))
+                          {
+                              serializer.Serialize(writer, contribuyente);
+                              contribstr = sww.ToString(); // Your XML
+                          }
+                      }
+                    */
+
+                   // UtilClass.EscribirArchivoLog("DOMICILIO-CONTRIB:" + contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
+
+
+                    using (var sww = new UtilClass.Utf8StringWriter())
                     {
-                        using (XmlWriter writer = XmlWriter.Create(sww))
+                        using (XmlWriter writer =  XmlWriter.Create(sww))
                         {
                             serializer.Serialize(writer, contribuyente);
                             contribstr = sww.ToString(); // Your XML
@@ -474,7 +518,7 @@ namespace ModuloAFIP
                     if (contribstr != null && contribstr.Length > 0)
                     {
                         contribXML.LoadXml(contribstr);
-
+                        
                         contribXML.Save(ubicacionComp);
                         r = true;
                     }
@@ -545,6 +589,25 @@ namespace ModuloAFIP
 
                     if (contribuyente != null)
                     {
+                       // UtilClass.EscribirArchivoLog(contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
+                        
+                        string apellido = contribuyente.datosGenerales.apellido;
+                        string nombre = contribuyente.datosGenerales.nombre;
+                        string descripProv = contribuyente.datosGenerales.domicilioFiscal.descripcionProvincia;
+                        string direccion = contribuyente.datosGenerales.domicilioFiscal.direccion;
+                        string localidad = contribuyente.datosGenerales.domicilioFiscal.localidad;
+                        string razonSocial = contribuyente.datosGenerales.razonSocial;
+                        
+                       // contribuyente.datosGenerales.domicilioFiscal.direccion = decodificado;
+                        contribuyente.datosGenerales.apellido = System.Net.WebUtility.HtmlDecode(apellido);
+                        contribuyente.datosGenerales.nombre = System.Net.WebUtility.HtmlDecode(nombre);
+                        contribuyente.datosGenerales.domicilioFiscal.descripcionProvincia = System.Net.WebUtility.HtmlDecode(descripProv);
+                        contribuyente.datosGenerales.domicilioFiscal.direccion = System.Net.WebUtility.HtmlDecode(direccion);
+                        contribuyente.datosGenerales.domicilioFiscal.localidad = System.Net.WebUtility.HtmlDecode(localidad);
+                        contribuyente.datosGenerales.razonSocial = System.Net.WebUtility.HtmlDecode(razonSocial);
+
+
+                        //UtilClass.EscribirArchivoLog(contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
                         return contribuyente;
                     }
                     else

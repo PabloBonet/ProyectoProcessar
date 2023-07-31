@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -77,6 +78,30 @@ namespace ModuloAFIP
             return cuitSinGuiones;
         }
 
+        public class Utf8StringWriter : StringWriter
+        {
+            public override Encoding Encoding => Encoding.UTF8;
+        }
 
+        /// <summary>
+        /// Funcion para convertir codificación HTML a formato normal
+        /// </summary>
+        /// <param name="textoCodificado">Texto codificado</param>
+        /// <returns>Texto decodificado</returns>
+     /*   public static string ConvertirCaracteresCodificados(string textoCodificado,string strlog)
+        {
+            EscribirArchivoLog("TEXTO COD:" + textoCodificado, strlog);
+            int contador = 0;
+            string decodificado = WebUtility.HtmlDecode(textoCodificado);
+            while (decodificado.Contains("&") && contador <= 3)
+            {
+                EscribirArchivoLog("TEXTO decodificado:" + decodificado, strlog);
+                decodificado = WebUtility.HtmlDecode(decodificado);
+                    contador++;
+            }
+
+            return decodificado;
+  
+        }*/
     }
 }

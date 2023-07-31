@@ -705,13 +705,13 @@ namespace ModuloAFIP
                                 }
                   */
 
-                string inf = "DOC TIPO: " + comprobante.DocTipoCliente;
+              /*  string inf = "DOC TIPO: " + comprobante.DocTipoCliente;
                 UtilClass.EscribirArchivoLog(inf, _strLog, true);
 
 
                  inf = "Nro doc: " + comprobante.NroDocCliente;
                 UtilClass.EscribirArchivoLog(inf, _strLog, true);
-
+              */
                 if (comprobante.DocTipoCliente == 80)
                 {
                     string cuitSinGuiones = UtilClass.CambiarFormatoCuitSinGuiones(comprobante.NroDocCliente);
@@ -724,8 +724,8 @@ namespace ModuloAFIP
                     detReq.DocTipo = comprobante.DocTipoCliente;
                 }
 
-                inf = "Nro doc conv: " + v_docNro;
-                UtilClass.EscribirArchivoLog(inf, _strLog, true);
+               /* inf = "Nro doc conv: " + v_docNro;
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);*/
                 detReq.DocNro = v_docNro; //Nro documento
                 // detReq.DocTipo = 80; //CUIT: documento tipo 80
 
@@ -1010,7 +1010,7 @@ namespace ModuloAFIP
                     detReq.DocTipo = comprobante.DocTipoCliente;
                 }
 
-             //   detReq.DocNro = v_docNro; //Nro documento
+                detReq.DocNro = v_docNro; //Nro documento
                // detReq.DocTipo = 80; //CUIT: documento tipo 80
 
                 detReq.CbteDesde = numUltComp + 1; //Numero de ultimo comprobante + 1
