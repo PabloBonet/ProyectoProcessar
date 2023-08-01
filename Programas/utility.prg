@@ -23554,3 +23554,64 @@ PARAMETERS p_tablaarticulos, pa_conexion
 
 RETURN Rta_SN
 
+
+FUNCTION registarCajaOrigen
+PARAMETERS p_idcajamovih, p_idcajareca
+*#/----------------------------------------
+* Función para registar el id del detalle del movimiento de la caja con la caja origen asociada 
+* - PARAMETROS 	p_idcajamovih: ID del detalle de movimiento entre cajas (En principio se va a usar para moviemento de efectivo)
+*				p_idcajareca: ID de la caja recaudadora que originó el moviento, anterior a la caja actual
+* Retorno: Retorna True si se cargó correctamente, false en otro caso
+*#/----------------------------------------
+
+
+	IF TYPE('p_idcajamovih') = 'N' AND TYPE('p_idcajareca') = 'N'
+	
+		** Abro la Conexión
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+		
+			DIMENSION lamatriz7(3,2)
+			v_idcajamovo  = 0
+			v_idcajamovih = p_idcajamovih
+			v_idcajareca  = p_idcajareca
+						
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+			p_tabla       = 'cajamovio'
+			p_matriz      = 'lamatriz7'
+			p_conexion    = vconeccionF
+
+			lamatriz7(1,1)='idcajamovo'
+			lamatriz7(1,2)=ALLTRIM(STR(v_idcajamovo))
+			lamatriz7(2,1)='idcajamovh'
+			lamatriz7(2,2)=ALLTRIM(STR(v_idcajamovih))
+			lamatriz7(3,1)='idcajareca'
+			lamatriz7(3,2)=ALLTRIM(STR(v_idcajareca))
+
+																		
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar en cajamovio",0+48+0,"Error")				
+				RETURN .F.
+			ENDIF 
+			
+			
+		** Cierro la Conexion
+		=abreycierracon(vconeccionF,"")
+		
+		
+	
+	ELSE
+	
+		RETURN .F.
+	
+	
+	ENDIF 
+
+
+	RETURN .T.
+
+		
+
+ENDFUNC 
+
