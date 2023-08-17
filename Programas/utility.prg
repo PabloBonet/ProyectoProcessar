@@ -5228,8 +5228,15 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 	
 	*// si llego es porque hay registro de descripcion de la tabla *//
 	*// busco la descripcion del registro pasado *//
+	IF TYPE('par_valindice')="C" THEN 
+		v_par_valindice = "'"+ALLTRIM(par_valindice)+"'"
+	ELSE 
+		v_par_valindice = ALLTRIM(STR(par_valindice))
+	ENDIF 
+	
 	sqlmatriz(1)= ALLTRIM(tabladescrip_sql.consulta)
-	sqlmatriz(2)=" where "+ALLTRIM(par_tabla)+"."+ALLTRIM(par_nomindice)+" = "+ALLTRIM(STR(par_valindice))
+	sqlmatriz(2)=" where "+ALLTRIM(par_tabla)+"."+ALLTRIM(par_nomindice)+" = "+v_par_valindice  &&ALLTRIM(STR(par_valindice))
+
 	verror=sqlrun(vconeccionFD,"datoscompro_sql")
 	IF verror=.f.
 		=abreycierracon(vconeccionFD,"")
@@ -5247,14 +5254,16 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 	SELECT tabladescrip_sql
 	USE IN tabladescrip_sql
 
-
-	sqlmatriz(1)	="  update asientoscompro set detacompro = '"+ALLTRIM(v_retornod)+"'"
-	sqlmatriz(2)	="  where  idregicomp = "+ALLTRIM(STR(par_valindice))+" and tabla = '"+ALLTRIM(par_tabla)+"'"
-	verror=sqlrun(vconeccionFD,"asientosco")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la Actualización de AsientosCompro ",0+48+0,"Error")
+	
+	IF !(TYPE('par_valindice')="C") THEN  && actualizo detalle de asientos solo si indice es numero --> comprobante
+		sqlmatriz(1)	="  update asientoscompro set detacompro = '"+ALLTRIM(v_retornod)+"'"
+		sqlmatriz(2)	="  where  idregicomp = "+ALLTRIM(STR(par_valindice))+" and tabla = '"+ALLTRIM(par_tabla)+"'"
+		verror=sqlrun(vconeccionFD,"asientosco")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualización de AsientosCompro ",0+48+0,"Error")
+		ENDIF 
 	ENDIF 
-
+	
 	=abreycierracon(vconeccionFD,"")
 
 	RETURN v_retornod
