@@ -21672,9 +21672,22 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 			v_direccion = entidades_sql.direccion
 			v_localidad = entidades_sql.localidad
 			v_iva 		= entidades_sql.iva
-			v_cuit 		= entidades_sql.cuit
-			v_docTipo 	= '80'
-			v_dni 		= entidades_sql.dni
+			*v_cuit 		= entidades_sql.cuit
+			*v_docTipo 	= '80'
+			*v_dni 		= entidades_sql.dni
+			v_cuit 			= IIF(thisform.tb_cuit.Tag= "1",thisform.tb_cuit.Value,&ventidad..cuit)
+*!*			v_docTIpo = entidad.tipodoc
+			v_docTipoS 		= &ventidad..codafip 
+			v_dni 			= IIF(thisform.tb_dni.Tag= "1",thisform.tb_dni.Value,&ventidad..dni)
+			
+			DO CASE
+			CASE EMPTY(ALLTRIM(v_cuit)) = .F.
+				v_docTIpoS = "80"
+			CASE v_dni > 0 AND EMPTY(ALLTRIM(v_cuit)) = .T.
+				v_docTIpoS = "96"
+			OTHERWISE
+				v_docTIpoS = "99"
+			ENDCASE
 			v_telefono 	= entidades_sql.telefono
 			v_cp 		= entidades_sql.cp
 			v_fax 		= entidades_sql.fax
@@ -21696,9 +21709,10 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 			v_direccion = entidades_sql.direccionh
 			v_localidad = entidades_sql.localidadh
 			v_iva 		= entidades_sql.ivah
-			v_cuit 		= entidades_sql.cuith
-			v_docTipo 	= '80'
-			v_dni 		= entidades_sql.dnih
+			v_cuit 			= IIF(thisform.tb_cuit.Tag= "1",thisform.tb_cuit.Value,&vcuentaSel..cuit)
+*!*			v_docTIpo = cuentaSel.tipodoc
+			v_docTipoS 		= &vcuentaSel..codafip 
+			v_dni 			= IIF(thisform.tb_dni.Tag= "1",thisform.tb_dni.Value,&vcuentaSel..dni)
 			v_telefono 	= entidades_sql.telefonoh
 			v_cp 		= entidades_sql.cph
 			v_fax 		= entidades_sql.faxh
@@ -22168,7 +22182,468 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 ENDFUNC 
 
 
+FUNCTION GenerarRemito
+PARAMETERS p_tablaarti, p_cone
+*#/ ------------------------------
+* Crea un Comprobante de facturacion a partir de los articulos recibidos en la tabla pasada como parámetros
+* PARAMETROS : 
+*	p_tablaarti: tabla conteniendo los datos para generar el comprobante (entidad i , servicio i, cuenta i, fecha c(8), idcomproba i, ;
+* 																		 pventa i,transporte I,nomTrans C(254), dirEntrega C(254), stock C(1), tipoOp I, observa1 C(254),observa2 C(254),observa3 C(254), observa4 C(254), ;
+*																		articulo c(15),idconcepto I, idservicio I, detalle C(254), unidad C(10),cantidadfc N(13,4),unidadfc  C(10), cantidad N(13,4), unitario N(13,4), impuestos N(13,4),impuesto I, razonimp N(13,4) )
 
+
+*   p_cone :  conexion a la base de datos, si es 0 abre una nueva conexion
+* RETORNO: 
+* 	retorna el Id del remito si no se produjeron errores
+*   Si hay error retorna 0
+*#/--------------------------------
+	IF !(TYPE('p_idvincular')='N') THEN 
+		p_idvincular = 0 
+	ENDIF 
+	* Variables para Vinculos si se recibe parametro de vinculación
+	v_idcompro_va	= 0
+	v_idregistro_va	= 0
+	v_idcompro_vb	= 0
+	v_idregistro_vb	= p_idvincular
+
+	v_retornoidfactura = 0
+
+	IF TYPE('p_cone') = 'L'
+	p_cone = 0
+	
+	ENDIF 
+	IF p_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		vconeccionL = p_cone
+	ELSE 
+		vconeccionL = abreycierracon(0,_SYSSCHEMA)
+	ENDIF 	
+
+*	USE &p_tablaarti IN 0
+
+	SELECT SUM(cantidad*unitario) as neto  FROM &p_tablaarti INTO CURSOR totales
+	
+	
+	
+	
+	SELECT &p_tablaarti
+	GO TOP 
+	IF NOT EOF()
+		v_entidad  		= &p_tablaarti..entidad
+		v_servicio 		= &p_tablaarti..servicio
+		v_cuenta   		= &p_tablaarti..cuenta
+		v_idcomproba 	= &p_tablaarti..idcomproba
+		v_pventa		= &p_tablaarti..pventa
+		v_fecha 		= &p_tablaarti..fecha
+		v_transporte	= &p_tablaarti..transporte
+		v_nombreTransporte = &p_tablaarti..nomTrans
+*		v_dirEntrega	= &p_tablaarti..direntre
+		v_stock			= &p_tablaarti..stock
+		v_dirEntrega 	= &p_tablaarti..direntrega
+		v_transporte	= &p_tablaarti..transporte
+		v_nomTransporte	= &p_tablaarti..nomtrans
+		v_tipoOp		= &p_tablaarti..tipoop
+	
+		SELECT totales
+		v_neto 			= totales.neto
+		v_subtotal 		= totales.neto
+		v_descuento 	= 0
+		v_recargo 		= 0
+		v_operaExenta 	= ""
+		v_anulado 		= "N"
+		v_vendedor 		= 0
+		v_cespcae 		= ""
+		v_caecespVen 	= ""
+*!*			v_fechavenc1 	= ""
+*!*			v_fechavenc2 	= ""
+*!*			v_fechavenc3 	= ""
+*!*			v_fechaDescuento = ""
+*!*			v_proxvenc = ""
+*!*			v_confirmada = ""
+			v_astoConta = 0
+*!*			v_deuda_cta = 0
+				
+
+	ELSE
+		RETURN 0
+	ENDIF 
+
+	*** Busco el comprobante ***
+	sqlmatriz(1)="SELECT c.*,t.opera,v.pventa,v.puntov, pv.electronica from comprobantes c left join compactiv v on c.idcomproba = v.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro "
+	sqlmatriz(2)=" left join puntosventa pv on pv.puntov = v.puntov "
+	sqlmatriz(3)=" WHERE c.idcomproba = "+ALLTRIM(STR(v_idcomproba ))+" and v.pventa = "+ALLTRIM(STR(v_pventa))
+
+	verror=sqlrun(vconeccionL ,"compRem_sql")
+
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes  ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionL ,"")
+	    RETURN 0
+	ENDIF 
+
+
+	SELECT compRem_sql
+	GO TOP 
+	IF EOF()
+		MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes  ",0+48+0,"Error")
+		*** me desconecto	
+		=abreycierracon(vconeccionL,"")
+	    RETURN 0
+	ENDIF 
+
+	*** Busco la entidad ***
+
+	sqlmatriz(1)= " SELECT e.*, IFNULL(h.servicio,0) as servicio, IFNULL(h.cuenta,0) as cuenta, "
+	sqlmatriz(2)= " IFNULL(h.ruta1,0) as ruta1, IFNULL(h.folio1,0) as folio1, IFNULL(h.ruta2,0) as ruta2, IFNULL(h.folio2,0) as folio2, "
+	sqlmatriz(3)= " IFNULL(h.compania,e.compania) as companiah, IFNULL(h.nombre,e.nombre) as nombreh, IFNULL(h.apellido,e.apellido) as apellidoh, "
+	sqlmatriz(4)= " IFNULL(h.direccion,e.direccion) as direccionh, IFNULL(h.localidad,e.localidad) as localidadh, IFNULL(h.iva,e.iva) as ivah, IFNULL(h.dni,e.dni) as dnih, IFNULL(h.telefono,e.telefono) as telefonoh, "
+	sqlmatriz(5)= " IFNULL(h.cuit,e.cuit) as cuith, IFNULL(h.cp,e.cp) as cph, IFNULL(h.fax,e.fax) as faxh, IFNULL(h.email,e.email) as emailh "
+	sqlmatriz(6)= " from entidades e left join entidadesh h on e.entidad = h.entidad  where e.entidad = "+STR(v_entidad)
+
+	verror=sqlrun(vconeccionL,"entidades0_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las entidades ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionL,"")
+	    RETURN 0
+	ENDIF 
+
+
+	******************************************************************************************************
+	SELECT * FROM entidades0_sql INTO TABLE ent_sql
+	
+	ALTER table ent_sql alter COLUMN servicio i
+	ALTER table ent_sql alter COLUMN cuenta i
+	ALTER table ent_sql alter COLUMN ruta1 i
+	ALTER table ent_sql alter COLUMN folio1 i
+	ALTER table ent_sql alter COLUMN ruta2 i
+	ALTER table ent_sql alter COLUMN folio2 i
+	USE IN entidades0_sql 
+		
+		
+	a_entidad = v_entidad
+	a_servicio= v_servicio
+	a_cuenta  = v_cuenta
+	a_fecha	  = v_fecha
+	a_numComp = ""
+	a_monto	  = 0.00
+	a_cuota   = 0
+	a_vtocta  = ''
+	a_fechavenc1=''
+	a_fechavenc2=''
+	a_fechavenc3=''
+			
+			
+	*** GUARDA DATOS DE CABECERA DEL COMPROBANTE
+
+	v_idremito  = maxnumeroidx("idremito","I","remitos",1)
+	IF v_idremito  <= 0
+		MESSAGEBOX("No se pudo recuperar el ultimo indice del remito",0+16,"Error")
+		RETURN 0
+	ENDIF  
+
+	SELECT compRem_sql
+	GO TOP 
+			
+			
+	v_idcom  = v_idcomproba
+	v_pventa = v_pventa
+	v_numero = maxnumerocom(v_idcom,v_pventa  ,1)
+	v_tipo	 = compRem_sql.tipo
+
+	DO CASE 
+		
+		CASE v_entidad = 0  and v_servicio = 0 AND  v_cuenta = 0
+			***Factura a CONSUMIDOR FINAL
+			v_apellido = "CONSUMIDOR FINAL"
+			v_nombre = ""
+			v_direccion = ""
+			v_localidad = ""
+			** ? **
+			v_iva = 0
+			v_cuit = ""
+			v_docTIpo = "99"
+			v_dni = 0
+			v_telefono = ""
+			v_cp = ""
+			v_fax = ""
+			v_email = ""
+			**** ? ****
+			v_zona = ""
+			**** ? ****
+			v_ruta1 = 0
+			**** ? ****
+			v_folio1 = 0
+			**** ? ****
+			v_ruta2 = 0
+			**** ? ****
+			v_folio2 = 0
+			
+		CASE v_servicio = 0  OR v_cuenta = 0 AND v_entidad <> 0
+			***Factura a ENTIDAD
+			***Toma los datos de la tabla Entidad
+			SELECT ent_sql
+			GO TOP 
+			v_apellido = ALLTRIM(ent_sql.compania)+' '+ent_sql.apellido
+			v_nombre = IIF(EMPTY(ALLTRIM(ent_sql.compania)),ALLTRIM(ent_sql.nombre),'') &&entidad.nombre
+			v_direccion = ent_sql.direccion
+			v_localidad = ent_sql.localidad
+			v_iva = ent_sql.iva
+			v_cuit = ent_sql.cuit
+			v_docTIpo = ent_sql.tipodoc
+*			v_docTipo = ent_sql.codafip 
+			v_dni = ent_sql.dni
+			v_telefono = ent_sql.telefono
+			v_cp = ent_sql.cp
+			v_fax = ent_sql.fax
+			v_email = ent_sql.email
+			**** ? ****
+			v_zona = ""
+			**** ? ****
+			v_ruta1 = 0
+			**** ? ****
+			v_folio1 = 0
+			**** ? ****
+			v_ruta2 = 0
+			**** ? ****
+			v_folio2 = 0
+			
+		CASE v_entidad <> 0 AND v_servicio <> 0  AND v_cuenta <> 0 
+			***Factura a una SUBCUENTA de la ENTIDAD
+			***Toma los datos de la tabla CuentaSel
+			
+			v_apellido =  ALLTRIM(ent_sql.companiah)+' '+IIF(EMPTY(ALLTRIM(ent_sql.companiah)),ALLTRIM(ent_sql.apellidoh),'') &&cuentaSel.apellido
+			v_nombre = IIF(EMPTY(ALLTRIM(ent_sql.companiah)),ALLTRIM(ent_sql.nombreh),'')  &&cuentaSel.nombre
+			v_direccion = ent_sql.direccionh
+			v_localidad = ent_sql.localidadh
+			v_iva = ent_sql.ivah
+			v_cuit = ent_sql.cuith
+			v_docTIpo = ent_sql.tipodoc
+	*		v_docTipo = ent_sql.codafip
+			v_dni = ent_sql.dnih
+			v_telefono = ent_sql.telefonoh
+			v_cp = ent_sql.cph
+			v_fax = ent_sql.faxh
+			v_email = ent_sql.emailh
+			**** ? ****
+			v_zona = ""
+			**** ? ****
+			v_ruta1 = ent_sql.ruta1
+			**** ? ****
+			v_folio1 = ent_sql.folio1
+			**** ? ***
+			v_ruta2 = ent_sql.ruta2
+			**** ? ****
+			v_folio2 = ent_sql.folio2
+	ENDCASE 
+
+
+		
+	*** GUARDA DATOS DE CABECERA DEL REMITO
+	DIMENSION lamatriz1(43,2)
+	
+	lamatriz1(1,1)='idremito'
+	lamatriz1(1,2)= ALLTRIM(STR(v_idremito))
+	lamatriz1(2,1)='idcomproba'
+	lamatriz1(2,2)=ALLTRIM(STR(v_idcom))
+	lamatriz1(3,1)='pventa'
+	lamatriz1(3,2)= ALLTRIM(STR(v_pventa))
+	lamatriz1(4,1)='numero'
+	lamatriz1(4,2)=ALLTRIM(STR(v_numero))
+	lamatriz1(5,1)='tipo'
+	lamatriz1(5,2)="'"+ALLTRIM(v_tipo)+"'"
+	lamatriz1(6,1)='fecha'
+	lamatriz1(6,2)="'"+alltrim(v_fecha)+"'"
+	lamatriz1(7,1)='entidad'
+	lamatriz1(7,2)=ALLTRIM(STR(v_entidad))
+	lamatriz1(8,1)='servicio'
+	lamatriz1(8,2)= ALLTRIM(STR(v_servicio))
+	lamatriz1(9,1)='cuenta'
+	lamatriz1(9,2)= ALLTRIM(STR(v_cuenta))
+	lamatriz1(10,1)='apellido'
+	lamatriz1(10,2)= "'"+ALLTRIM(v_apellido)+"'"
+	lamatriz1(11,1)='nombre'
+	lamatriz1(11,2)= "'"+ALLTRIM(v_nombre)+"'"
+	lamatriz1(12,1)='direccion'
+	lamatriz1(12,2)= "'"+ALLTRIM(v_direccion)+"'"
+	lamatriz1(13,1)='localidad'
+	lamatriz1(13,2)= "'"+ALLTRIM(v_localidad)+"'"
+	lamatriz1(14,1)='iva'
+	lamatriz1(14,2)= ALLTRIM(STR(v_iva))
+	lamatriz1(15,1)='cuit'
+	lamatriz1(15,2)= "'"+ALLTRIM(v_cuit)+"'"
+	lamatriz1(16,1)='tipodoc'
+	lamatriz1(16,2)= "'"+ALLTRIM(v_docTIpo)+"'"
+	lamatriz1(17,1)='dni'
+	lamatriz1(17,2)= ALLTRIM(STR(v_dni))
+	lamatriz1(18,1)='telefono'
+	lamatriz1(18,2)= "'"+ALLTRIM(v_telefono)+"'"
+	lamatriz1(19,1)='cp'
+	lamatriz1(19,2)= "'"+ALLTRIM(v_cp)+"'"
+	lamatriz1(20,1)='fax'
+	lamatriz1(20,2)= "'"+ALLTRIM(v_fax)+"'"
+	lamatriz1(21,1)='email' 
+	lamatriz1(21,2)= "'"+ALLTRIM(v_email)+"'"
+	lamatriz1(22,1)='transporte'
+	lamatriz1(22,2)= ALLTRIM(STR(v_transporte))
+	lamatriz1(23,1)='nomtransp'
+	lamatriz1(23,2)= "'"+ALLTRIM(v_nombreTransporte)+"'"
+	lamatriz1(24,1)='direntrega'
+	lamatriz1(24,2)= "'"+ALLTRIM(v_dirEntrega)+"'"
+	lamatriz1(25,1)='stock'
+	lamatriz1(25,2)= "'"+ALLTRIM(v_stock)+"'"
+	lamatriz1(26,1)='idtipoopera'
+	lamatriz1(26,2)= ALLTRIM(STR(v_tipoOp))
+	lamatriz1(27,1)='neto'
+	lamatriz1(27,2)= ALLTRIM(STR(v_neto,13,4))
+	lamatriz1(28,1)='subtotal'
+	lamatriz1(28,2)= ALLTRIM(STR(v_subtotal,13,4))
+	lamatriz1(29,1)='recargo'
+	lamatriz1(29,2)= "0"
+	lamatriz1(30,1)='operexenta'
+	lamatriz1(30,2)= "'"+ALLTRIM(v_operaExenta)+"'"
+	lamatriz1(31,1)='anulado'
+	lamatriz1(31,2)= "'"+ALLTRIM(v_anulado)+"'"
+	lamatriz1(32,1)='observa1'
+	lamatriz1(32,2)= "'"+ALLTRIM(v_observa1)+"'"
+	lamatriz1(33,1)='observa2'
+	lamatriz1(33,2)= "'"+ALLTRIM(v_observa2)+"'"
+	lamatriz1(34,1)='observa3'
+	lamatriz1(34,2)= "'"+ALLTRIM(v_observa3)+"'"
+	lamatriz1(35,1)='observa4'
+	lamatriz1(35,2)= "'"+ALLTRIM(v_observa4)+"'"
+	lamatriz1(36,1)='ruta1'
+	lamatriz1(36,2)= ALLTRIM(STR(v_ruta1))
+	lamatriz1(37,1)='folio1'
+	lamatriz1(37,2)= ALLTRIM(STR(v_folio1))
+	lamatriz1(38,1)='ruta2'
+	lamatriz1(38,2)= ALLTRIM(STR(v_ruta2))
+	lamatriz1(39,1)='folio2'
+	lamatriz1(39,2)= ALLTRIM(STR(v_folio2))
+	lamatriz1(40,1)='astoconta'
+	lamatriz1(40,2)= ALLTRIM(STR(v_astoConta))
+	lamatriz1(41,1)='cespcae'
+	lamatriz1(41,2)= "'"+ALLTRIM(v_cespcae)+"'"
+	lamatriz1(42,1)='caecespven'
+	lamatriz1(42,2)= "'"+ALLTRIM(v_caecespVen)+"'"
+	lamatriz1(43,1)='vendedor'
+	lamatriz1(43,2)= ALLTRIM(STR(v_vendedor))
+
+
+	p_tipoope = 'I'
+	p_condicion   = ''
+	p_tabla     = 'remitos'
+	p_matriz    = 'lamatriz1'
+	p_conexion  = vconeccionL
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+	    RETURN 0
+	ENDIF  
+
+	
+		
+	*** GUARDO DETALLE DEL REMITO ***			
+SELECT &p_tablaarti
+GO TOP 
+
+DO WHILE NOT EOF()
+	
+		p_tipoope     = 'I'
+		p_condicion   = ''
+		v_titulo      = " EL ALTA "
+		
+		v_idremitoh = maxnumeroidx("idremitoh","I","remitosh",1)
+
+		v_articulo = &p_tablaarti..articulo
+		v_idconcepto = &p_tablaarti..idconcepto
+		
+		IF !EMPTY(v_articulo) AND v_idconcepto > 0
+		
+			MESSAGEBOX("Un Item tiene asociado un artículo y un concepto a la vez",0+16,"Error al intentar guardar el detalle del comprobante")
+			RETURN 0
+		ENDIF 
+
+		**** ? ****
+		v_servicio 		= &p_tablaarti..servicio
+		v_cantidad 		= &p_tablaarti..cantidad
+		v_unidad 		= &p_tablaarti..unidad
+		v_cantidadFC 	= &p_tablaarti..cantidadFc
+		v_unidadFC 		= &p_tablaarti..unidadFc
+		v_detalle 		= &p_tablaarti..detalle
+		v_unitario 		= &p_tablaarti..unitario
+		v_impuestos		= &p_tablaarti..impuestos
+		v_totalArt 		= (v_cantidad*v_unitario) + v_impuestos
+		v_codigoCta 	= ""
+		v_nombreCta 	= ""
+		v_padron 		= 0
+		v_idimpuesto	= &p_tablaarti..impuesto
+		v_razonImpuesto = &p_tablaarti..razonimp
+
+		DIMENSION lamatriz2(18,2)
+		
+		lamatriz2(1,1)='idremito'
+		lamatriz2(1,2)= ALLTRIM(STR(v_idremito))
+		lamatriz2(2,1)='idremitoh'
+		lamatriz2(2,2)= ALLTRIM(STR(v_idremitoh))
+		lamatriz2(3,1)='articulo'
+		lamatriz2(3,2)= "'"+ALLTRIM(v_articulo)+"'"
+		lamatriz2(4,1)='idconcepto'
+		lamatriz2(4,2)= ALLTRIM(STR(v_idconcepto))
+		lamatriz2(5,1)='servicio'
+		lamatriz2(5,2)= ALLTRIM(STR(v_servicio))
+		lamatriz2(6,1)='cantidad'
+		lamatriz2(6,2)= ALLTRIM(STR(v_cantidad))
+		lamatriz2(7,1)='unidad'
+		lamatriz2(7,2)= "'"+ALLTRIM(v_unidad)+"'"
+		lamatriz2(8,1)='cantidadfc'
+		lamatriz2(8,2)= ALLTRIM(str(v_cantidadFC,13,4))
+		lamatriz2(9,1)='unidadfc'
+		lamatriz2(9,2)= "'"+ALLTRIM(v_unidadFC)+"'"
+		lamatriz2(10,1)='detalle'
+		lamatriz2(10,2)= "'"+ALLTRIM(v_detalle)+"'"
+		lamatriz2(11,1)='unitario'
+		lamatriz2(11,2)= ALLTRIM(STR(v_unitario,13,4))
+		lamatriz2(12,1)='impuestos'
+		lamatriz2(12,2)= ALLTRIM(STR(v_impuestos,13,4))
+		lamatriz2(13,1)='total'
+		lamatriz2(13,2)= ALLTRIM(STR(v_totalArt,13,4))
+		lamatriz2(14,1)='codigocta'
+		lamatriz2(14,2)= "'"+ALLTRIM(v_codigoCta)+"'"
+		lamatriz2(15,1)='nombrecta'
+		lamatriz2(15,2)= "'"+ALLTRIM(v_nombreCta)+"'"
+		lamatriz2(16,1)='padron' 
+		lamatriz2(16,2)= ALLTRIM(STR(v_padron))
+		lamatriz2(17,1)='impuesto'
+		lamatriz2(17,2)= ALLTRIM(STR(v_idimpuesto))
+		lamatriz2(18,1)='razonimp'
+		lamatriz2(18,2)= ALLTRIM(STR(v_razonImpuesto,13,4))
+	
+		p_tabla     = 'remitosh'
+		p_matriz    = 'lamatriz2'
+		p_conexion  = vconeccionL
+		IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
+		ENDIF						
+		
+		SELECT &p_tablaarti
+	SKIP 1
+ENDDO	
+		
+			
+			
+			
+			
+						
+ 	sele compRem_sql
+ 	USE IN compRem_sql
+ 	sele &p_tablaarti
+ 	USE IN &p_tablaarti
+	SELECT ent_sql 	
+	USE IN ent_sql 
+	
+ 
+	RETURN v_idremito
+ENDFUNC 
 
 FUNCTION GetMiembroGrupo
 PARAMETERS pl_TipoGrupo, pl_NomGrupo, pl_conexion
