@@ -1656,6 +1656,11 @@ LOCAL loException AS Exception
 ENDFUNC
 
   
+  
+  **********************************
+  ***** FUNCIONES DE IMPRESIÓN******
+  **********************************
+  
 
 FUNCTION imprimirFactura
 PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
@@ -3259,6 +3264,333 @@ PARAMETERS p_idoc
 ENDFUNC 
 
 
+ FUNCTION imprimirAcopio
+PARAMETERS p_idacopio
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UNA Acopio(COMPROBANTES DE LA TABLA Acopio)
+* PARAMETROS: P_IDACOPIO
+*#/----------------------------------------
+
+
+	v_idacopio = p_idacopio
+
+
+	IF v_idacopio > 0
+
+
+
+		CREATE TABLE comprobantesimp FREE (fecha C(8), idregistro I, idnp I, numComp C(30), tipoComp C(60), neto Y, op I, acopio C(1), imprimir I, observa c(254), idajuste I, numacop I, cliacop I, ;
+		nomCliAcop C(200), carAcop I, nomCarAcop C(200), ordAcop I, fechaAcop C(8), descAcop C(200), masAcop N(13,2), menosAcop N(13,2), saldoAcop N(13,2), tipoC C(1), nombrecomp C(50), puntov C(4), acopmast N(13,2), acopmenost N(13,2))
+		
+		SELECT comprobantesimp
+		INDEX on ALLTRIM(fecha) TO fechaimp
+		SET ORDER TO fechaimp
+
+		CREATE TABLE materialesimp	FREE (idmate I, detalle C(100), unidad C(10),precio y, tipocbio y,moneda I,nom_mone C(80), op I, idacopiod I, kg y, kgTot y)
+
+		
+		vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+		
+		************************************
+		*** Busco la Cabecera del acopio ***
+		************************************
+		
+		sqlmatriz(1)= "SELECT a.*,c.apellido as apeCli, c.nombre as nomCli, c.compania as compaCli ,c.apellido as apeCar, c.nombre as nomCar, c.compania as compCar, o.tipo, o.comprobante,p.puntov  "
+		sqlmatriz(2)= " FROM acopio a left join entidades c on a.entidad = c.entidad left join entidades r on  a.carpintero = r.entidad  left join comprobantes o on a.idcomproba = o.idcomproba  left join puntosventa p on a.pventa = p.pventa "
+		sqlmatriz(3)= " where a.idacopio = "+ALLTRIM(STR(v_idacopio))
+		
+		verror=sqlrun(vconeccionD,"acopio_sql_im")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los comprobantes asociados al acopio ",0+48+0,"Error")
+		ENDIF
+					
+					
+		v_numAcop = 0
+		v_cliAcop =0
+		v_nomCliAcop = ""
+		v_carAcop = 0
+		v_nomCArAcop = ""
+		v_ordAcop	= 0
+		v_fechaAcop	= ""
+		v_descAcop = ""
+		v_tipoC	= ""
+		v_nombrecomp = ""
+		v_puntov = "0000"
+		
+		v_masAcopt = 0.00
+		v_menosAcopt = 0.00
+		v_saldoAcopt = 0.00
+		v_idcomprobaAcop = 0
+		
+		
+		SELECT acopio_sql_im
+		GO TOP 
+		
+		IF NOT EOF()
+
+			v_numAcop = acopio_sql_im.numcomp
+			v_cliAcop =  acopio_sql_im.entidad
+			v_nomCliAcop = IIF(EMPTY(ALLTRIM(acopio_sql_im.apeCli+ " "+acopio_sql_im.nomCli))=.T.,acopio_sql_im.compCli,ALLTRIM(acopio_sql_im.apeCli+ " "+acopio_sql_im.nomCli))
+		
+			v_carAcop = acopio_sql_im.carpintero
+			v_nomCArAcop =  IIF(EMPTY(ALLTRIM(acopio_sql_im.apeCar+ " "+acopio_sql_im.nomCar))=.T.,acopio_sql_im.compCar,ALLTRIM(acopio_sql_im.apeCar+ " "+acopio_sql_im.nomCar))
+			
+			v_ordAcop	= acopio_sql_im.numero
+			v_fechaAcop	= acopio_sql_im.fecha
+			v_descAcop = acopio_sql_im.descrip
+			v_idcomprobaAcop = acopio_sql_im.idcomproba
+			v_tipoc		= acopio_sql_im.tipo
+			v_nombrecomp = acopio_sql_im.comprobante
+			v_puntov = acopio_sql_im.puntov
+
+					
+		ELSE
+		
+			RETURN 
+		ENDIF 
+				
+		
+		
+		
+		**************************************
+		*** Busco comprobantes de facturas ***
+		**************************************
+		
+		sqlmatriz(1)=" select a.*,p.puntov as actividad, f.numero, f.neto, f.fecha as fechaF,f.observa1 as observa, c.comprobante,c.abrevia, t.opera from compacopio a left join facturas f "
+		sqlmatriz(2)=" ON a.idregistro = f.idfactura left join comprobantes c on f.idcomproba = c.idcomproba left join puntosventa p on f.pventa = p.pventa left join tipocompro t on c.idtipocompro = t.idtipocompro "
+		sqlmatriz(3)=" where a.idacopio = "+ALLTRIM(STR(v_idacopio))+" and a.idregistro > 0 "
+		sqlmatriz(4)=" order by f.fecha, f.numero, f.idcomproba "
+		
+		verror=sqlrun(vconeccionD,"acopiosFac_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los comprobantes asociados al acopio ",0+48+0,"Error")
+		ENDIF
+		
+		v_acopmenosFac 	= 0.00
+		v_acopmasFac	= 0.00
+			
+				
+		SELECT acopiosFac_sql
+		GO TOP 
+		
+		DO WHILE NOT EOF()
+
+		
+			v_fecha 		= acopiosFac_sql.fechaF
+			v_idregistro 	= acopiosFac_sql.idregistro
+			v_idnp			= acopiosFac_sql.idnp
+			v_idajuste		= acopiosFac_sql.idajustea
+			v_numComp		= ALLTRIM(acopiosFac_sql.abrevia)+"      " + ALLTRIM(acopiosFac_sql.actividad)+" - "+ALLTRIM(STRTRAN(STR(acopiosFac_sql.numero, 8,0),' ','0'))
+			v_tipoComp 		= acopiosFac_sql.comprobante 
+			v_neto			= ROUND(acopiosFac_sql.importe,2)
+			v_op			= acopiosFac_sql.opera 
+			v_acopio		= acopiosFac_sql.acopio
+			v_imp 			= 1
+			v_observa		= ALLTRIM(acopiosFac_sql.observa)
+			
+			IF v_op < 0
+				v_acopmenosFac 	= v_neto
+				v_menosAcopt = v_menosAcopt + v_acopmenosFac 
+			ELSE
+				IF v_op > 0
+					v_acopmasFac =  v_neto
+					v_masAcopt = v_masAcopt + v_acopmasFac 
+				ENDIF 
+			ENDIF 
+	
+			INSERT INTO comprobantesimp values(v_fecha, v_idregistro, v_idnp,v_numComp, v_tipoComp, v_neto,v_op,v_acopio,v_imp, v_observa,v_idajuste,v_numacop, ;
+			v_cliacop, v_nomCliAcop, v_carAcop, v_nomCarAcop, v_ordAcop, v_fechaAcop, v_descAcop, v_acopmasFac , v_acopmenosFac, v_saldoAcopt, v_tipoc, v_nombrecomp,v_puntov,v_masAcopt,v_menosAcopt)
+		
+	
+	
+			SELECT acopiosFac_sql
+			SKIP 1
+		
+		ENDDO 
+		
+		*********************
+		*** Busco Ajustes ***
+		*********************
+		v_acopmenosAju 	= 0.00
+		v_acopmasAju	= 0.00
+		
+		sqlmatriz(1)=" select a.*,aj.fecha as fechaA,aj.monto as montoAju, aj.observa from compacopio a left join ajustesacopio aj " 
+		sqlmatriz(2)=" ON a.idajustea = aj.idajustea "
+		sqlmatriz(3)=" where a.idacopio = "+ALLTRIM(STR(v_idacopio))+" and  a.idajustea > 0 "
+		sqlmatriz(4)=" order by aj.idajustea"
+		
+		verror=sqlrun(vconeccionD,"ajustesAcop_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de ajustes de acopio",0+48+0,"Error")
+		ENDIF 
+		
+		SELECT ajustesAcop_sql 
+		GO TOP 
+
+		DO WHILE NOT EOF()
+
+			v_fecha 		= ajustesAcop_sql.fechaA
+			v_idregistro 	= ajustesAcop_sql.idregistro
+			v_idnp			= ajustesAcop_sql.idnp
+			v_idajuste		= ajustesAcop_sql.idajustea
+			v_numComp		= "AJUSTE      " + ALLTRIM(STRTRAN(STR(ajustesAcop_sql.idajustea, 8,0),' ','0'))
+			v_tipoComp 		= "Ajuste de Acopio"
+			v_neto			= ROUND(ajustesAcop_sql.montoAju,2)
+			v_acopio		= ajustesAcop_sql.acopio
+			
+			DO CASE
+			CASE v_neto > 0
+			
+				IF v_acopio = 'S'
+					v_op = 1
+					v_acopmasAju =  v_neto
+					v_masAcopt = v_masAcopt + v_acopmasAju 
+				ELSE
+					v_op = 0
+	
+				ENDIF 
+			CASE v_neto < 0
+				v_op = -1
+				v_acopmenosAju 	= (-1*v_neto)
+				v_menosAcopt = v_menosAcopt + v_acopmenosAju 
+			OTHERWISE
+				v_op 	= 0
+
+			ENDCASE
+	
+			v_imp 			= 1
+			v_observa		= ALLTRIM(ajustesAcop_sql.observa)
+			
+			INSERT INTO comprobantesimp values(v_fecha, v_idregistro, v_idnp,v_numComp, v_tipoComp, v_neto,v_op,v_acopio,v_imp, v_observa,v_idajuste,v_numacop, ;
+			v_cliacop, v_nomCliAcop, v_carAcop, v_nomCarAcop, v_ordAcop, v_fechaAcop, v_descAcop, v_acopmasAju , v_acopmenosAju , v_saldoAcopt, v_tipoc, v_nombrecomp,v_puntov,v_masAcopt,v_menosAcopt)
+		
+		
+		
+
+			SELECT ajustesAcop_sql
+			SKIP 1
+
+		ENDDO 
+	
+		****************
+		*** Busco NP ***
+		****************
+		v_acopmenosNP 	= 0.00
+		v_acopmasNP	= 0.00
+		
+		sqlmatriz(1)=" select a.* from compacopio a "
+		sqlmatriz(2)=" where a.idacopio = "+ALLTRIM(STR(v_idacopio))+" and a.idnp > 0 "
+
+	
+		verror=sqlrun(vconeccionD,"acopiosNPA_sql")
+
+		SELECT * FROM acopiosNPA_sql INTO TABLE .\acopiosNP_sql
+		
+		SELECT acopiosNP_sql
+		GO TOP 
+
+		IF NOT EOF()
+			DO WHILE NOT EOF()
+				
+				v_fecha 		= acopiosNP_sql.fechanp 
+				v_idregistro 	= acopiosNP_sql.idregistro
+				v_idajuste		= acopiosNP_sql.idajustea
+				v_idnp			= acopiosNP_sql.idnp
+				v_numComp		= "NP        " + ALLTRIM(acopiosNP_sql.nroserie)+" - "+ALLTRIM(STRTRAN(STR(acopiosNP_sql.nronp, 8,0),' ','0'))
+				v_tipoComp 		= "Nota de Pedido"
+				v_neto			= ROUND(acopiosNP_sql.importe,2)
+				v_op			= 0
+				v_acopio		= acopiosNP_sql.acopio
+				v_imp			= 1
+				v_observa		= ALLTRIM(acopiosNp_Sql.observa)
+
+				
+				INSERT INTO comprobantesimp values(v_fecha, v_idregistro, v_idnp,v_numComp, v_tipoComp, v_neto,v_op,v_acopio,v_imp, v_observa,v_idajuste,v_numacop, ;
+				v_cliacop, v_nomCliAcop, v_carAcop, v_nomCarAcop, v_ordAcop, v_fechaAcop, v_descAcop, v_acopmasNP, v_acopmenosNP , v_saldoAcopt, v_tipoc, v_nombrecomp,v_puntov,v_masAcopt,v_menosAcopt)
+	
+	
+	
+
+				SELECT acopiosNP_sql
+				SKIP 1
+
+			ENDDO 
+
+		ENDIF 
+		
+		************************
+		*** Busco materiales ***
+		************************
+		
+		sqlmatriz(1)=" select a.*, m.detalle, m.unidad from acopiod a left join mateacopio m on a.idmateacopio = m.idmateacopio "
+		sqlmatriz(2)=" where a.idacopio = "+ALLTRIM(STR(v_Idacopio))
+		sqlmatriz(3)=" order by a.idmateacopio "
+
+	
+		verror=sqlrun(vconeccionD,"acopiosMat_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Materiales del acopio",0+48+0,"Error")
+		ENDIF 
+
+		SELECT * FROM acopiosMat_sql INTO TABLE .\acopiosMat
+		SELECT acopiosMat
+		GO TOP 
+
+		DO WHILE NOT EOF()
+				
+			v_idacopiod	= acopiosMat.idacopiod
+			v_idmate 	= acopiosMat.idmateacop
+			v_detalle	= acopiosMat.detalle
+			v_unidad	= acopiosMat.unidad
+			v_precio	= ROUND(acopiosMat.precio,2)
+			v_tipocmbio	= ROUND(acopiosMat.tipocbio,2)
+			v_moneda	= acopiosMat.moneda
+			
+			SELECT monedas_sql 
+			GO top
+			LOCATE FOR moneda = v_moneda
+			v_nom_mon	= monedas_sql.nombre
+			v_op		= 0
+			v_kg		= 0.0
+			v_kgTot		= 0.0
+
+									
+			INSERT INTO materialesimp values (v_idmate, v_detalle, v_unidad, v_precio, v_tipocmbio, v_moneda,v_nom_mon,v_op,v_idacopiod,v_kg,v_kgtot)
+
+			SELECT acopiosMat
+			SKIP 1
+
+		ENDDO 
+
+		*** Me desconecto ***
+		=abreycierracon(vconeccionD,"")	
+
+
+
+		v_saldoAcopt = v_masAcopt - v_menosAcopt 
+		
+		SELECT comprobantesimp 
+		GO TOP 
+
+		replace ALL saldoacop WITH v_saldoAcopt, acopmast WITH v_masAcopt, acopmenost WITH v_menosAcopt 
+
+
+
+			IF v_idcomprobaAcop > 0
+
+				DO FORM reporteform WITH "comprobantesimp;materialesimp","comprobantescr;materialescr",v_idcomprobaAcop 
+			
+			
+			ENDIF 
+
+						
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar el ACOPIO para imprimir ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
 
 
 
@@ -24098,4 +24430,89 @@ PARAMETERS p_idcajamovih, p_idcajareca
 		
 
 ENDFUNC 
+
+
+
+
+FUNCTION maxnumero
+PARAMETERS p_campo, p_tipo, p_tabla,p_condicion
+*#/----------------------------------------
+* FUNCION PARA TRAER EL MAXIMO numero UNA TABLA
+* RECIBE COMO PARAMETROS EL CAMPO QUE CONTIENE EL ID o NUMERO, EL TIPO DE CAMPO, LA TABLA 
+* Devuelve el MAXIMO numero o -1 en caso de error
+*#/----------------------------------------
+
+	v_cond =  ""
+	IF TYPE('p_condicion') = 'C'
+	
+		v_cond = ALLTRIM(p_condicion)
+	
+	ENDIF 
+
+
+	IF p_tipo = 'I'
+
+		vconeccionFm = abreycierracon(0,_SYSSCHEMA)
+		*INTEGER
+		
+		sqlmatriz(1)=" select MAX("+ALLTRIM(p_campo)+") as maximo from "+ALLTRIM(p_tabla)
+		sqlmatriz(2)= " "+v_cond
+		
+		verror=sqlrun(vconeccionFm,"maximoNum_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion del maximo Numero de indice ",0+48+0,"Error")
+			=abreycierracon(vconeccionFm,"")
+		    RETURN  -1 
+		ENDIF 
+		
+				* me desconecto	
+		=abreycierracon(vconeccionFm,"")
+		SELECT maximoNum_sql
+		GO TOP 
+		IF NOT EOF()
+			v_maximo = IIF(ISNULL(maximoNum_sql.maximo),0,maximoNum_sql.maximo)		
+			v_maximo = IIF(TYPE('v_maximo')='N',v_maximo,VAL(v_maximo))
+		ELSE
+			v_maximo = 0
+		ENDIF 
+
+		RETURN v_maximo
+
+	ELSE
+		IF p_tipo = 'C'
+			*CHAR
+			sqlmatriz(1)=" select MAX("+ALLTRIM(p_campo)+") as maximo from "+ALLTRIM(p_tabla)
+			sqlmatriz(2)= " "+v_cond
+					
+			verror=sqlrun(vconeccionFm,"maximoNum_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion del maximo Numero de indice ",0+48+0,"Error")
+				=abreycierracon(vconeccionFm,"")
+			    RETURN  -1 
+			ENDIF 
+			
+			* me desconecto	
+			=abreycierracon(vconeccionFm,"")
+			SELECT maximoNum_sql
+			GO TOP 
+			IF NOT EOF()
+				v_maximo = IIF(ISNULL(maximoNum_sql.maximo),0,maximoNum_sql.maximo)		
+				v_maximo = IIF(TYPE('v_maximo')='C',v_maximo,str(v_maximo))
+			ELSE
+				v_maximo = "0"
+			ENDIF 
+
+			RETURN v_maximo
+						
+		ELSE
+			
+		ENDIF 
+
+	ENDIF 
+
+RETURN -1
+ENDFUNC
+ 
+ 
+ 
 
