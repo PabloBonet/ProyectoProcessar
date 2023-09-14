@@ -15671,7 +15671,7 @@ PARAMETERS p_ListaP
 		sqlmatriz(2)=" INTO TABLE r_listaprea fields terminated by ',' "
 		sqlmatriz(3)=" ENCLOSED BY ';' "
 		sqlmatriz(4)=" LINES TERMINATED BY '\r\n' "
-		sqlmatriz(5)=" IGNORE 1 ROWS "
+*		sqlmatriz(5)=" IGNORE 1 ROWS "
 
 		verror=sqlrun(vconeccionF,"loadlp")
 		IF verror=.f.  
