@@ -15809,7 +15809,7 @@ PARAMETERS pda_tablatmp, pda_id
 	v_titulo    = " EL ALTA "
 	tablaACA     = "datosanexo"
 	p_matriz    = 'lamatrizACA'
-	DIMENSION lamatrizACA(7,2)
+	DIMENSION lamatrizACA(9,2)
 
 	DO WHILE !EOF()
 	
@@ -15829,6 +15829,10 @@ PARAMETERS pda_tablatmp, pda_id
 			lamatrizACA(6,2)="'"+ALLTRIM(&pda_tablatmp..tabla)+"'"
 			lamatrizACA(7,1)='id'
 			lamatrizACA(7,2)=ALLTRIM(STR(&pda_tablatmp..id))
+			lamatrizACA(8,1)='fechab'
+			lamatrizACA(8,2)="'"+ALLTRIM(&pda_tablatmp..fechab)+"'"
+			lamatrizACA(9,1)='importeb'
+			lamatrizACA(9,2)=ALLTRIM(STR(&pda_tablatmp..importeb,13,2))
 						
 			p_conexion  = vconeccionACA
 			IF SentenciaSQL(tablaACA,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
