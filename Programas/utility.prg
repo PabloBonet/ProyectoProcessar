@@ -21884,7 +21884,17 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 	v_idcompro_vb	= 0
 	v_idregistro_vb	= p_idvincular
 	
-
+	USE &p_tablaarti IN 0
+	SELECT &p_tablaarti
+	GO TOP 
+	CALCULATE SUM(&p_tablaarti..cantidad * &p_tablaarti..unitario) TO v_tfdc 
+	GO TOP 
+	IF v_tfdc <= 0 THEN 
+		USE IN &p_tablaarti	
+		RETURN 0 
+	ENDIF  
+	
+	
 	v_retornoidfactura = 0
 	IF p_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
 		vconeccionL = p_cone
@@ -21892,9 +21902,10 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 		vconeccionL = abreycierracon(0,_SYSSCHEMA)
 	ENDIF 	
 	
-	USE &p_tablaarti IN 0
-	SELECT &p_tablaarti
-	GO TOP 
+
+
+
+
 	v_entidad  		= &p_tablaarti..entidad
 	v_servicio 		= &p_tablaarti..servicio
 	v_cuenta   		= &p_tablaarti..cuenta
