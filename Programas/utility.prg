@@ -23068,7 +23068,7 @@ PARAMETERS p_tablaarti, p_cone
 * PARAMETROS : 
 *	p_tablaarti: tabla conteniendo los datos para generar el comprobante (entidad i , servicio i, cuenta i, fecha c(8), idcomproba i, ;
 * 																		 pventa i,transporte I,nomTrans C(254), dirEntrega C(254), stock C(1), tipoOp I, observa1 C(254),observa2 C(254),observa3 C(254), observa4 C(254), ;
-*																		articulo c(15),idconcepto I, idservicio I, detalle C(254), unidad C(10),cantidadfc N(13,4),unidadfc  C(10), cantidad N(13,4), unitario N(13,4), impuestos N(13,4),impuesto I, razonimp N(13,4) )
+*																		articulo c(15),idconcepto I, idservicio I, detalle C(254), unidad C(10),cantidadfc N(13,4),unidadfc  C(10), cantidad N(13,4), unitario N(13,4), impuestos N(13,4),impuesto I, razonimp N(13,4), numero I )
 
 
 *   p_cone :  conexion a la base de datos, si es 0 abre una nueva conexion
@@ -23121,6 +23121,35 @@ PARAMETERS p_tablaarti, p_cone
 		v_transporte	= &p_tablaarti..transporte
 		v_nomTransporte	= &p_tablaarti..nomtrans
 		v_tipoOp		= &p_tablaarti..tipoop
+		v_numeroRem		= &p_tablaarti..numero
+	
+	
+	
+*!*		** valido que el comprobante no exista
+
+*!*			*** Busco el Remito ***
+*!*			sqlmatriz(1)=" SELECT *   "
+*!*			sqlmatriz(2)=" FROM remitos r left join ultimoestado u on r.idremito = u.id "
+*!*			sqlmatriz(3)=" where u.tabla = 'remitos' and u.campo = 'idremito' and r.numero = "+ALLTRIM(STR(v_numeroRem))
+*!*			sqlmatriz(4)=" and r.idcomproba = "+ALLTRIM(STR(v_idcomproba))+" and r.pventa = "+ALLTRIM(STR(v_pventa))
+*!*			verror=sqlrun(vconeccionL ,"RemitoVal_sql")
+
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes  ",0+48+0,"Error")
+*!*			*** me desconecto	
+*!*				=abreycierracon(vconeccionL ,"")
+*!*			    RETURN 0
+*!*			ENDIF 
+
+*!*			SELECT RemitoVal_sql
+*!*			GO TOP 
+*!*			IF NOT EOF()
+*!*				&& Ya existe el comprobante -> No lo cargo
+*!*				RETURN 0
+*!*			ENDIF 
+		
+	
+	
 	
 		SELECT totales
 		v_neto 			= totales.neto
@@ -23227,7 +23256,14 @@ PARAMETERS p_tablaarti, p_cone
 			
 	v_idcom  = v_idcomproba
 	v_pventa = v_pventa
-	v_numero = maxnumerocom(v_idcom,v_pventa  ,1)
+	v_numRem = &p_tablaarti..numero
+	
+	IF v_numRem > 0
+		v_numero = v_numRem 
+	ELSE
+		v_numero = maxnumerocom(v_idcom,v_pventa  ,1)
+	ENDIF 
+	
 	v_tipo	 = compRem_sql.tipo
 
 	DO CASE 
