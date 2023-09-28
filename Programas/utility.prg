@@ -1817,7 +1817,8 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 			ALTER table factu ADD COLUMN codQR C(100)
 			ALTER table factu ADD COLUMN apeynom C(200)
 			ALTER table factu ADD COLUMN totalletra C(254)
-			ALTER table factu ADD COLUMN compAso C(254)
+			ALTER table factu ADD COLUMN compAso M
+
 
 	** Agrego el importe total en letras **
 		SELECT factu
@@ -1827,10 +1828,15 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 	
 	** Agrego comprobantes asociados **
 	
-	 	v_comproAso = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF)
-		 	
-	 	
-	 
+	
+		tipoComproObjtmp 	= CREATEOBJECT('comprobantesclass')
+
+
+		v_idCompRemi = tipoComproObjtmp.getidcomprobante("REMITO R")
+		
+
+	 	v_comproAso = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompRemi )
+		
 	** AGREGO OBSERVACIONES FIJAS EN EL COMPROBANTE SEGÚN CONDICIONES EN LA TABLA observacond  y el total en letras *
 	
 			ALTER table factu ADD COLUMN obsfijo C(250)
@@ -21040,7 +21046,7 @@ ENDFUNC
 
 
 FUNCTION GetLinkCompro
-PARAMETERS pgl_idcompro, pgl_idregi, p_cone
+PARAMETERS pgl_idcompro, pgl_idregi, p_cone, p_idcomproAso
 *#/ ------------------------------
 * Obtiene en una tabla todos los comprobantes vinculados con uno recibido como parametro
 * PARAMETROS : 
@@ -21057,6 +21063,14 @@ PARAMETERS pgl_idcompro, pgl_idregi, p_cone
 	ELSE 
 		vconeccionL = abreycierracon(0,_SYSSCHEMA)
 	ENDIF 	
+	
+	IF TYPE('p_idcomproAso') = 'L'
+		v_idcomproAsoB =" "
+		v_idcomproAsoA = " "
+	ELSE
+		v_idcomproAsoB =" and l.idcomprobab = "+ALLTRIM(STR(p_idcomproAso))
+		v_idcomproAsoA  =" and l.idcomprobaa = "+ALLTRIM(STR(p_idcomproAso))
+	ENDIF 
 
 
 **--- Obtengo Los Comprobantes Vinculados al recibido como parametro si el recibido está del lado de comprobantes A
@@ -21066,7 +21080,9 @@ PARAMETERS pgl_idcompro, pgl_idregi, p_cone
 	sqlmatriz(4)=" left join tipocompro   t on t.idtipocompro = c.idtipocompro "
 	sqlmatriz(5)=" left join comprobantes d on d.idcomproba   = l.idcomprobab "
 	sqlmatriz(6)=" left join tipocompro   u on u.idtipocompro = d.idtipocompro "
-	sqlmatriz(7)=" where  l.idcomprobaa = "+alltrim(STR(pgl_idcompro))+" and l.idregistroa = "+alltrim(STR(pgl_idregi))
+	sqlmatriz(7)=" where  l.idcomprobaa = "+alltrim(STR(pgl_idcompro))+" and l.idregistroa = "+alltrim(STR(pgl_idregi))+v_idcomproAsoB 
+	
+
 	verror=sqlrun(vconeccionL,"linkcomproA_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en Seleccion LinkCompro ... ",0+48+0,"Error")
@@ -21081,7 +21097,8 @@ PARAMETERS pgl_idcompro, pgl_idregi, p_cone
 	sqlmatriz(4)=" left join tipocompro   t on t.idtipocompro = c.idtipocompro "
 	sqlmatriz(5)=" left join comprobantes d on d.idcomproba   = l.idcomprobaa "
 	sqlmatriz(6)=" left join tipocompro   u on u.idtipocompro = d.idtipocompro "
-	sqlmatriz(7)=" where  l.idcomprobab = "+alltrim(STR(pgl_idcompro))+" and l.idregistrob = "+alltrim(STR(pgl_idregi))
+	sqlmatriz(7)=" where  l.idcomprobab = "+alltrim(STR(pgl_idcompro))+" and l.idregistrob = "+alltrim(STR(pgl_idregi))+v_idcomproAsoA
+		
 
 	verror=sqlrun(vconeccionL,"linkcomproB_sql")
 	IF verror=.f.  
@@ -24569,7 +24586,7 @@ ENDFUNC
 
 
 FUNCTION comprobantesAsociados 
-PARAMETERS p_idcompro, p_idregi, p_cone
+PARAMETERS p_idcompro, p_idregi, p_cone,p_idcomproAso
 *#/ ------------------------------
 * Obtiene una cadena de caracteres con los comprobantes asociados al comprobante pasado como parámetro
 * PARAMETROS : 
@@ -24587,7 +24604,7 @@ PARAMETERS p_idcompro, p_idregi, p_cone
 		vconeccionL = abreycierracon(0,_SYSSCHEMA)
 	ENDIF 	
 
-	v_tablaAso = GetLinkCompro(p_idcompro, p_idregi, vconeccionL)
+	v_tablaAso = GetLinkCompro(p_idcompro, p_idregi, vconeccionL, p_idcomproAso)
 	
 	
 	
