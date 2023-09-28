@@ -25115,4 +25115,87 @@ ENDFUNC
  
  
  
+function formatearArchivo
+PARAMETERS p_nombreArchivo
+*#/----------------------------------------
+* FUNCION PARA Formatear el archivo, cambiando la ',' por el '.'
+* RECIBE COMO PARAMETROS EL NOMBRE DEL ARCHIVO, debe estar separado por ';'
+* Devuelve True o False
+*#/----------------------------------------
+
+if !file(p_nombreArchivo) THEN
+	=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+	thisform.tb_adjunto.SetFocus
+	RETURN 0
+ENDIF
+
+	ABRE = p_nombreArchivo
+			PUNTERO = FOPEN(ABRE,0)
+			ARCHITMP = "formateoArchivo.csv"
+			PUNTER2 = FCREATE(ARCHITMP)
+			
+			
+			IF PUNTERO > 0 THEN
+				DO WHILE !FEOF(PUNTERO)
+					EJE = ALLTRIM(FGETS(PUNTERO))
+					
+					posPunto = 0
+					posComa = 0
+
+					
+					posComa = AT(ALLTRIM(","),EJE)
+					posPunto = AT(ALLTRIM("."),EJE)
+					
+					
+					DO CASE
+					CASE posComa > 0 AND posPunto > 0 && Existe un punto y una coma
+						
+						IF posComa > posPunto
+						
+						** Quito el punto y  Reemplazo la ',' por el '.'
+						=FPUTS(PUNTER2,STRTRAN(STRTRAN(EJE,'.',''),',','.'))
+						
+						ELSE
+					
+						** Quito la Coma
+							=FPUTS(PUNTER2,STRTRAN(EJE,',',''))
+						ENDIF 
+												
+					CASE posComa = 0 AND posPunto > 0 && Existe solo punto
+					
+						** Dejo como está
+						=FPUTS(PUNTER2,EJE)
+					CASE posComa > 0 AND posPunto = 0 && Existe solo coma
+					
+						** Reemplazo la ',' por '.'
+						=FPUTS(PUNTER2,STRTRAN(EJE,',','.'))
+					CASE posComa = 0 AND posPunto = 0 	&& No tiene puntos ni coma
+				
+						**Dejo como está
+						=FPUTS(PUNTER2,EJE)
+					OTHERWISE 
+						=FPUTS(PUNTER2,EJE)
+					ENDCASE
+								
+					
+
+				ENDDO
+
+				=FCLOSE(PUNTERO)
+				=FCLOSE(PUNTER2)
+					
+				EJECU = "COPY FILE "+ARCHITMP+" TO "+ABRE 
+				&EJECU
+				EJECU = "DELETE FILE "+ARCHITMP
+				&EJECU
+			
+			ELSE
+			
+				=FCLOSE(PUNTER2)
+				EJECU = "DELETE FILE "+ARCHITMP
+				&EJECU
+			ENDIF
+
+	RETURN .T.
+ENDFUNC 
 
