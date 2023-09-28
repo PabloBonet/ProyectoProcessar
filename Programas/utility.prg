@@ -1880,11 +1880,11 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 				v_puntoVta		= ALLTRIM(factu.puntov)
 				v_fechaVenc_cae	= ALLTRIM(factu.caecespven)
 				v_cespcae		= ALLTRIM(factu.cespcae)
-				
-				v_codBarra		= v_cuitEmpresa+v_tipoCompAfip+"0"+v_puntoVta+v_fechaVenc_cae+v_Cespcae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
+			*	v_codBarra		= v_tipoCompAfip+"0"+v_puntoVta+v_Cespcae+v_fechaVenc_cae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
+				v_codBarra		= STRTRAN(v_CuitEmpresa,'-','')+v_tipoCompAfip+"0"+v_puntoVta+v_Cespcae+v_fechaVenc_cae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
 
 				v_codBarraD 		= calculaDigitoVerif(v_codBarra)
-				
+		
 				SELECT factu
 				replace ALL codBarra WITH v_codBarraD
 				
