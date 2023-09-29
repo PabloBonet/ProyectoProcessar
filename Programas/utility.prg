@@ -23524,7 +23524,7 @@ DO WHILE NOT EOF()
 		lamatriz2(5,1)='servicio'
 		lamatriz2(5,2)= ALLTRIM(STR(v_servicio))
 		lamatriz2(6,1)='cantidad'
-		lamatriz2(6,2)= ALLTRIM(STR(v_cantidad))
+		lamatriz2(6,2)= ALLTRIM(STR(v_cantidad,13,4))
 		lamatriz2(7,1)='unidad'
 		lamatriz2(7,2)= "'"+ALLTRIM(v_unidad)+"'"
 		lamatriz2(8,1)='cantidadfc'
