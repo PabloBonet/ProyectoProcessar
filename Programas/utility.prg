@@ -9998,9 +9998,14 @@ PARAMETERS p_idregistro, p_tabla
 	v_retorno = .F.
 	IF p_idregistro > 0
 	
-	
-	
-	
+		IF TYPE('_SYSMODFECHAFAC') = 'U' && SI no está definida -> Actua como si no tuviera que modificar
+			RETURN .T.
+		ENDIF 
+		IF _SYSMODFECHAFAC = 'N'
+			RETURN .T.
+		
+		ENDIF 
+
 		**** Busca datos comprobante ***
 
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
@@ -23498,6 +23503,7 @@ DO WHILE NOT EOF()
 		**** ? ****
 		v_servicio 		= &p_tablaarti..servicio
 		v_cantidad 		= &p_tablaarti..cantidad
+*		MESSAGEBOX(v_Cantidad)
 		v_unidad 		= &p_tablaarti..unidad
 		v_cantidadFC 	= &p_tablaarti..cantidadFc
 		v_unidadFC 		= &p_tablaarti..unidadFc
