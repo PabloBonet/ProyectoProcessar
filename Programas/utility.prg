@@ -1783,11 +1783,11 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 			GO TOP
 			IF NOT EOF()
 				v_idfe = fac_det_sql_au.idfe
-				SELECT * FROM fac_det_sql_au WHERE idfe = v_idfe INTO TABLE .\factu
+				SELECT * FROM fac_det_sql_au WHERE idfe = v_idfe INTO TABLE .\factu ORDER BY idfacturah
 			
 			ENDIF 
 		ELSE
-			SELECT * FROM fac_det_sql 	INTO TABLE .\factu
+			SELECT * FROM fac_det_sql 	INTO TABLE .\factu ORDER BY idfacturah
 		ENDIF 
 
 	
