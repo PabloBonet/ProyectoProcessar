@@ -1118,7 +1118,7 @@ namespace ModuloAFIP
                 }
 
 
-                if (detReq.ImpIVA > 0)
+                if (detReq.ImpIVA >= 0)
                 {
 
                     List<ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva> listIva = new List<ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva>();
@@ -1135,7 +1135,17 @@ namespace ModuloAFIP
                         aiva.BaseImp = Math.Round(a.BaseImp, 2);    //CONTROLAR SI ESTO ESTÁ BIEN, COMPARANDOLO CON EL MODULO DEL AFIP HECHO
                         aiva.Importe = Math.Round(a.Importe, 2);
 
-                        if (aiva.Id > 0 && aiva.BaseImp > 0 && aiva.Importe > 0)
+                        /* if (aiva.Id > 0 && aiva.BaseImp > 0 && aiva.Importe > 0)
+                         {
+                             listIva.Add(aiva);
+                         }
+                         else
+                         {
+                             Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
+                             throw e;
+                         }*/
+
+                        if (aiva.Id > 0)
                         {
                             listIva.Add(aiva);
                         }
@@ -1144,6 +1154,7 @@ namespace ModuloAFIP
                             Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
                             throw e;
                         }
+
 
                     }
                                        
