@@ -468,7 +468,8 @@ namespace ModuloAFIP
         /// <param name="idComprobante">ID del comprobante a autorizar</param>
         /// <returns>ComprobanteClass si se autorizó correctamente, NULL en otro caso</returns>
         private ComprobanteClass AutorizarComprobantePru(LoginTicket ticketAcceso, ComprobanteClass comprobante, int idComprobante)
-        {            
+        {
+            UtilClass.EscribirArchivoLog("En AutorizarComprobantePru", _strLog, true);
             if (ticketAcceso != null && idComprobante > 0 && comprobante.IDComprobante > 0)
             {
                 if (comprobante.IDComprobante == idComprobante)
@@ -478,7 +479,7 @@ namespace ModuloAFIP
                         string inf;
 
                         inf = "Error al autorizar el comprobante por ID. El comprobante ya está autorizado con CAE: " + comprobante.CAE + "\n";
-
+                      //  this.AgregarObservaciones(inf, true);
                         //Escribo en el archivo
 
                         //UtilClass.EscribirArchivoLog(inf, _archivoLog, _flujoEscritura, _strLog, true);
@@ -508,20 +509,33 @@ namespace ModuloAFIP
                             }
 
                             /*** Armar RequerimientoAutorización*/
+                         //   UtilClass.EscribirArchivoLog("Antes de ArmarRequerimientoAutorizacion", _strLog, true);
+                           
 
                             ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAERequest reqAut = ArmarRequerimientoAutorizacion(autorizacionPru, comprobante);
-
+                            //  UtilClass.EscribirArchivoLog("Despues de ArmarRequerimientoAutorizacion", _strLog, true);
+                            
                             if (!_produccion)
                             {
+                                //  UtilClass.EscribirArchivoLog("NO es producciòn", _strLog, true);
+                                
                                 if (comprobante.CAE == "" && comprobante.FechaVtoCAE == "" && comprobante.Resultado != "A")
                                 {
+
+                                    // UtilClass.EscribirArchivoLog("Antes de FECAESolicitar", _strLog, true);
+                                   
                                     //Autorizar
                                     ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEResponse respuesta = _servicioPrueba.FECAESolicitar(autorizacionPru, reqAut);
-
+                                    //  UtilClass.EscribirArchivoLog("Despues de FECAESolicitar", _strLog, true);
+                                   
                                     // Cargo en el comprobante los datos de la respuesta
                                     if (respuesta != null)
                                     {
+                                        
+                                     
                                         comprobante.cargarRespuesta(respuesta);
+                                     
+                                       
                                     }
                                 }
                                 else
@@ -536,8 +550,8 @@ namespace ModuloAFIP
                         {
                             string inf;
 
-                            inf = "Error al autorizar el comprobante por ID. " + e.Message + "\n";
-
+                            inf = "Error al autorizar el comprobante por ID. " + e.Message + "\n" +e.Source+"\n" +e.Data+"\n"+e.InnerException+"\n"+e.StackTrace+"\n"+e.TargetSite+"\n";
+                            
                             //Escribo en el archivo
 
                             //UtilClass.EscribirArchivoLog(inf, _archivoLog, _flujoEscritura, _strLog, true);
@@ -676,7 +690,7 @@ namespace ModuloAFIP
                 //OBTENGO EL NUMERO DEL ULTIMO COMPROBANTE REGISTRADO
                 ClienteLoginCms_CS.ar.gov.afip.wswhomo.FERecuperaLastCbteResponse ultComprobante = null;
                 ultComprobante = ObtenerUltimoComprobanteRegistrado(autorizacion, puntoVenta, tipoComprobante);
-
+               
                 if (ultComprobante == null)
                 {
                     Exception e = new Exception("No se pudo obtener el último comprobante");
@@ -688,7 +702,7 @@ namespace ModuloAFIP
 
                 /*** Detalle de la solicitud del comprobante ***/
                 ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest detReq = new ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest();
-
+                
                 detReq.Concepto = 1; //1: Productos
                 long v_docNro = 0;
                 /*
@@ -742,6 +756,7 @@ namespace ModuloAFIP
                
 
                 double compImpIvaTot = comprobante.ImporteIva; // importe total del iva
+               
                 compImpIvaTot = Math.Round(compImpIvaTot, 2);
 
                 detReq.ImpOpEx = 0;
@@ -769,7 +784,7 @@ namespace ModuloAFIP
                 detReq.MonCotiz = comprobante.CotizacionMoneda;
 
                 detReq.ImpTrib = comprobante.ImporteTributo;
-
+                
                 if (detReq.ImpTrib > 0)
                 {
                     List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.Tributo> listaTributo = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.Tributo>();
@@ -807,10 +822,10 @@ namespace ModuloAFIP
                     detReq.Tributos = arrayTributos;
                     detReq.ImpTrib = detReq.ImpTrib;
                 }
-
-                if (detReq.ImpIVA > 0)
+               
+                if (detReq.ImpIVA >= 0)
                 {
-
+                    
                     List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva> listIva = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva>();
 
                     ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva aiva = null;
@@ -824,9 +839,20 @@ namespace ModuloAFIP
                         aiva.Id = a.ID;
                         aiva.BaseImp = Math.Round(a.BaseImp, 2);    //CONTROLAR SI ESTO ESTÁ BIEN, COMPARANDOLO CON EL MODULO DEL AFIP HECHO
                         aiva.Importe = Math.Round(a.Importe, 2);
-                     
 
-                        if (aiva.Id > 0 && aiva.BaseImp > 0 && aiva.Importe > 0)
+
+                        /* if (aiva.Id > 0 && aiva.BaseImp > 0 && aiva.Importe > 0)
+                         {
+                             listIva.Add(aiva);
+                         }
+                         else
+                         {
+                             Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
+                             throw e;
+                         }*/
+
+
+                         if (aiva.Id > 0 )
                         {
                             listIva.Add(aiva);
                         }
@@ -835,9 +861,8 @@ namespace ModuloAFIP
                             Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
                             throw e;
                         }
-
                     }
-
+                  
                     ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva[] arrayIva = listIva.ToArray();
                     detReq.Iva = arrayIva;
                    
@@ -875,8 +900,8 @@ namespace ModuloAFIP
                 }
 
                 // Agrego los items de los Opcionales
-              
-                
+
+               
                 if (comprobante.ListaOpcionales.Count > 0)
                 {
                     
@@ -905,10 +930,11 @@ namespace ModuloAFIP
 
                 }
 
-
+              
                 List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest> listaDetalle = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest>();
 
                 listaDetalle.Add(detReq);
+               
                 ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest[] arrayDetalle = listaDetalle.ToArray();
                 reqAut.FeDetReq = arrayDetalle;
 
@@ -954,7 +980,7 @@ namespace ModuloAFIP
                 string cuit = comprobante.NroDocCliente;
 
                 /*** Cabecera de la solicitud del comprobante ***/
-                ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAECabRequest cabreq = new ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAECabRequest();
+                        ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAECabRequest cabreq = new ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAECabRequest();
                 int cantidadReg = 1; //Siempre se autoriza de a 1 elemento
                 cabreq.CantReg = cantidadReg;
 
@@ -1490,7 +1516,7 @@ namespace ModuloAFIP
                     string fecha = DateTime.Now.ToString();
 
                     inf = inf + "***EXCEPCION AL CARGAR TICKET: " + excepcionObtUltComprobante.Message;
-                    AgregarObservaciones(inf, true);
+                   
                     //Escribo en el archivo
                     // UtilClass.EscribirArchivoLog(inf, _archivoLog, _flujoEscritura, _strLog, true);
                     UtilClass.EscribirArchivoLog(inf, _strLog, true);
@@ -1595,7 +1621,7 @@ namespace ModuloAFIP
                 string mensaje;
 
                 mensaje = "Error al autorizar comprobante (ID " + idComprobante + "). " + e.Message;
-
+                this.AgregarObservaciones(mensaje, true);
                 Exception ex = new Exception(mensaje);
                 throw ex;
             }

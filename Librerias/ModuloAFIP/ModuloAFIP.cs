@@ -369,6 +369,8 @@ namespace ModuloAFIP
         /// <returns>Retorna el comprobante, Null en caso de que ocurra un error</returns>
         private ComprobanteClass CargaComprobante(string ubicacionCompAso, int idregistro,string cuitEmisor)
         {
+
+          
             ComprobanteClass retorno;
             _observaciones = new List<string>();
             _error = false;
@@ -413,7 +415,7 @@ namespace ModuloAFIP
                            
                     }
 
-
+                    
                     XmlDocument compXML = new XmlDocument();
                   
                     compXML.Load(ubicacionComp);
@@ -438,19 +440,19 @@ namespace ModuloAFIP
                     comprobante.NroDocCliente = compXML.SelectSingleNode("//nrodoccli").InnerText;
                     comprobante.ImporteNeto = Double.Parse((compXML.SelectSingleNode("//netocomp").InnerText).Replace('.', ','));
                     comprobante.FechaVtoPago = compXML.SelectSingleNode("//fchvtopago").InnerText;
-
+                    
                     List<AlicuotaIvaClass> listaIva = new List<AlicuotaIvaClass>();
                     List<TributoComprobanteClass> listaTributo = new List<TributoComprobanteClass>();
 
                     Double totalIVA = 0;
                     Double totalTributo = 0;
-
+                  
 
                     // Cargo la lista de nodos del XML, cada nodo de la lista es un registro en la tabla de facturas de donde proviene el archivo xml
                     XmlNodeList listaNodosXml = compXML.SelectNodes("//tablafactura");
                     int cantNodos = listaNodosXml.Count;
 
-
+                   
                     for (int i = 0; i < cantNodos; i++)
                     {
 
@@ -497,7 +499,7 @@ namespace ModuloAFIP
 
 
                     }
-                  
+                   
                     comprobante.ImporteOpEx = Double.Parse((compXML.SelectSingleNode("//opexento").InnerText).Replace('.', ','));
                     comprobante.ImporteTributo = totalTributo;
                     comprobante.ImporteIva = totalIVA;
@@ -520,7 +522,7 @@ namespace ModuloAFIP
                             {
                                 _error = true;
                                 _errores.Add(cad);
-                                UtilClass.EscribirArchivoLog(cad, _strLog);
+                               
                             }
 
 
@@ -898,6 +900,7 @@ namespace ModuloAFIP
         /// <returns>Retorna True si no se generaron errores propios del modulo</returns>
         public bool AutorizarComp(string ubicacionCompAso, int idRegistro)
         {
+            UtilClass.EscribirArchivoLog("AutorizarCOMP", _strLog);
             bool retorno;
             _observaciones = new List<string>();
             _error = false;
@@ -907,26 +910,29 @@ namespace ModuloAFIP
                 if (ubicacionCompAso == null || ubicacionCompAso.Length == 0) // Nombre del Archivo de configuración incorrecto
                 {
                     _error = true;
-                    string mensaje = "El nombre del Archivo de configuración es incorrecto";
+                    string mensaje = "El nombre del Archivo de configuración es incorrecto\n";
                     _errores.Add(mensaje);
                     UtilClass.EscribirArchivoLog(mensaje, _strLog);
                     retorno = false;
                 }
                 else
                 {
-                   
 
 
+                    UtilClass.EscribirArchivoLog("CARGA COMPROBANTE\n", _strLog);
 
                     ComprobanteClass comprobante = CargaComprobante(ubicacionCompAso, idRegistro,_strCuit);
-
+                    UtilClass.EscribirArchivoLog("DESPUES COMPROBANTE\n", _strLog);
                     if (comprobante != null)
                     {
                        
                         ComprobanteClass comprobanteRespuesta = null;
+                        UtilClass.EscribirArchivoLog("ANTES  AutorizarComprobante\n", _strLog);
                         comprobanteRespuesta = _gestionFE.AutorizarComprobante(_ticketAcceso, comprobante, idRegistro);
-
-
+                        UtilClass.EscribirArchivoLog("DESUES  AutorizarComprobante\n", _strLog);
+                        UtilClass.EscribirArchivoLog((_gestionFE.Observaciones)+"\n", _strLog);
+                       
+                        
                         if (comprobanteRespuesta != null)
                         {
                                                       
@@ -996,8 +1002,10 @@ namespace ModuloAFIP
                             catch (Exception e)
                             {
                                 _error = true;
-                                string mensaje = "Ocurrio un error: " + e.Message;
+                                string obs = _gestionFE.Observaciones;
+                                string mensaje = "Ocurrio un error: " + e.Message +"\n OBS:"+obs; 
                                 _errores.Add(mensaje);
+                                
                                 UtilClass.EscribirArchivoLog(mensaje, _strLog);
                                 return false;
                             }
@@ -1007,7 +1015,9 @@ namespace ModuloAFIP
                         }
                         else
                         {
-                          
+
+                            UtilClass.EscribirArchivoLog("COMPROBANTE NULL\n", _strLog);
+
                             retorno = false;
                         }
 

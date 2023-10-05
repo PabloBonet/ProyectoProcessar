@@ -565,6 +565,8 @@ namespace EntidadesClass
 
             if (respuestaAfip != null)
             {
+
+                
                 ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAECabResponse cabecera = respuestaAfip.FeCabResp;
                 ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetResponse detalle = respuestaAfip.FeDetResp.First(); //Siempre hay un comprobante en el detalle
 
