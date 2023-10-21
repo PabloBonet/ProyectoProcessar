@@ -5239,7 +5239,7 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 *#/-------------------------------------------------------------
 
 	vcan_column = ALEN(&p_matcolumn,1)
-	
+
 *!*		ejer = " dimension "+p_matcolumn+"("+ALLTRIM(STR(vcan_column))+",6)"
 *!*		&ejer
 	
@@ -5270,6 +5270,8 @@ PARAMETERS p_grilla, p_RecordSource, p_matcolumn, p_DynamicColor, p_FontSize
 		FOR _icl = 1 TO vcan_column
 			
 			v_columnxx 						= p_grilla+".column"+ALLTRIM(STR(_icl))
+			
+			
 			&v_columnxx..ControlSource 		= &p_matcolumn(_icl,1) 
 			&v_columnxx..header1.Caption 	= IIF(&p_matcolumn(_icl,2)=="","Header",&p_matcolumn(_icl,2))
 			&v_columnxx..header1.FontBold 	= .T. 
@@ -12341,7 +12343,144 @@ PARAMETERS p_tabla,p_campo,p_valor
 						
 					ENDFOR 
 			
-			
+					*Elimino los registros de las tablas asociadas en relaciones indirectas a la tabla pasada como parametro
+						* --> estadosreg
+						sqlmatriz(1)=" delete from estadosreg "
+						sqlmatriz(2)=" where tabla='"+ALLTRIM(p_tabla)+"' and id='"+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))+"'"
+						verror=sqlrun(vconeccionF,"eliminaTabla_sql")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
+						    SQLFlagErrorTrans=1
+						    
+						ENDIF
+
+						* --> reldatosextra
+						sqlmatriz(1)=" delete from reldatosextra "
+						sqlmatriz(2)=" where tabla='"+ALLTRIM(p_tabla)+"' and idregistro="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))
+						verror=sqlrun(vconeccionF,"eliminaTabla_sql")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla reldatosextra ",0+48+0,"Error")
+						    SQLFlagErrorTrans=1
+						    
+						ENDIF
+
+						* --> planillacajacomp
+						sqlmatriz(1)=" delete from planillacajacomp "
+						sqlmatriz(2)=" where tabla='"+ALLTRIM(p_tabla)+"' and idregistro="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))
+						verror=sqlrun(vconeccionF,"eliminaTabla_sql")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla planillacajacomp",0+48+0,"Error")
+						    SQLFlagErrorTrans=1    
+						ENDIF
+
+
+						* --> cajarecaudah ( facturas, recibos, factuprove, pagosprov, remitos, vinculocomp, pagares, np, presupuesto, cajaie
+						* ajustestockp, cajamovip, transferencias, transferencias
+						sqlmatriz(1)=" select * from "+ALLTRIM(p_tabla)
+						sqlmatriz(2)=" where "+ALLTRIM(p_campo)+"="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),"'"+ALLTRIM(p_valor)+"'"))
+						verror=sqlrun(vconeccionF,"registroTabla_sql")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
+						    SQLFlagErrorTrans=1
+						ENDIF
+						SELECT registroTabla_sql
+						LOCAL var_idcompro 
+						var_idcompro = 0
+						GO TOP 
+						IF !EOF() THEN 
+							FOR ncampos = 1 TO FCOUNT("registroTabla_sql")
+								IF LOWER(ALLTRIM(FIELD(ncampos))) = 'idcomproba'	THEN 
+									var_idcompro = registrotabla_sql.idcomproba
+								ENDIF 
+							ENDFOR 
+						ENDIF 
+						USE IN registrotabla_sql 
+
+						IF var_idcompro > 0 THEN 
+							sqlmatriz(1)=" delete from cajarecaudah "
+							sqlmatriz(2)=" where idcomproba="+ALLTRIM(STR(var_idcompro))+" and idregicomp="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))
+							verror=sqlrun(vconeccionF,"eliminaTabla_sql")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: cajarecaudah",0+48+0,"Error")
+							    SQLFlagErrorTrans=1
+							    
+							ENDIF
+						ENDIF 				
+
+						
+						* --> linkcompro ( facturas, recibos, factuprove, pagosprov, remitos, vinculocomp, pagares, np, presupuesto, cajaie
+						IF var_idcompro > 0 THEN 
+							sqlmatriz(1)=" delete from linkcompro "
+							sqlmatriz(2)=" where ( idcomprobaa="+ALLTRIM(STR(var_idcompro))+" and idregistroa="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))+" )"
+							sqlmatriz(3)="       or ( idcomprobab="+ALLTRIM(STR(var_idcompro))+" and idregistrob="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))+" )"
+							verror=sqlrun(vconeccionF,"eliminaTabla_sql")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: linkcompro ",0+48+0,"Error")
+							    SQLFlagErrorTrans=1
+							    
+							ENDIF
+						ENDIF 				
+						
+						IF ALLTRIM(p_tabla)=='facturas'  THEN 
+							sqlmatriz(1)=" delete from cobros "
+							sqlmatriz(2)=" where idfactura="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))
+							verror=sqlrun(vconeccionF,"eliminaTabla_sql")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: cobros ",0+48+0,"Error")
+							    SQLFlagErrorTrans=1
+							    
+							ENDIF
+						ENDIF 				
+						
+						* --> asientoscompro ( facturas, recibos, factuprove, pagosprov, remitos, vinculocomp, pagares, np, presupuesto, cajaie
+						IF var_idcompro > 0 THEN 
+
+							sqlmatriz(1)=" select idasiento from asientoscompro "
+							sqlmatriz(2)=" where ( tabla='"+ALLTRIM(p_tabla)+"' and idregicomp="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))+" )"
+							verror=sqlrun(vconeccionF,"asientoTabla_sql")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error al traer el asiento asociado a la tabla tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
+							    SQLFlagErrorTrans=1
+							ENDIF
+							SELECT asientoTabla_sql
+							LOCAL var_nroidasiento 
+							var_nroidasiento = 0
+							GO TOP 
+							IF !EOF() THEN 
+								var_nroidasiento = asientoTabla_sql.idasiento
+							ENDIF 
+							USE IN asientoTabla_sql
+							IF var_nroidasiento > 0 THEN 
+
+								* Elimino Asociacion con Comprobantes 
+								sqlmatriz(1)="DELETE FROM asientoscompro WHERE idasiento = " + ALLTRIM(STR(var_nroidasiento))
+								verror=sqlrun(vconeccionF,"asiento1")
+								IF verror=.f.  
+								    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
+								    SQLFlagErrorTrans=1
+								ENDIF
+
+								* Elimino Asociacion con Asientos Agrupados si la Hubiere 
+								sqlmatriz(1)="DELETE FROM asientosg WHERE idasiento = " + ALLTRIM(STR(var_nroidasiento))
+								verror=sqlrun(vconeccionF,"asiento1")
+								IF verror=.f.  
+								    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
+								    SQLFlagErrorTrans=1
+								ENDIF
+
+								* Elimino Asiento * 
+								sqlmatriz(1)="DELETE FROM asientos WHERE idasiento = " + ALLTRIM(STR(var_nroidasiento))
+								verror=sqlrun(vconeccionF,"asiento1")
+								IF verror=.f.  
+								    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
+								    SQLFlagErrorTrans=1
+								ENDIF
+							
+							ENDIF 
+						ENDIF 				
+								
+					**********************************************************
+					
 					** Elimino el registro de la tabla pasada como parámetro**
 					sqlmatriz(1)=" delete from "+ALLTRIM(p_tabla)
 					sqlmatriz(2)=" where "+ALLTRIM(p_campo)+"="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),"'"+ALLTRIM(p_valor)+"'"))
@@ -12351,6 +12490,8 @@ PARAMETERS p_tabla,p_campo,p_valor
 					    SQLFlagErrorTrans=1
 					    
 					ENDIF
+			
+			
 			
 					* FINALIZAR TRANSACCION
 					IF sqlCerrarTrans(vconeccionF,SQLFlagErrorTrans)=.f.
@@ -12368,7 +12509,7 @@ PARAMETERS p_tabla,p_campo,p_valor
 						MESSAGEBOX("Han Ocurrido Errores. La del registro en la Base de Datos NO FUE Realizada",0+16+0,"ERROR en Transacción")
 						RETURN .F.
 					ELSE
-						MESSAGEBOX("Se ha eliminado el registro correctamente",0+64+0,"Registro eliminado")
+						*MESSAGEBOX("Se ha eliminado el registro correctamente",0+64+0,"Registro eliminado")
 						RETURN .T.
 					ENDIF 
 				ENDIF 
@@ -22991,7 +23132,7 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 
 		GO TOP 
 		IF EOF() THEN 
-			MESSAGEBOX("Error al obtener las Facturas Asociadas a la ND",0+48+0,"Error")
+			MESSAGEBOX("Error al obtener las Facturas Asociadas al Comprobante de Recargo",0+48+0,"Error")
 			=abreycierracon(vconeccionR,"")
 			RETURN 0
 		ENDIF 
@@ -25136,6 +25277,8 @@ if !file(p_nombreArchivo) THEN
 ENDIF
 
 	ABRE = p_nombreArchivo
+	
+	
 			PUNTERO = FOPEN(ABRE,0)
 			ARCHITMP = "formateoArchivo.csv"
 			PUNTER2 = FCREATE(ARCHITMP)
