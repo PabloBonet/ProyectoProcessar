@@ -25348,3 +25348,153 @@ ENDIF
 	RETURN .T.
 ENDFUNC 
 
+
+FUNCTION saldosEntidadesAFecha
+PARAMETERS p_nombreTabRet, p_fechaHasta, p_entidadD, p_entidadH, pa_conexion
+*#/----------------------------------------
+* FUNCION PARA Que retorna los saldos a una fecha de un grupo de entidades.
+* PARAMETROS: 	p_nombreTabRet: Nombre de la tabla en la que se va a retornar los datos
+*				p_fechaHasta: Fecha de calculo de saldo
+*				p_entidadD: Entidad desde la que se va a calcular
+*				p_entidadH: Entidad hasta la que se va a calcular. Si entidad Desde es igual a Hasta busca para una entidad
+*				pa_conexion: Conexión usada, si no hay conexión abierta -> abre una
+* RETORNO:		True en caso de que no haya errores, False  en caso contrario
+*#/---
+
+	IF TYPE('p_nombreTabRet') <> 'C'
+		MESSAGEBOX("Parametro 'nombreTabRet' incorrecto. <utility.saldosEntidadesAFecha>",0+16+256,"Error al obtener el saldo de entidades por fecha")
+		RETURN .F.
+	ENDIF 
+
+
+	IF TYPE('p_fechaHasta') <> 'C'
+		MESSAGEBOX("Parametro 'fechaHasta' incorrecto. <utility.saldosEntidadesAFecha>",0+16+256,"Error al obtener el saldo de entidades por fecha")
+		RETURN .F.
+	ENDIF 
+
+	IF TYPE('p_entidadD') <> 'N'
+		MESSAGEBOX("Parametro 'entidadD' incorrecto. <utility.saldosEntidadesAFecha>",0+16+256,"Error al obtener el saldo de entidades por fecha")
+		RETURN .F.
+	ENDIF 
+
+	IF TYPE('p_entidadH') <> 'N'
+		MESSAGEBOX("Parametro 'entidadH' incorrecto. <utility.saldosEntidadesAFecha>",0+16+256,"Error al obtener el saldo de entidades por fecha")
+		RETURN .F.
+	ENDIF 
+
+	_sqlfechadeu = p_fechaHasta
+	_sqlentidadd = p_entidadD
+	_sqlentidadh = p_entidadH
+	IF p_entidadH = 0 THEN 
+		_sqlentidadh = 100000000
+	ENDIF 
+
+
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionDV = pa_conexion
+		ELSE 
+			vconeccionDV = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionDV = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+
+	
+*!*		sqlmatriz(1)=" Select f.entidad, f.servicio, f.cuenta, TRIM(f.nombre) as nombre ,f.cuit, f.idclascomp, c.descrip as clasifica , SUM(saldof) as saldo, detaservi  "
+*!*		sqlmatriz(2)=" from facturasaldof f left join clasificacomp c on c.idclascomp = f.idclascomp where f.saldof <> 0 group by f.entidad, f.servicio, f.cuenta, f.idclascomp  "
+	sqlmatriz(1)=" Select f.entidad, f.servicio, f.cuenta, TRIM(f.nombre) as nombre ,f.cuit,f.fechafac as fecha, f.total, SUM(ifnull(f.imputado,0)) as imputado, SUM(f.saldof) as saldo, p.puntov, o.abrevia,o.comprobante as comproba, o.tipo, s.numero,t.opera,	 "
+	sqlmatriz(2)=" s.idfactura as idregistro, s.idcomproba "
+	sqlmatriz(3)=" from facturasaldof f left join clasificacomp c on c.idclascomp = f.idclascomp left join facturas s on f.idfactura = s.idfactura left join puntosventa p on s.pventa = p.pventa "
+	sqlmatriz(4)=" left join comprobantes o on s.idcomproba = o.idcomproba left join tipocompro t on o.idtipocompro = t.idtipocompro "
+	sqlmatriz(5)=" where f.saldof <> 0 group by f.idfactura"
+
+	verror=sqlrun(vconeccionDV,"servicios_deudaA")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Comprobantes ",0+48+0,"Error")
+	    IF pa_conexion = 0
+			*** Cierro conexión ***
+			=abreycierracon(vconeccionF,"")
+		ENDIF 
+	    RETURN .F.
+	ENDIF 
+SELECT * FROM servicios_deudaA INTO TABLE servicios_deuda
+
+*!*		sqlmatriz(1)=" Select r.entidad, TRIM(r.nombre) as nombre , e.cuit, SUM(r.saldo) as saldo "
+*!*		sqlmatriz(2)=" from recibossaldof  r left join entidades e on e.entidad = r.entidad "
+*!*		sqlmatriz(3)=" group by r.entidad "
+
+	sqlmatriz(1)=" Select f.entidad,0 as servicio, 0 as cuenta, TRIM(f.nombre) as nombre , e.cuit,f.fecha,f.importe as total, SUM(ifnull(f.totimputado,0)) as imputado, SUM(f.saldo) as saldo, p.puntov, o.abrevia,o.comprobante as comproba, o.tipo, s.numero,t.opera,  "
+	sqlmatriz(2)=" s.idrecibo as idregistro, s.idcomproba "
+	sqlmatriz(3)=" from recibossaldof  f left join entidades e on e.entidad = f.entidad left join recibos s on f.idrecibo = s.idrecibo left join puntosventa p on s.pventa = p.pventa "
+	sqlmatriz(4)=" left join comprobantes o on s.idcomproba = o.idcomproba left join tipocompro t on o.idtipocompro = t.idtipocompro  "
+	sqlmatriz(5)=" where f.saldo <> 0 group by f.idrecibo"
+	
+	verror=sqlrun(vconeccionDV,"servicios_cobrosA")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Comprobantes ",0+48+0,"Error")
+	    IF pa_conexion = 0
+			*** Cierro conexión ***
+			=abreycierracon(vconeccionF,"")
+		ENDIF 
+	    RETURN .F.
+	ENDIF 
+
+	SELECT * FROM servicios_cobrosA INTO TABLE servicios_cobros
+	
+	IF pa_conexion = 0
+		*** Cierro conexión ***
+		=abreycierracon(vconeccionF,"")
+	ENDIF 
+	v_sent = "CREATE TABLE "+ALLTRIM(p_nombreTabRet)+" (entidad I,servicio I,cuenta I,nombre C(250),cuit C(13),fecha C(8),total N(13,4), imputado N(13,4), saldo N(13,4),puntov C(4), abrevia C(20), comproba C(100), tipo C(1), numero I, opera I, idregistro I, idcomproba I)"
+	
+	&v_sent
+	
+	SELECT servicios_deuda
+	GO TOP 
+	
+	IF NOT EOF()
+	
+		SELECT &p_nombreTabret
+		APPEND FROM servicios_deuda
+			
+	ENDIF 
+	
+	SELECT servicios_cobros
+	GO TOP 
+	
+	IF NOT EOF()
+		SELECT &p_nombreTabret
+		APPEND FROM servicios_cobros
+	
+	ENDIF 
+	
+	SELECT &p_nombreTabret
+	replace all saldo WITH IIF(saldo<0,saldo*(-1),saldo)
+
+	SELECT &p_nombreTabret
+	GO TOP 
+	RETURN .T.
+	
+
+ENDFUNC 
+
+
+FUNCTION guardarSaldosEntidades 
+PARAMETERS  p_tablacomp,p_idregistro, p_fechaHasta, p_entidad, pa_conexion
+*#/----------------------------------------
+* FUNCION PARA Que para guardar los saldos en una fecha de un grupo de entidades.
+* PARAMETROS: 	p_tablacomp: Tabla del comprobante generado que asocio a los saldos
+*				p_idregistro: ID del comprobante que asocio a los saldos
+*				p_fechaHasta: Fecha de calculo de saldo
+*				p_entidadD: Entidad desde la que se va a calcular
+*				p_entidadH: Entidad hasta la que se va a calcular. Si entidad Desde es igual a Hasta busca para una entidad
+*				pa_conexion: Conexión usada, si no hay conexión abierta -> abre una
+* RETORNO:		True en caso de que no haya errores, False  en caso contrario
+*#/---
+
+
+** Llamar a saldosEntidadesAFecha
+
+** Guardo en la tabla de historial de saldos: los datos del comprobante que voy a asociar con los datos del comprobante que tiene saldo.
