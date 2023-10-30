@@ -22052,7 +22052,7 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 	GO TOP 
 	CALCULATE SUM(&p_tablaarti..cantidad * &p_tablaarti..unitario) TO v_tfdc 
 	GO TOP 
-	IF v_tfdc <= 0 THEN 
+	IF v_tfdc <= _SYSREDONDEO THEN 
 		USE IN &p_tablaarti	
 		RETURN 0 
 	ENDIF  
@@ -25479,6 +25479,78 @@ SELECT * FROM servicios_deudaA INTO TABLE servicios_deuda
 	
 
 ENDFUNC 
+
+
+
+
+FUNCTION SetIDFinanciaFC
+PARAMETERS pfin_idfactura, pfin_idfinancia, pa_conexion
+*#/----------------------------------------
+* FUNCION PARA Guardar el dato de que tipo de financiacion se eligio para la factura
+*				solo actualiza si en la factura el campo idfinancia = 0 , sino deja la que está
+*
+* PARAMETROS: 	pfin_idfactura: ID de la factura a actualizar con la financiacion elegida
+*				pfin_idfinancia: idfinancia, id de la financiacion seleccionada
+*				pa_conexion: Conexión usada, si no hay conexión abierta -> abre una
+* RETORNO:		True en caso de que no haya errores, False  en caso contrario
+*#/---
+
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionDV = pa_conexion
+		ELSE 
+			vconeccionDV = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionDV = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+
+	
+	sqlmatriz(1)=" Select idfinancia from facturas "
+	sqlmatriz(2)=" where idfactura = "+alltrim(STR(pfin_idfactura))
+	verror=sqlrun(vconeccionDV,"actu_idfinancia")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de idfinanciacion ",0+48+0,"Error")
+	    IF pa_conexion = 0
+			*** Cierro conexión ***
+			=abreycierracon(vconeccionF,"")
+		ENDIF 
+	    RETURN .F.
+	ENDIF 
+	SELECT actu_idfinancia
+	IF !EOF() THEN 
+		IF actu_idfinancia.idfinancia = 0  AND pfin_idfinancia > 0 THEN 
+
+			sqlmatriz(1)=" update facturas set idfinancia = "+alltrim(STR(pfin_idfinancia))
+			sqlmatriz(2)=" where idfactura = "+alltrim(STR(pfin_idfactura))
+			verror=sqlrun(vconeccionDV,"upd_idfinancia")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de idfinanciacion ",0+48+0,"Error")
+			    IF pa_conexion = 0
+					*** Cierro conexión ***
+					=abreycierracon(vconeccionDV,"")
+				ENDIF 
+			    RETURN .F.
+			ENDIF 
+		
+		ENDIF 
+	ENDIF 
+	USE IN actu_idfinancia
+    IF pa_conexion = 0
+		*** Cierro conexión ***
+		=abreycierracon(vconeccionDV,"")
+	ENDIF 
+	RETURN .t. 
+ENDFUNC 
+
+
+
+
+
+
+
+
 
 
 FUNCTION guardarSaldosEntidades 
