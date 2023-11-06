@@ -340,7 +340,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 *!*						I   = &vconceptoser..importe 
 					I   = IIF(ALLTRIM(&ventidadesdf..fijarvalor) = 'S', &ventidadesdf..unitario, &vconceptoser..importe) 				
 					Fun = &vconceptoser..funcion
-					
+
 					IF !EMPTY(Fun) THEN 
 					
 	*********************************************************				
@@ -361,7 +361,24 @@ PARAMETERS par_idperiodo, par_ordenfa
 								SELECT &ventidadesdf 
 
 								Fun = STRTRAN(STRTRAN(STRTRAN(Fun,'(','('+ALLTRIM(STR(par_idperiodo))+','+ALLTRIM(STR(&ventidadesdf..identidadh))+','+ALLTRIM(STR(&ventidadesdf..idconcepto))+','+ALLTRIM(STR(vconeFacturar))+','+ALLTRIM(varparconceptos)+','),',,',','),',)',')')
+								IF LEN(Fun) > 254 THEN 
+									nfuncion =FModificaFuncion (Fun)
+									Fun = SUBSTR(nfuncion,3)
+									FunV= VAL(SUBSTR(nfuncion,1,2))
+			
+					
 								V_retfun = &Fun
+									
+									IF FunV > 0 THEN 
+										FOR ijv = 1 TO FunV
+											eje="RELEASE fvar"+ALLTRIM(STR(ijv))
+											&eje
+										ENDFOR 
+									ENDIF 
+								ELSE
+									V_retfun = &Fun
+								ENDIF 	
+								
 								
 								IF TYPE('V_retfun')='C' THEN 
 									ALINES(ARR_CAN_IMP,V_retfun,4,';')
@@ -418,11 +435,14 @@ PARAMETERS par_idperiodo, par_ordenfa
 	*/ Calculo los Impuestos a aplicar para los Detalles a Facturar 
 	*/ Uniendo detalles e impuestos en una nueva tabla 
 	
+	SELECT &ventidadesdf
+	ALTER TABLE &ventidadesdf ALTER	COLUMN funcion char(254)
 
 	ventidadesdif = 'entidadesdif'+vartmp
 *!*		SELECT d.*,i.impuesto, i.detalle as detimpu, i.razon, i.baseimpon, d.neto as impuestos FROM &ventidadesdf d LEFT JOIN  &vimpuestosac i ON d.idconcepto=i.idconcepto WHERE d.idconcepto > 0 UNION  ;
 *!*		SELECT e.*,j.impuesto, j.detalle as detimpu, j.razon, j.baseimpon, e.neto as impuestos FROM &ventidadesdf e LEFT JOIN  &vimpuestosac j ON ALLTRIM(e.articulo)==ALLTRIM(j.articulo) WHERE e.idconcepto = 0 AND !EMPTY(e.articulo) ;
 *!*		into table &ventidadesdif
+
 	SELECT d.*,IIF(ISNULL(i.impuesto),0,i.impuesto) as impuesto, IIF(ISNULL(i.detalle),'',i.detalle) as detimpu, IIF(ISNULL(i.razon),0,i.razon) as razon, IIF(ISNULL(i.baseimpon),0,i.baseimpon) as baseimpon, ;
 		IIF(ISNULL(i.iva),0,i.iva) as iva, IIF(ISNULL(d.neto),0,d.neto) as impuestos FROM &ventidadesdf d LEFT JOIN  &vimpuestosac i ON (d.idconcepto=i.idconcepto AND d.iva = i.iva) WHERE (d.idconcepto > 0  AND d.neto <> 0 ) UNION  ;
 	SELECT e.*,IIF(ISNULL(j.impuesto),0,j.impuesto) as impuesto, IIF(ISNULL(j.detalle),'',j.detalle) as detimpu, IIF(ISNULL(j.razon),0,j.razon) as razon, IIF(ISNULL(j.baseimpon),0,j.baseimpon) as baseimpon, ;
@@ -430,6 +450,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	into table &ventidadesdif
 	SELECT &ventidadesdif 
 	UPDATE &ventidadesdif SET impuestos = ( neto * razon / 100 )
+
 
 
 	**************************************************************************************
@@ -453,6 +474,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 			detalle, unitario, neto, SUM(impuestos) as impuestos, SUM(razon) as razon, neto as total, " " as codigocta, " " as nombrecta, nrocuota as cuota, cantcuotas , padron, idcuotasd,  ;
 			identidadd, STR(identidadh)+STR(idconcepto)+STR(identidadd)+ALLTRIM(articulo) as orden ;
 		FROM &ventidadesdif INTO TABLE &vdetafactutmp  ORDER BY orden GROUP BY orden 
+
 
 
 	SELECT &vdetafactutmp
@@ -493,6 +515,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 
 	COUNT TO vCantidad_F	
 		
+
 		
 	**/ Cargo la Numeracion de Facturas y Detalle en tabla temporaria
 
@@ -1533,4 +1556,56 @@ PARAMETERS p_idperiodo
  	=abreycierracon(vconeccion,"")
 
 
+ENDFUNC 
+
+
+
+FUNCTION FModificaFuncion
+*#/----------------------------------------
+*/* Modifica la Llamada a la función para ajustar a ejecucion
+*/* Convierte en Parametros los stings pasados de mas de 255 caracteres
+*#/----------------------------------------
+PARAMETERS p_Fmodificar
+	
+	vfunc = ""
+	vparametro = ""
+	vcanvar 	= 0
+	vagregar  	= 0
+	vabrecomilla = 0
+	FOR ifmv = 1 TO LEN(p_Fmodificar) 
+		
+		IF SUBSTR(p_Fmodificar,ifmv,1) = '"' THEN 
+			IF vabrecomilla = 0 THEN 
+				vabrecomilla = 1 
+				vagregar = 1
+				vcanvar = vcanvar + 1
+				eje = "public fvar"+ALLTRIM(STR(vcanvar))
+				&eje
+				eje = "fvar"+ALLTRIM(STR(vcanvar))+"= ''"
+				&eje
+			ELSE
+				vabrecomilla = 0 
+			ENDIF 	
+		ENDIF 
+		
+		IF vabrecomilla = 0 THEN 
+			IF !(SUBSTR(p_Fmodificar,ifmv,1)='"')
+				vfunc = vfunc+SUBSTR(p_Fmodificar,ifmv,1)	
+			ENDIF 
+		ELSE
+			IF vagregar = 1 THEN 
+				vfunc = vfunc+"fvar"+ALLTRIM(STR(vcanvar))	
+				vagregar = 0			
+			ENDIF 
+			IF !(SUBSTR(p_Fmodificar,ifmv,1)='"')
+				eje = "fvar"+ALLTRIM(STR(vcanvar))+"= fvar"+ALLTRIM(STR(vcanvar))+" + SUBSTR(p_Fmodificar,ifmv,1)"
+				&eje
+			ENDIF 
+		ENDIF 
+	
+	ENDFOR 
+
+	vreturnf = SUBSTR(ALLTRIM(STR(vcanvar+100)),2,2)+vfunc
+	RETURN vreturnf
+	
 ENDFUNC 

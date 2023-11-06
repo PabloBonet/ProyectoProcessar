@@ -7,7 +7,9 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 * Función Global Calculo de Porcentajes sobre Conceptos  .
 *#/----------------------------------------
 
+
 	vcond = ""
+	
 	IF !EMPTY(pper_A) THEN 
 		ALINES(Aparam,pper_A,4,',')
 		FOR ipar = 1 TO ALEN(Aparam,1)
