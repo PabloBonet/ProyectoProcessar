@@ -1978,10 +1978,53 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 				
 			ENDIF 
 			
+			
+			
+		
+			*** Obtengo el historial de saldos para la factura ***
+			v_buscasaldo  = .F.	
+			IF TYPE('_SYSREGHISCOMP') = 'C'
+				IF _SYSREGHISCOMP == 'S'
+					v_buscasaldo  = .T.
+	
+	
+					sqlmatriz(1)=" SELECT fecha,entidad, comproba, puntov,numero,abrevia, tipo,total, saldo,imputado "
+					sqlmatriz(2)=" FROM histosaldoent "
+					sqlmatriz(3)=" where tablaaso = 'facturas' and idregaso = "+ALLTRIM(STR(v_idfactura))
+					
+
+					verror=sqlrun(vconeccionF,"hissaldo_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del historial de saldos",0+48+0,"Error")
+					ENDIF
+
+
+					SELECT * from hissaldo_sql INTO TABLE hissaldo
+					
+					ALTER table hissaldo alter COLUMN fecha C(8)
+					ALTER table hissaldo alter COLUMN entidad I
+					ALTER table hissaldo alter COLUMN puntov C(4)
+					ALTER table hissaldo alter COLUMN numero I
+					ALTER table hissaldo alter COLUMN abrevia C(10)
+					ALTER table hissaldo alter COLUMN tipo C(10)
+					ALTER table hissaldo alter column total N(13,4)
+					ALTER table hissaldo alter column saldo N(13,4)
+					ALTER table hissaldo alter column imputado N(13,4)
+					 					
+
+
+				endif
+				
+			endif
+			
 			=abreycierracon(vconeccionF,"")
 				
+			IF v_buscasaldo = .T.
+				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes;hissaldo","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc;hissaldorc",v_idcomproba,.F.,pEnviarImpresora
+			ELSE
+				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc",v_idcomproba,.F.,pEnviarImpresora
+			ENDIF 
 
-			DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc",v_idcomproba,.F.,pEnviarImpresora
 			
 		ELSE
 			MESSAGEBOX("Error al cargar la factura para imprimir",0+48+0,"Error al cargar la factura")
@@ -25350,16 +25393,17 @@ ENDFUNC
 
 
 FUNCTION saldosEntidadesAFecha
-PARAMETERS p_nombreTabRet, p_fechaHasta, p_entidadD, p_entidadH, pa_conexion
+PARAMETERS p_nombreTabRet, p_fechaHasta, p_entidadD, p_entidadH
 *#/----------------------------------------
 * FUNCION PARA Que retorna los saldos a una fecha de un grupo de entidades.
 * PARAMETROS: 	p_nombreTabRet: Nombre de la tabla en la que se va a retornar los datos
 *				p_fechaHasta: Fecha de calculo de saldo
 *				p_entidadD: Entidad desde la que se va a calcular
 *				p_entidadH: Entidad hasta la que se va a calcular. Si entidad Desde es igual a Hasta busca para una entidad
-*				pa_conexion: Conexión usada, si no hay conexión abierta -> abre una
+*				
 * RETORNO:		True en caso de que no haya errores, False  en caso contrario
 *#/---
+
 
 	IF TYPE('p_nombreTabRet') <> 'C'
 		MESSAGEBOX("Parametro 'nombreTabRet' incorrecto. <utility.saldosEntidadesAFecha>",0+16+256,"Error al obtener el saldo de entidades por fecha")
@@ -25390,17 +25434,9 @@ PARAMETERS p_nombreTabRet, p_fechaHasta, p_entidadD, p_entidadH, pa_conexion
 	ENDIF 
 
 
-	IF TYPE("pa_conexion") = 'N' THEN 
-		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
-			vconeccionDV = pa_conexion
-		ELSE 
-			vconeccionDV = abreycierracon(0,_SYSSCHEMA)
-		ENDIF 	
-	ELSE 
-		vconeccionDV = abreycierracon(0,_SYSSCHEMA)	
-		pa_conexion = 0
-	ENDIF 
-
+	
+	vconeccionDV = abreycierracon(0,_SYSSCHEMA)
+	
 	
 *!*		sqlmatriz(1)=" Select f.entidad, f.servicio, f.cuenta, TRIM(f.nombre) as nombre ,f.cuit, f.idclascomp, c.descrip as clasifica , SUM(saldof) as saldo, detaservi  "
 *!*		sqlmatriz(2)=" from facturasaldof f left join clasificacomp c on c.idclascomp = f.idclascomp where f.saldof <> 0 group by f.entidad, f.servicio, f.cuenta, f.idclascomp  "
@@ -25408,17 +25444,21 @@ PARAMETERS p_nombreTabRet, p_fechaHasta, p_entidadD, p_entidadH, pa_conexion
 	sqlmatriz(2)=" s.idfactura as idregistro, s.idcomproba "
 	sqlmatriz(3)=" from facturasaldof f left join clasificacomp c on c.idclascomp = f.idclascomp left join facturas s on f.idfactura = s.idfactura left join puntosventa p on s.pventa = p.pventa "
 	sqlmatriz(4)=" left join comprobantes o on s.idcomproba = o.idcomproba left join tipocompro t on o.idtipocompro = t.idtipocompro "
-	sqlmatriz(5)=" where f.saldof <> 0 group by f.idfactura"
+	sqlmatriz(5)=" where f.saldof <> 0  group by f.idfactura"
 
 	verror=sqlrun(vconeccionDV,"servicios_deudaA")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Comprobantes ",0+48+0,"Error")
-	    IF pa_conexion = 0
+	  
 			*** Cierro conexión ***
-			=abreycierracon(vconeccionF,"")
-		ENDIF 
+			=abreycierracon(vconeccionDV ,"")
+		
 	    RETURN .F.
 	ENDIF 
+	
+	SELECT servicios_deudaA
+	
+
 SELECT * FROM servicios_deudaA INTO TABLE servicios_deuda
 
 *!*		sqlmatriz(1)=" Select r.entidad, TRIM(r.nombre) as nombre , e.cuit, SUM(r.saldo) as saldo "
@@ -25434,19 +25474,19 @@ SELECT * FROM servicios_deudaA INTO TABLE servicios_deuda
 	verror=sqlrun(vconeccionDV,"servicios_cobrosA")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Comprobantes ",0+48+0,"Error")
-	    IF pa_conexion = 0
+	    
 			*** Cierro conexión ***
-			=abreycierracon(vconeccionF,"")
-		ENDIF 
+			=abreycierracon(vconeccionDV ,"")
+		
 	    RETURN .F.
 	ENDIF 
 
 	SELECT * FROM servicios_cobrosA INTO TABLE servicios_cobros
 	
-	IF pa_conexion = 0
+	
 		*** Cierro conexión ***
-		=abreycierracon(vconeccionF,"")
-	ENDIF 
+		=abreycierracon(vconeccionDV ,"")
+	
 	v_sent = "CREATE TABLE "+ALLTRIM(p_nombreTabRet)+" (entidad I,servicio I,cuenta I,nombre C(250),cuit C(13),fecha C(8),total N(13,4), imputado N(13,4), saldo N(13,4),puntov C(4), abrevia C(20), comproba C(100), tipo C(1), numero I, opera I, idregistro I, idcomproba I)"
 	
 	&v_sent
@@ -25554,7 +25594,7 @@ ENDFUNC
 
 
 FUNCTION guardarSaldosEntidades 
-PARAMETERS  p_tablacomp,p_idregistro, p_fechaHasta, p_entidad, pa_conexion
+PARAMETERS  p_tablacomp,p_idregistro, p_fechaHasta, p_entidad,p_listComp, pa_conexion
 *#/----------------------------------------
 * FUNCION PARA Que para guardar los saldos en una fecha de un grupo de entidades.
 * PARAMETROS: 	p_tablacomp: Tabla del comprobante generado que asocio a los saldos
@@ -25562,11 +25602,167 @@ PARAMETERS  p_tablacomp,p_idregistro, p_fechaHasta, p_entidad, pa_conexion
 *				p_fechaHasta: Fecha de calculo de saldo
 *				p_entidadD: Entidad desde la que se va a calcular
 *				p_entidadH: Entidad hasta la que se va a calcular. Si entidad Desde es igual a Hasta busca para una entidad
+*				p_listComp: Lista de tipos de comprobantes que voy a registrar, si es vacia -> registro todos, sino va con el formato: <idcomp1,idcomp2,...,idcompN>
 *				pa_conexion: Conexión usada, si no hay conexión abierta -> abre una
 * RETORNO:		True en caso de que no haya errores, False  en caso contrario
 *#/---
 
 
-** Llamar a saldosEntidadesAFecha
+	** Llamar a saldosEntidadesAFecha
+	IF TYPE('p_tablaComp') <> 'C'
+		MESSAGEBOX("Parametro 'p_tablaComp' incorrecto. <utility.guardarSaldosEntidades >",0+16+256,"Error al registrar el saldo de entidad")
 
-** Guardo en la tabla de historial de saldos: los datos del comprobante que voy a asociar con los datos del comprobante que tiene saldo.
+		RETURN .F.
+	ENDIF 
+
+	IF TYPE('p_idregistro') <> 'N'
+		MESSAGEBOX("Parametro 'p_idregistro' incorrecto. <utility.guardarSaldosEntidades >",0+16+256,"Error al registrar el saldo de entidad")
+		RETURN .F.
+	ENDIF 
+
+	IF TYPE('p_fechaHasta') <> 'C'
+		MESSAGEBOX("Parametro 'p_fechaHasta' incorrecto. <utility.guardarSaldosEntidades >",0+16+256,"Error al registrar el saldo de entidad")
+		RETURN .F.
+	ENDIF 
+
+	IF TYPE('p_entidad') <> 'N'
+		MESSAGEBOX("Parametro 'p_fechaHasta' incorrecto. <utility.guardarSaldosEntidades >",0+16+256,"Error al registrar el saldo de entidad")
+		RETURN .F.
+	ENDIF 
+
+	IF TYPE('p_listcomp') <> 'C'
+		MESSAGEBOX("Parametro 'p_listcomp' incorrecto. <utility.guardarSaldosEntidades >",0+16+256,"Error al registrar el saldo de entidad")
+		RETURN .F.
+	ENDIF 
+
+	
+	IF pa_conexion<= 0
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)
+	ELSE
+		vconeccionF=pa_conexion
+	ENDIF 
+
+
+
+		v_ret = saldosEntidadesAFecha ("saldosTmpEnt", p_fechaHasta, p_entidad, p_entidad)
+		
+*		v_ret = saldosEntidadesAFecha ("saldosTmpEnt", p_fechaHasta, p_entidad, p_entidad, 0)
+
+
+	*	v_sent = "CREATE TABLE "+ALLTRIM(p_nombreTabRet)+" (entidad I,servicio I,cuenta I,nombre C(250),cuit C(13),fecha C(8),total N(13,4), imputado N(13,4), saldo N(13,4),puntov C(4), abrevia C(20), comproba C(100), tipo C(1), numero I, opera I, idregistro I, idcomproba I)"
+
+
+	IF EMPTY(ALLTRIM(p_listcomp)) = .T.
+		SELECT * FROM saldosTmpEnt INTO TABLE saldoTmpEntFil
+	ELSE
+		v_sen = "SELECT * FROM saldosTmpEnt WHERE idcomproba in ("+ALLTRIM(p_listcomp)+") into table saldoTmpEntFil"
+		&v_sen
+	ENDIF 
+
+	IF pa_conexion > 0
+		vconeccionF = pa_conexion
+	ELSE
+		** Abro la Conexión
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+	ENDIF 
+	
+								
+	
+		DIMENSION lamatriz(16,2)
+		
+		
+ 
+	 SELECT saldoTmpEntFil
+	GO TOP 
+
+	DO WHILE NOT EOF()
+
+
+		SELECT saldoTmpEntFil
+		
+		
+		v_idhisalent = 0
+		v_tablaaso = p_tablacomp
+		v_idregaso = p_idregistro 
+		v_entidad = saldoTmpEntFil.entidad 
+		v_servicio = saldoTmpEntFil.servicio 
+		v_cuenta = saldoTmpEntFil.cuenta 
+		v_nombre = saldoTmpEntFil.nombre 
+		v_cuit = saldoTmpEntFil.cuit 
+		v_fecha = saldoTmpEntFil.fecha 
+		v_total = saldoTmpEntFil.total 
+		v_imputado = saldoTmpEntFil.imputado 
+		v_saldo = saldoTmpEntFil.saldo 
+		v_puntov = saldoTmpEntFil.puntov 
+		v_abrevia = saldoTmpEntFil.abrevia 
+		v_comproba = saldoTmpEntFil.comproba 
+		v_tipo = saldoTmpEntFil.tipo 
+		v_numero = saldoTmpEntFil.numero 
+		v_opera = saldoTmpEntFil.opera 
+		v_idregistro = saldoTmpEntFil.idregistro 
+		v_idcomproba= saldoTmpEntFil.idcomproba 
+		
+		
+		
+			v_idcajamovo  = 0
+		
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+			p_tabla       = 'histosaldoent'
+			p_matriz      = 'lamatriz'
+			p_conexion    = vconeccionF
+
+			lamatriz(1,1)='idhisalent'
+			lamatriz(1,2)=ALLTRIM(STR(v_idhisalent))
+			lamatriz(2,1)='tablaaso'
+			lamatriz(2,2)="'"+ALLTRIM(v_tablaaso)+"'"
+			lamatriz(3,1)='idregaso'
+			lamatriz(3,2)=ALLTRIM(STR(v_idregaso))
+			lamatriz(4,1)='fecha'
+			lamatriz(4,2)="'"+ALLTRIM(v_fecha)+"'"
+			lamatriz(5,1)='entidad'
+			lamatriz(5,2)=ALLTRIM(STR(v_entidad))
+			lamatriz(6,1)='idcomproba'
+			lamatriz(6,2)=ALLTRIM(STR(v_idcomproba))
+			lamatriz(7,1)='idregistro'
+			lamatriz(7,2)=ALLTRIM(STR(v_idregistro))
+			lamatriz(8,1)='total'
+			lamatriz(8,2)=ALLTRIM(STR(v_total,13,4))
+			lamatriz(9,1)='imputado' 
+			lamatriz(9,2)=ALLTRIM(STR(v_imputado,13,4))
+			lamatriz(10,1)='saldo'
+			lamatriz(10,2)=ALLTRIM(STR(v_saldo,13,4))
+			lamatriz(11,1)='puntov'
+			lamatriz(11,2)="'"+ALLTRIM(v_puntov)+"'"
+			lamatriz(12,1)='abrevia'
+			lamatriz(12,2)="'"+ALLTRIM(v_abrevia)+"'"
+			lamatriz(13,1)='comproba'
+			lamatriz(13,2)="'"+ALLTRIM(v_comproba)+"'"
+			lamatriz(14,1)='tipo'
+			lamatriz(14,2)="'"+ALLTRIM(v_tipo)+"'"
+			lamatriz(15,1)='numero'
+			lamatriz(15,2)=ALLTRIM(STR(v_numero))
+			lamatriz(16,1)='opera'
+			lamatriz(16,2)=ALLTRIM(STR(v_opera))
+																		
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error al intentar guardar en histosaldoent",0+48+0,"Error")				
+				RETURN .F.
+			ENDIF 
+		
+		SELECT saldoTmpEntFil
+		SKIP 1
+
+	ENDDO
+	
+	IF pa_conexion <= 0
+		** Cierro la Conexion
+		=abreycierracon(vconeccionF,"")
+		
+	ENDIF 
+	
+	RETURN .t.
+	
+ENDFUNC 
+
