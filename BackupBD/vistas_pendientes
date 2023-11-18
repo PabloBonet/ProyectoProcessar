@@ -1,0 +1,114 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema trsoftdb
+--
+
+CREATE DATABASE IF NOT EXISTS trsoftdb;
+USE trsoftdb;
+
+--
+-- Temporary table structure for view `artifact`
+--
+DROP TABLE IF EXISTS `artifact`;
+DROP VIEW IF EXISTS `artifact`;
+CREATE TABLE `artifact` (
+  `idcomproba` int(10) unsigned,
+  `idfactura` int(10) unsigned,
+  `articulo` char(50),
+  `cantfact` double(19,2)
+);
+
+--
+-- Temporary table structure for view `artifactpend`
+--
+DROP TABLE IF EXISTS `artifactpend`;
+DROP VIEW IF EXISTS `artifactpend`;
+CREATE TABLE `artifactpend` (
+  `idfactura` int(10) unsigned,
+  `articulo` char(50),
+  `cantfact` double(19,2),
+  `cantrem` double(19,2),
+  `pendrem` double(19,2)
+);
+
+--
+-- Temporary table structure for view `artirem`
+--
+DROP TABLE IF EXISTS `artirem`;
+DROP VIEW IF EXISTS `artirem`;
+CREATE TABLE `artirem` (
+  `idcomproba` int(10) unsigned,
+  `idremito` int(10) unsigned,
+  `articulo` char(50),
+  `cantrem` double(19,2)
+);
+
+--
+-- Temporary table structure for view `artirempend`
+--
+DROP TABLE IF EXISTS `artirempend`;
+DROP VIEW IF EXISTS `artirempend`;
+CREATE TABLE `artirempend` (
+  `idremito` int(10) unsigned,
+  `articulo` char(50),
+  `cantrem` double(19,2),
+  `cantfact` double(19,2),
+  `pendfact` double(19,2)
+);
+
+--
+-- Definition of view `artifact`
+--
+
+DROP TABLE IF EXISTS `artifact`;
+DROP VIEW IF EXISTS `artifact`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `artifact` AS select `f`.`idcomproba` AS `idcomproba`,`f`.`idfactura` AS `idfactura`,`d`.`articulo` AS `articulo`,sum(`d`.`cantidad`) AS `cantfact` from (`facturas` `f` left join `detafactu` `d` on((`f`.`idfactura` = `d`.`idfactura`))) group by `f`.`idfactura`,`d`.`articulo`;
+
+--
+-- Definition of view `artifactpend`
+--
+
+DROP TABLE IF EXISTS `artifactpend`;
+DROP VIEW IF EXISTS `artifactpend`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `artifactpend` AS select `f`.`idfactura` AS `idfactura`,`f`.`articulo` AS `articulo`,`f`.`cantfact` AS `cantfact`,sum(ifnull(`p`.`cantrem`,0.00)) AS `cantrem`,(`f`.`cantfact` - sum(ifnull(`p`.`cantrem`,0.00))) AS `pendrem` from ((`artifact` `f` left join `linkcompro` `l` on(((`f`.`idcomproba` = `l`.`idcomprobab`) and (`f`.`idfactura` = `l`.`idregistrob`)))) left join `artirem` `p` on(((`l`.`idregistroa` = `p`.`idremito`) and (`l`.`idcomprobaa` = `p`.`idcomproba`)))) where ((`f`.`articulo` = `p`.`articulo`) or ((`f`.`cantfact` > 0) and isnull(`p`.`cantrem`))) group by `f`.`idfactura`,`f`.`articulo`;
+
+--
+-- Definition of view `artirem`
+--
+
+DROP TABLE IF EXISTS `artirem`;
+DROP VIEW IF EXISTS `artirem`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `artirem` AS select `f`.`idcomproba` AS `idcomproba`,`f`.`idremito` AS `idremito`,`d`.`articulo` AS `articulo`,sum(`d`.`cantidad`) AS `cantrem` from ((`remitos` `f` left join `remitosh` `d` on((`f`.`idremito` = `d`.`idremito`))) left join `ultimoestado` `u` on(((`u`.`tabla` = 'remitos') and (`u`.`campo` = 'idremito') and (`f`.`idremito` = `u`.`id`)))) where (`u`.`idestador` = 4) group by `f`.`idremito`,`d`.`articulo`;
+
+--
+-- Definition of view `artirempend`
+--
+
+DROP TABLE IF EXISTS `artirempend`;
+DROP VIEW IF EXISTS `artirempend`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `artirempend` AS select `r`.`idremito` AS `idremito`,`r`.`articulo` AS `articulo`,`r`.`cantrem` AS `cantrem`,sum(ifnull(`f`.`cantfact`,0.00)) AS `cantfact`,(`r`.`cantrem` - sum(ifnull(`f`.`cantfact`,0.00))) AS `pendfact` from ((`artirem` `r` left join `linkcompro` `l` on(((`r`.`idcomproba` = `l`.`idcomprobab`) and (`r`.`idremito` = `l`.`idregistrob`)))) left join `artifact` `f` on(((`l`.`idregistroa` = `f`.`idfactura`) and (`l`.`idcomprobaa` = `f`.`idcomproba`)))) where ((`r`.`articulo` = `f`.`articulo`) or ((`r`.`cantrem` > 0) and isnull(`f`.`cantfact`))) group by `r`.`idremito`,`r`.`articulo`;
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
