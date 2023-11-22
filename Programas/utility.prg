@@ -17943,7 +17943,7 @@ PARAMETERS pp_idnp
 	sqlmatriz(1)="SELECT * FROM np WHERE idnp = " + ALLTRIM(STR(pp_idnp))
 	verror=sqlrun(vconeccionF,"np_sql")
 	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la NP: "+ STR(pp_idpresupu),0+48+0,"Error")
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la NP: "+ STR(pp_idnp),0+48+0,"Error")
 	*** me desconecto	
 		=abreycierracon(vconeccionF,"")
 	    RETURN 	rt_idnp  
@@ -17985,7 +17985,7 @@ PARAMETERS pp_idnp
 	sqlmatriz(1)="SELECT * FROM ot WHERE idnp = " + ALLTRIM(STR(pp_idnp))+ " and articulo in (select articulo from articuloscmp) "
 	verror=sqlrun(vconeccionF,"ot_sql")
 	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del DETALLE de la NP: "+ STR(pp_idpresupu),0+48+0,"Error")
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del DETALLE de la NP: "+ STR(pp_idnp),0+48+0,"Error")
 	*** me desconecto	
 		=abreycierracon(vconeccionF,"")
 	    RETURN rt_idnp 
@@ -17996,7 +17996,7 @@ PARAMETERS pp_idnp
 	sqlmatriz(1)="SELECT * FROM tiponp WHERE descpe = '"+ALLTRIM(v_tipoOF )+"'"
 	verror=sqlrun(vconeccionF,"tipoOF_sql")
 	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del tipo de la OF: "+ STR(pp_idpresupu),0+48+0,"Error")
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del tipo de la OF: "+ STR(pp_idnp),0+48+0,"Error")
 	*** me desconecto	
 		=abreycierracon(vconeccionF,"")
 	    RETURN rt_idnp 
@@ -22013,8 +22013,33 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 		
 	ELSE && Regenera la tabla completa si existe, sino la crea
 
+		*** Regenero los Saldos Resultados de las Cuentas Bancarias ** 
+		**************************************************************
+		
+		sqlmatriz(1)= "drop table if exists r_bancosaldos "
+		verror=sqlrun(vconeccionF,"borra_saldos")
+		IF verror=.f.
+			MESSAGEBOX("No se puede eliminar la Tabla r_bancosaldos",0+16,"Advertencia")
+			= abreycierracon(vconeccionF,"")
+			RETURN .F. 
+		ENDIF 
+		sqlmatriz(1)=" create table r_bancosaldos as SELECT * FROM bancosaldos   "
+		verror=sqlrun(vconeccionF,"crea_saldos")
+		IF verror=.f.
+			MESSAGEBOX("No se puede Crear la Tabla r_bancosaldos",0+16,"Advertencia")
+			= abreycierracon(vconeccionF,"")
+			RETURN .F. 
+		ENDIF 
+		sqlmatriz(1)=" ALTER TABLE  r_bancosaldos ADD PRIMARY KEY (idcuenta)   "
+		verror=sqlrun(vconeccionF,"crea_saldos")
+		IF verror=.f.
+			MESSAGEBOX("No se puede Crear la Tabla r_bancosaldos",0+16,"Advertencia")
+			= abreycierracon(vconeccionF,"")
+			RETURN .F. 
+		ENDIF 
+		****************************************************************
+		
 		*** Regenero para cada tabla ** 
-
 
 		v_ret = ctaCteBancos('RECIBOS',0,0)
 		
@@ -25765,4 +25790,108 @@ PARAMETERS  p_tablacomp,p_idregistro, p_fechaHasta, p_entidad,p_listComp, pa_con
 	RETURN .t.
 	
 ENDFUNC 
+
+
+
+
+
+FUNCTION RenumerarAsientos
+PARAMETERS pren_tipoAsi, pren_desde, pren_hasta, pren_inicial, pa_conexion
+*#/----------------------------------------
+* FUNCION Renumerar los asientos en un determinado periodo
+*
+* PARAMETROS: 	pren_tipoAsi: Tipo de Asientos a Renumerar, "I"=Asientos Individuales, "G"=Asientos Grupales 
+*				pren_desde: Fecha de Inicio para la Reenumeracion
+*				pren_hasta: Fecha de Fin para reenumeracion 
+*				pa_conexion: Conexión usada, si no hay conexión abierta -> abre una
+* RETORNO:		True en caso de que no haya errores, False  en caso contrario
+*#/---
+
+
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionRA = pa_conexion
+		ELSE 
+			vconeccionRA = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionRA = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+
+	IF pren_tipoAsi = "I" THEN 
+	
+		sqlmatriz(1)=" Select a.idasiento as ida , a.numero, a.fecha, a.idtipoasi, t.detalle as detatipo  from asientos a "
+		sqlmatriz(2)=" left join tipoasiento t on t.idtipoasi = a.idtipoasi "
+		sqlmatriz(3)=" where fecha >= '"+alltrim(pren_desde)+"' and fecha <= '"+alltrim(pren_hasta)+"'"
+		sqlmatriz(4)=" group by a.idasiento "
+
+		v_tabla_asiento = "asientos"
+		v_campo_asiento = "idasiento"
+		
+	ELSE
+		sqlmatriz(1)=" Select g.idasientog as ida , g.numero, g.fecha, a.idtipoasi, t.detalle as detatipo  from asientosg g "
+		sqlmatriz(2)=" left join asientos a on a.idasiento = g.idasiento "
+		sqlmatriz(3)=" left join tipoasiento t on t.idtipoasi = a.idtipoasi "
+		sqlmatriz(4)=" where g.fecha >= '"+alltrim(pren_desde)+"' and g.fecha <= '"+alltrim(pren_hasta)+"'"
+		sqlmatriz(5)=" group by g.idasientog "
+
+		v_tabla_asiento = "asientosg"
+		v_campo_asiento = "idasientog"
+	ENDIF 
+	
+	verror=sqlrun(vconeccionRA,"numasientos_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de idfinanciacion ",0+48+0,"Error")
+	    IF pa_conexion = 0
+			*** Cierro conexión ***
+			=abreycierracon(vconeccionRA,"")
+		ENDIF 
+	    RETURN .F.
+	ENDIF 	
+
+	SELECT *, IIF(ALLTRIM(detatipo)=='APERTURA' ,"A",IIF(ALLTRIM(detatipo)=='CIERRE' ,"Z","B")) AS tipo , ;
+	STRTRAN(STR(ida,13),' ','0') as idasi, 100000000 AS numerado  ;
+	FROM numasientos_sql INTO TABLE numeraasientos 
+	
+	
+	USE IN numasientos_sql 
+	SELECT numeraasientos
+	INDEX on ALLTRIM(FECHA)+ALLTRIM(TIPO)+ALLTRIM(idasi) TAG orden
+	GO TOP 
+	cant_asientos = RECCOUNT()
+	FOR nroasi = 1 TO cant_asientos
+		replace numerado WITH (pren_inicial-1)+nroasi
+		SKIP 
+	ENDFOR  
+	GO TOP 
+	
+	WAIT WINDOWS "Reenumerando..." NOWAIT 
+	DO WHILE !EOF()
+	
+		sqlmatriz(1)=" update "+ALLTRIM(v_tabla_asiento)+" set numero = "+STR(numeraasientos.numerado)
+		sqlmatriz(2)=" where "+ALLTRIM(v_campo_asiento)+" = "+STR(numeraasientos.ida)		
+		verror=sqlrun(vconeccionRA,"update_asientos")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualización de Asientos ",0+48+0,"Error")
+		    IF pa_conexion = 0
+				*** Cierro conexión ***
+				=abreycierracon(vconeccionRA,"")
+			ENDIF 
+		    RETURN .F.
+		ENDIF 	
+
+		SELECT numeraasientos
+		SKIP 
+	ENDDO 
+	WAIT CLEAR 
+	USE IN numeraasientos
+
+    IF pa_conexion = 0
+		*** Cierro conexión ***
+		=abreycierracon(vconeccionRA,"")
+	ENDIF 
+	RETURN .t. 
+ENDFUNC 
+
 

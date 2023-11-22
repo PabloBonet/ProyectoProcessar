@@ -1287,16 +1287,21 @@ FUNCTION CargaMServicios
 			=abreycierracon(vconeccionF,"")	
 		ENDIF
 		SELECT bocaserv_sql
-		SELECT *, 100000000.000 as manterior, 100000000.000 as mactual,100000000.000 as consextra, 100000000.000 as consumo, 100000000 as idimportap  FROM bocaserv_sql INTO TABLE mservicios
-		replace ALL manterior WITH 0, mactual WITH 0, consumo WITH 0, idimportap WITH p_idimportap, consextra WITH 0
+		SELECT *, 100000000.000 as manterior, 100000000.000 as mactual,100000000.000 as consextra, 100000000.000 as consumo, 100000000 as idimportap, 100000000.000 as canterior  FROM bocaserv_sql INTO TABLE mservicios
+		replace ALL manterior WITH 0, canterior WITH 0, mactual WITH 0, consumo WITH 0, idimportap WITH p_idimportap, consextra WITH 0
 		
 		*/------------------------------------------------------------------------------------
 
 		*/ Obtengo las mediciones anteriores para cargarlas como iniciales del periodo actual
 		*/ ------------------------------------------------------------------------------------
+		
 		sqlmatriz(1)=" select ifnull(MAX(p.idimportap),0) as maxidant, ifnull(i.servicio,0) as servicio from importadatosp p "
 		sqlmatriz(2)=" left join importadatos i on i.idimporta = p.idimporta "
-		sqlmatriz(3)=" where p.idimportap < "+STR(p_idimportap)+" and  i.servicio = "+STR(importa.servicio)
+		IF importa.idimpoant = 0 THEN 
+			sqlmatriz(3)=" where p.idimportap < "+STR(p_idimportap)+" and  i.servicio = "+STR(importa.servicio)
+		ELSE
+			sqlmatriz(3)=" where p.idimportap = "+STR(importa.idimpoant)+" and  i.servicio = "+STR(importa.servicio)		
+		ENDIF 
 		verror=sqlrun(vconeccionF,"maxidante_sql")
 		IF verror=.f.  THEN 
 		    MESSAGEBOX(" ... ",0+48+0,"Error")
@@ -1332,10 +1337,10 @@ FUNCTION CargaMServicios
 		SELECT mservicios
 		SET RELATION TO ALLTRIM(bocanumero) INTO mserviant 
 		GO TOP 
-		replace ALL manterior WITH mserviant.mactual, mactual WITH mserviant.mactual 
+		replace ALL manterior WITH mserviant.mactual, canterior WITH mserviant.consumo, mactual WITH mserviant.mactual 
 		
 
-		DIMENSION lamatriz(8,2)
+		DIMENSION lamatriz(9,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
@@ -1360,6 +1365,8 @@ FUNCTION CargaMServicios
 			lamatriz(7,2) = alltrim(STR(p_idimportap))
 			lamatriz(8,1) = 'idbocaser'
 			lamatriz(8,2) = alltrim(str(mservicios.idbocaser))
+			lamatriz(9,1) = 'canterior'
+			lamatriz(9,2) = alltrim(str(mservicios.canterior,12,4))
 
 			p_tabla     = 'mservicios'
 			p_matriz    = 'lamatriz'
@@ -5756,12 +5763,9 @@ ENDFUNC
 *******************************************************
 
 
-
 FUNCTION importarEntidades
 
-
 ** Busco las Localidades **
-		
 		
 		*sqlmatriz(1)="Select mid(concat(TRIM(l.nombre),' - ',TRIM(pr.nombre),' - ',TRIM(pa.nombre)),1,100) as nombre , l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
 		sqlmatriz(1)="Select  l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
@@ -6159,6 +6163,208 @@ FUNCTION importarEntidades
 			SKIP 1					
 		ENDDO 
 
-
-
 ENDFUNC 
+
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION UnificaEntidad
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Recibe como Parametro las cuentas a unificar y eliminar .csv
+*/ Formato del archivo .csv 
+*/   entidada c(20), entidadb c(20) 
+*/  
+*#/----------------------------------------
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1 - Carga de Archivo de Entidades -
+		p_archivo = alltrim(p_archivo)
+*!*			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		if file(".\unientidad.dbf") THEN
+			if used("unientidad") then
+				sele unientidad
+				use
+			endif
+			DELETE FILE .\unientidad.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\unientidad FREE (  entidada c(20), entidadb c(20)  )
+
+		SELECT unientidad 
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+		SELECT unientidad 
+		ALTER table unientidad ADD COLUMN eliminar c(1)
+		ALTER table unientidad ADD COLUMN eliminarb c(1)
+
+		DIMENSION tablasactu (7,1)
+		tablasactu(1,1) ='facturas'
+		tablasactu(2,1) ='recibos'
+		tablasactu(3,1) ='factuprove'
+		tablasactu(4,1) ='pagosprov'
+		tablasactu(5,1) ='np'
+		tablasactu(6,1) ='remitos'
+		tablasactu(7,1) ='otpedido'
+
+		DIMENSION lamatriz1 (1,2)
+
+		_SYSSCHEMA_ANT =_SYSSCHEMA
+				
+		FOR ISCH = 1 TO 2 
+		
+				IF ISCH = 1 THEN 
+					_SYSSCHEMA = 'processar'
+				ELSE
+					_SYSSCHEMA = 'processarh'
+				ENDIF 
+				
+				vconeccionFP=abreycierracon(0,_SYSSCHEMA)	
+				
+				SELECT unientidad
+				GO TOP 
+
+				DO WHILE !EOF()
+				
+					IF !EMPTY(ALLTRIM(unientidad.entidada))  THEN 
+						
+						IF ( ALLTRIM(UPPER(unientidad.entidada)) == 'BORRAR' OR !(ALLTRIM(UPPER(unientidad.entidada))==ALLTRIM(UPPER(unientidad.entidadb))) ) AND ISCH = 1 THEN 
+							REPLACE eliminar WITH 'B'
+							REPLACE eliminarb WITH 'B'
+												
+						ENDIF 
+						
+					
+						IF !( ALLTRIM(UPPER(unientidad.entidada)) == 'BORRAR') AND !(ALLTRIM(UPPER(unientidad.entidada))==ALLTRIM(UPPER(unientidad.entidadb))) THEN 
+							
+							v_entidada = ALLTRIM(unientidad.entidada)
+							v_entidadb = ALLTRIM(unientidad.entidadb)
+							
+							FOR ita = 1 TO 6 
+							
+								p_tipoope     = 'U'
+								p_condicion   = " entidad="+ALLTRIM(v_entidadb)
+								v_titulo      = " EL ACTUALIZA "
+									
+								lamatriz1(1,1)='entidad'
+								lamatriz1(1,2)= ALLTRIM(v_entidada)
+
+								p_tabla     = tablasactu(ita,1)
+								p_matriz    = 'lamatriz1'
+								p_conexion  = vconeccionFP
+								IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+								    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de Entidades ",0+48+0,"Error")
+								    RETURN 0
+								ENDIF  
+
+							ENDFOR  
+							
+						ENDIF 
+							
+							
+						IF ALLTRIM(UPPER(unientidad.entidada)) == 'BORRAR' OR !(ALLTRIM(UPPER(unientidad.entidada))==ALLTRIM(UPPER(unientidad.entidadb))) THEN 
+
+							FOR ita = 1 TO 7 
+								
+								p_tabla = tablasactu(ita,1)
+
+								sqlmatriz(1)=" select * from "+ALLTRIM(p_tabla)+" where entidad = "+ALLTRIM(unientidad.entidadb)
+								verror=sqlrun(vconeccionFP,"Existe_registro")
+								IF verror=.f.  
+								    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Articulos... ",0+48+0,"Error")
+								    RETURN 0
+								ENDIF
+								SELECT Existe_registro
+								GO TOP 
+								IF !EOF() THEN 
+									SELECT unientidad 
+									IF ALLTRIM(_SYSSCHEMA)=='processar' THEN 
+										replace eliminar WITH ''
+									ELSE
+										replace eliminarb WITH ''
+									ENDIF 
+								ENDIF 
+								USE IN Existe_registro 
+
+							ENDFOR  
+
+						ENDIF 
+										
+					ENDIF 
+						
+					SELECT unientidad 
+					SKIP 					
+					
+				ENDDO 
+				
+				=abreycierracon(vconeccionFP,"")	
+
+				
+		ENDFOR 
+
+		RELEASE lamatriz1
+		SELECT unientidad
+		_SYSSCHEMA =_SYSSCHEMA_ANT
+
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		*** FINALMENTE BORRO LAS ENTIDADES DE LA TABLA MAESTRA
+		SELECT * FROM unientidad INTO TABLE noentidadeli WHERE ALLTRIM(eliminar) == 'B' AND EMPTY(ALLTRIM(eliminarb))
+		SELECT noentidadeli
+		COPY TO noentidadeli.xls TYPE XL5 
+		USE IN noentidadeli
+		SELECT * FROM unientidad INTO TABLE unientidadeli WHERE ALLTRIM(eliminar) == 'B' AND ALLTRIM(eliminarb) == 'B'
+		SELECT unientidadeli
+
+		GO TOP 
+
+		DO WHILE !EOF()
+
+			sqlmatriz(1)=" delete from entidades where entidad = "+ALLTRIM(unientidadeli.entidadb)
+			verror=sqlrun(vconeccionF,"Borra_registro")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Articulos... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF
+			
+			SELECT unientidadeli
+			SKIP 
+		ENDDO 
+		
+		USE IN unientidadeli
+		
+		
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT unientidad 
+	USE IN unientidad 
+	
+	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
