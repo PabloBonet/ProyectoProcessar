@@ -4695,7 +4695,7 @@ PARAMETERS  para_aliasd
 ***			tipoc char(1)
 ***			idtipogrup i
 ***			nombretipo c(100)
-***			codarbol c(15)
+***			codarbol c(20)
 ***			tiporeg c(1) 'M'=Miembro, 'G'=Grupo 'T'=Tipo Grupo
 *#/----------------------------------------
 
@@ -4754,11 +4754,11 @@ PARAMETERS  para_aliasd
 			skip
 		ENDDO 
 		SELECT grupotmp0
-		ALTER table grupotmp0 ADD codarbol c(15)
-		ALTER table grupotmp0 ADD codpadre c(15)
+		ALTER table grupotmp0 ADD codarbol c(20)
+		ALTER table grupotmp0 ADD codpadre c(20)
 		GO TOP 
 		replace ALL codarbol WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)+ ;
-									ALLTRIM(REPLICATE('0',(9-LEN(ALLTRIM(idmiembro))))+ALLTRIM(idmiembro)), ;
+									ALLTRIM(REPLICATE('0',(14-LEN(ALLTRIM(idmiembro))))+ALLTRIM(idmiembro)), ;
 					codpadre WITH SUBSTR(ALLTRIM(STR((idtipogrup+1000),4)),2,3)+SUBSTR(ALLTRIM(STR((idgrupo+1000),4)),2,3)
 		
 		SET ENGINEBEHAVIOR 70 
