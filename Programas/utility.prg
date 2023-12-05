@@ -23094,12 +23094,13 @@ ENDFUNC
 
 
 FUNCTION GenNDRecargo
-PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdReciboRec, p_coneg
+PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaRec, P_IdReciboRec, p_coneg
 *#/ ------------------------------
 * Crea una Nota de Débito por Recargos, recibe como parametros el monto total del recargo y genera una Nota de Debito y lo cancela con el recibo pasado como parámetro si lo hubiere
 * PARAMETROS : 
 * 	P_EntidadRec: Entidad a la que se le cargará el comprobante de recargo
 *   p_ImporteRec:  Importe Total Bruto del Recargo para generar el comprobante
+*   p_ImporteFin:  Importe Total Bruto del Interes por Financiacion para generar el comprobante
 *   P_idcomprobaRec: Idcomproba del comprobante ND que se utiliza para generar los recargos
 *   p_pventaRec:      id del Punto de Venta que se utiliza para generar los recargos
 *   P_IdReciboRec:   ID Recibo con el cual se cancela el comprobante de Recargos generados,
@@ -23124,8 +23125,9 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 		RETURN 0
 	ENDIF 
 	
+	MESSAGEBOX(p_ImporteRec + P_ImporteFin)
 	 	
-	IF p_ImporteRec <= 0 OR P_EntidadRec <= 0 THEN 
+	IF ( p_ImporteRec + p_ImporteFin ) <= 0 OR P_EntidadRec <= 0 THEN 
 		RETURN 0
 	ENDIF 
 *!*		oeObjR	= CREATEOBJECT('oeclass')	
@@ -23167,7 +23169,6 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 	V_SaldoREcibo   = 0.00
 	IF 	P_IdReciboRec > 0 THEN 
 
-	
 		sqlmatriz(1)="SELECT r.*, s.saldo from recibos r left join r_recibossaldo s on s.idrecibo = r.idrecibo where r.idrecibo = "+ALLTRIM(STR(P_IdReciboRec))
 		verror=sqlrun(vconeccionR ,"reciborec_sql")
 		IF verror=.f.  
@@ -23232,53 +23233,101 @@ PARAMETERS P_EntidadRec, p_ImporteRec,  P_idcomprobaRec, p_pventaRec, P_IdRecibo
 		=abreycierracon(vconeccionR ,"")
 		RETURN 0
 	ENDIF 
-	* Obtengo el Codigo del Articulo asociado por TOE a los intereses para notas de debito 
-
-	oeObjR	= CREATEOBJECT('oeclass')	
-	v_codTabR	    =  oeObjR.getCodigoOp('ND RECARGOS') && Obtengo: CODIGO_TABLA. El caracter '_' es el de separación
-	v_nPosR 		= AT('_',v_codTabR) &&Retorna la posición donde aparece el caracter de separacion utilizado (_)
-	v_codigoREC	    = SUBSTR(v_codTabR,1,v_nPosR-1) && Retorna el código
-	v_tablaR		= SUBSTR(v_codTabR,v_nPosR+1)	&& Retorna el resto de la cadena, que corresponde a la tabla
-	RELEASE oeObjR
-
-
-	sqlmatriz(1)=" SELECT a.*,ai.impuesto,ai.idartimp,i.razon as razon,i.detalle as detaimp, af.unidadf,af.base FROM articulos a "
-	sqlmatriz(2)=" LEFT JOIN articulosimp ai on a.articulo = ai.articulo "
-	sqlmatriz(3)=" LEFT JOIN impuestos i ON ai.impuesto = i.impuesto "
-	sqlmatriz(4)=" LEFT JOIN articulosf af on a.articulo = af.articulo"
-	sqlmatriz(5)=" WHERE  ai.iva = "+ALLTRIM(STR(v_ivarec))+" and  a.articulo = '"+ALLTRIM(v_codigoRec)+"'"
-	verror=sqlrun(vconeccionR ,"articuloRec_sql")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Artículo para la ND  ",0+48+0,"Error")
-	*** me desconecto	
-		=abreycierracon(vconeccionR ,"")
-	    RETURN 0
-	ENDIF 
-	SELECT articuloRec_sql
-	GO TOP 
-	IF EOF() THEN 
-		MESSAGEBOX("Error al obtener el Impuesto para el Artículo para la ND",0+48+0,"Error")
-		=abreycierracon(vconeccionR,"")
-		RETURN 0
-	ENDIF 
-
-	v_razonimpRec = articuloRec_sql.razon
-	v_imponetouni =  p_ImporteRec /  (1+(v_razonimpRec/100))
-	USE IN articuloRec_sql 
-
-
+	
+	
 	CREATE TABLE tmpndinteres (entidad i , servicio i, cuenta i, articulo c(20), cantidad y, unitario y, fecha c(8), idcomproba i, pventa i)
-	INSERT  INTO tmpndinteres VALUES (P_EntidadREc,0,0,'ND RECARGOS',1,v_imponetouni,DTOS(DATE()),V_PidcomprobaRec, V_pventaREc)
+
+	IF p_ImporteRec > 0 THEN 
+		* Obtengo el Codigo del Articulo asociado por TOE a los intereses Punitorios  para notas de debito 
+		
+		oeObjR	= CREATEOBJECT('oeclass')	
+		v_codTabR	    =  oeObjR.getCodigoOp('ND RECARGOS') && Obtengo: CODIGO_TABLA. El caracter '_' es el de separación
+		v_nPosR 		= AT('_',v_codTabR) &&Retorna la posición donde aparece el caracter de separacion utilizado (_)
+		v_codigoREC	    = SUBSTR(v_codTabR,1,v_nPosR-1) && Retorna el código
+		v_tablaR		= SUBSTR(v_codTabR,v_nPosR+1)	&& Retorna el resto de la cadena, que corresponde a la tabla
+		RELEASE oeObjR
+
+
+		sqlmatriz(1)=" SELECT a.*,ai.impuesto,ai.idartimp,i.razon as razon,i.detalle as detaimp, af.unidadf,af.base FROM articulos a "
+		sqlmatriz(2)=" LEFT JOIN articulosimp ai on a.articulo = ai.articulo "
+		sqlmatriz(3)=" LEFT JOIN impuestos i ON ai.impuesto = i.impuesto "
+		sqlmatriz(4)=" LEFT JOIN articulosf af on a.articulo = af.articulo"
+		sqlmatriz(5)=" WHERE  ai.iva = "+ALLTRIM(STR(v_ivarec))+" and  a.articulo = '"+ALLTRIM(v_codigoRec)+"'"
+		verror=sqlrun(vconeccionR ,"articuloRec_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Artículo para la ND  ",0+48+0,"Error")
+		*** me desconecto	
+			=abreycierracon(vconeccionR ,"")
+		    RETURN 0
+		ENDIF 
+		SELECT articuloRec_sql
+		GO TOP 
+		IF EOF() THEN 
+			MESSAGEBOX("Error al obtener el Impuesto para el Artículo para la ND",0+48+0,"Error")
+			=abreycierracon(vconeccionR,"")
+			RETURN 0
+		ENDIF 
+
+		v_razonimpRec = articuloRec_sql.razon
+		v_imponetouni =  p_ImporteRec /  (1+(v_razonimpRec/100))
+		USE IN articuloRec_sql 
+
+
+*!*			CREATE TABLE tmpndinteres (entidad i , servicio i, cuenta i, articulo c(20), cantidad y, unitario y, fecha c(8), idcomproba i, pventa i)
+		SELECT tmpndinteres
+		INSERT  INTO tmpndinteres VALUES (P_EntidadREc,0,0,'ND RECARGOS',1,v_imponetouni,DTOS(DATE()),V_PidcomprobaRec, V_pventaREc)
+	ENDIF 
+
+	IF p_ImporteFin > 0 THEN 
+		* Obtengo el Codigo del Articulo asociado por TOE a los intereses de Financiacion  para notas de debito 
+		
+		oeObjR	= CREATEOBJECT('oeclass')	
+		v_codTabR	    =  oeObjR.getCodigoOp('COSTO FINANCIACION') && Obtengo: CODIGO_TABLA. El caracter '_' es el de separación
+		v_nPosR 		= AT('_',v_codTabR) &&Retorna la posición donde aparece el caracter de separacion utilizado (_)
+		v_codigoREC	    = SUBSTR(v_codTabR,1,v_nPosR-1) && Retorna el código
+		v_tablaR		= SUBSTR(v_codTabR,v_nPosR+1)	&& Retorna el resto de la cadena, que corresponde a la tabla
+		RELEASE oeObjR
+
+
+		sqlmatriz(1)=" SELECT a.*,ai.impuesto,ai.idartimp,i.razon as razon,i.detalle as detaimp, af.unidadf,af.base FROM articulos a "
+		sqlmatriz(2)=" LEFT JOIN articulosimp ai on a.articulo = ai.articulo "
+		sqlmatriz(3)=" LEFT JOIN impuestos i ON ai.impuesto = i.impuesto "
+		sqlmatriz(4)=" LEFT JOIN articulosf af on a.articulo = af.articulo"
+		sqlmatriz(5)=" WHERE  ai.iva = "+ALLTRIM(STR(v_ivarec))+" and  a.articulo = '"+ALLTRIM(v_codigoRec)+"'"
+		verror=sqlrun(vconeccionR ,"articuloRec_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Artículo para la ND  ",0+48+0,"Error")
+		*** me desconecto	
+			=abreycierracon(vconeccionR ,"")
+		    RETURN 0
+		ENDIF 
+		SELECT articuloRec_sql
+		GO TOP 
+		IF EOF() THEN 
+			MESSAGEBOX("Error al obtener el Impuesto para el Artículo para la ND",0+48+0,"Error")
+			=abreycierracon(vconeccionR,"")
+			RETURN 0
+		ENDIF 
+
+		v_razonimpRec = articuloRec_sql.razon
+		v_imponetouni =  p_ImporteFin /  (1+(v_razonimpRec/100))
+		USE IN articuloRec_sql 
+
+
+		SELECT tmpndinteres
+		INSERT  INTO tmpndinteres VALUES (P_EntidadREc,0,0,'COSTO FINANCIACION',1,v_imponetouni,DTOS(DATE()),V_PidcomprobaRec, V_pventaREc)
+	ENDIF 
 
 
 	USE IN tmpndinteres 
 	
-	
 	v_idndRec = GenerarFDC("tmpndinteres",0,v_IDfacturaVin )
 
+	MESSAGEBOX(v_idndRec)
+	
 	IF v_idndRec > 0 AND P_IdReciboRec > 0 AND V_idcomproRERec > 0 AND V_SaldoREcibo > 0 THEN 
-		v_importecancela = p_ImporteRec
-		IF p_ImporteRec > V_SaldoREcibo   THEN 
+		v_importecancela = ( p_ImporteRec + p_ImporteFin )
+		IF ( p_ImporteRec + p_ImporteFin ) > V_SaldoREcibo   THEN 
 			v_ImporteCancela  =	V_SaldoREcibo
 		ENDIF 
 		CREATE TABLE tmpaplicarnd ( idcomproba i, idfactura i, idregipago i, idcuotafc i, imputado y )
