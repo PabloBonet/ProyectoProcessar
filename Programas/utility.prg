@@ -1828,14 +1828,49 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 	
 	** Agrego comprobantes asociados **
 	
-	
+		v_comproAso  = ""
 		tipoComproObjtmp 	= CREATEOBJECT('comprobantesclass')
-
+	
 
 		v_idCompRemi = tipoComproObjtmp.getidcomprobante("REMITO R")
 		
-
-	 	v_comproAso = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompRemi )
+		v_idCompFa = tipoComproObjtmp.getidcomprobante("FACTURA A")
+		v_idCompFb = tipoComproObjtmp.getidcomprobante("FACTURA B")
+		v_idCompFc = tipoComproObjtmp.getidcomprobante("FACTURA C")
+		
+		v_idCompNDa = tipoComproObjtmp.getidcomprobante("NOTA DE DEBITO A")
+		v_idCompNDb = tipoComproObjtmp.getidcomprobante("NOTA DE DEBITO B")
+		v_idCompNDc = tipoComproObjtmp.getidcomprobante("NOTA DE DEBITO C")
+												
+		v_idCompNCa = tipoComproObjtmp.getidcomprobante("NOTA DE CREDITO A")
+		v_idCompNCb = tipoComproObjtmp.getidcomprobante("NOTA DE CREDITO B")		
+		v_idCompNCc = tipoComproObjtmp.getidcomprobante("NOTA DE CREDITO C")		
+		
+		
+	
+	 	v_comproAsore = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompRemi )
+	 	
+	 	v_comproASo = v_comproAso + ALLTRIM(v_comproAsore)
+	 	
+	 	v_comproAsofa = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompFa )
+	 	v_comproAsofb = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompFb)
+		v_comproAsofc = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompFc)
+		
+		
+		v_comproAso = ALLTRIM(v_comproAso)  + ALLTRIM(v_comproAsofa) + ALLTRIM(v_comproAsofb) + ALLTRIM(v_comproAsofc)
+		
+		v_comproAsoNDa = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNDa )
+	 	v_comproAsoNDb = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNDb)
+		v_comproAsoNDc = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNDc)
+		
+		v_comproAso = ALLTRIM(v_comproAso)  + ALLTRIM(v_comproAsoNDa) + ALLTRIM(v_comproAsoNDb) + ALLTRIM(v_comproAsoNDc)
+		
+		
+		v_comproAsoNCa = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNCa )
+	 	v_comproAsoNCb = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNCb)
+		v_comproAsoNCc = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNCc)
+		
+		v_comproAso = ALLTRIM(v_comproAso)  + ALLTRIM(v_comproAsoNCa) + ALLTRIM(v_comproAsoNCb) + ALLTRIM(v_comproAsoNCc)
 		
 	** AGREGO OBSERVACIONES FIJAS EN EL COMPROBANTE SEGÚN CONDICIONES EN LA TABLA observacond  y el total en letras *
 	
@@ -24869,15 +24904,13 @@ PARAMETERS p_idcompro, p_idregi, p_cone,p_idcomproAso
 	ENDIF 	
 
 	v_tablaAso = GetLinkCompro(p_idcompro, p_idregi, vconeccionL, p_idcomproAso)
-	
-	
-	
+			
 	IF EMPTY(ALLTRIM(v_tablaAso)) = .F.
 		
 		USE &v_tablaAso IN 0
 	
 		SELECT &v_tablaAso 
-		GO TOP 
+		GO TOP
 		DO WHILE NOT EOF()
 		
 			**idlinkcomp i , idcomproa i , idrega i , idcomprob i , idregb i , tablaa c(30), operaa i , tablab c(30), operab i
@@ -24924,7 +24957,7 @@ PARAMETERS p_idcompro, p_idregi, p_cone,p_idcomproAso
 					sqlmatriz(1)=" select * from "+ALLTRIM(v_buscaT)+" t left join comprobantes c on t.idcomproba = c.idcomproba left join puntosventa p on t.pventa = p.pventa "
 					sqlmatriz(2)=" where t.idcomproba = "+ALLTRIM(STR(v_buscaC))+" and t."+(v_campoIndice)+"="+ALLTRIM(STR(v_BuscaR))
 				ENDCASE
-										
+				
 					verror=sqlrun(vconeccionL,"compAsociado_sql")
 					IF verror=.f.  
 					    MESSAGEBOX("Ha Ocurrido un Error en la búsqueda del comprobante asociado... ",0+48+0,"Error")
