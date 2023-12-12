@@ -4962,7 +4962,9 @@ FUNCTION generabusquedag
 ** AGREGA EL CAMPO busquedag para poder realizar busquedas y filtrados con el objeto de grupos
 *#/----------------------------------------
 	SELECT &para_tabla
-	ALTER table &para_tabla ADD COLUMN busquedag c(254)
+	IF EMPTY(FIELD("busquedag")) THEN 
+		ALTER table &para_tabla ADD COLUMN busquedag c(254)
+	ENDIF 
 	replace ALL busquedag WITH &para_string
 	GO TOP 
 RETURN 
@@ -23160,7 +23162,6 @@ PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaR
 		RETURN 0
 	ENDIF 
 	
-	MESSAGEBOX(p_ImporteRec + P_ImporteFin)
 	 	
 	IF ( p_ImporteRec + p_ImporteFin ) <= 0 OR P_EntidadRec <= 0 THEN 
 		RETURN 0
@@ -23358,7 +23359,6 @@ PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaR
 	
 	v_idndRec = GenerarFDC("tmpndinteres",0,v_IDfacturaVin )
 
-	MESSAGEBOX(v_idndRec)
 	
 	IF v_idndRec > 0 AND P_IdReciboRec > 0 AND V_idcomproRERec > 0 AND V_SaldoREcibo > 0 THEN 
 		v_importecancela = ( p_ImporteRec + p_ImporteFin )
@@ -23371,7 +23371,6 @@ PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaR
 		=GAplicaCobro("tmpaplicarnd",0)
 
 	ENDIF 
-***MESSAGEBOX("B1")
 
 ENDFUNC 
 
@@ -25976,4 +25975,79 @@ PARAMETERS pren_tipoAsi, pren_desde, pren_hasta, pren_inicial, pa_conexion
 	RETURN .t. 
 ENDFUNC 
 
+
+
+
+
+FUNCTION FActuCuotasEdc
+PARAMETERS pfa_articulo, pfa_identidadd, pa_conexion
+*#/----------------------------------------
+* FUNCION Actualizar Importe de Cuotas para Facturacion Mensual
+*
+* PARAMETROS: 	pfa_articulo: articulo para el cual se cambiara el precio en los clientes con cuotas
+*				pfa_identidadd: Item de detalle individual para el cual se cambiará el valor de la cuota a facturar 
+*				pa_conexion: Conexión usada, si no hay conexión abierta -> abre una
+* RETORNO:		True en caso de que no haya errores, False  en caso contrario
+*#/---
+
+
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionRA = pa_conexion
+		ELSE 
+			vconeccionRA = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionRA = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+
+	
+	sqlmatriz(1) = " select d.identidadd, d.articulo, d.cantidad, d.neto, c.idcuotasd, c.neto as netocuota, c.impuesto as impucuota, c.neto as netoante, c.impuesto , c.cantcuotas, c.idfactura, c.facturar, c.valorcuota "
+	sqlmatriz(2) = " from entidadesdc c left join entidadesd d on d.identidadd = c.identidadd " 
+	sqlmatriz(3) = " where c.idfactura = 0 "+IIF(pfa_identidadd > 0 ," and c.identidadd = "+STR(pfa_identidadd) ,IIF( EMPTY(ALLTRIM(pfa_articulo))= .t. ," " ," and d.articulo = '"+ALLTRIM(pfa_articulo)+"'"))
+	verror=sqlrun(vconeccionRA,"cuotasdc_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Cuotas a Actualizar  ",0+48+0,"Error")
+	    IF pa_conexion = 0
+			*** Cierro conexión ***
+			=abreycierracon(vconeccionRA,"")
+		ENDIF 
+	    RETURN .F.
+	ENDIF 	
+
+	SELECT * FROM cuotasdc_sql INTO TABLE cuotasdc 
+	
+	USE IN cuotasdc_sql
+	SELECT cuotasdc
+	GO TOP 
+	replace ALL netocuota WITH neto / ( IIF(valorcuota = 'S' OR cantcuotas = 0 ,1,cantcuotas  ) ), ;
+				impucuota WITH IIF(netoante = 0,0,( impuesto / netoante )) * ( neto / ( IIF(valorcuota = 'S' OR cantcuotas = 0 ,1,cantcuotas  ) ))
+	GO TOP 
+
+
+	DO WHILE !EOF()
+	
+		sqlmatriz(1)=" update entidadesdc  set neto = "+STR(cuotasdc.netocuota,13,2)+", impuesto = "+STR(cuotasdc.impucuota,13,2)
+		sqlmatriz(2)=" where idcuotasd = "+str(cuotasdc.idcuotasd)
+		verror=sqlrun(vconeccionRA,"update_entidadesdc")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualización de Cuotas a Facturar ",0+48+0,"Error")
+		    IF pa_conexion = 0
+				=abreycierracon(vconeccionRA,"")
+			ENDIF 
+		    RETURN .F.
+		ENDIF 	
+
+		SELECT cuotasdc
+		SKIP 
+	ENDDO 
+	USE IN cuotasdc
+
+    IF pa_conexion = 0
+		*** Cierro conexión ***
+		=abreycierracon(vconeccionRA,"")
+	ENDIF 
+	RETURN .t. 
+ENDFUNC 
 

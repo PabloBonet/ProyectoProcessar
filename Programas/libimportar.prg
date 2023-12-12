@@ -5823,6 +5823,16 @@ FUNCTION importarEntidades
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
 
+		
+		
+		v_ControlaEnAfip = .t.
+		
+		IF  MESSAGEBOX("Desea Cargar solo las Entidades válidas en AFIP  ",4+32+256,"Error...") = 7 THEN  && NO
+			v_controlaEnAfip = .f. 
+		ENDIF 
+
+		
+
 		SELECT entidadescar
 		GO TOP 
 		DO WHILE NOT EOF()
@@ -5850,7 +5860,8 @@ FUNCTION importarEntidades
 			v_nomprovImp	= ALLTRIM(entidadescar.nomprov)
 			v_cpIMP			= ALLTRIM(entidadescar.cp)
 			
-			IF EMPTY(ALLTRIM(v_cuitImp))=.F.
+			
+			IF EMPTY(ALLTRIM(v_cuitImp))=.F. OR v_ControlaEnAfip = .f. THEN 
 				*********
 				** Tiene asignado un CUIT
 				*********
@@ -5863,8 +5874,12 @@ FUNCTION importarEntidades
 					*********
 					** Faltan datos -> Busco el contribuyente
 					******
-
+							
+							IF v_ControlaEnAfip = .t. THEN 
 								v_ret = obtenerContribuyente("tablaContrib", v_cuitImp,.t.)
+							ELSE
+								v_ret = .t.
+							ENDIF 
 
 							IF v_ret = .F.
 
@@ -5884,152 +5899,159 @@ FUNCTION importarEntidades
 					    	
 						v_errorEnIteracion =.t.
 					ELSE
-						SELECT tablaContrib
-						GO TOP 
-						
-						IF NOT EOF()
+					
+					
+						IF v_ControlaEnAfip = .t. THEN  &&Solo busco si eligio controlar carga con afip 
 							
-							*********
-							** Encontró el contribuyente en los datos del AFIP
-							*********
+
+							SELECT tablaContrib
+							GO TOP 
 							
-							v_apellido 	= tablaContrib.apellido
-							v_nombre	= tablaContrib.nombre
-							v_razonSocial 	= tablaContrib.razonSoc
-							v_cp		= tablaContrib.cp
-							v_nomprov	= tablaContrib.nomprov
-							v_direccion	= tablaContrib.direccion
-							v_nomLoc	= tablaContrib.nomLoc
-							v_tipodoc	= tablaContrib.tipodoc
-							v_documento	= tablaContrib.documento
-							v_ivaSel 	= tablaContrib.iva
-
-							SELECT localidades_sql1 
-								GO TOP 
-							TRY 
-							
-								IF EMPTY(ALLTRIM(v_localidadImp)) = .T.
+							IF NOT EOF()
 								
-									SELECT * FROM localidades_sql1 WHERE (ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprov)) AND ALLTRIM(UPPER(nomloc)) == ALLTRIM(UPPER(v_nomLoc))) OR  ;
-									(ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprov)) AND ALLTRIM(UPPER(cp)) == ALLTRIM(UPPER(v_cp))) INTO CURSOR locSel 
-
-								
-								ELSE
-									SELECT * FROM localidades_sql1 WHERE (ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprovimp)) AND ALLTRIM(UPPER(nomloc)) == ALLTRIM(UPPER(v_nomLocimp))) OR  ;
-									(ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprovimp)) AND ALLTRIM(UPPER(cp)) == ALLTRIM(UPPER(v_cpimp))) INTO CURSOR locSel 
-
-								
-								ENDIF 
 								*********
-								** No tiene asigando el codigo de la localidad de la base de datos -> La busco.
+								** Encontró el contribuyente en los datos del AFIP
 								*********
-							
-								*********
-								** BUsco entres las localidades cargadas
-								*********
+								
+								v_apellido 	= tablaContrib.apellido
+								v_nombre	= tablaContrib.nombre
+								v_razonSocial 	= tablaContrib.razonSoc
+								v_cp		= tablaContrib.cp
+								v_nomprov	= tablaContrib.nomprov
+								v_direccion	= tablaContrib.direccion
+								v_nomLoc	= tablaContrib.nomLoc
+								v_tipodoc	= tablaContrib.tipodoc
+								v_documento	= tablaContrib.documento
+								v_ivaSel 	= tablaContrib.iva
 
-								SELECT locSel
-								GO TOP 
-															 
-								IF NOT EOF()
-									*********
-									** Encontró la localidad en la Base de Datos
-									*********
+								SELECT localidades_sql1 
+									GO TOP 
+								TRY 
 								
-									v_localidadIMP = locSel.localidad
-									v_cpimp			= locSel.cp
-								ELSE 
-									*********
-									** No encontró la localidad. -> la cargo con los datos traidos de AFIP
-									*********
-																		
-									v_codLoc = cargarLocalidad(v_nomLoc, v_cp, v_nomprov)
-								
-									v_tipo = TYPE('v_codLoc')
+									IF EMPTY(ALLTRIM(v_localidadImp)) = .T.
 									
-									v_codLoc = IIF(v_tipo=='N',STR(v_codLoc),v_codLoc)
+										SELECT * FROM localidades_sql1 WHERE (ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprov)) AND ALLTRIM(UPPER(nomloc)) == ALLTRIM(UPPER(v_nomLoc))) OR  ;
+										(ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprov)) AND ALLTRIM(UPPER(cp)) == ALLTRIM(UPPER(v_cp))) INTO CURSOR locSel 
+
 									
-									IF VAL(v_codLoc) > 0
-										*********
-										** Se cargó correctamente la Localidad
-										*********
-									
-										v_localidadIMP = v_codLoc
-										
-										*********
-										** Actualizo la tabla local de localidad Localidades
-										*********
-			
-											sqlmatriz(1)="Select  l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
-											sqlmatriz(2)=" from localidades l left join provincias pr on l.provincia = pr.provincia left join paises pa on pa.pais = pr.pais "
-											sqlmatriz(3)=" order by l.nombre "
-
-											verror=sqlrun(vconeccionF,"localidades_sql1_a")
-											IF verror=.f.  
-
-												v_error = "Ha Ocurrido un Error en la BÚSQUEDA de Localidades"
-												 INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
-											ENDIF 
-											
-												
-											SELECT * FROM localidades_sql1_a INTO TABLE localidades_sql1
-
-											ALTER table localidades_sql1 alter COLUMN localidad C(10)
-											ALTER table localidades_sql1 alter COLUMN cp C(50)
-											ALTER table localidades_sql1 alter COLUMN provincia C(10)
-											ALTER table localidades_sql1 alter COLUMN nomprov C(200)
-											ALTER table localidades_sql1 alter COLUMN nomloc C(200)
-																						
-										v_cpimp	= v_cp
-										
-										SELECT localidades_sql1
-										GO TOP 
 									ELSE
-										*********
-										** NO Se cargó correctamente la Localidad
-										*********
-										v_localidadIMP = '0'
-										v_errorEnIteracion =.t.
-										
-									ENDIF
-								ENDIF 
+										SELECT * FROM localidades_sql1 WHERE (ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprovimp)) AND ALLTRIM(UPPER(nomloc)) == ALLTRIM(UPPER(v_nomLocimp))) OR  ;
+										(ALLTRIM(UPPER(nomprov)) == ALLTRIM(UPPER(v_nomprovimp)) AND ALLTRIM(UPPER(cp)) == ALLTRIM(UPPER(v_cpimp))) INTO CURSOR locSel 
 
-							CATCH 
+									
+									ENDIF 
+									*********
+									** No tiene asigando el codigo de la localidad de la base de datos -> La busco.
+									*********
 								
-									v_error = "Error al obtener la localidad"
-								 	INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
-						    		v_errorEnIteracion =.t.
-					    														
-							ENDTRY 
-	
-						
-							IF EMPTY(ALLTRIM(v_apellidoImp)) = .t. AND  EMPTY(ALLTRIM(v_nombreImp)) = .t. AND EMPTY(ALLTRIM(v_companiaImp))
-								*********
-								** Si El apellido, el nombre y la compania son vacios -> Busco los datos
-								*********
-													
-								v_apellidoImp	= tablaContrib.apellido
-								v_nombreImp		= tablaContrib.nombre
-								v_companiaImp	= tablaContrib.razonSoc
-								
-							ENDIF 
-				
-							v_direccionImp	= tablaContrib.direccion
-							v_tipodocstrImp	= tablaContrib.tipodoc
-							v_documentoImp	= tablaContrib.documento
-							
-							v_ivaImp 		= tablaContrib.iva
-							
-							IF EMPTY(ALLTRIM(v_cpimp)) = .T.
-								v_cpimp = tablaContrib.cp
-							ENDIF 
+									*********
+									** BUsco entres las localidades cargadas
+									*********
+
+									SELECT locSel
+									GO TOP 
+																 
+									IF NOT EOF()
+										*********
+										** Encontró la localidad en la Base de Datos
+										*********
+									
+										v_localidadIMP = locSel.localidad
+										v_cpimp			= locSel.cp
+									ELSE 
+										*********
+										** No encontró la localidad. -> la cargo con los datos traidos de AFIP
+										*********
+																			
+										v_codLoc = cargarLocalidad(v_nomLoc, v_cp, v_nomprov)
+									
+										v_tipo = TYPE('v_codLoc')
+										
+										v_codLoc = IIF(v_tipo=='N',STR(v_codLoc),v_codLoc)
+										
+										IF VAL(v_codLoc) > 0
+											*********
+											** Se cargó correctamente la Localidad
+											*********
+										
+											v_localidadIMP = v_codLoc
 											
-						ELSE
-												
-							v_errorEnIteracion = .T.
-								
-						ENDIF 
+											*********
+											** Actualizo la tabla local de localidad Localidades
+											*********
 				
+												sqlmatriz(1)="Select  l.localidad, l.cp, l.provincia, pr.nombre as nomProv, pa.nombre as nomPais, l.nombre as nomLoc "
+												sqlmatriz(2)=" from localidades l left join provincias pr on l.provincia = pr.provincia left join paises pa on pa.pais = pr.pais "
+												sqlmatriz(3)=" order by l.nombre "
+
+												verror=sqlrun(vconeccionF,"localidades_sql1_a")
+												IF verror=.f.  
+
+													v_error = "Ha Ocurrido un Error en la BÚSQUEDA de Localidades"
+													 INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
+												ENDIF 
+												
+													
+												SELECT * FROM localidades_sql1_a INTO TABLE localidades_sql1
+
+												ALTER table localidades_sql1 alter COLUMN localidad C(10)
+												ALTER table localidades_sql1 alter COLUMN cp C(50)
+												ALTER table localidades_sql1 alter COLUMN provincia C(10)
+												ALTER table localidades_sql1 alter COLUMN nomprov C(200)
+												ALTER table localidades_sql1 alter COLUMN nomloc C(200)
+																							
+											v_cpimp	= v_cp
+											
+											SELECT localidades_sql1
+											GO TOP 
+										ELSE
+											*********
+											** NO Se cargó correctamente la Localidad
+											*********
+											v_localidadIMP = '0'
+											v_errorEnIteracion =.t.
+											
+										ENDIF
+									ENDIF 
+
+								CATCH 
+									
+										v_error = "Error al obtener la localidad"
+									 	INSERT INTO errores VALUES (v_entidadImp ,v_cuitImp,v_error)
+							    		v_errorEnIteracion =.t.
+						    														
+								ENDTRY 
+		
+							
+								IF EMPTY(ALLTRIM(v_apellidoImp)) = .t. AND  EMPTY(ALLTRIM(v_nombreImp)) = .t. AND EMPTY(ALLTRIM(v_companiaImp))
+									*********
+									** Si El apellido, el nombre y la compania son vacios -> Busco los datos
+									*********
+														
+									v_apellidoImp	= tablaContrib.apellido
+									v_nombreImp		= tablaContrib.nombre
+									v_companiaImp	= tablaContrib.razonSoc
+									
+								ENDIF 
+					
+								v_direccionImp	= tablaContrib.direccion
+								v_tipodocstrImp	= tablaContrib.tipodoc
+								v_documentoImp	= tablaContrib.documento
+								
+								v_ivaImp 		= tablaContrib.iva
+								
+								IF EMPTY(ALLTRIM(v_cpimp)) = .T.
+									v_cpimp = tablaContrib.cp
+								ENDIF 
+												
+							ELSE
+													
+								v_errorEnIteracion = .T.
+									
+							ENDIF 
+						
+						ENDIF 
+						
 							*********
 						SELECT codafip, idafipd FROM tipodocu_sql  WHERE ALLTRIM(detalle) == ALLTRIM(v_tipodocstrImp) INTO CURSOR tipodocsel
 
