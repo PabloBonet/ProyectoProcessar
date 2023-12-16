@@ -26051,3 +26051,131 @@ PARAMETERS pfa_articulo, pfa_identidadd, pa_conexion
 	RETURN .t. 
 ENDFUNC 
 
+
+FUNCTION registrarCumpFacRem
+PARAMETERS p_idfactura, p_idremito, p_accion, pa_conexion
+*#/----------------------------------------
+* FUNCION Función para registrar las cumplimentaciones de Facturas o Remitos
+* 	Busca el saldo de los items de las facturas y remitos asociados, y los registra 
+*	Tabla que voy a registrar: cumpFacRem
+* PARAMETROS: 	p_idfactura: ID de la factura a la cual se le van a cumplir los items
+*				p_idremito: ID del remito al cual se le van a cumplir los items
+*				p_accion: '+' o '-': para agregar o quitar la relación
+* RETORNO:		True en caso de que no haya errores, False  en caso contrario
+*#/---
+
+
+
+
+** Obtener las facturas pendientes de remitar y los remitos pendientes de facturar
+** Por cada factura veo el articuloo y la cantidad
+* Hago una subconsulta de los remitos para ese articulo y lo guardo en un cursor.
+* comparo, la cantidad pendiente de remitar con la cantidad que tenga el remito para ese articulo en ese item
+* si la cantidad es mayor a cero, cambio el pendiende de facturar en el remito por el total remitado y en la facura en ese item pongo la diferencia.
+* En un tabla temporal pongo el idfactturah y el idremitoh  con la cantidad imputada en el item del remito
+** Hago el mismo procedimiento por cada item de la factura
+
+	IF TYPE('p_idfactura') <> 'N' OR  TYPE('p_idremito') <> 'N' OR TYPE('p_accion') <> 'C'
+	
+		RETURN .F.
+	ENDIF 
+
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionR = pa_conexion
+		ELSE 
+			vconeccionR = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionR = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+
+
+	DO CASE
+	CASE accion = '+' && Agrego un registro a la tabla cumpfacrem
+		sqlmatriz(1)= " select * from facpendrem where idfactura = "+ALLTRIM(STR(p_idfactura))
+		verror=sqlrun(vconeccionR,"facpendrem_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las facturas pendientes de remitar",0+48+0,"Error")
+		    IF pa_conexion = 0
+				*** Cierro conexión ***
+				=abreycierracon(vconeccionR,"")
+			ENDIF 
+		    RETURN .F.
+		ENDIF 	
+	
+		sqlmatriz(1)= " select * from rempendfac where idremito = "+ALLTRIM(STR(p_idremito))
+		verror=sqlrun(vconeccionR,"facpendrem_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los remitos pendientes de facturar",0+48+0,"Error")
+		    IF pa_conexion = 0
+				*** Cierro conexión ***
+				=abreycierracon(vconeccionR,"")
+			ENDIF 
+		    RETURN .F.
+		ENDIF 	
+	
+		SELECT * FROM facpendrem_sql INTO TABLE facpendrem
+		SELECT * FROM rempendfac_sql INTO TABLE rempendfac
+		
+	
+		SELECT facpendrem
+		GO TOP 
+		DO WHILE NOT EOF()
+
+			v_idfacturah = facpendrem.idfacturah
+			v_articulo = facpendrem.articulo
+			v_cantFact = facpendrem.cantidadf
+			v_cantpendrem = facpendrem.cantpenr
+			
+			
+			SELECT * FROM rempendfac WHERE articulo = v_articulo INTO CURSOR rempenart
+			
+			SELECT rempenart
+			GO TOP 
+			DO WHILE NOT EOF()
+				v_cantpendfa = rempenart.cantpenf
+				v_idremitoh = rempenart.idremitoh
+				
+				
+				IF v_cantpendfa > 0
+				
+					v_acump = v_cantFact - v_cantpendfa 
+					
+					IF v_acump > 0
+						
+					ELSE
+					
+					ENDIF 
+				ENDIF 
+				SELECT rempenart
+				SKIP 1
+
+			ENDDO
+			
+
+			SELECT facpendrem
+			SKIP 1
+		ENDDO
+
+	CASE accion = '-' && Elimino un registro de la tabla cumpfacrem
+		sqlmatriz(1)= "delete from cumpfacrem where idfactura = "+ALLTRIM(STR(p_idfactura)) +" and idremito = " + ALLTRIM(STR(p_idremito))
+		verror=sqlrun(vconeccionR,"borracumpfr_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la eliminación de las facturas pendientes de remitar",0+48+0,"Error")
+		    IF pa_conexion = 0
+				*** Cierro conexión ***
+				=abreycierracon(vconeccionR,"")
+			ENDIF 
+		    RETURN .F.
+		ENDIF 	
+		
+		RETURN .T.
+	OTHERWISE	&& No hago nada, retorno False, porque paso un parámetro incorrecto
+		RETURN .F.
+	ENDCASE
+
+	
+
+ENDFUNC 

@@ -6390,3 +6390,310 @@ ENDFUNC
 
 
 *******************************************************
+
+
+
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION UnificaArticulo
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Recibe como Parametro las cuentas a unificar y eliminar .csv
+*/ Formato del archivo .csv 
+*/   articuloa c(50), articulob c(50) 
+*/  articuloa : codigo nuevo
+*/	articulob : codigo viejo
+*#/----------------------------------------
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1 - Carga de Archivo de Articulos -
+		p_archivo = alltrim(p_archivo)
+*!*			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		if file(".\uniarticulo.dbf") THEN
+			if used("uniarticulo") then
+				sele uniarticulo
+				use
+			endif
+			DELETE FILE .\uniarticulo.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\uniarticulo FREE (  articuloa c(50), articulob c(50)  )
+
+		SELECT uniarticulo
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+		SELECT uniarticulo
+		ALTER table uniarticulo ADD COLUMN eliminar c(1)
+	*	ALTER table uniarticulo ADD COLUMN eliminarb c(1)
+
+		DIMENSION tablasactu (31,1)
+		
+		tablasactu(1,1) ='ajustestockh'
+		tablasactu(2,1) ='articostos'
+		tablasactu(3,1) ='articuloscmp'
+		tablasactu(4,1) ='articulosf'
+		tablasactu(5,1) ='articulosimg'
+		tablasactu(6,1) ='articulosimp'
+		tablasactu(7,1) ='articulospro'
+		tablasactu(8,1) ='contabarticonc'
+		tablasactu(9,1) ='cumplimentah'
+		tablasactu(10,1) ='cumplimentaocd'
+		tablasactu(11,1) ='detafactu'
+		tablasactu(12,1) ='detafactutmp'
+		tablasactu(13,1) ='entartdes'
+		tablasactu(14,1) ='entidadesa'
+		tablasactu(15,1) ='entidadesd'
+		tablasactu(16,1) ='etiquetas'
+		tablasactu(17,1) ='factuproved'
+		tablasactu(18,1) ='facturasimp'
+		tablasactu(19,1) ='facturasimptmp'
+		tablasactu(20,1) ='listaprecioh'
+		tablasactu(21,1) ='ot'
+		tablasactu(22,1) ='r_articulostock'
+		tablasactu(23,1) ='r_artocdpendiente'
+		tablasactu(24,1) ='r_artpendiente'
+		tablasactu(25,1) ='r_depostock'
+		tablasactu(26,1) ='r_listaprea'
+		tablasactu(27,1) ='r_ocdpendientes'
+		tablasactu(28,1) ='r_otpendientes'
+		tablasactu(29,1) ='presupuh'
+		tablasactu(30,1) ='remitosh'
+		tablasactu(31,1) ='remitosprovh'
+
+		DIMENSION lamatriz1 (1,2)
+
+		_SYSSCHEMA_ANT =_SYSSCHEMA
+				
+*!*			FOR ISCH = 1 TO 2 
+			ISCH = 1
+*!*					IF ISCH = 1 THEN 
+*!*						_SYSSCHEMA = 'processar'
+*!*					ELSE
+*!*						_SYSSCHEMA = 'processarh'
+*!*					ENDIF 
+				
+				vconeccionFP=abreycierracon(0,_SYSSCHEMA)	
+				
+				SELECT uniarticulo
+				GO TOP 
+
+				DO WHILE !EOF()
+				
+					IF !EMPTY(ALLTRIM(uniarticulo.articuloa))  THEN 
+						
+*!*							IF ( ALLTRIM(UPPER(uniarticulo.articuloa)) == 'BORRAR' OR !(ALLTRIM(UPPER(uniarticulo.articuloa))==ALLTRIM(UPPER(uniarticulo.articulob))) ) AND ISCH = 1 THEN 
+*!*								REPLACE eliminar WITH 'B'
+*!*								*REPLACE eliminarb WITH 'B'
+*!*													
+*!*							ENDIF 
+						
+						IF (ALLTRIM(UPPER(uniarticulo.articuloa)) == "'BORRAR'" OR ALLTRIM(UPPER(uniarticulo.articuloa)) == 'BORRAR' ) AND ISCH = 1 THEN 
+							REPLACE eliminar WITH 'B'
+							*REPLACE eliminarb WITH 'B'
+												
+						ENDIF 
+					
+						IF !( ALLTRIM(UPPER(uniarticulo.articuloa)) == "'BORRAR'" OR ALLTRIM(UPPER(uniarticulo.articuloa)) == 'BORRAR' ) AND !(ALLTRIM(UPPER(uniarticulo.articuloa))==ALLTRIM(UPPER(uniarticulo.articulob))) THEN 
+						
+							v_articuloa = ALLTRIM(uniarticulo.articuloa)
+							v_articulob = ALLTRIM(uniarticulo.articulob)
+							
+							FOR ita = 1 TO 31 
+							
+								p_tipoope     = 'U'
+								p_condicion   = " articulo="+ALLTRIM(v_articulob)
+								v_titulo      = " EL ACTUALIZA "
+									
+								lamatriz1(1,1)='articulo'
+								lamatriz1(1,2)= ALLTRIM(v_articuloa)
+
+								p_tabla     = tablasactu(ita,1)
+								
+													
+								p_matriz    = 'lamatriz1'
+								p_conexion  = vconeccionFP
+								IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+								    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de Articulos ",0+48+0,"Error")
+								    RETURN 0
+								ENDIF  
+
+							ENDFOR  
+							
+							
+							
+							p_tipoope     = 'U'
+							p_condicion   = " articulo="+ALLTRIM(v_articulob)
+							v_titulo      = " EL ACTUALIZA "
+								
+							lamatriz1(1,1)='articulo'
+							lamatriz1(1,2)= ALLTRIM(v_articuloa)
+
+							p_tabla     = "articulos"
+							
+							
+							
+							p_matriz    = 'lamatriz1'
+							p_conexion  = vconeccionFP
+							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+							    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de Articulos ",0+48+0,"Error")
+							    RETURN 0
+							ENDIF  
+						ENDIF 
+							
+							
+						IF ALLTRIM(UPPER(uniarticulo.articuloa)) == "'BORRAR'" OR ALLTRIM(UPPER(uniarticulo.articuloa)) == 'BORRAR'  OR !(ALLTRIM(UPPER(uniarticulo.articuloa))==ALLTRIM(UPPER(uniarticulo.articulob))) THEN 
+						
+							FOR ita = 1 TO 31
+								
+								p_tabla = tablasactu(ita,1)
+
+								sqlmatriz(1)=" select * from "+ALLTRIM(p_tabla)+" where articulo = "+ALLTRIM(uniarticulo.articulob)
+								verror=sqlrun(vconeccionFP,"Existe_registro")
+								IF verror=.f.  
+								    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Articulos... ",0+48+0,"Error")
+								    RETURN 0
+								ENDIF
+								SELECT Existe_registro
+								GO TOP 
+								IF !EOF() THEN 
+									SELECT uniarticulo
+*!*										IF ALLTRIM(_SYSSCHEMA)=='processar' THEN 
+*!*											replace eliminar WITH ''
+*!*										ELSE
+*!*											replace eliminarb WITH ''
+*!*										ENDIF 
+									replace eliminar WITH ''
+				
+								ENDIF 
+								USE IN Existe_registro 
+
+							ENDFOR  
+
+						ENDIF 
+										
+					ENDIF 
+						
+					SELECT uniarticulo
+					SKIP 					
+					
+				ENDDO 
+				
+				=abreycierracon(vconeccionFP,"")	
+
+				
+*!*			ENDFOR 
+
+		RELEASE lamatriz1
+		SELECT uniarticulo
+		_SYSSCHEMA =_SYSSCHEMA_ANT
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		*** FINALMENTE BORRO LAS ENTIDADES DE LA TABLA MAESTRA
+*!*			SELECT * FROM uniarticulo INTO TABLE noarticuloeli WHERE ALLTRIM(eliminar) == 'B' AND EMPTY(ALLTRIM(eliminarb))
+*!*			SELECT noarticuloeli 
+*!*			COPY TO noarticuloeli.xls TYPE XL5 
+*!*			USE IN noarticuloeli 
+*!*			SELECT * FROM uniarticulo INTO TABLE uniarticuloeli WHERE ALLTRIM(eliminar) == 'B' AND ALLTRIM(eliminarb) == 'B'
+
+
+*!*			SELECT * FROM uniarticulo INTO TABLE noarticuloeli WHERE ALLTRIM(eliminar) == 'B' 
+*!*			SELECT noarticuloeli 
+*!*			COPY TO noarticuloeli.xls TYPE XL5 
+		
+*!*			USE IN noarticuloeli 
+
+ 
+		SELECT * FROM uniarticulo  WHERE ALLTRIM(eliminar) == 'B' OR ALLTRIM(eliminar) == "'B'" INTO TABLE uniarticuloeli
+		
+		
+		SELECT uniarticuloeli
+		GO TOP 
+		
+		IF NOT EOF()
+
+			
+			
+			v_sn=MESSAGEBOX("¿Confirma la eliminación de los articulos mostrados?",4+32+256,"Eliminar articulos")
+			
+			IF v_sn = 6
+			
+				FOR ita = 1 TO 31
+				
+					p_tablaelim     = tablasactu(ita,1)
+					SELECT uniarticuloeli
+					GO TOP 
+					DO WHILE !EOF()
+
+						sqlmatriz(1)=" delete from "+ALLTRIM(p_tablaelim)+" where articulo = "+ALLTRIM(uniarticuloeli.articulob)
+						
+						verror=sqlrun(vconeccionF,"Borra_registro")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Articulos... ",0+48+0,"Error")
+						    RETURN 0
+						ENDIF
+						
+						SELECT uniarticuloeli
+						SKIP 
+					ENDDO 
+			
+				ENDFOR 
+				
+				SELECT uniarticuloeli
+				GO TOP 
+				DO WHILE !EOF()
+
+					sqlmatriz(1)=" delete from articulos where articulo = "+ALLTRIM(uniarticuloeli.articulob)
+					
+					verror=sqlrun(vconeccionF,"Borra_registro")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Articulos... ",0+48+0,"Error")
+					    RETURN 0
+					ENDIF
+					
+					SELECT uniarticuloeli
+					SKIP 
+				ENDDO 
+		
+			
+			ENDIF 
+		
+		
+		ENDIF 
+		
+		USE IN uniarticuloeli
+		
+		
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT uniarticulo
+	USE IN uniarticulo
+	
+	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+
+*******************************************************
