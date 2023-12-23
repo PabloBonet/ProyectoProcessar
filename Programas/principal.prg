@@ -3,11 +3,12 @@ _screen.Visible = .t.
 SET SYSMENU OFF
 CLEAR
 
-_screen.windowstate= 0
+_screen.windowstate=0
 _screen.closable = .f.
 _screen.MaxButton = .T.
 _screen.AutoCenter = .T.
 _screen.Caption 	= ""
+_screen.BackColor = RGB(72,120,118)
 
 set exclusive OFF
 set date to dmy
@@ -44,15 +45,18 @@ vrand = RAND(-100.001)
 PUBLIC toolbarsys, onactivitictrl
 toolbarsys = CREATEOBJECT('toolbarsys')
 
+*!*	_screen.Visible = .f.
 
 
-WAIT windows "Verificando Conexion con Base de Datos... Aguarde..." NOWAIT 
+*WAIT windows "Verificando Conexion con Base de Datos... Aguarde..." NOWAIT 
 
 =LEECONFIG()
 
+=VPNCONEXION()
+
 *** SETEO  Y DEFINICION DE VARIABLES PUBLICAS Y DE INICIO
 PUBLIC _SYSSERVIDOR , _SYSMENUSYSTEM, _SYSMODULO , _SYSUSUARIO,_SYSVERCAJASREC , _SYSVERSION , _SYSIP, _SYSHOST, _SYSLISTAPRECIO, _SYSBGPROCE, _SYSVERSION
-PUBLIC _SYSMASTER_SERVER ,_SYSMASTER_USER, _SYSMASTER_PASS ,_SYSMASTER_USER , _SYSMYSQL_PORT , _SYSMASTER_SCHEMA, _SYSMASTER_DESC, _SYSNIVELUSU
+PUBLIC _SYSMASTER_SERVER ,_SYSMASTER_USER, _SYSMASTER_PASS ,_SYSMASTER_USER , _SYSMASTER_PORT, _SYSMYSQL_PORT , _SYSMASTER_SCHEMA, _SYSMASTER_DESC, _SYSNIVELUSU
 
 PUBLIC SQLMATRIZ(20)
 FOR I = 1 TO 20

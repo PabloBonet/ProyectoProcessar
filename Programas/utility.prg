@@ -31,7 +31,9 @@ FUNCTION LEECONFIG()
 		ENDDO
 		USE 
 		SET SAFETY OFF
+		
 	ELSE 
+		_screen.Visible = .t. 
 		DO FORM seteoaccesodb TO vseteo
 		IF !(vseteo = "0") THEN
 			USE CONFIG.DBF IN 0
@@ -51,7 +53,7 @@ FUNCTION LEECONFIG()
 			SET SAFETY OFF
 			RETURN 
 		ELSE 
-			MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
+*			MESSAGEBOX("No se puede continuar con la ejecucion; Error en carga de archivo de configuración !! ",0+16,"Error de Ejecución")
 			quit	
 		ENDIF 
 	ENDIF 
@@ -63,7 +65,7 @@ ENDFUNC
 
 
 FUNCTION CREACONFIG()
-		PARAMETERS pc_server, pc_usuario, pc_passw, pc_puerto, pc_esquema, pc_driver, pc_encripta, pc_llave
+		PARAMETERS pc_server, pc_usuario, pc_passw, pc_puerto, pc_esquema, pc_driver, pc_encripta, pc_llave, pc_vpnexe, pc_vpncon, pc_vpnusr, pc_vpnpass
 		v_llave = pc_llave
 		IF FILE('config.dbf') THEN 
 			DELETE FILE 'config.dbf' 
@@ -94,10 +96,28 @@ FUNCTION CREACONFIG()
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
 		INSERT INTO config VALUES (v_charC)
 
+		v_charC="PUBLIC _SYSVPN_EXE, _SYSVPN_CON, _SYSVPN_USR, _SYSVPN_PASS "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSVPN_EXE     = '"+(ALLTRIM(pc_vpnexe))+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSVPN_CON     = '"+ALLTRIM(pc_vpncon)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSVPN_USR     = '"+ALLTRIM(pc_vpnusr)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+		v_charC="_SYSVPN_PASS    = '"+ALLTRIM(pc_vpnpass)+"' "
+		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
+		INSERT INTO config VALUES (v_charC)
+
+
 		USE 
 	RETURN 
 
 ENDFUNC
+
 
 
 
@@ -5613,6 +5633,9 @@ PARAMETERS p_fecha,p_devuelve
 ENDFUNC 
 
 
+
+*************************************************
+
 FUNCTION fdescribecompro
 PARAMETERS par_tabla,par_nomindice,par_valindice
 *#/-------------------------------------------------------------
@@ -5676,7 +5699,7 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 
 	
 	IF !(TYPE('par_valindice')="C") THEN  && actualizo detalle de asientos solo si indice es numero --> comprobante
-		sqlmatriz(1)	="  update asientoscompro set detacompro = '"+ALLTRIM(v_retornod)+"'"
+		sqlmatriz(1)	="  update asientoscompro set detacompro = '"+ALLTRIM(SUBSTR(ALLTRIM(v_retornod)+SPACE(254),1,254))+"'"
 		sqlmatriz(2)	="  where  idregicomp = "+ALLTRIM(STR(par_valindice))+" and tabla = '"+ALLTRIM(par_tabla)+"'"
 		verror=sqlrun(vconeccionFD,"asientosco")
 		IF verror=.f.  
@@ -5689,6 +5712,8 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 	RETURN v_retornod
 ENDFUNC 
 
+
+***********************************************
 
 
 FUNCTION imprimirRemito
@@ -16204,12 +16229,10 @@ FUNCTION FUpdatesys
 	 IF !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'   ',1,3)=='S/A') AND !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'    ',1,3)=='N/A') AND !EMPTY(ALLTRIM(_SYSFTPUPDATE))  THEN 
  
 	  	  =ALINES(ARRFTP,_SYSFTPUPDATE,1,';',' ')
-		
 		IF ping(ALLTRIM(ARRFTP(1))) = .f. THEN 
 			RELEASE ARRFTP 
 			RETURN 0
 		ENDIF 
-		
 	  	oFTp = .NULL.
 	  	oFTP = CreateObject("CLASE_FTP")
 	  
@@ -16262,39 +16285,38 @@ ENDFUNC
 
 
 FUNCTION ping
-param tcServer
-*#/----------------------------------------
-*******************************************
-** Ping, recibe como parametro un hosts y envia un ping para chequear que exista
-* devuelve .t. si responde, .f. si no responde el host
-*******************************************
-*#/----------------------------------------
-    LOCAL llResult
-    tcServer = IIF( VARTYPE(tcServer)='C', ALLTRIM(tcServer), '')
+PARAMETERS tcIpNumber 
+**********************************
+DECLARE INTEGER ShellExecute IN shell32.dll ; 
+INTEGER hndWin, ; 
+STRING cAction, ; 
+STRING cFileName, ; 
+STRING cParams, ;  
+STRING cDir, ; 
+INTEGER nShowWin
 
-    if empty(tcServer)
-        return .f.
-    endif
-    DECLARE INTEGER WSACleanup IN ws2_32
-    DECLARE INTEGER gethostbyname IN ws2_32 STRING host
-    Declare Long inet_addr In wsock32 String cp
-    DECLARE INTEGER WSAStartup IN ws2_32 INTEGER wVerRq, STRING lpWSAData
-    Declare Long gethostbyaddr In wsock32 Long @addr, Long lenght, Long protocol
+local lcCMD, lcParas, lcping
+DECLARE Sleep IN Win32API INTEGER
 
-    IF WSAStartup(0x202, Repli(Chr(0),512)) = 0
-        IF ISALPHA( LEFT(tcServer,1))
-               llResult= !(gethostbyname(tcServer) = 0)
-        ELSE
-              * Ip-adress to NETWORK BYTE ORDRER
-              ipAddress_n = inet_addr(alltrim(tcServer))
-              llResult= !(gethostbyaddr(ipAddress_n,4,2)=0)
-        ENDIF
-    ENDIF
-   = WSACleanup()
+lcCmd = 'ping -n 1 -w 2 '+tcIpNumber+' > '   && command to Execute 
+lcParas = FULLPATH(CURDIR())+'ping.tcp '   && Extra parameter to pass your command 
+ * --- Execute the command.
+****   shellExecute last parameter 0  will hide DOS window
+***  If you want to show DOS window change it to value  1 
 
-RETURN llResult
-
-**********************************************************************************
+ShellExecute(0,'open','cmd', '/C'+lcCmd+' '+lcParas, '',0)
+sleep(1000)  && delay time to come  back
+lcping=FILETOSTR(lcParas)
+ *** sleep value  can be reduced according to your need
+CLEAR DLLS ShellExecute
+DELETE FILE &lcParas
+* --- Return to caller.
+IF ATC('recibidos = 1,',lcping) = 0 then 
+	RETURN .f.
+ELSE
+	RETURN .t. 
+ENDIF 
+ENDFUNC
 
 
 
@@ -25990,6 +26012,9 @@ PARAMETERS pfa_articulo, pfa_identidadd, pa_conexion
 * RETORNO:		True en caso de que no haya errores, False  en caso contrario
 *#/---
 
+	IF pfa_identidadd = 0 THEN 
+		RETURN .f. 
+	ENDIF 
 
 	IF TYPE("pa_conexion") = 'N' THEN 
 		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
@@ -26021,27 +26046,31 @@ PARAMETERS pfa_articulo, pfa_identidadd, pa_conexion
 	USE IN cuotasdc_sql
 	SELECT cuotasdc
 	GO TOP 
-	replace ALL netocuota WITH neto / ( IIF(valorcuota = 'S' OR cantcuotas = 0 ,1,cantcuotas  ) ), ;
-				impucuota WITH IIF(netoante = 0,0,( impuesto / netoante )) * ( neto / ( IIF(valorcuota = 'S' OR cantcuotas = 0 ,1,cantcuotas  ) ))
-	GO TOP 
 
-
-	DO WHILE !EOF()
+	IF !EOF() THEN && si hay cuotas
 	
-		sqlmatriz(1)=" update entidadesdc  set neto = "+STR(cuotasdc.netocuota,13,2)+", impuesto = "+STR(cuotasdc.impucuota,13,2)
-		sqlmatriz(2)=" where idcuotasd = "+str(cuotasdc.idcuotasd)
-		verror=sqlrun(vconeccionRA,"update_entidadesdc")
-		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un Error en la Actualización de Cuotas a Facturar ",0+48+0,"Error")
-		    IF pa_conexion = 0
-				=abreycierracon(vconeccionRA,"")
-			ENDIF 
-		    RETURN .F.
-		ENDIF 	
+		replace ALL netocuota WITH neto / ( IIF(valorcuota = 'S' OR cantcuotas = 0 ,1,cantcuotas  ) ), ;
+					impucuota WITH IIF(netoante = 0,0,( impuesto / netoante )) * ( neto / ( IIF(valorcuota = 'S' OR cantcuotas = 0 ,1,cantcuotas  ) ))
+		GO TOP 
 
-		SELECT cuotasdc
-		SKIP 
-	ENDDO 
+		DO WHILE !EOF()
+		
+			sqlmatriz(1)=" update entidadesdc  set neto = "+STR(cuotasdc.netocuota,13,2)+", impuesto = "+STR(cuotasdc.impucuota,13,2)
+			sqlmatriz(2)=" where idcuotasd = "+str(cuotasdc.idcuotasd)
+			verror=sqlrun(vconeccionRA,"update_entidadesdc")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Actualización de Cuotas a Facturar ",0+48+0,"Error")
+			    IF pa_conexion = 0
+					=abreycierracon(vconeccionRA,"")
+				ENDIF 
+			    RETURN .F.
+			ENDIF 	
+
+			SELECT cuotasdc
+			SKIP 
+		ENDDO 
+		
+	ENDIF  
 	USE IN cuotasdc
 
     IF pa_conexion = 0
@@ -26050,6 +26079,136 @@ PARAMETERS pfa_articulo, pfa_identidadd, pa_conexion
 	ENDIF 
 	RETURN .t. 
 ENDFUNC 
+
+
+
+
+FUNCTION FTRChDiferido
+PARAMETERS pch_idcheque, pa_conexion
+*#/----------------------------------------
+* FUNCION Actualizar Importe de Cuotas para Facturacion Mensual
+*
+* PARAMETROS: 	pch_idcheque: idcheque para realizar la transferencia en la cuenta 
+*				pa_conexion: Conexión usada, si no hay conexión abierta -> abre una
+* RETORNO:		True en caso de que no haya errores, False  en caso contrario
+*#/---
+
+	IF !(TYPE("_SYSCHDIFERIDO") = 'C') THEN
+		RETURN .f.
+	ENDIF
+	 
+	
+	IF EMPTY("_SYSCHDIFERIDO") OR LEN(_SYSCHDIFERIDO) = 1  OR UPPER(SUBSTR(ALLTRIM(_SYSCHDIFERIDO),1,1)) ='N'  THEN
+		RETURN .f.
+	ENDIF 
+	
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionCH = pa_conexion
+		ELSE 
+			vconeccionCH = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionCH = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+
+
+	sqlmatriz(1)="select * from cheques where idcheque = "+STR(pch_idcheque)
+	verror=sqlrun(vconeccionCH,"cheques_dife")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de Cheques para Hacer la Transferencia ",0+48+0,"Error")
+	    IF pa_conexion = 0
+			=abreycierracon(vconeccionCH,"")
+		ENDIF 
+	    RETURN .F.
+	ENDIF 	
+	SELECT cheques_dife
+
+	GO TOP 
+	IF EOF()
+		USE IN cheques_dife
+	    IF pa_conexion = 0 THEN 
+			=abreycierracon(vconeccionCH,"")	
+		ENDIF 
+	    RETURN .F.
+	ENDIF 
+	
+	v_chidcuentad = cheques_dife.idcuenta && cuenta destino para la transferencia
+	v_chidcuentao = 0					  && Cuenta Origen de los montos para la transferencia
+	v_chimporte	  = cheques_dife.importe
+	v_chfecha	  = cheques_dife.fechaacr
+	v_chfechanul  = cheques_dife.fechanula
+	v_chobserva   = 'IDCHQ:'+ALLTRIM(STR(cheques_dife.idcheque))+";"
+
+	* Controlo que ya no haya una transferencia para este cheque
+	sqlmatriz(1)="select * from transferencia where observa like 'IDCHQ:"+ALLTRIM(STR(pch_idcheque))+";'"
+	verror=sqlrun(vconeccionCH,"transferido_dife")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda Comprobantes de Transferencias ya hechos para el Cheque",0+48+0,"Error")
+	    IF pa_conexion = 0
+			=abreycierracon(vconeccionCH,"")
+		ENDIF 
+	    RETURN .F.
+	ENDIF 	
+	SELECT transferido_dife
+	GO TOP 
+	IF EOF()
+		USE IN transferido_dife
+	    IF pa_conexion = 0 THEN 
+			=abreycierracon(vconeccionCH,"")	
+		ENDIF 
+	    RETURN .F.
+	ENDIF 
+	USE IN transferido_dife
+
+	SELECT cheques_dife
+
+	*************************************************************
+	
+	
+	v_chmanualauto 	= IIF(SUBSTR(_SYSCHDIFERIDO,1,1)="A",.t.,.f.)
+	aelemenche 		= ALINES(Arrbancos,SUBSTR(_SYSCHDIFERIDO,3),';')
+	
+	FOR canbc = 1 TO aelemenche 
+		IF INT(VAL(SUBSTR(Arrbancos(canbc),1,(ATC('-',Arrbancos(canbc),1)-1)))) = v_chidcuentad then 
+			IF v_chidcuentao = 0 THEN 
+				v_chidcuentao = INT(VAL(SUBSTR(Arrbancos(canbc),(ATC('-',Arrbancos(canbc),1)+1))))
+			ENDIF 
+		ENDIF 
+	ENDFOR 
+	RELEASE ArrBancos
+
+
+	IF EMPTY(v_chfecha) OR !EMPTY(v_chfechanul) OR v_chidcuentao = 0  THEN 
+	    IF pa_conexion = 0
+			*** Cierro conexión ***
+			=abreycierracon(vconeccionCH,"")
+		ENDIF 	
+		RETURN .t.
+	ENDIF 
+
+	tipoPagoObjCh	= CREATEOBJECT('tipospagosclass')
+	v_tipoPagoTR = tipopagoObjCh.gettipospagos('TRANSFERENCIA')	
+	RELEASE tipoPagoObjCh
+	
+***  aqui preparo los datos para la transferencia de cuentas ***
+	CREATE TABLE tmpdetacheque ( idtipopago i, idcuenta i, idcuentad i, fecha c(8), importe n(13,2), idregistro i, descrip c(200), observa c(200) )
+	INSERT INTO tmpdetacheque VALUES (v_tipoPagoTR, v_chidcuentao, v_chidcuentad, v_chfecha, v_chimporte, 0, 'TRANSFERENCIA', v_chobserva  )
+	USE IN tmpdetacheque 
+	DO FORM transferencia WITH 0, "tmpdetacheque", v_chmanualauto  TO v_retornatra
+	
+
+****************************************************************
+	IF pa_conexion = 0
+		*** Cierro conexión ***
+		=abreycierracon(vconeccionCH,"")
+	ENDIF 
+
+ENDFUNC 
+
+
+
 
 
 FUNCTION registrarCumpFacRem
@@ -26063,8 +26222,6 @@ PARAMETERS p_idfactura, p_idremito, p_accion, pa_conexion
 *				p_accion: '+' o '-': para agregar o quitar la relación
 * RETORNO:		True en caso de que no haya errores, False  en caso contrario
 *#/---
-
-
 
 
 ** Obtener las facturas pendientes de remitar y los remitos pendientes de facturar
@@ -26176,6 +26333,37 @@ PARAMETERS p_idfactura, p_idremito, p_accion, pa_conexion
 		RETURN .F.
 	ENDCASE
 
-	
-
 ENDFUNC 
+
+
+
+
+FUNCTION VPNConexion
+*#/----------------------------------------
+* FUNCION Verifica si necesita conexion con VPN
+* RETORNO:		True en caso de que haya conectado, False  en caso contrario
+*#/---
+
+ IF !(TYPE("_SYSMYSQL_SERVER")= 'C') THEN 
+ 	RETURN .f.
+ ENDIF 
+ IF ping(ALLTRIM(_SYSMYSQL_SERVER)) = .T. THEN 
+	 RETURN .T.
+ ENDIF 
+ IF TYPE("_SYSVPN_CON") = 'C' THEN 
+	IF !EMPTY(_SYSVPN_CON) THEN 
+		EJE = "RUN /N2 "+_SYSVPN_EXE+" "+_SYSVPN_CON+" "+_SYSVPN_USR+" "+_SYSVPN_PASS
+		&EJE
+		WAIT windows "Conectando VPN..." TIMEOUT 7 
+*		RELEASE _SYSVPN_EXE,_SYSVPN_CON,_SYSVPN_USR,_SYSVPN_PASS
+	ENDIF 
+ 	RETURN .T.
+ ENDIF 
+
+
+
+
+
+
+
+
