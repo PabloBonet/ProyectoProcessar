@@ -198,7 +198,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva, ifnull(c.compuesto,'N') as compuesto  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
 	sqlmatriz(2)=" left join conceptoser c on c.idconcepto = f.idconcepto "
 	sqlmatriz(3)=" left join entidadesh h on h.identidadh = f.identidadh "
-	sqlmatriz(4)=" where f.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(4)=" where f.facturar = 'S' and h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	verror=sqlrun(vconeFacturar,"entidadesdf_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
@@ -322,7 +322,6 @@ PARAMETERS par_idperiodo, par_ordenfa
 	SET RELATION TO idconcepto INTO &vconceptoser ADDITIVE 
 	replace ALL ejecucion WITH &vconceptoser..ejecucion 
 
-
 	** EJECUTA CALCULANDO CONCEPTOS POR NIVELES
 	FOR ieje = 0 TO 3 
 	
@@ -367,7 +366,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 									FunV= VAL(SUBSTR(nfuncion,1,2))
 			
 					
-								V_retfun = &Fun
+									V_retfun = &Fun
 									
 									IF FunV > 0 THEN 
 										FOR ijv = 1 TO FunV
@@ -608,8 +607,10 @@ PARAMETERS par_idperiodo, par_ordenfa
 		SKIP 
 	ENDDO 	
 	SET ENGINEBEHAVIOR 70
+
 	
 	= CargarFacturas ( vfacturastmp, vdetafactutmp, vfacturasimptmp, vbocaserviciosftmp,  vconeFacturar)
+
 	
 	=abreycierracon(vconeFacturar,"")
 	
@@ -669,6 +670,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 
 
 	DO WHILE !EOF() 
+
 	
 		*** GUARDA DATOS DE CABECERA DE LA FACTURA
 		lamatriz1(1,1)='idfactura'
@@ -784,7 +786,6 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		lamatriz1(56,1)='idtipocli'
 		lamatriz1(56,2)= ALLTRIM(STR(&pfacturas..idtipocli))
 
-
 		p_tabla     = 'facturastmp'
 		p_matriz    = 'lamatriz1'
 		p_conexion  = vconeccionFa 
@@ -792,7 +793,6 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
 		    RETURN 
 		ENDIF  
-
 
 		varchi = FCAdeudadas ( 0, 0, 0, ALLTRIM(&pfacturas..fecha), &pfacturas..idfactura, "I", "tmp", vconeccionFa )
 
@@ -858,6 +858,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		lamatriz2(21,2)= ALLTRIM(STR(&pdetafactu..neto,13,4))
 		lamatriz2(22,1)='idcuotasd'
 		lamatriz2(22,2)= ALLTRIM(STR(&pdetafactu..idcuotasd,13,4))
+
 
 		p_tabla     = 'detafactutmp'
 		p_matriz    = 'lamatriz2'
