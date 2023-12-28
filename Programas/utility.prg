@@ -16295,11 +16295,13 @@ STRING cParams, ;
 STRING cDir, ; 
 INTEGER nShowWin
 
-local lcCMD, lcParas, lcping
+local lcCMD, lcParas, lcping, lctmp
 DECLARE Sleep IN Win32API INTEGER
 
+lctmp = ALLTRIM(STRTRAN(SUBSTR(STR((RAND(-1)*1000)),2),'','0'))
+
 lcCmd = 'ping -n 1 -w 2 '+tcIpNumber+' > '   && command to Execute 
-lcParas = FULLPATH(CURDIR())+'ping.tcp '   && Extra parameter to pass your command 
+lcParas = FULLPATH(CURDIR())+'ping'+lctmp+'.tcp '   && Extra parameter to pass your command 
  * --- Execute the command.
 ****   shellExecute last parameter 0  will hide DOS window
 ***  If you want to show DOS window change it to value  1 
@@ -26363,6 +26365,133 @@ FUNCTION VPNConexion
 
 
 
+FUNCTION stockArticuloFecha
+PARAMETERS pa_articulo, pa_deposito, pa_fecha, pa_conexion
+*#/----------------------------------------
+* FUNCION Función para obtener el stock de un articulo en un deposito hasta una fecha determinada.
+* El codigo puede ser de articulos o material. Primero va a intentar buscar como articulo y si no lo encuentra busca material
+* PARAMETROS: 	pa_articulo: ID del articulo que se desea buscar
+*				pa_deposito: ID del deposito
+*				pa_fecha: Fecha hasta la cual se va a calcular los movimientos formato: 'AAAAMMDD'
+*				pa_conexion: Variable de conexión, si existe la usa sino la crea
+* RETORNO:		Cantidad de stock a la fecha indicada, NULL en caso de error
+*#/---
+
+	IF EMPTY(ALLTRIM(pa_articulo)) = .T. OR TYPE('pa_deposito') <> 'N' OR TYPE('pa_fecha') <> 'C'
+		RETURN null
+	ENDIF 
+
+
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionR = pa_conexion
+		ELSE 
+			vconeccionR = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionR = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+	** Compruebo primero si es un articulo  **
+	sqlmatriz(1)= " select articulo from articulos " 
+	sqlmatriz(2)= " where articulo = '"+ALLTRIM(pa_articulo)+"'"
+	
+	verror=sqlrun(vconeccionR,"articulo_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del artículos ",0+48+0,"Error")
+	    IF pa_conexion = 0
+			*** Cierro conexión ***
+			=abreycierracon(vconeccionR,"")
+		ENDIF 
+	    RETURN null
+	ENDIF 	
+	
+	
+	SELECT articulo_sql
+	GO TOP 
+	IF NOT EOF()
+		** Es un artículo ** 
+		
+		sqlmatriz(1)= " SELECT p.fecha,h.articulo, h.detalle, h.deposito,sum((h.cantidad*if(t.ie='I',1,-1))) as stock "
+		sqlmatriz(2)= " FROM ajustestockp p left join ajustestockh h on p.idajuste = h.idajuste left join tipomstock t on p.idtipomov = t.idtipomov "
+		sqlmatriz(3)= " left join estadosreg e on e.tabla = 'ajustestockh' and e.campo = 'idajusteh' and h.idajusteh = e.id "
+		sqlmatriz(4)= " where p.fecha <= '"+ALLTRIM(pa_fecha)+"' and  h.articulo = '"+ALLTRIM(pa_articulo)+"' and h.deposito = "+ALLTRIM(STR(pa_deposito))+" and (e.idestador is null or e.idestador <> 2) "
+
+*!*			verror=sqlrun(vconeccionR,"stockart_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del stock de artículos ",0+48+0,"Error")
+*!*			    IF pa_conexion = 0
+*!*					*** Cierro conexión ***
+*!*					=abreycierracon(vconeccionR,"")
+*!*				ENDIF 
+*!*			    RETURN null
+*!*			ENDIF 
+*!*			
+	
+	ELSE
+		
+		** Compruebo primero si es un material **
+		sqlmatriz(1)= " select codigomat from otmateriales" 
+		sqlmatriz(2)= " where codigomat = '"+ALLTRIM(pa_articulo)+"'"
+		
+		verror=sqlrun(vconeccionR,"material_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del material ",0+48+0,"Error")
+		    IF pa_conexion = 0
+				*** Cierro conexión ***
+				=abreycierracon(vconeccionR,"")
+			ENDIF 
+		    RETURN null
+		ENDIF 	
+		
+		
+		SELECT material_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			** Es un material **
+			sqlmatriz(1)= " SELECT p.fecha,h.idmate,h.codigomat, h.descrip, h.iddepo,sum((h.cantidad*if(t.ie='I',1,-1))) as stock "
+			sqlmatriz(2)= " FROM otmovistockp p left join otmovistockh h on p.idmovip = h.idmovip left join ottiposmovi t on p.idtipomov = t.idtipomov "
+			sqlmatriz(3)= "  left join estadosreg e on e.tabla = 'otmovistockh' and e.campo = 'idmovih' and h.idmovih = e.id "
+			sqlmatriz(4)= "  where p.fecha <= '"+ALLTRIM(pa_fecha)+"' and  h.codigomat = '"+ALLTRIM(pa_articulo)+"'  and h.iddepo = "+ALLTRIM(STR(pa_deposito))+" and (e.idestador is null or e.idestador <> 2) "
+		ELSE
+			RETURN null 
+		ENDIF 
+	
+	ENDIF 
+
+
+	
+	verror=sqlrun(vconeccionR,"stockart_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del stock de artículos ",0+48+0,"Error")
+	    IF pa_conexion = 0
+			*** Cierro conexión ***
+			=abreycierracon(vconeccionR,"")
+		ENDIF 
+	    RETURN null
+	ENDIF 
+		
+	
+	SELECT stockart_sql
+	GO TOP 
+	IF NOT EOF()
+		SELECT stockart_sql
+		v_stock = stockart_sql.stock
+		IF ISNULL(v_stock) = .T.
+			RETURN 0
+		ELSE
+		
+			RETURN v_stock
+		ENDIF 
+	ELSE
+	
+		RETURN 0	
+	
+	ENDIF 
+		
+
+ENDFUNC 
 
 
 
