@@ -2441,16 +2441,24 @@ PARAMETERS p_idnp
 			** agrega los datos extra y anexos de la entidad y la nota de pedido a la impresion
 			************************************************************
 			*Anexo Entidades
-			sqlmatriz(1)=" select concat(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor, concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
-			sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'entidades' and r.idregistro = "+ ALLTRIM(STR(v_entidad))
+			sqlmatriz(1)=" select concat(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor, concat(r.tabla,SPACE(15)) as tabla, ifnull(o.orden,'000') as ordenar from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+			sqlmatriz(2)=" left join datosextraor o on o.tabla = 'entidades' and o.propiedad = d.propiedad "
+			sqlmatriz(3)=" where d.imprimir = 'S' and r.tabla = 'entidades' and r.idregistro = "+ ALLTRIM(STR(v_entidad))
+
+*!*				sqlmatriz(1)=" select concat(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor, concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+*!*				sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'entidades' and r.idregistro = "+ ALLTRIM(STR(v_entidad))
 			verror=sqlrun(vconeccionF,"entidadextra_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
 			ENDIF 		
 			
 			*Anexo NP
-			sqlmatriz(1)=" select CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor , concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
-			sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'np' and r.idregistro = "+ ALLTRIM(STR(v_idnp))
+			sqlmatriz(1)=" select CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor , concat(r.tabla,SPACE(15)) as tabla, ifnull(o.orden,'000') as ordenar from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+			sqlmatriz(2)=" left join datosextraor o on o.tabla = 'np' and o.propiedad = d.propiedad "
+			sqlmatriz(3)=" where d.imprimir = 'S' and r.tabla = 'np' and r.idregistro = "+ ALLTRIM(STR(v_idnp))
+
+*!*				sqlmatriz(1)=" select CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor , concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+*!*				sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'np' and r.idregistro = "+ ALLTRIM(STR(v_idnp))
 			verror=sqlrun(vconeccionF,"npextra_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
@@ -2461,7 +2469,7 @@ PARAMETERS p_idnp
 			IF EOF() THEN 
 				CREATE TABLE entidadex ( propiedad c(50), valor m , tabla c(15)) 
 			ELSE
-				SELECT propiedad , valor , tabla FROM entidadextra_sql INTO TABLE .\entidadex ORDER BY propiedad 
+				SELECT propiedad , valor , tabla, ordenar FROM entidadextra_sql INTO TABLE .\entidadex ORDER BY ordenar, propiedad 
 				ALTER table entidadex alter COLUMN valor m
 			ENDIF 
 			USE IN entidadextra_sql
@@ -2472,7 +2480,7 @@ PARAMETERS p_idnp
 			IF EOF() THEN 
 				CREATE TABLE npex ( propiedad c(50), valor m , tabla c(15)) 
 			ELSE
-				SELECT propiedad , valor , tabla FROM npextra_sql INTO TABLE .\npex ORDER BY propiedad 
+				SELECT propiedad , valor , tabla, ordenar FROM npextra_sql INTO TABLE .\npex ORDER BY ordenar, propiedad 
 				ALTER table npex alter COLUMN valor m
 			ENDIF 
 			USE IN npextra_sql 

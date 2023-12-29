@@ -195,10 +195,13 @@ PARAMETERS par_idperiodo, par_ordenfa
 	*/*************
 	* Obtengo el detalle de todos los conceptos o detalles que debo facturar cargado a las entidades Seleccionadas
 	*/ - sin los conceptos compuestos 
-	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva, ifnull(c.compuesto,'N') as compuesto  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
+	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva, ifnull(c.compuesto,'N') as compuesto, ifnull(a.idcuotasd,0) as cacuotas  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
 	sqlmatriz(2)=" left join conceptoser c on c.idconcepto = f.idconcepto "
 	sqlmatriz(3)=" left join entidadesh h on h.identidadh = f.identidadh "
-	sqlmatriz(4)=" where f.facturar = 'S' and h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(4)=" left join entidadesdc a on a.identidadd = f.identidadd "
+	sqlmatriz(5)=" where f.facturar = 'S' and h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(6)=" group by f.identidadd "
+
 	verror=sqlrun(vconeFacturar,"entidadesdf_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
@@ -214,6 +217,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 	ENDIF 
 
 	SELECT * FROM &ventidadesdf_sql INTO TABLE ventidadesdf
+	
+
 
 *******************************************************************************************************************
 ****** Obtengo los conceptos compuestos de aquellos que debo facturar para agregar los items correspondientes *****
@@ -252,8 +257,6 @@ PARAMETERS par_idperiodo, par_ordenfa
 *******************************************************************************************************************
 
 
-
-
 	v_fechaemite = &vfactulotes_sql..fechaemite
 	
 	*/*************
@@ -285,6 +288,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 	ventidadesdf = 'entidadesdf'+vartmp 
 	SELECT * FROM &ventidadesdf_sql INTO TABLE &ventidadesdf WHERE compuesto = 'N'
 	SELECT &ventidadesdf
+	ALTER table &ventidadesdf alter COLUMN cacuotas i
+	ALTER TABLE &ventidadesdf ALTER COLUMN detalle c(200)  
 	ALTER table &ventidadesdf ADD COLUMN nrocuota i
 	ALTER table &ventidadesdf ADD COLUMN cantcuotas i
 	ALTER table &ventidadesdf ADD COLUMN netocuota y
@@ -423,7 +428,10 @@ PARAMETERS par_idperiodo, par_ordenfa
 
 	SELECT &ventidadesdf
 	GO TOP 
-	UPDATE &ventidadesdf SET unitario=netocuota, cantidad=1 WHERE idcuotasd > 0
+	UPDATE &ventidadesdf SET detalle = ALLTRIM(detalle)+' - Cta. '+ALLTRIM(STR(nrocuota))+'/'+ALLTRIM(STR(cantcuotas)) ,unitario=netocuota, cantidad=1 WHERE idcuotasd > 0
+	** aqui elimino todos los que tienen cuotas pero no tienen idcuotasd 
+	UPDATE &ventidadesdf SET unitario=0, cantidad=0 WHERE idcuotasd = 0 AND cacuotas > 0
+	****
 	UPDATE &ventidadesdf SET neto=unitario * cantidad 
 	
 	GO TOP 
