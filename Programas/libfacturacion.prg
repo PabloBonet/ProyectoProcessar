@@ -357,7 +357,9 @@ PARAMETERS par_idperiodo, par_ordenfa
 								IF ieje > 0 THEN 
 									varentih = &ventidadesdf..identidadh
 									vartablaauxi = 'auxiconceptos'
-									SELECT articulo, cantidad, (unitario * cantidad) as neto from &ventidadesdf INTO cursor &vartablaauxi WHERE identidadh = varentih AND (unitario*cantidad)  > 0 AND ejecucion < ieje
+									SELECT articulo, cantidad, (unitario * cantidad) as neto from &ventidadesdf INTO cursor &vartablaauxi ;
+									WHERE identidadh = varentih AND (unitario*cantidad)  <> 0 AND ejecucion < ieje
+									
 								ENDIF 
 
 								varparconceptos = IIF(EMPTY(vartablaauxi),"",'"'+vartablaauxi+'"')
