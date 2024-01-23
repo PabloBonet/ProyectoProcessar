@@ -2099,6 +2099,431 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 
 ENDFUNC 
 
+***************************************************************************************************
+**Impresión de Facturas desde Tablas Temporarias en la generación de comprobantes por lotes
+
+FUNCTION imprimirTmpFactura
+PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UNA FACTURA DE LA TABLA TEMPORARIA (COMPROBANTES DE LA TABLA FACTURATMP: FACTURA, NC, ND)
+* PARAMETROS: P_IDFACTURA, P_ESELECTRONICA
+*#/----------------------------------------
+
+
+	v_idfactura 	= p_idFactura
+	v_esElectronica = .F.
+	v_idperiodo		= 0
+	
+	IF v_idfactura > 0
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+		*** Busco los datos de la factura y el detalle
+		IF v_esElectronica  = .T.
+
+*!*				sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov, ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
+*!*				sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv, com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
+*!*				sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+*!*				sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+*!*				sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+*!*				sqlmatriz(6)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
+*!*				sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
+*!*				sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+*!*				sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
+*!*				sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
+*!*				*sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) &&+  " and fe.resultado = 'A'"
+*!*				
+*!*				verror=sqlrun(vconeccionF,"fac_det_sql_au")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
+*!*				ENDIF
+*!*				
+*!*				v_idperiodo = fac_det_sql_au.idperiodo
+		ELSE
+			
+			sqlmatriz(1)="Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
+			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
+			sqlmatriz(3)=" from facturastmp f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+			sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactutmp d on f.idfactura = d.idfactura "
+			sqlmatriz(6)=" left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"fac_det_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
+			ENDIF
+
+			v_idperiodo = fac_det_sql.idperiodo
+		
+		ENDIF 
+		
+		
+		*** Busco los datos de los impuestos
+			sqlmatriz(1)="Select fi.detalle as detaimp, fi.neto as netoimp, fi.razon as razonimp, fi.importe as importeimp, ai.tipo as tipoimp "
+			sqlmatriz(2)=" from facturasimptmp fi" 
+			sqlmatriz(3)=" left join impuestos i on fi.impuesto = i.impuesto "
+			sqlmatriz(4)=" left join afipimpuestos ai on i.idafipimp = ai.idafipimp "
+			sqlmatriz(5)=" where fi.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"impuestos_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
+			ENDIF
+		
+
+		*** Busco los datos de las deudas asociadas a la factura 	
+			sqlmatriz(1)=" Select idfacturad, idfactura, idfcdeuda, detalle , importe  "
+			sqlmatriz(2)=" from facturasdtmp  " 
+			sqlmatriz(3)=" where importe > 0 and idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"deuda_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  las deudas",0+48+0,"Error")
+			ENDIF
+
+		*** Busco los datos de las Cuotas asociadas a la factura 	
+			sqlmatriz(1)=" Select idcuotafc, idfactura, cuota , cancuotas , importe , fechavenc "
+			sqlmatriz(2)=" from facturascta " 
+			sqlmatriz(3)=" where importe < 0 and idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"cuotas_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  las deudas",0+48+0,"Error")
+			ENDIF
+
+		*** Busco los datos de las Bocas de Servicios asociadas 	
+			sqlmatriz(1)=" Select b.idfacbser, b.idfactura, b.bocanumero, b.ruta1, b.folio1, "
+			sqlmatriz(2)=" b.ruta2, b.folio2, b.direccion, b.idtiposer, b.idcateser, b.valorref, b.unidadref, "
+			sqlmatriz(3)=" b.manterior, b.mactual, b.consextra, b.consumo, t.detalle as detatipo, c.detalle as detacate "
+			sqlmatriz(4)=" from facturasbsertmp b " 
+			sqlmatriz(5)=" left join tiposervicio t on t.idtiposer = b.idtiposer "
+			sqlmatriz(6)=" left join cateservicio c on c.idcateser = b.idcateser "
+			sqlmatriz(7)=" where b.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
+			verror=sqlrun(vconeccionF,"bocas_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  las deudas",0+48+0,"Error")
+			ENDIF
+
+		*** Busco los datos de Lotes de Facturas ( en caso de que sea una factura de emisión Mensual )	
+			sqlmatriz(1)=" Select * from factulotes  where idperiodo = "+ ALLTRIM(STR(v_idperiodo))
+			verror=sqlrun(vconeccionF,"flotes_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del lote",0+48+0,"Error")
+			ENDIF
+			
+
+		IF v_esElectronica  = .T.
+
+*!*				SELECT fac_det_sql_au 
+*!*				GO TOP
+*!*				IF NOT EOF()
+*!*					v_idfe = fac_det_sql_au.idfe
+*!*					SELECT * FROM fac_det_sql_au WHERE idfe = v_idfe INTO TABLE .\factu ORDER BY idfacturah
+*!*				
+*!*				ENDIF 
+		ELSE
+			SELECT * FROM fac_det_sql 	INTO TABLE .\factu ORDER BY idfacturah
+		ENDIF 
+
+	
+		
+		
+		SELECT * FROM impuestos_sql INTO TABLE .\ImpIVA WHERE ALLTRIM(tipoIMP) = "IVA" AND importeimp <> 0
+		
+		SELECT * FROM impuestos_sql INTO TABLE .\ImpTRIB WHERE ALLTRIM(tipoIMP) = "TRIBUTO" AND importeimp <> 0
+
+		SELECT * FROM deuda_sql 	INTO TABLE .\deuda
+
+		SELECT * FROM cuotas_sql 	INTO TABLE .\cuotas
+
+		SELECT * FROM bocas_sql 	INTO TABLE .\bocas
+		
+		SELECT * FROM flotes_sql 	INTO TABLE .\flotes
+		
+		SELECT factu
+		GO TOP 
+		IF NOT EOF()
+		
+
+
+			v_idcomproba = factu.idcomproba
+
+			ALTER table factu ADD COLUMN codBarra C(42)
+			ALTER table factu ADD COLUMN codQR C(100)
+			ALTER table factu ADD COLUMN apeynom C(200)
+			ALTER table factu ADD COLUMN totalletra C(254)
+			ALTER table factu ADD COLUMN compAso M
+
+
+	** Agrego el importe total en letras **
+		SELECT factu
+		v_totalFactura = factu.total
+		v_totalEnLetras = enletras(v_totalFactura)
+	
+	
+	** Agrego comprobantes asociados **
+	
+		v_comproAso  = ""
+		tipoComproObjtmp 	= CREATEOBJECT('comprobantesclass')
+	
+
+		v_idCompRemi = tipoComproObjtmp.getidcomprobante("REMITO R")
+		
+		v_idCompFa = tipoComproObjtmp.getidcomprobante("FACTURA A")
+		v_idCompFb = tipoComproObjtmp.getidcomprobante("FACTURA B")
+		v_idCompFc = tipoComproObjtmp.getidcomprobante("FACTURA C")
+		
+		v_idCompNDa = tipoComproObjtmp.getidcomprobante("NOTA DE DEBITO A")
+		v_idCompNDb = tipoComproObjtmp.getidcomprobante("NOTA DE DEBITO B")
+		v_idCompNDc = tipoComproObjtmp.getidcomprobante("NOTA DE DEBITO C")
+												
+		v_idCompNCa = tipoComproObjtmp.getidcomprobante("NOTA DE CREDITO A")
+		v_idCompNCb = tipoComproObjtmp.getidcomprobante("NOTA DE CREDITO B")		
+		v_idCompNCc = tipoComproObjtmp.getidcomprobante("NOTA DE CREDITO C")		
+		
+		
+	
+	 	v_comproAsore = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompRemi )
+	 	
+	 	v_comproASo = v_comproAso + ALLTRIM(v_comproAsore)
+	 	
+	 	v_comproAsofa = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompFa )
+	 	v_comproAsofb = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompFb)
+		v_comproAsofc = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompFc)
+		
+		
+		v_comproAso = ALLTRIM(v_comproAso)  + ALLTRIM(v_comproAsofa) + ALLTRIM(v_comproAsofb) + ALLTRIM(v_comproAsofc)
+		
+		v_comproAsoNDa = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNDa )
+	 	v_comproAsoNDb = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNDb)
+		v_comproAsoNDc = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNDc)
+		
+		v_comproAso = ALLTRIM(v_comproAso)  + ALLTRIM(v_comproAsoNDa) + ALLTRIM(v_comproAsoNDb) + ALLTRIM(v_comproAsoNDc)
+		
+		
+		v_comproAsoNCa = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNCa )
+	 	v_comproAsoNCb = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNCb)
+		v_comproAsoNCc = comprobantesAsociados(v_idcomproba, p_idFactura, vconeccionF,v_idCompNCc)
+		
+		v_comproAso = ALLTRIM(v_comproAso)  + ALLTRIM(v_comproAsoNCa) + ALLTRIM(v_comproAsoNCb) + ALLTRIM(v_comproAsoNCc)
+		
+	** AGREGO OBSERVACIONES FIJAS EN EL COMPROBANTE SEGÚN CONDICIONES EN LA TABLA observacond  y el total en letras *
+	
+		SELECT factu 
+		GO TOP 
+		ALTER table factu ADD COLUMN obsfijo C(250)
+*!*				v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.F.)
+*!*				SELECT factu 
+*!*				GO TOP 
+*!*				replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso)
+
+	** AGREGO EL CALCULO PARA LOS RECARGOS PARA AQUELLAS FACTURAS QUE TIENEN VENCIMIENTOS 1 2 Y 3
+			ALTER table factu ADD COLUMN recargo1 n(13,2)
+			ALTER table factu ADD COLUMN recargo2 n(13,2)
+			GO TOP 
+			v_interesdia = factu.interesd
+			v_fechavence1 = cftofc(factu.fechavenc1)
+			v_fechavence2 = cftofc(factu.fechavenc2)
+			v_fechavence3 = cftofc(factu.fechavenc3)
+			v_recargo1 	 = IIF(!EMPTY(v_fechavence1) and !EMPTY(v_fechavence2), ((v_fechavence2 - v_fechavence1)* factu.total * (v_interesdia / 100)), 0.00 )
+			v_recargo2 	 = IIF(!EMPTY(v_fechavence1) and !EMPTY(v_fechavence3), ((v_fechavence3 - v_fechavence1)* factu.total * (v_interesdia / 100)), 0.00 )
+			replace ALL apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso) , recargo1 WITH v_recargo1, recargo2 WITH v_recargo2 
+			
+	**********************************************************************************************		
+			SELECT factu 
+			GO TOP 
+			
+					
+			v_idcomproba = factu.idcomproba
+			v_tipoCompAfip	= ALLTRIM(factu.tipcomAFIP)
+			
+			
+			v_codBarra		= ""
+			v_codBarraD 	= ""
+			v_electronica	= factu.electro
+			v_cuitEmpresa	= _SYSCUIT
+			
+*!*				IF  ALLTRIM(v_electronica) == "S"
+
+*!*				*** Genero Código de Barras ***
+
+*!*					v_cuitempresa	= ALLTRIM(v_CuitEmpresa)
+*!*					
+*!*					v_puntoVta		= ALLTRIM(factu.puntov)
+*!*					v_fechaVenc_cae	= ALLTRIM(factu.caecespven)
+*!*					v_cespcae		= ALLTRIM(factu.cespcae)
+*!*				*	v_codBarra		= v_tipoCompAfip+"0"+v_puntoVta+v_Cespcae+v_fechaVenc_cae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
+*!*					v_codBarra		= STRTRAN(v_CuitEmpresa,'-','')+v_tipoCompAfip+"0"+v_puntoVta+v_Cespcae+v_fechaVenc_cae && EL PUNTO DE VENTA DEBE SER DE 5 DIGITOS
+
+*!*					v_codBarraD 		= calculaDigitoVerif(v_codBarra)
+*!*			
+*!*					SELECT factu
+*!*					replace ALL codBarra WITH v_codBarraD
+*!*					
+*!*					
+*!*					
+*!*				*** Genero Código QR ***
+*!*				
+*!*					PRIVATE poFbc
+*!*					poFbc = CREATEOBJECT("FoxBarcodeQR")
+*!*					
+*!*					
+*!*					  poFbc.nBackColor = RGB(255,255,255) && White
+*!*					  poFbc.nBarColor = RGB(0,0,0) && Black
+*!*					  poFbc.nCorrectionLevel = 0 && Medium 15%
+*!*	  
+*!*	  
+*!*	  
+*!*					SELECT factu
+*!*					GO TOP 
+*!*							
+*!*						
+*!*					v_version = 1					
+*!*					v_moneda = "PES"
+*!*					v_cotizacion = 1
+*!*					v_tipoDoc	= 80
+*!*		
+*!*					v_cuitEmpSG	 	= ALLTRIM(STRTRAN(v_CuitEmpresa,'-',''))
+*!*					** Armo la cadena JSON  **
+*!*					versionFCompro = ALLTRIM(STR(v_version))
+
+*!*	                fechaCompro = SUBSTR(ALLTRIM(factu.fecha),1,4)+'-'+SUBSTR(ALLTRIM(factu.fecha),5,2)+'-'+SUBSTR(ALLTRIM(factu.fecha),7,2)
+*!*	                cuitE 		= ALLTRIM(v_cuitEmpSG)
+*!*		
+*!*	                ptovta_fe   = ALLTRIM(STR(VAL(v_puntoVta)))
+*!*	                idtipocbte_fe = ALLTRIM(STR(VAL(factu.tipcomAFIP)))
+*!*		
+*!*					numerostr  = ALLTRIM(STR(factu.numero))
+*!*	                imp_totstr = ALLTRIM(STR(ROUND(factu.total,2),13,2))
+*!*		
+*!*		            monedastr = ALLTRIM(v_moneda)
+*!*	                cotizacionstr = ALLTRIM(STR(v_cotizacion,13,2))
+*!*		
+*!*	                tipoDocstr = ALLTRIM(STR(v_tipoDoc))
+*!*	                cuitC = ALLTRIM(STRTRAN(factu.cuit,'-',''))
+*!*		
+*!*					cae_fe = ALLTRIM(v_cespcae)
+*!*											
+*!*						v_json1 = ' { "ver":' + versionFCompro+ ',"fecha":"' + fechaCompro +'","cuit":' + cuitE+ ',"ptoVta":' + ptovta_fe + ',"tipoCmp":' + idtipocbte_fe
+*!*						v_json2 = ',"nroCmp":' + numerostr  + ',"importe":' + imp_totstr + ',"moneda":"' + monedastr + '","ctz":' + cotizacionstr + ',"tipoDocRec":' + tipoDocstr 
+*!*						v_json3 = ',"nroDocRec":' + cuitC + ',"tipoCodAut":"E"' + ',"codAut":' + cae_fe + ' }'
+*!*															
+*!*					v_json	= ALLTRIM(ALLTRIM(v_json1)+ ALLTRIM(v_json2)+ ALLTRIM(v_json3))
+*!*		
+*!*				
+*!*						
+*!*					** Encripto la cadena JSON **
+*!*					v_datosCodificados  = "" 
+*!*					
+*!*					v_datosCodificados  = ALLTRIM(strconv(v_json,13))
+
+*!*					
+*!*					** Armo la cadena a codificar en el código QR **
+*!*					v_codigo = "https://www.afip.gob.ar/fe/qr/" + "?p=" + ALLTRIM(v_datosCodificados)
+*!*									
+*!*					** Genero la imagen con el código QR **
+*!*			
+*!*					v_idRegistroStr = ALLTRIM(STRTRAN(STR((factu.idfactura),10,0),' ','0'))
+*!*					v_ubicacionImgen = _SYSESTACION+"\imagenQR_"+ v_idRegistroStr 
+*!*					
+*!*					v_codQRImg= poFbc.FullQRCodeImage(ALLTRIM(v_codigo),v_ubicacionImgen,250)
+*!*					
+*!*					v_ubicacionImgen = v_ubicacionImgen+".bmp"
+*!*					
+*!*				
+*!*					
+*!*					
+*!*					SELECT factu 
+*!*					GO TOP 
+*!*					replace ALL codqr WITH v_ubicacionImgen
+*!*					
+*!*					
+*!*					SELECT factu 
+*!*					GO TOP 
+*!*					
+*!*				*	APPEND GENERAL factu.codqr FROM (v_codQRImg)				
+*!*					*replace  codqr WITH v_codQRImg				
+*!*							
+*!*					
+*!*									
+*!*				ELSE
+*!*					
+*!*				ENDIF 
+			
+			
+			
+		
+			*** Obtengo el historial de saldos para la factura ***
+			v_buscasaldo  = .F.	
+			IF TYPE('_SYSREGHISCOMP') = 'C'
+				IF _SYSREGHISCOMP == 'S'
+					v_buscasaldo  = .T.
+	
+	
+					sqlmatriz(1)=" SELECT fecha,entidad, comproba, puntov,numero,abrevia, tipo,total, saldo,imputado "
+					sqlmatriz(2)=" FROM histosaldoent "
+					sqlmatriz(3)=" where tablaaso = 'facturastmp' and idregaso = "+ALLTRIM(STR(v_idfactura))
+					
+
+					verror=sqlrun(vconeccionF,"hissaldo_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del historial de saldos",0+48+0,"Error")
+					ENDIF
+
+
+					SELECT * from hissaldo_sql INTO TABLE hissaldo
+					
+					ALTER table hissaldo alter COLUMN fecha C(8)
+					ALTER table hissaldo alter COLUMN entidad I
+					ALTER table hissaldo alter COLUMN puntov C(4)
+					ALTER table hissaldo alter COLUMN numero I
+					ALTER table hissaldo alter COLUMN abrevia C(10)
+					ALTER table hissaldo alter COLUMN tipo C(10)
+					ALTER table hissaldo alter column total N(13,4)
+					ALTER table hissaldo alter column saldo N(13,4)
+					ALTER table hissaldo alter column imputado N(13,4)
+					 					
+
+
+				endif
+				
+			endif
+			
+			=abreycierracon(vconeccionF,"")
+				
+			IF v_buscasaldo = .T.
+				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes;hissaldo","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc;hissaldorc",v_idcomproba,.F.,pEnviarImpresora
+			ELSE
+				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc",v_idcomproba,.F.,pEnviarImpresora
+			ENDIF 
+
+			
+		ELSE
+			MESSAGEBOX("Error al cargar la factura para imprimir",0+48+0,"Error al cargar la factura")
+			
+			=abreycierracon(vconeccionF,"")	
+			
+			RETURN 	
+		ENDIF 
+		
+		
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar la factura ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
+
+
+
+***************************************************************************************************
 
 FUNCTION imprimirRecibo
 PARAMETERS p_idRecibo
@@ -16315,7 +16740,7 @@ lcParas = FULLPATH(CURDIR())+'ping'+lctmp+'.tcp '   && Extra parameter to pass y
 ***  If you want to show DOS window change it to value  1 
 
 ShellExecute(0,'open','cmd', '/C'+lcCmd+' '+lcParas, '',0)
-sleep(1000)  && delay time to come  back
+sleep(2000)  && delay time to come  back
 lcping=FILETOSTR(lcParas)
  *** sleep value  can be reduced according to your need
 CLEAR DLLS ShellExecute
@@ -26501,6 +26926,101 @@ PARAMETERS pa_articulo, pa_deposito, pa_fecha, pa_conexion
 
 ENDFUNC 
 
+
+FUNCTION TransponerDB
+PARAMETERS tp_tablap, tp_tablah, tp_indice, tp_campoa, tp_campob, tp_prefijo 
+*#/----------------------------------------
+* FUNCION Función obtener una tabla resultado con los datos de tablap y los datos de tablah como columnas de la tabla resultado
+* PARAMETROS: 	tp_tablap	: Tabla Padre a la cual se le anexaran los datos de la tabla hija en forma de columnas 
+*				tp_tablah	: Tabla que contiene los datos de los valores a anexar a la tabla resultado en forma de columnas
+*				tp_indice	: campo comun a las dos tablas para hacer el join al rellenar los datos
+*				tp_campoa	: campo que será utilizado para nominar las columnas de la nueva tabla (ej:codigo)
+*				tp_campob	: campo con el que se llenarán los valores de las nuevas columnas
+*				tp_prefijo	: prefijo que se le coloca a los campos agregados
+* RETORNO:		retorna la tabla con los datos agregados en forma de columna, el nombre de la nueva tabla se compone del nombre
+*				de tp_tablap concatenado con '_T' (TransPoner DB)
+*#/---
+	IF USED(tp_tablap) THEN 
+		USE IN &tp_tablap
+	ENDIF 
+	USE &tp_tablap IN 0 ALIAS tp_tablapp
+
+	IF USED(tp_tablah) THEN 
+		USE IN &tp_tablah 
+	ENDIF 
+	USE &tp_tablah IN 0 ALIAS tp_tablahh
+	SELECT tp_tablahh
+	
+	*preparo la tabla que se va a modificar
+	SELECT * FROM tp_tablapp INTO TABLE tablap01
+	
+	* obtengo los nombres de las columnas a utilizar
+	SET ENGINEBEHAVIOR 70
+	SELECT &tp_campoa+SPACE(10) as nombrecp FROM tp_tablahh INTO TABLE tablah01 ORDER BY nombrecp GROUP BY nombrecp
+	
+	v_campob = "tp_tablahh."+ALLTRIM(tp_campob)
+	v_tipocampo = IIF(TYPE(v_campob)='C',"c(150)","n(12,2)")
+	
+
+	SELECT tablah01
+	GO TOP 
+	replace ALL nombrecp WITH LOWER(STRTRAN(SUBSTR((ALLTRIM(tp_prefijo)+ALLTRIM(nombrecp)+SPACE(10)),1,10),' ','_'))
+	GO top
+	DO WHILE !EOF()
+		SELECT tablap01
+		eje = "ALTER TABLE tablap01 ADD COLUMN "+alltrim(tablah01.nombrecp)+" "+v_tipocampo
+		&eje 
+		SELECT tablah01
+		SKIP 
+	ENDDO 
+
+
+	IF SUBSTR(v_tipocampo,1,1) ='c' THEN 
+		eje = "SELECT p.*, h."+ALLTRIM(tp_campoa)+" as campoa, h."+ALLTRIM(tp_campob)+" as campob  FROM tablap01 p LEFT JOIN tp_tablahh h ON h."+ALLTRIM(tp_indice)+"== p."+ALLTRIM(tp_indice)+ " into table tablap02 "
+	ELSE
+		v_campoa 		= "tp_tablahh."+ALLTRIM(tp_campoa)
+		v_tipocampo_ca 	= IIF(TYPE(v_campoa)='N','str','')
+		v_campoidx 		= "tp_tablahh."+ALLTRIM(tp_indice)
+		v_tipocampo_idx = IIF(TYPE(v_campoidx)='N','str','')
+		
+		eje = "SELECT p.*, h."+ALLTRIM(tp_campoa)+" as campoa, SUM(h."+ALLTRIM(tp_campob)+") as campob,  "+v_tipocampo_idx+"(p."+ALLTRIM(tp_indice)+")+"+v_tipocampo_ca+"(h."+ALLTRIM(tp_campoa)+") as grupo "+ ;
+				" FROM tablap01 p LEFT JOIN tp_tablahh h ON h."+ALLTRIM(tp_indice)+" == p."+ALLTRIM(tp_indice)+ ;
+				" into table tablap02 group by grupo "
+	ENDIF 
+	&eje 
+
+	SELECT tablap01
+	eje = "index on "+ALLTRIM(tp_indice)+" tag "+ALLTRIM(tp_indice)
+	&eje
+
+	SELECT tablap02
+	SET RELATION TO &tp_indice into tablap01 
+	GO TOP 
+	DO WHILE !EOF()
+		SELECT tablap01
+		eje = "replace  "+LOWER(STRTRAN(SUBSTR((ALLTRIM(tp_prefijo)+ALLTRIM(tablap02.campoa)+SPACE(10)),1,10),' ','_'))+" with tablap02.campob "
+		&eje
+		SELECT tablap02
+		SKIP 
+	ENDDO 
+
+	SET ENGINEBEHAVIOR 90
+	
+	v_archivoreto = tp_tablap+'_T'
+	SELECT * FROM tablap01 INTO TABLE &v_archivoreto 
+	 
+	USE IN tablah01
+	USE IN tablap01
+	USE IN tp_tablahh
+	USE IN tp_tablapp
+	USE IN tablap02
+	USE IN &v_archivoreto 
+	RETURN v_archivoreto
+ENDFUNC 
+	
+	
+	
+	
 
 
 
