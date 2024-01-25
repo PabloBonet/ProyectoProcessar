@@ -2974,37 +2974,40 @@ FUNCTION CargaCtaCteClientes
 	SET ENGINEBEHAVIOR 70
 	SELECT entidad,servicio,cuenta,fecha,numerocomp,SUM(monto) as monto,cuota,vtocta,fechavenc1,fechavenc2,fechavenc3 FROM ctasctesentcar GROUP BY entidad,numerocomp INTO TABLE ctasctesentcarA
 	SET ENGINEBEHAVIOR 90
-v_pventaIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,1,2)))
-v_idcompIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,3,2)))
-v_pventaEgr = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,5,2)))
-v_idcompEgr = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,7,2)))
+	v_pventaIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,1,2)))
+	v_idcompIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,3,2)))
+	v_pventaEgr = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,5,2)))
+	v_idcompEgr = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,7,2)))
 
-*** BUsco comprobantes de Ingreso y Egreso ***
-sqlmatriz(1)="SELECT c.*,t.opera,v.pventa,v.puntov from comprobantes c left join compactiv v on c.idcomproba = v.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro "
-sqlmatriz(2)=" WHERE c.ctacte = 'S' and t.opera <> 0 and ((c.idcomproba = "+ALLTRIM(STR(v_idcompIng))+" and v.pventa = "+ALLTRIM(STR(v_pventaIng))+") or ( c.idcomproba = "+ALLTRIM(STR(v_idcompEgr))+" and v.pventa = "+ALLTRIM(STR(v_pventaEgr))+"))"
+	v_idfactura_min = 0
+	v_idfactura_max = 0	
 
-
-verror=sqlrun(vconeccionF,"compIngEgr_sql")
-
-IF verror=.f.  
-    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes de Ingreso y Egreso ",0+48+0,"Error")
-*** me desconecto	
-	=abreycierracon(vconeccionF,"")
-    RETURN 0
-ENDIF 
+	*** BUsco comprobantes de Ingreso y Egreso ***
+	sqlmatriz(1)="SELECT c.*,t.opera,v.pventa,v.puntov from comprobantes c left join compactiv v on c.idcomproba = v.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro "
+	sqlmatriz(2)=" WHERE c.ctacte = 'S' and t.opera <> 0 and ((c.idcomproba = "+ALLTRIM(STR(v_idcompIng))+" and v.pventa = "+ALLTRIM(STR(v_pventaIng))+") or ( c.idcomproba = "+ALLTRIM(STR(v_idcompEgr))+" and v.pventa = "+ALLTRIM(STR(v_pventaEgr))+"))"
 
 
-SELECT compIngEgr_sql
-GO TOP 
+	verror=sqlrun(vconeccionF,"compIngEgr_sql")
 
-IF EOF()
-	MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes de Ingreso y Egreso ",0+48+0,"Error")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes de Ingreso y Egreso ",0+48+0,"Error")
 	*** me desconecto	
-	=abreycierracon(vconeccionF,"")
-    RETURN 0
+		=abreycierracon(vconeccionF,"")
+	    RETURN 0
+	ENDIF 
 
-	
-ENDIF 
+
+	SELECT compIngEgr_sql
+	GO TOP 
+
+	IF EOF()
+		MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes de Ingreso y Egreso ",0+48+0,"Error")
+		*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 0
+
+		
+	ENDIF 
 
 
 	*** Busco las entidades ***
@@ -3073,6 +3076,13 @@ ENDIF
 				MESSAGEBOX("No se pudo recuperar el ultimo indice de la factura",0+16,"Error")
 				RETURN 
 			ENDIF 
+			
+			* Guardo el minimo idfactura y el maximo para el lote procesado
+			IF v_idfactura_min = 0 THEN 
+				v_idfactura_min = v_idfactura
+			ENDIF 
+			v_idfactura_max = v_idfactura
+			
 			
 			v_opera = 0
 			IF a_monto < 0 
@@ -3461,6 +3471,12 @@ ENDIF
 	SELECT ctasctesentcar
 	USE IN ctasctesentcar
 
+	*//* Actualizo los Numeros de Facturas y puntos de venta con los numero del comprobante
+	** pasado en el archivo de importacion en el campo observa1
+
+	 =CargaCtaCteCliRenumera ( v_idfactura_min, v_idfactura_max )
+
+
 	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
 */**************************************************************
 */**************************************************************
@@ -3473,8 +3489,98 @@ ENDIF
 	RETURN lreto
 ENDFUNC  
 
-
 *******************************************************
+
+FUNCTION CargaCtaCteCliRenumera
+	PARAMETERS p_v_idmin, p_v_idmax
+*#/----------------------------------------
+*/ Reenumeracion de Comprobantes de CtaCte Importados
+*  Parametros
+*			p_v_idmin : Minimo idfactura a partir del cual va a reenumerar con el campo numerico contenido en observa1
+*			p_v_idmax : Maximo idfactura hasta el cual se realizará la reenumeración 
+*#/----------------------------------------
+	IF MESSAGEBOX("Desea Conservar la Numeración de Comprobantes Originales...",32+4+256,"Reenumeracion de Comprobantes") = 7 THEN 
+		RETURN 
+	ENDIF 
+
+	WAIT windows "Reenumerando Comprobantes ..." NOWAIT 
+	
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+
+	* Obtengo todos los puntos de venta
+	sqlmatriz(1)="select * from puntosventa "
+	verror=sqlrun(vconeccionF,"puntosventa_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la factura para actualizar montos",0+48+0,"Error")
+	ENDIF 
+	
+	* Obtengo todas las facturas cargadas para reenumerar
+	sqlmatriz(1)="select * from facturas where idfactura >= "+STR(p_v_idmin)+" and idfactura <="+STR(p_v_idmax)
+	verror=sqlrun(vconeccionF,"facturascli_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la factura para actualizar montos",0+48+0,"Error")
+	ENDIF 
+	
+	DIMENSION lamatriz1(4,2)	
+	p_tipoope     = 'U'
+	v_titulo      = " LA MODIFICACIÓN "
+
+	SELECT facturascli_sql
+	GO TOP 
+	BROWSE 
+	
+	DO WHILE !EOF()
+		
+		*** ACTUALIZO FACTURA ***
+		vf_idfactura = facturascli_sql.idfactura
+		vf_observa1  = ALLTRIM(STRTRAN(facturascli_sql.observa1,'Comprobante de ajuste asociado a:','')) &&B 0000-00093193
+		vf_longitudobs = LEN(vf_observa1)
+		
+		vf_tipo = SUBSTR(vf_observa1,1,1)
+		vf_puntov=SUBSTR(vf_observa1,3,4)
+		vf_pventa = 1
+		
+		SELECT puntosventa_sql
+		GO TOP 
+		LOCATE FOR ALLTRIM(puntov) == ALLTRIM(vf_puntov)
+		IF FOUND()
+			vf_pventa = puntosventa_sql.pventa 
+		ENDIF 
+		
+		vf_numero =INT(VAL(SUBSTR(vf_observa1,8,8)))
+
+		MESSAGEBOX(vf_observa1)
+		
+		IF vf_numero > 0 AND vf_longitudobs = 15 THEN 
+			lamatriz1(1,1)='idfactura'
+			lamatriz1(1,2)= ALLTRIM(STR(vf_idfactura))
+			lamatriz1(2,1)='tipo'
+			lamatriz1(2,2)= "'"+ALLTRIM(vf_tipo)+"'"
+			lamatriz1(3,1)='pventa'
+			lamatriz1(3,2)= ALLTRIM(STR(vf_pventa))
+			lamatriz1(4,1)='numero'
+			lamatriz1(4,2)= ALLTRIM(STR(vf_numero))
+			
+			p_condicion   = " idfactura = "+ ALLTRIM(STR(vf_idfactura))
+			
+			p_tabla     = 'facturas'
+			p_matriz    = 'lamatriz1'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en Actualizacion de Numeros de Factura",0+48+0,"Error")
+				 RETURN .F.
+		  	ENDIF  	
+		ENDIF 
+		
+		SELE facturascli_sql
+		SKIP 
+	ENDDO 
+
+	=abreycierracon(vconeccionF,"")	
+	USE IN facturascli_sql
+	WAIT CLEAR 
+	
+ENDFUNC 
 
 */------------------------------------------------------------------------------------------------------------
 */ FINAL  Carga de Cuenta corrientes de entidades
@@ -5870,7 +5976,7 @@ FUNCTION importarEntidades
 				** 1- Compruebo Si no tiene cargados los datos de Apellido, Nombre, Compania y/o localidad -> Busco los datos en el AFIP. **
 				*********
 
-				IF (EMPTY(ALLTRIM(v_apellidoImp)) = .t. AND  EMPTY(ALLTRIM(v_nombreImp)) = .t. AND EMPTY(ALLTRIM(v_companiaImp)) = .t.) OR EMPTY(ALLTRIM(v_localidadImp)) = .t.
+				IF (EMPTY(ALLTRIM(v_apellidoImp)) = .t. AND  EMPTY(ALLTRIM(v_nombreImp)) = .t. AND EMPTY(ALLTRIM(v_companiaImp)) = .t.) OR EMPTY(ALLTRIM(v_localidadImp)) = .t. THEN 
 					*********
 					** Faltan datos -> Busco el contribuyente
 					******
@@ -5903,7 +6009,6 @@ FUNCTION importarEntidades
 					
 						IF v_ControlaEnAfip = .t. THEN  &&Solo busco si eligio controlar carga con afip 
 							
-
 							SELECT tablaContrib
 							GO TOP 
 							
@@ -6050,20 +6155,22 @@ FUNCTION importarEntidades
 									
 							ENDIF 
 						
-						ENDIF 
+*!*							ENDIF   
 						
 							*********
-						SELECT codafip, idafipd FROM tipodocu_sql  WHERE ALLTRIM(detalle) == ALLTRIM(v_tipodocstrImp) INTO CURSOR tipodocsel
+							SELECT codafip, idafipd FROM tipodocu_sql  WHERE ALLTRIM(detalle) == ALLTRIM(v_tipodocstrImp) INTO CURSOR tipodocsel
 
-						v_afiptipodImp= tipodocsel.idafipd		
+							v_afiptipodImp= tipodocsel.idafipd		
+								
+							IF ALLTRIM(v_tipodocstrImp) == 'CUIT'
+													
+								v_tipodocImp = IIF(EMPTY(ALLTRIM(v_tipodocImp)) = .T.,"1",ALLTRIM(v_tipodocImp))
+							ELSE
+								v_cuitImp = ""
+								v_tipodocImp = VAL(v_afiptipodImp)
+							ENDIF 
 							
-						IF ALLTRIM(v_tipodocstrImp) == 'CUIT'
-												
-							v_tipodocImp = IIF(EMPTY(ALLTRIM(v_tipodocImp)) = .T.,"1",ALLTRIM(v_tipodocImp))
-						ELSE
-							v_cuitImp = ""
-							v_tipodocImp = VAL(v_afiptipodImp)
-						ENDIF 
+						ENDIF 	
 					ENDIF 
 
 			
