@@ -1,0 +1,124 @@
+Variables públicas
+
+_SYSFECHADESDE
+C
+20180101  
+Fecha de inicio por defecto para la busqueda del periodo 
+
+_SYSUNIDADREFACOPIO
+N
+1
+Unidad de referencia de acopio  
+
+
+_SYSUNIDADREFACOPIOP
+N
+1
+Unidad de referencia de acopio de proveedores 
+
+
+_SYSDIASALERT1
+N
+60
+Cantidad de dias para primer alerta (Acopio)
+
+_SYSDIASALERT2
+N
+365
+Cantidad de dias para el segundo alerta (Acopio)
+
+
+_SYSDIASALERT1P
+N
+60
+Cantidad de dias para primer alerta (Acopio Proveedor)
+
+_SYSDIASALERT2P
+N
+365
+Cantidad de dias para el segundo alerta (Acopio Proveedor)
+
+
+
+---------------------------------------------------------------
+Tablas MySQL
+
+CREATE TABLE  `mateacopio` (
+  `idmateacopio` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `detalle` char(100) NOT NULL,
+  `unidad` char(10) NOT NULL,
+  `articulo` char(50) NOT NULL DEFAULT '',
+  PRIMARY KEY (`idmateacopio`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `acopio` (
+  `idacopio` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `pventa` int(10) unsigned NOT NULL,
+  `idcomproba` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `entidad` int(10) unsigned NOT NULL,
+  `descrip` char(100) NOT NULL,
+  `numero` int(10) unsigned NOT NULL,
+  `numcomp` int(10) unsigned NOT NULL,
+  `carpintero` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`idacopio`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `acopiod` (
+  `idacopiod` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idacopio` int(10) unsigned NOT NULL,
+  `idmateacopio` int(10) unsigned NOT NULL,
+  `precio` float(13,4) NOT NULL,
+  `tipocbio` float(13,4) NOT NULL,
+  `moneda` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idacopiod`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `acopiop` (
+  `idacopiop` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `pventa` int(10) unsigned NOT NULL,
+  `idcomproba` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `entidad` int(10) unsigned NOT NULL,
+  `descrip` char(100) NOT NULL,
+  `numero` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idacopiop`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `acopiodp` (
+  `idacopiodp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idacopiop` int(10) unsigned NOT NULL,
+  `idmateacop` int(10) unsigned NOT NULL,
+  `precio` float(13,4) NOT NULL,
+  `tipocbio` float(13,4) NOT NULL,
+  `moneda` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idacopiodp`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `compacopio` (
+  `idcompacopio` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idacopio` int(10) unsigned NOT NULL,
+  `importe` float(13,4) NOT NULL,
+  `idregistro` int(10) unsigned NOT NULL,
+  `idnp` int(10) unsigned NOT NULL,
+  `acopio` char(1) NOT NULL,
+  `idajustea` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idcompacopio`)
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `compacopiop` (
+  `idcompacop` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idacopiop` int(10) unsigned NOT NULL,
+  `importe` float(13,4) NOT NULL,
+  `idregistro` int(10) unsigned NOT NULL,
+  `idnp` int(10) unsigned NOT NULL,
+  `acopio` char(1) NOT NULL,
+  `idajusteap` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idcompacop`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
