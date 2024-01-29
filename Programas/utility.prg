@@ -27018,8 +27018,50 @@ PARAMETERS tp_tablap, tp_tablah, tp_indice, tp_campoa, tp_campob, tp_prefijo
 	RETURN v_archivoreto
 ENDFUNC 
 	
+
+
+FUNCTION GenerarTablasR	
+PARAMETERS pa_conexion
+*#/----------------------------------------
+* FUNCION Regenera las Tablas de Resultados para las vistas
+* PARAMETROS: 	pa_conexion: Variable de conexión, si existe la usa sino la crea
+*#/---
+
+	IF MESSAGEBOX("Confirma la Regeneacion de Tablas Resultados de Vistas...",4+32+256,"Regeneración de Tablas Resultados...") = 7 THEN 
+		RETURN 
+	ENDIF 
+	WAIT windows "Aguarde... Regenerando Vistas y Tablas..." NOWAIT 
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionRG = pa_conexion
+		ELSE 
+			vconeccionRG = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionRG = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+	** Compruebo primero si es un articulo  **
+	sqlmatriz(1)= " call p_creartablasr_() " 
+	
+	verror=sqlrun(vconeccionRG,"tablasr_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Regeneración de Tablas R ",0+48+0,"Error")
+	    IF pa_conexion = 0
+			*** Cierro conexión ***
+*			=abreycierracon(vconeccionRG,"")
+		ENDIF 
+	ENDIF 
+	
+	IF pa_conexion = 0 THEN && cierro la conexion si no la abrio al ingresar
+		=abreycierracon(vconeccionRG,"")
+	ENDIF 
+
+	WAIT CLEAR 
+	MESSAGEBOX("Se ha Completado la Regeneración de Tablas Resultados... ",0+64,"Regeneración de Tablas Resultados...")
 	
 	
+RETURN 
 	
 
 

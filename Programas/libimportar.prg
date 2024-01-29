@@ -4974,9 +4974,11 @@ ENDFUNC
 FUNCTION AsociarCablemodems
 	PARAMETERS p_idimportap, p_archivo, p_func
 *#/----------------------------------------
+*/ Para que esta Función actualice, previamente se deben haber cargado los cablemodems desde importación de Cablemodems
 */ Asociar Cablemodems con Cuentas de Clientes 
 */ Si p_archivo = '(ACTUALIZA)INTERNET' --> entonces actualiza el perfil con los datos de acuerdo al cablemodem y agrega 
-*/ aquellos cablemodems que no están a los actuales 
+*/ aquellos cablemodems que no están a los actuales
+*/ Si p_archivo = 'INTERNET' --> entonces elimina las bocas de servicios cargadas y carga todas las nuevas (Carga Inicial)
 *#/----------------------------------------
 
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
