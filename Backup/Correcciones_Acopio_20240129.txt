@@ -85,6 +85,7 @@ CREATE TABLE  `acopiop` (
   `entidad` int(10) unsigned NOT NULL,
   `descrip` char(100) NOT NULL,
   `numero` int(10) unsigned NOT NULL,
+  `numcomp` int(10) unsigned NOT NULL,
   PRIMARY KEY (`idacopiop`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 
