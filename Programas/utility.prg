@@ -26448,7 +26448,7 @@ PARAMETERS pfa_articulo, pfa_identidadd, pa_conexion
 *#/---
 
 	IF pfa_identidadd = 0 THEN 
-		RETURN .f. 
+*!*			RETURN .f. 
 	ENDIF 
 
 	IF TYPE("pa_conexion") = 'N' THEN 
@@ -26477,7 +26477,7 @@ PARAMETERS pfa_articulo, pfa_identidadd, pa_conexion
 	ENDIF 	
 
 	SELECT * FROM cuotasdc_sql INTO TABLE cuotasdc 
-	
+
 	USE IN cuotasdc_sql
 	SELECT cuotasdc
 	GO TOP 
