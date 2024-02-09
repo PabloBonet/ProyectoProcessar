@@ -123,3 +123,20 @@ CREATE TABLE  `compacopiop` (
   `idajusteap` int(10) unsigned NOT NULL,
   PRIMARY KEY (`idcompacop`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `ajustesacopiop` (
+  `idajusteap` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `monto` float(13,4) NOT NULL,
+  `observa` char(254) NOT NULL,
+  PRIMARY KEY (`idajusteap`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE  `ajustesacopio` (
+  `idajustea` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `fecha` char(8) NOT NULL,
+  `monto` float(13,4) NOT NULL,
+  `observa` char(254) NOT NULL,
+  PRIMARY KEY (`idajustea`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
