@@ -76,6 +76,7 @@ FUNCTION Sqlrun
 		V_TAMAÑO   = LEN(SQLMATRIZ(I)) 
 *		V_FLAG     = 1 && SI VALE 0 LA CADENA ESTÁ ABIERTA - SI VALE 1 LA CADENA CERRADA
 		* Proceso el string de sqlmatriz(i)
+		
 		FOR J=1 TO V_TAMAÑO STEP 1
 			v_char = SUBSTR(v_original,j,1)
 			IF v_char = "'" THEN 
@@ -93,13 +94,20 @@ FUNCTION Sqlrun
 			ENDIF 
 			V_NUEVOSTR = V_NUEVOSTR + v_char
 		ENDFOR 
-		
 		SQLMATRIZ(I) = V_NUEVOSTR
 	ENDFOR     
+	
+	
+    *Genera Archivo de Logs
+	=FSYSLOG(SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20))
+
+		
 	LOCAL laError, lcMsg, ln
 	DIMENSION laError[1]   
     
 	r=SQLEXEC(co,SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20),pcursor)
+
+	
 	IF r < 0
 	  *MANEJO DE ERRORES * ALEJANDRO
 	  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+SQLMATRIZ(1)+SQLMATRIZ(2)+SQLMATRIZ(3)+SQLMATRIZ(4)+SQLMATRIZ(5)+SQLMATRIZ(6)+SQLMATRIZ(7)+SQLMATRIZ(8)+SQLMATRIZ(9)+SQLMATRIZ(10)+SQLMATRIZ(11)+SQLMATRIZ(12)+SQLMATRIZ(13)+SQLMATRIZ(14)+SQLMATRIZ(15)+SQLMATRIZ(16)+SQLMATRIZ(17)+SQLMATRIZ(18)+SQLMATRIZ(19)+SQLMATRIZ(20),0+64,'SQLRUN')
@@ -117,6 +125,8 @@ FUNCTION Sqlrun
     ELSE
     	vrreturn=.t.
     ENDIF 
+    
+    
 	LimpiaMatriz()	
 RETURN vrreturn
 
@@ -185,7 +195,6 @@ PARAMETERS pbase
 		";Uid="+lcUser+;
 		";Pwd="+lcPassWord
 		lnHandle=SQLSTRINGCONNECT(lcStringConn)
-				
 	ENDIF 
 	
 	IF lnHandle > 0
@@ -254,7 +263,10 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 			pos = 1
 			elementos = ALEN(&p_matriz,1)
 			sqlmatriz(pos) = "INSERT INTO "+ALLTRIM(p_tabla)+" ("
+
+
 			FOR fila = 1 TO elementos STEP 1
+
 				IF LEN(ALLTRIM(sqlmatriz(pos))) + LEN(ALLTRIM(&p_matriz(fila,1))) < 240 THEN 
 					* no hago nada
 				ELSE 
@@ -269,7 +281,7 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 		 	sqlmatriz(pos) = sqlmatriz(pos)+ ") values ("
 		 	
 		 	
-			FOR fila = 1 TO ALEN(&p_matriz,1) STEP 1
+			FOR fila = 1 TO elementos STEP 1 &&ALEN(&p_matriz,1) STEP 1
 			
 				IF LEN(ALLTRIM(sqlmatriz(pos))) + LEN(ALLTRIM(&p_matriz(fila,2))) < 240 THEN 
 					* no hago nada
@@ -277,9 +289,12 @@ PARAMETERS p_tabla, p_matriz, p_tipoope, p_condicion, p_conexion
 					pos  = pos + 1
 				ENDIF
 				IF fila < elementos THEN 
+
 					sqlmatriz(pos) = sqlmatriz(pos)+ALLTRIM(&p_matriz(fila,2))+","
 				ELSE 
+
 					sqlmatriz(pos) = sqlmatriz(pos)+ALLTRIM(&p_matriz(fila,2))
+
 				ENDIF 
 		 	ENDFOR 
 		 	sqlmatriz(pos) = sqlmatriz(pos)+")"

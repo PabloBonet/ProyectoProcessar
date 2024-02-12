@@ -1553,18 +1553,33 @@ PARAMETERS p_idperiodo
 	IF  MESSAGEBOX("Se Eliminarán los Conceptos Facturados NO MENSUALIZADOS del Lote ..."+CHR(13)+"Esta operación no se puede revertir..."+CHR(13)+" ¿ Desea Continuar con la Eliminación ?",4+48+256,"Eliminar Detalles No Mensualizados") = 7 THEN 
 		RETURN 
 	ENDIF 
+	
+	WAIT windows "Aguarde..." NOWAIT 
+	
 	vconeccion = abreycierracon(0,_SYSSCHEMA)
 
+
+	sqlmatriz(1)=" create temporary table deletenmes as ( select dd.identidadd from factulotese e left join entidadesd dd on dd.identidadh = e.identidadh "
+	sqlmatriz(3)="  where e.idperiodo = "+STR(p_idperiodo)+" and dd.mensual = 'N' )"
+	verror=sqlrun(vconeccion ,"deletemes")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Creacion de Tablas Temporarioas para Eliminar Registros ",0+48+0,"Error")
+		=abreycierracon(vconeccion,"")
+		RETURN 	
+	ENDIF 
+
+
 	* Traigo los detalles de las Entidades h que están en el Lote pasado como parametro 
-	sqlmatriz(1)=" delete from from entidadesd d where d.identidadd in "
-	sqlmatriz(2)=" ( select dd.identidadd from factulotese e left join entidadesd dd on dd.identidadh = e.identidadh "
-	sqlmatriz(4)="  where e.idperiodo = "+STR(p_idperiodo)+" and dd.mensual = 'N' ) and d.identidadd not in ( select identidadd from entidadesdc )"
+	sqlmatriz(1)=" delete from entidadesd where identidadd in "
+	sqlmatriz(2)=" ( select identidadd from deletenmes ) and identidadd not in ( select identidadd from entidadesdc )"
 	verror=sqlrun(vconeccion,"deletenm_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Detalles para Eliminar no Mensuales ",0+48+0,"Error")
 	ENDIF 
 
+
  	=abreycierracon(vconeccion,"")
+WAIT CLEAR 
 
 
 ENDFUNC 

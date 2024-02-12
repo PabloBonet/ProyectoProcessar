@@ -5480,6 +5480,8 @@ FUNCTION filtragrupos
 	ENDIF 
 	RELEASE arraytablas 
 	
+	RETURN EJE3
+	
 ENDFUNC 
 
 
@@ -9421,23 +9423,32 @@ FUNCTION estadoReclamoPorSector
 ENDFUNC 	
 	
 FUNCTION CopiarClip
+*#/----------------------------------------
+* Copia lo que hay en la grilla o area seleccinada a distintos formatos
+* Parametros: p_csv es el formato en el cual dará salida al archivo
+* Si no recibe parametro entonces convierte a .csv (separado por comas)
+*#/----------------------------------------
 	PARAMETERS p_csv 
 	
 	IF !TYPE('p_csv')='C' THEN 
 		v_auxi = ALIAS()
+		
+		v_confiltro = FILTER(v_auxi)
+		v_confiltro = IIF(EMPTY(v_confiltro),""," and "+ALLTRIM(v_confiltro))
+		
 		IF !EMPTY(v_auxi) THEN 
 			IF (ALLTRIM(FIELD("sel",v_auxi))=='SEL') THEN
 				IF TYPE('sel')='L' THEN 
-					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip WHERE sel = .t. 
+					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip WHERE sel = .t. &v_confiltro
 					SELECT ccopiarclip
 					IF _tally = 0  THEN 
-						SELECT * FROM &v_auxi INTO CURSOR ccopiarclip 
+						SELECT * FROM &v_auxi INTO CURSOR ccopiarclip WHERE .t. = .t. &v_confiltro
 					ENDIF 
 				ELSE
-					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  			
+					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  	WHERE .t. = .t.	&v_confiltro	
 				ENDIF 
 			ELSE
-				SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  	
+				SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  	WHERE .t. = .t. &v_confiltro
 			ENDIF  
 			SELECT ccopiarclip
 			v_rec = reccount()
@@ -9451,6 +9462,7 @@ FUNCTION CopiarClip
 	ELSE
 		v_auxi = ALIAS()
 		IF !EMPTY(v_auxi) THEN 
+		
 			v_drv = SYS(5)+'\'
 			SET DEFAULT TO &v_drv
 			v_ext = 'CSV'
@@ -26476,7 +26488,7 @@ PARAMETERS pfa_articulo, pfa_identidadd, pa_conexion
 	    RETURN .F.
 	ENDIF 	
 
-	SELECT * FROM cuotasdc_sql INTO TABLE cuotasdc 
+	SELECT * FROM cuotasdc_sql INTO TABLE cuotasdc WHERE !ISNULL(identidadd)
 
 	USE IN cuotasdc_sql
 	SELECT cuotasdc
@@ -26487,7 +26499,6 @@ PARAMETERS pfa_articulo, pfa_identidadd, pa_conexion
 		replace ALL netocuota WITH neto / ( IIF(valorcuota = 'S' OR cantcuotas = 0 ,1,cantcuotas  ) ), ;
 					impucuota WITH IIF(netoante = 0,0,( impuesto / netoante )) * ( neto / ( IIF(valorcuota = 'S' OR cantcuotas = 0 ,1,cantcuotas  ) ))
 		GO TOP 
-
 		DO WHILE !EOF()
 		
 			sqlmatriz(1)=" update entidadesdc  set neto = "+STR(cuotasdc.netocuota,13,2)+", impuesto = "+STR(cuotasdc.impucuota,13,2)
@@ -27060,9 +27071,53 @@ PARAMETERS pa_conexion
 	WAIT CLEAR 
 	MESSAGEBOX("Se ha Completado la Regeneración de Tablas Resultados... ",0+64,"Regeneración de Tablas Resultados...")
 	
-	
 RETURN 
 	
 
 
+*************************
+*************************
+
+FUNCTION FSYSLOG()
+PARAMETERS log_string, log_archivo
+*#/----------------------------------------
+* FUNCION Guarda un String en un Archivo de Log
+* PARAMETROS: 	log_string: String para guardar en el archivo de log
+*				log_archivo: Nombre del archivo en que se va a guardar el string
+*#/---
+	IF !(TYPE('_SYSLOGSYSTEM') = 'C') THEN 
+		RETURN 
+	ELSE 
+		IF EMPTY(_SYSLOGSYSTEM) THEN 
+			RETURN 
+		ELSE 
+			IF UPPER(SUBSTR(_SYSLOGSYSTEM,1,1)) = 'N' THEN 
+				RETURN 			
+			ENDIF 
+		ENDIF 
+	ENDIF 
+	
+	IF EMPTY(log_string) THEN 
+		RETURN 
+	ENDIF 
+	
+	IF !(TYPE('log_archivo') = 'C') THEN 
+		log_archivo = ""
+	ENDIF 
+	IF EMPTY(log_archivo) THEN 
+		log_archivo = IIF(EMPTY(SUBSTR(_SYSLOGSYSTEM,3)),'logsystem.log',SUBSTR(_SYSLOGSYSTEM,3))
+	ENDIF 
+	vlog_archivo = _SYSSERVIDOR+log_archivo	
+	
+	IF !FILE(vlog_archivo) THEN 
+		p=FCREATE(vlog_archivo)
+		FCLOSE(p)
+	ENDIF 
+	p=fopen(vlog_archivo,1)
+	=FSEEK(p,0, 2)
+	Str_Escribir = ALLTRIM(TTOC(DATETIME()))+" ; "+log_string+CHR(13)
+	=fwrite(p, Str_Escribir)
+	FCLOSE(p)
+	RETURN 
+ENDFUNC
 
