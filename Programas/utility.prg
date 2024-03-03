@@ -26605,3 +26605,233 @@ PARAMETERS log_string, log_archivo
 	RETURN 
 ENDFUNC
 
+
+************************************************************************
+************************************************************************
+FUNCTION FConsultaCompro
+PARAMETERS pfc_idtipocomp, pfc_idregistro 
+*#/----------------------------------------
+* FUNCION Consulta comprobantes , recibe como parametro el tipo de comprobante y el idregistro y muestra en pantalla el comprobante
+* PARAMETROS: 	pfc_idtipocomp: id del tipo de comprobante que se pretende mostrar
+*				pfc_idregistro: id del comprobante a mostrar en la tabla padre en la que se guarda
+*#/---
+
+	IF pfc_idtipocomp = 0 THEN 
+		RETURN 
+	ENDIF 
+	IF pfc_idregistro = 0 THEN 
+		RETURN 
+	ENDIF 
+	
+	vconeccionCO = abreycierracon(0,_SYSSCHEMA)
+	sqlmatriz(1)= "SELECT tabla FROM comprobantes where idtipocompro = "+ALLTRIM(STR(pfc_idtipocomp))
+	verror=sqlrun(vconeccionCO,"tablacompro_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de la Tabla del Comprobante a Mostrar ",0+48+0,"Error")
+	    RETURN 
+	ENDIF 
+	= abreycierracon(vconeccionCO,"")
+	SELECT tablacompro_sql 
+	GO TOP 
+	IF EOF() THEN 
+		USE IN tablacompro_sql
+		RETURN 
+	ENDIF 
+	v_tablacomprobante = ALLTRIM(tablacompro_sql.tabla)
+	USE IN tablacompro_sql 
+	IF EMPTY(v_tablacomprobante) THEN 
+		RETURN 
+	ENDIF 
+
+	DO CASE 
+		CASE v_tablacomprobante == "cajaie"
+			DO FORM cajaie WITH pfc_idregistro
+			
+		CASE v_tablacomprobante == "cajamovip"
+			DO FORM transfecajas WITH pfc_idregistro
+			
+		CASE v_tablacomprobante == "costop"
+			DO FORM costos WITH pfc_idregistro			
+			
+		CASE v_tablacomprobante == "cumplimentaoc"
+			DO FORM cumpleoc WITH pfc_idregistro
+			
+		CASE v_tablacomprobante == "cumplimentap"
+			DO FORM cumplimentacion WITH pfc_idregistro
+			
+		CASE v_tablacomprobante == "factuprove"
+			DO FORM facturasprov WITH pfc_idregistro
+			
+		CASE v_tablacomprobante == "facturas"
+			DO FORM facturas WITH pfc_idregistro
+			
+		CASE v_tablacomprobante == "np"
+			DO FORM np WITH pfc_idregistro			
+			
+		CASE v_tablacomprobante == "oc"
+			DO FORM oc WITH pfc_idregistro		
+			
+		CASE v_tablacomprobante == "pagares"
+			DO FORM pagares WITH pfc_idregistro, 0			
+
+		CASE v_tablacomprobante == "pagosprov"
+			DO FORM pagosprov WITH pfc_idregistro,0,0,0
+
+		CASE v_tablacomprobante == "presupu"
+			DO FORM presupuesto WITH pfc_idregistro			
+				
+		CASE v_tablacomprobante == "recibos"
+			DO FORM recibos WITH pfc_idregistro,0,0,0
+
+		CASE v_tablacomprobante == "remitos"
+			DO FORM remitos WITH pfc_idregistro
+
+		CASE v_tablacomprobante == "transferencias"
+			DO FORM transferencia WITH pfc_idregistro
+
+		OTHERWISE 
+	ENDCASE 
+
+	RETURN 		
+ENDFUNC 
+*!*			DO CASE
+*!*				
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA A")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA B")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA C")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*				
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO A")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO B")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO C")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*				
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO A")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO B")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO C")
+*!*					DO FORM facturas WITH pfc_idregistro
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("FACTURA A MiPyMEs")
+*!*					DO FORM facturas WITH v_idregistro
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE CREDITO A MiPyMEs")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*			
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE DEBITO A MiPyMEs")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*				
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("FACTURA B MiPyMEs")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*			
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE CREDITO B MiPyMEs")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE DEBITO B MiPyMEs")
+*!*					DO FORM facturas WITH pfc_idregistro
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("FACTURA C MiPyMEs")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE CREDITO C MiPyMEs")
+*!*					DO FORM facturas WITH pfc_idregistro
+*!*			
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE DEBITO C MiPyMEs")
+*!*					DO FORM facturas WITH pfc_idregistro
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("RECIBO")
+*!*					DO FORM recibos WITH pfc_idregistro,0,0,0
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("RECIBO A")
+*!*					DO FORM recibos WITH pfc_idregistro,0,0,0
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("RECIBO B")
+*!*					DO FORM recibos WITH pfc_idregistro,0,0,0
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("RECIBO C")
+*!*					DO FORM recibos WITH pfc_idregistro,0,0,0
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("REMITO")
+*!*					DO FORM remitos WITH pfc_idregistro
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE PEDIDO")
+*!*					DO FORM np WITH pfc_idregistro			
+*!*				
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("ORDEN DE COMPRA")
+*!*					DO FORM oc WITH pfc_idregistro			
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("PRESUPUESTO")
+*!*					DO FORM presupuesto WITH pfc_idregistro			
+*!*				
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("ORDEN DE PAGO")
+*!*					DO FORM pagosprov WITH pfc_idregistro,0,0,0
+*!*			
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("CAJA INGRESO")
+*!*					DO FORM cajaie WITH pfc_idregistro
+				
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("CAJA EGRESO")
+*!*					DO FORM cajaie WITH pfc_idregistro
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("TRANSFERENCIAS")
+*!*					DO FORM transferencia WITH pfc_idregistro
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("TRANSFERENCIAS DE CAJAS")
+*!*					DO FORM transfecajas WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("CUMPLIMENTACION NP")
+*!*					DO FORM cumplimentacion WITH pfc_idregistro
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("CUMPLIMENTA OC")
+*!*					DO FORM cumpleoc WITH v_idregistro
+*!*			
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("PAGARES")
+*!*					DO FORM pagares WITH pfc_idregistro, 0			
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("COSTOS")
+*!*					DO FORM costos WITH pfc_idregistro			
+
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA PROV A")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+			
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA PROV B")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA PROV C")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+*!*				
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO PROV A")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO PROV B")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO PROV C")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+*!*				
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO PROV A")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO PROV B")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO PROV C")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+*!*					
+*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("LIQUIDACION CUPONES")
+*!*					DO FORM facturasprov WITH pfc_idregistro
+
+*!*				OTHERWISE			
+*!*			ENDCASE
+*!*			RELEASE tipoComproObjcFC 
+
+*!*	ENDFUNC 
