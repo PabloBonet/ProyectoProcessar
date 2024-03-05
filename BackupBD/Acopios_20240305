@@ -1,0 +1,185 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema trsoftdb
+--
+
+CREATE DATABASE IF NOT EXISTS trsoftdb;
+USE trsoftdb;
+
+--
+-- Definition of table `acopio`
+--
+
+DROP TABLE IF EXISTS `acopio`;
+CREATE TABLE `acopio` (
+  `idacopio` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `pventa` int(10) unsigned NOT NULL,
+  `idcomproba` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `entidad` int(10) unsigned NOT NULL,
+  `descrip` char(100) NOT NULL,
+  `numero` int(10) unsigned NOT NULL,
+  `numcomp` int(10) unsigned NOT NULL,
+  `carpintero` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`idacopio`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+--
+-- Definition of table `acopiod`
+--
+
+DROP TABLE IF EXISTS `acopiod`;
+CREATE TABLE `acopiod` (
+  `idacopiod` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idacopio` int(10) unsigned NOT NULL,
+  `idmateacopio` int(10) unsigned NOT NULL,
+  `precio` float(13,4) NOT NULL,
+  `tipocbio` float(13,4) NOT NULL,
+  `moneda` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idacopiod`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+
+--
+-- Definition of table `acopiodp`
+--
+
+DROP TABLE IF EXISTS `acopiodp`;
+CREATE TABLE `acopiodp` (
+  `idacopiodp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idacopiop` int(10) unsigned NOT NULL,
+  `idmateacop` int(10) unsigned NOT NULL,
+  `precio` float(13,4) NOT NULL,
+  `tipocbio` float(13,4) NOT NULL,
+  `moneda` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idacopiodp`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+--
+-- Definition of table `acopiop`
+--
+
+DROP TABLE IF EXISTS `acopiop`;
+CREATE TABLE `acopiop` (
+  `idacopiop` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `pventa` int(10) unsigned NOT NULL,
+  `idcomproba` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `entidad` int(10) unsigned NOT NULL,
+  `descrip` char(100) NOT NULL,
+  `numero` int(10) unsigned NOT NULL,
+  `numcomp` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idacopiop`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+
+--
+-- Definition of table `ajustesacopio`
+--
+
+DROP TABLE IF EXISTS `ajustesacopio`;
+CREATE TABLE `ajustesacopio` (
+  `idajustea` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `fecha` char(8) NOT NULL,
+  `monto` float(13,4) NOT NULL,
+  `observa` char(254) NOT NULL,
+  `opera` int(11) NOT NULL,
+  PRIMARY KEY (`idajustea`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+
+--
+-- Definition of table `ajustesacopiop`
+--
+
+DROP TABLE IF EXISTS `ajustesacopiop`;
+CREATE TABLE `ajustesacopiop` (
+  `idajusteap` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `fecha` char(8) NOT NULL,
+  `monto` float(13,4) NOT NULL,
+  `observa` char(254) NOT NULL,
+  `opera` int(11) NOT NULL,
+  PRIMARY KEY (`idajusteap`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+
+--
+-- Definition of table `compacopio`
+--
+
+DROP TABLE IF EXISTS `compacopio`;
+CREATE TABLE `compacopio` (
+  `idcompacopio` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idacopio` int(10) unsigned NOT NULL,
+  `importe` float(13,4) NOT NULL,
+  `idregistro` int(10) unsigned NOT NULL,
+  `idnp` int(10) unsigned NOT NULL,
+  `acopio` char(1) NOT NULL,
+  `idajustea` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idcompacopio`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+--
+-- Definition of table `compacopiop`
+--
+
+DROP TABLE IF EXISTS `compacopiop`;
+CREATE TABLE `compacopiop` (
+  `idcompacop` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idacopiop` int(10) unsigned NOT NULL,
+  `importe` float(13,4) NOT NULL,
+  `idregistro` int(10) unsigned NOT NULL,
+  `idnp` int(10) unsigned NOT NULL,
+  `acopio` char(1) NOT NULL,
+  `idajusteap` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idcompacop`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+
+--
+-- Definition of table `mateacopio`
+--
+
+DROP TABLE IF EXISTS `mateacopio`;
+CREATE TABLE `mateacopio` (
+  `idmateacopio` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `detalle` char(100) NOT NULL,
+  `unidad` char(10) NOT NULL,
+  `articulo` char(50) NOT NULL DEFAULT '',
+  PRIMARY KEY (`idmateacopio`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

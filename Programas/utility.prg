@@ -3825,14 +3825,13 @@ PARAMETERS p_idacopio
 
 		CREATE TABLE materialesimp	FREE (idmate I, detalle C(100), unidad C(10),precio y, tipocbio y,moneda I,nom_mone C(80), op I, idacopiod I, kg y, kgTot y)
 
-		
 		vconeccionD=abreycierracon(0,_SYSSCHEMA)	
 		
 		************************************
 		*** Busco la Cabecera del acopio ***
 		************************************
 		
-		sqlmatriz(1)= "SELECT a.*,c.apellido as apeCli, c.nombre as nomCli, c.compania as compaCli ,c.apellido as apeCar, c.nombre as nomCar, c.compania as compCar, o.tipo, o.comprobante,p.puntov  "
+		sqlmatriz(1)= "SELECT a.*,c.apellido as apeCli, c.nombre as nomCli, c.compania as compaCli ,r.apellido as apeCar, r.nombre as nomCar, r.compania as compCar, o.tipo, o.comprobante,p.puntov  "
 		sqlmatriz(2)= " FROM acopio a left join entidades c on a.entidad = c.entidad left join entidades r on  a.carpintero = r.entidad  left join comprobantes o on a.idcomproba = o.idcomproba  left join puntosventa p on a.pventa = p.pventa "
 		sqlmatriz(3)= " where a.idacopio = "+ALLTRIM(STR(v_idacopio))
 		
@@ -3867,7 +3866,7 @@ PARAMETERS p_idacopio
 
 			v_numAcop = acopio_sql_im.numcomp
 			v_cliAcop =  acopio_sql_im.entidad
-			v_nomCliAcop = IIF(EMPTY(ALLTRIM(acopio_sql_im.apeCli+ " "+acopio_sql_im.nomCli))=.T.,acopio_sql_im.compCli,ALLTRIM(acopio_sql_im.apeCli+ " "+acopio_sql_im.nomCli))
+			v_nomCliAcop = IIF(EMPTY(ALLTRIM(acopio_sql_im.apeCli+ " "+acopio_sql_im.nomCli))=.T.,acopio_sql_im.compaCli,ALLTRIM(acopio_sql_im.apeCli+ " "+acopio_sql_im.nomCli))
 		
 			v_carAcop = acopio_sql_im.carpintero
 			v_nomCArAcop =  IIF(EMPTY(ALLTRIM(acopio_sql_im.apeCar+ " "+acopio_sql_im.nomCar))=.T.,acopio_sql_im.compCar,ALLTRIM(acopio_sql_im.apeCar+ " "+acopio_sql_im.nomCar))
@@ -3887,13 +3886,11 @@ PARAMETERS p_idacopio
 		ENDIF 
 				
 		
-		
-		
 		**************************************
 		*** Busco comprobantes de facturas ***
 		**************************************
 		
-		sqlmatriz(1)=" select a.*,p.puntov as actividad, f.numero, f.neto, f.fecha as fechaF,f.observa1 as observa, c.comprobante,c.abrevia, t.opera from compacopio a left join facturas f "
+		sqlmatriz(1)=" select a.*,p.puntov as actividad, f.numero, f.neto, f.fecha as fechaF,f.observa1 as observa, c.comprobante,c.abrevia, IF(a.importe < 0,-1,IF(a.importe > 0,1,0)) as opera from compacopio a left join facturas f "
 		sqlmatriz(2)=" ON a.idregistro = f.idfactura left join comprobantes c on f.idcomproba = c.idcomproba left join puntosventa p on f.pventa = p.pventa left join tipocompro t on c.idtipocompro = t.idtipocompro "
 		sqlmatriz(3)=" where a.idacopio = "+ALLTRIM(STR(v_idacopio))+" and a.idregistro > 0 "
 		sqlmatriz(4)=" order by f.fecha, f.numero, f.idcomproba "
@@ -3944,57 +3941,120 @@ PARAMETERS p_idacopio
 			SKIP 1
 		
 		ENDDO 
-		
 		*********************
 		*** Busco Ajustes ***
 		*********************
 		v_acopmenosAju 	= 0.00
 		v_acopmasAju	= 0.00
 		
-		sqlmatriz(1)=" select a.*,aj.fecha as fechaA,aj.monto as montoAju, aj.observa from compacopio a left join ajustesacopio aj " 
-		sqlmatriz(2)=" ON a.idajustea = aj.idajustea "
-		sqlmatriz(3)=" where a.idacopio = "+ALLTRIM(STR(v_idacopio))+" and  a.idajustea > 0 "
-		sqlmatriz(4)=" order by aj.idajustea"
+*!*			sqlmatriz(1)=" select a.*,aj.fecha as fechaA,aj.monto as montoAju, aj.observa from compacopio a left join ajustesacopio aj " 
+*!*			sqlmatriz(2)=" ON a.idajustea = aj.idajustea "
+*!*			sqlmatriz(3)=" where a.idacopio = "+ALLTRIM(STR(v_idacopio))+" and  a.idajustea > 0 "
+*!*			sqlmatriz(4)=" order by aj.idajustea"
+*!*			
+*!*			verror=sqlrun(vconeccionD,"ajustesAcop_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de ajustes de acopio",0+48+0,"Error")
+*!*			ENDIF 
 		
-		verror=sqlrun(vconeccionD,"ajustesAcop_sql")
+		
+		
+		
+		
+		sqlmatriz(1)=" select a.*,aj.fecha as fechaA,aj.monto as montoAju, aj.observa, IF(a.importe < 0,-1,IF(a.importe > 0,1,0)) as opera from compacopio a left join ajustesacopio aj " 
+		sqlmatriz(2)=" ON a.idajustea = aj.idajustea "
+		sqlmatriz(3)= "where a.idacopio = "+ALLTRIM(STR(v_idacopio))+" and  a.idajustea > 0 "
+		sqlmatriz(4)=" order by aj.idajustea"
+
+
+		verror=sqlrun(vconeccionD,"ajustesAcop_sqla")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de ajustes de acopio",0+48+0,"Error")
 		ENDIF 
+
+
+		SELECT * FROM  ajustesAcop_sqla INTO TABLE  ajustesAcop_sql
+		GO TOP 
+
+		ALTER table ajustesAcop_sql alter COLUMN opera I
+
+
+		SELECT ajustesAcop_sql 
+		GO TOP 
+		replace ALL importe WITH importe*opera
+
+		
 		
 		SELECT ajustesAcop_sql 
 		GO TOP 
 
 		DO WHILE NOT EOF()
 
+
+
 			v_fecha 		= ajustesAcop_sql.fechaA
 			v_idregistro 	= ajustesAcop_sql.idregistro
 			v_idnp			= ajustesAcop_sql.idnp
 			v_idajuste		= ajustesAcop_sql.idajustea
-			v_numComp		= "AJUSTE      " + ALLTRIM(STRTRAN(STR(ajustesAcop_sql.idajustea, 8,0),' ','0'))
-			v_tipoComp 		= "Ajuste de Acopio"
+			v_op 		= ajustesAcop_sql.opera
+			
+			v_numComp		= "AJUSTE - " + ALLTRIM(STRTRAN(STR(ajustesAcop_sql.idajustea, 8,0),' ','0'))
+			v_tipoComp 		= "AJUSTE "+ALLTRIM(IIF(v_op < 0, "DE EGRESO","DE INGRESO"))
 			v_neto			= ROUND(ajustesAcop_sql.montoAju,2)
 			v_acopio		= ajustesAcop_sql.acopio
 			
-			DO CASE
-			CASE v_neto > 0
+			v_imp 			= 1
 			
-				IF v_acopio = 'S'
-					v_op = 1
+			
+			
+			v_busqueda		= ALLTRIM(v_numComp)+ALLTRIM(v_tipoComp)
+			v_observa		= ALLTRIM(ajustesAcop_sql.observa)
+
+	
+		
+			
+			
+*!*				v_fecha 		= ajustesAcop_sql.fechaA
+*!*				v_idregistro 	= ajustesAcop_sql.idregistro
+*!*				v_idnp			= ajustesAcop_sql.idnp
+*!*				v_idajuste		= ajustesAcop_sql.idajustea
+*!*				v_numComp		= "AJUSTE      " + ALLTRIM(STRTRAN(STR(ajustesAcop_sql.idajustea, 8,0),' ','0'))
+*!*				v_tipoComp 		= "Ajuste de Acopio"
+*!*				v_neto			= ROUND(ajustesAcop_sql.montoAju,2)
+*!*				v_acopio		= ajustesAcop_sql.acopio
+			
+*!*				DO CASE
+*!*				CASE v_neto > 0
+*!*				
+*!*					IF v_acopio = 'S'
+*!*						v_op = 1
+*!*						v_acopmasAju =  v_neto
+*!*						v_masAcopt = v_masAcopt + v_acopmasAju 
+*!*					ELSE
+*!*						v_op = 0
+*!*		
+*!*					ENDIF 
+*!*				CASE v_neto < 0
+*!*					v_op = -1
+*!*					v_acopmenosAju 	= (-1*v_neto)
+*!*					v_menosAcopt = v_menosAcopt + v_acopmenosAju 
+*!*				OTHERWISE
+*!*					v_op 	= 0
+
+*!*				ENDCASE
+*!*		
+	
+	
+			DO CASE
+				CASE v_op > 0
 					v_acopmasAju =  v_neto
 					v_masAcopt = v_masAcopt + v_acopmasAju 
-				ELSE
-					v_op = 0
-	
-				ENDIF 
-			CASE v_neto < 0
-				v_op = -1
-				v_acopmenosAju 	= (-1*v_neto)
-				v_menosAcopt = v_menosAcopt + v_acopmenosAju 
-			OTHERWISE
-				v_op 	= 0
-
+				CASE v_op < 0
+					v_acopmenosAju 	= v_neto
+					v_menosAcopt = v_menosAcopt + v_acopmenosAju 
+				
 			ENDCASE
-	
+		
 			v_imp 			= 1
 			v_observa		= ALLTRIM(ajustesAcop_sql.observa)
 			
@@ -4054,7 +4114,6 @@ PARAMETERS p_idacopio
 			ENDDO 
 
 		ENDIF 
-		
 		************************
 		*** Busco materiales ***
 		************************
@@ -4103,9 +4162,9 @@ PARAMETERS p_idacopio
 		=abreycierracon(vconeccionD,"")	
 
 
-
 		v_saldoAcopt = v_masAcopt - v_menosAcopt 
-		
+	
+			
 		SELECT comprobantesimp 
 		GO TOP 
 
@@ -4123,6 +4182,351 @@ PARAMETERS p_idacopio
 						
 	ELSE
 		MESSAGEBOX("NO se pudo recuperar el ACOPIO para imprimir ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
+
+
+
+ FUNCTION imprimirAcopiop
+PARAMETERS p_idacopiop
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UNA Acopiop(COMPROBANTES DE LA TABLA Acopiop)
+* PARAMETROS: P_IDACOPIOP
+*#/----------------------------------------
+
+
+	v_idacopiop = p_idacopiop
+
+
+	IF v_idacopiop > 0
+
+
+
+		CREATE TABLE comprobantespimp FREE (fecha C(8), idregistro I, idnp I, numComp C(30), tipoComp C(60), total Y, op I, acopio C(1), imprimir I, observa c(254), idajuste I, numacop I, cliacop I, ;
+		nomCliAcop C(200), carAcop I, nomCarAcop C(200), ordAcop I, fechaAcop C(8), descAcop C(200), masAcop N(13,2), menosAcop N(13,2), saldoAcop N(13,2), tipoC C(1), nombrecomp C(50), puntov C(4), acopmast N(13,2), acopmenost N(13,2))
+		
+		SELECT comprobantespimp
+		INDEX on ALLTRIM(fecha) TO fechaimp
+		SET ORDER TO fechaimp
+
+		CREATE TABLE materialespimp	FREE (idmate I, detalle C(100), unidad C(10),precio y, tipocbio y,moneda I,nom_mone C(80), op I, idacopiod I, kg y, kgTot y)
+
+		vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+		
+		************************************
+		*** Busco la Cabecera del acopiop ***
+		************************************
+		
+		sqlmatriz(1)= "SELECT a.*,c.apellido as apeCli, c.nombre as nomCli, c.compania as compaCli , o.tipo, o.comprobante,p.puntov  "
+		sqlmatriz(2)= " FROM acopiop a left join entidades c on a.entidad = c.entidad left join comprobantes o on a.idcomproba = o.idcomproba  left join puntosventa p on a.pventa = p.pventa "
+		sqlmatriz(3)= " where a.idacopiop = "+ALLTRIM(STR(v_idacopiop))
+		
+		verror=sqlrun(vconeccionD,"acopiop_sql_im")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los comprobantes asociados al acopiop ",0+48+0,"Error")
+		ENDIF
+					
+					
+		v_numAcop = 0
+		v_cliAcop =0
+		v_nomCliAcop = ""
+		v_carAcop = 0
+		v_nomCArAcop = ""
+		v_ordAcop	= 0
+		v_fechaAcop	= ""
+		v_descAcop = ""
+		v_tipoC	= ""
+		v_nombrecomp = ""
+		v_puntov = "0000"
+		
+		v_masAcopt = 0.00
+		v_menosAcopt = 0.00
+		v_saldoAcopt = 0.00
+		v_idcomprobaAcop = 0
+		
+		
+		SELECT acopiop_sql_im
+		GO TOP 
+		
+		IF NOT EOF()
+
+			v_numAcop = acopiop_sql_im.numcomp
+			v_cliAcop =  acopiop_sql_im.entidad
+			v_nomCliAcop = IIF(EMPTY(ALLTRIM(acopiop_sql_im.apeCli+ " "+acopiop_sql_im.nomCli))=.T.,acopiop_sql_im.compaCli,ALLTRIM(acopiop_sql_im.apeCli+ " "+acopiop_sql_im.nomCli))
+		
+			
+			v_ordAcop	= acopiop_sql_im.numero
+			v_fechaAcop	= acopiop_sql_im.fecha
+			v_descAcop = acopiop_sql_im.descrip
+			v_idcomprobaAcop = acopiop_sql_im.idcomproba
+			v_tipoc		= acopiop_sql_im.tipo
+			v_nombrecomp = acopiop_sql_im.comprobante
+			v_puntov = acopiop_sql_im.puntov
+
+					
+		ELSE
+		
+			RETURN 
+		ENDIF 
+				
+		
+		**************************************
+		*** Busco comprobantes de facturas ***
+		**************************************
+		
+		sqlmatriz(1)=" select a.*,f.actividad, f.numero, f.neto,f.total, f.fecha as fechaF,f.observa, c.comprobante,c.abrevia, IF(a.importe < 0,-1,IF(a.importe > 0,1,0)) as opera from compacopiop a left join factuprove f "
+		sqlmatriz(2)=" ON a.idregistro = f.idfactprove left join comprobantes c on f.idcomproba = c.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro "
+		sqlmatriz(3)=" where a.idacopiop = "+ALLTRIM(STR(v_idacopiop))+" and a.idregistro > 0 "
+		sqlmatriz(4)=" order by f.fecha, f.numero, f.idcomproba "
+		
+		
+			
+		verror=sqlrun(vconeccionD,"acopiosFacp_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los comprobantes asociados al acopiop ",0+48+0,"Error")
+		ENDIF
+		
+		v_acopmenosFac 	= 0.00
+		v_acopmasFac	= 0.00
+			
+				
+		SELECT acopiosFacp_sql
+		GO TOP 
+		
+		DO WHILE NOT EOF()
+
+		
+			v_fecha 		= acopiosFacp_sql.fechaF
+			v_idregistro 	= acopiosFacp_sql.idregistro
+			v_idnp			= acopiosFacp_sql.idnp
+			v_idajuste		= acopiosFacp_sql.idajusteap
+			v_numComp		= ALLTRIM(acopiosFacp_sql.abrevia)+"      " +ALLTRIM(STRTRAN(STR(acopiosFacp_sql.actividad, 4,0),' ','0'))+" - "+ALLTRIM(STRTRAN(STR(acopiosFacp_sql.numero, 8,0),' ','0'))
+			v_tipoComp 		= acopiosFacp_sql.comprobante 
+			v_total			= ROUND(acopiosFacp_sql.total,2)
+			v_op			= acopiosFacp_sql.opera 
+			v_acopio		= acopiosFacp_sql.acopio
+			v_imp 			= 1
+			v_observa		= ALLTRIM(acopiosFacp_sql.observa)
+			
+			IF v_op < 0
+				v_acopmenosFac 	= v_total
+				v_menosAcopt = v_menosAcopt + v_acopmenosFac 
+			ELSE
+				IF v_op > 0
+					v_acopmasFac =  v_total
+					v_masAcopt = v_masAcopt + v_acopmasFac 
+				ENDIF 
+			ENDIF 
+	
+			INSERT INTO comprobantespimp values(v_fecha, v_idregistro, v_idnp,v_numComp, v_tipoComp, v_total,v_op,v_acopio,v_imp, v_observa,v_idajuste,v_numacop, ;
+			v_cliacop, v_nomCliAcop, v_carAcop, v_nomCarAcop, v_ordAcop, v_fechaAcop, v_descAcop, v_acopmasFac , v_acopmenosFac, v_saldoAcopt, v_tipoc, v_nombrecomp,v_puntov,v_masAcopt,v_menosAcopt)
+		
+	
+	
+			SELECT acopiosFacp_sql
+			SKIP 1
+		
+		ENDDO 
+		*********************
+		*** Busco Ajustes ***
+		*********************
+		v_acopmenosAju 	= 0.00
+		v_acopmasAju	= 0.00
+		
+
+		
+		sqlmatriz(1)=" select a.*,aj.fecha as fechaA,aj.monto as montoAju, aj.observa, IF(a.importe < 0,-1,IF(a.importe > 0,1,0)) as opera from compacopiop a left join ajustesacopiop aj " 
+		sqlmatriz(2)=" ON a.idajusteap = aj.idajusteap "
+		sqlmatriz(3)= "where a.idacopiop = "+ALLTRIM(STR(v_idacopiop))+" and  a.idajusteap > 0 "
+		sqlmatriz(4)=" order by aj.idajusteap"
+
+
+		verror=sqlrun(vconeccionD,"ajustesAcopp_sqla")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de ajustes de acopiop",0+48+0,"Error")
+		ENDIF 
+
+
+		SELECT * FROM  ajustesAcopp_sqla INTO TABLE  ajustesAcopp_sql
+		GO TOP 
+
+		ALTER table ajustesAcopp_sql alter COLUMN opera I
+
+
+		SELECT ajustesAcopp_sql
+		GO TOP 
+		replace ALL importe WITH importe*opera
+
+		
+		
+		SELECT ajustesAcopp_sql
+		GO TOP 
+
+		DO WHILE NOT EOF()
+
+
+
+			v_fecha 		= ajustesAcopp_sql.fechaA
+			v_idregistro 	= ajustesAcopp_sql.idregistro
+			v_idnp			= ajustesAcopp_sql.idnp
+			v_idajuste		= ajustesAcopp_sql.idajusteap
+			v_op 			= ajustesAcopp_sql.opera
+			
+			v_numComp		= "AJUSTE - " + ALLTRIM(STRTRAN(STR(ajustesAcopp_sql.idajusteap, 8,0),' ','0'))
+			v_tipoComp 		= "AJUSTE "+ALLTRIM(IIF(v_op < 0, "DE EGRESO","DE INGRESO"))
+			v_total			= ROUND(ajustesAcopp_sql.montoAju,2)
+			v_acopio		= ajustesAcopp_sql.acopio
+			
+			v_imp 			= 1
+			
+			
+			
+			v_busqueda		= ALLTRIM(v_numComp)+ALLTRIM(v_tipoComp)
+			v_observa		= ALLTRIM(ajustesAcopp_sql.observa)
+
+	
+		
+	
+			DO CASE
+				CASE v_op > 0
+					v_acopmasAju =  v_total
+					v_masAcopt = v_masAcopt + v_acopmasAju 
+				CASE v_op < 0
+					v_acopmenosAju 	= v_total
+					v_menosAcopt = v_menosAcopt + v_acopmenosAju 
+				
+			ENDCASE
+		
+			v_imp 			= 1
+			v_observa		= ALLTRIM(ajustesAcopp_sql.observa)
+			
+			INSERT INTO comprobantespimp values(v_fecha, v_idregistro, v_idnp,v_numComp, v_tipoComp, v_total,v_op,v_acopio,v_imp, v_observa,v_idajuste,v_numacop, ;
+			v_cliacop, v_nomCliAcop, v_carAcop, v_nomCarAcop, v_ordAcop, v_fechaAcop, v_descAcop, v_acopmasAju , v_acopmenosAju , v_saldoAcopt, v_tipoc, v_nombrecomp,v_puntov,v_masAcopt,v_menosAcopt)
+		
+		
+		
+
+			SELECT ajustesAcopp_sql
+			SKIP 1
+
+		ENDDO 
+	
+		****************
+		*** Busco NP ***
+		****************
+		v_acopmenosNP 	= 0.00
+		v_acopmasNP	= 0.00
+		
+		sqlmatriz(1)=" select a.* from compacopiop a "
+		sqlmatriz(2)=" where a.idacopiop = "+ALLTRIM(STR(v_idacopiop))+" and a.idnp > 0 "
+
+	
+		verror=sqlrun(vconeccionD,"acopiospNPA_sql")
+
+		SELECT * FROM acopiospNPA_sql INTO TABLE .\acopiospNP_sql
+		
+		SELECT acopiospNP_sql
+		GO TOP 
+
+		IF NOT EOF()
+			DO WHILE NOT EOF()
+				
+				v_fecha 		= acopiospNP_sql.fechanp 
+				v_idregistro 	= acopiospNP_sql.idregistro
+				v_idajuste		= acopiospNP_sql.idajusteap
+				v_idnp			= acopiospNP_sql.idnp
+				v_numComp		= "NP        " + ALLTRIM(acopiospNP_sql.nroserie)+" - "+ALLTRIM(STRTRAN(STR(acopiospNP_sql.nronp, 8,0),' ','0'))
+				v_tipoComp 		= "Nota de Pedido"
+				v_total			= ROUND(acopiospNP_sql.importe,2)
+				v_op			= 0
+				v_acopio		= acopiospNP_sql.acopiop
+				v_imp			= 1
+				v_observa		= ALLTRIM(acopiospNP_sql.observa)
+
+				
+				INSERT INTO comprobantespimp values(v_fecha, v_idregistro, v_idnp,v_numComp, v_tipoComp, v_total,v_op,v_acopio,v_imp, v_observa,v_idajuste,v_numacop, ;
+				v_cliacop, v_nomCliAcop, v_carAcop, v_nomCarAcop, v_ordAcop, v_fechaAcop, v_descAcop, v_acopmasNP, v_acopmenosNP , v_saldoAcopt, v_tipoc, v_nombrecomp,v_puntov,v_masAcopt,v_menosAcopt)
+	
+	
+	
+
+				SELECT acopiosNP_sql
+				SKIP 1
+
+			ENDDO 
+
+		ENDIF 
+		************************
+		*** Busco materiales ***
+		************************
+		
+		sqlmatriz(1)=" select a.*, m.detalle, m.unidad from acopiodp a left join mateacopio m on a.idmateacop = m.idmateacopio "
+		sqlmatriz(2)=" where a.idacopiop = "+ALLTRIM(STR(v_Idacopiop))
+		sqlmatriz(3)=" order by a.idmateacop "
+
+	
+		verror=sqlrun(vconeccionD,"acopiospMat_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Materiales del acopiop",0+48+0,"Error")
+		ENDIF 
+
+		SELECT * FROM acopiospMat_sql INTO TABLE .\acopiospMat
+		SELECT acopiospMat
+		GO TOP 
+
+		DO WHILE NOT EOF()
+				
+			v_idacopiodp	= acopiospMat.idacopiodp
+			v_idmate 	= acopiospMat.idmateacop
+			v_detalle	= acopiospMat.detalle
+			v_unidad	= acopiospMat.unidad
+			v_precio	= ROUND(acopiospMat.precio,2)
+			v_tipocmbio	= ROUND(acopiospMat.tipocbio,2)
+			v_moneda	= acopiospMat.moneda
+			
+			SELECT monedas_sql 
+			GO top
+			LOCATE FOR moneda = v_moneda
+			v_nom_mon	= monedas_sql.nombre
+			v_op		= 0
+			v_kg		= 0.0
+			v_kgTot		= 0.0
+
+									
+			INSERT INTO materialespimp values (v_idmate, v_detalle, v_unidad, v_precio, v_tipocmbio, v_moneda,v_nom_mon,v_op,v_idacopiodp,v_kg,v_kgtot)
+
+			SELECT acopiospMat
+			SKIP 1
+
+		ENDDO 
+
+		*** Me desconecto ***
+		=abreycierracon(vconeccionD,"")	
+
+
+		v_saldoAcopt = v_masAcopt - v_menosAcopt 
+	
+			
+		SELECT comprobantespimp 
+		GO TOP 
+
+		replace ALL saldoacop WITH v_saldoAcopt, acopmast WITH v_masAcopt, acopmenost WITH v_menosAcopt 
+
+
+
+			IF v_idcomprobaAcop > 0
+
+				DO FORM reporteform WITH "comprobantespimp;materialespimp","comprobantespcr;materialespcr",v_idcomprobaAcop 
+			
+			
+			ENDIF 
+
+						
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar el ACOPIOP para imprimir ID <= 0",0+16,"Error al imprimir")
 		RETURN 
 
 	ENDIF 
