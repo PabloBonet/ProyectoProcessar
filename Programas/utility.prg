@@ -11127,14 +11127,80 @@ PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta
 	
 	ENDIF 
 
-
 	v_fecha			= DTOS(DATE())
 	v_hora			= TIME()
 	
 	vp_tablacp 		= IIF(TYPE('p_tablacp')='C',p_tablacp,"")
 	vp_campocp 		= IIF(TYPE('p_campocp')='C',p_campocp,"")
 	vp_idregistrocp = IIF(TYPE('p_idregistrocp')='N',p_idregistrocp,0)
+	v_tablafecha 	= ""
+	v_indiceFecha	= ""
 	
+	vconeccionMo = abreycierracon(0,_SYSSCHEMA)
+
+   ** && busco la fecha del comprobante asociado
+ 	IF !EMPTY(vp_tablacp) AND !EMPTY(vp_campocp) AND vp_idregistrocp > 0  AND (ALLTRIM(vp_tablacp) == 'detallecobros' OR ALLTRIM(vp_tablacp)== 'detallepagos' OR ALLTRIM(vp_tablacp)== 'cajamovih' )THEN 
+		
+		IF ALLTRIM(vp_tablacp) == 'detallecobros' OR ALLTRIM(vp_tablacp) == 'detallepagos' THEN 
+			sqlmatriz(1)= " select c.tabla from "+ALLTRIM(vp_tablacp)+" t left join comprobantes c on c.idcomproba = t.idcomproba "
+			sqlmatriz(2)= " where "+ALLTRIM(vp_campocp)+" = "+ALLTRIM(STR(vp_idregistrocp))
+		ENDIF 
+
+		IF ALLTRIM(vp_tablacp) == 'cajamovih' THEN 
+			sqlmatriz(1)= " select c.tabla from cajamovih h left join cajamovip t on t.idcajamovp = h.idcajamovp"
+			sqlmatriz(2)= " left join comprobantes c on c.idcomproba = t.idcomproba "
+			sqlmatriz(3)= " where "+ALLTRIM(vp_campocp)+" = "+ALLTRIM(STR(vp_idregistrocp))		
+		ENDIF 
+		
+		verror=sqlrun(vconeccionMo ,"tablacompro_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la Tabla del Movimiento de Tipo de Pagos ",0+48+0,"Error")
+		    RETURN ""  
+		ENDIF	
+		SELECT tablacompro_sql
+		GO TOP 
+		IF !EOF() THEN 	
+			v_tablafecha = tablacompro_sql.tabla
+		ENDIF 
+		USE IN tablacompro_sql
+		IF !EMPTY(v_tablafecha) THEN 
+			v_IndiceFecha	 = obtenerCampoIndice(ALLTRIM(v_tablafecha))
+		ENDIF 
+
+		IF !EMPTY(v_IndiceFecha) THEN 
+		
+			DO CASE 
+				CASE ALLTRIM(vp_tablacp) == 'detallecobros' OR ALLTRIM(vp_tablacp) == 'detallepagos'
+				sqlmatriz(1) = " select c.fecha from "+ALLTRIM(vp_tablacp)+"  dc "
+				sqlmatriz(2) = " left join "+ALLTRIM(v_tablafecha)+" c on dc.idregistro = c."+ALLTRIM(v_IndiceFecha)
+				sqlmatriz(3) = " where dc."+ALLTRIM(vp_campocp)+" = "+ALLTRIM(STR(vp_idregistrocp))
+			
+				CASE ALLTRIM(vp_tablacp) == 'cajamovih'
+				sqlmatriz(1) = " select c.fecha from "+ALLTRIM(vp_tablacp)+"  dc "
+				sqlmatriz(2) = " left join "+ALLTRIM(v_tablafecha)+" c on dc.idcajamovp = c."+ALLTRIM(v_IndiceFecha)
+				sqlmatriz(3) = " where dc."+ALLTRIM(vp_campocp)+" = "+ALLTRIM(STR(vp_idregistrocp))
+				
+				OTHERWISE 
+				
+			ENDCASE 
+			
+			verror=sqlrun(vconeccionMo ,"compromovi_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Comprobantes para Registrar Movimiento de Pagos ",0+48+0,"Error")
+			    RETURN ""  
+			ENDIF	
+			SELECT compromovi_sql
+			GO TOP 
+			IF !EOF() THEN 	
+				v_fecha = compromovi_sql.fecha
+			ENDIF 
+			USE IN compromovi_sql
+			
+		ENDIF 
+	ENDIF 
+	
+
+
 	
 	DIMENSION lamatriz3(13,2)
 	
@@ -11166,7 +11232,6 @@ PARAMETERS p_idtipopago, p_tabla, p_campo, p_idregistro, p_idcajareca,p_idcuenta
 	lamatriz3(13,1)='idregicp'
 	lamatriz3(13,2)=ALLTRIM(STR(vp_idregistrocp))
 	
-	vconeccionMo = abreycierracon(0,_SYSSCHEMA)
 	
 	p_tipoope     = 'I'
 	p_condicion   = ''
@@ -27098,144 +27163,94 @@ PARAMETERS pfc_idtipocomp, pfc_idregistro
 
 	RETURN 		
 ENDFUNC 
-*!*			DO CASE
-*!*				
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA A")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA B")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA C")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*				
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO A")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO B")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO C")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*				
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO A")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO B")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO C")
-*!*					DO FORM facturas WITH pfc_idregistro
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("FACTURA A MiPyMEs")
-*!*					DO FORM facturas WITH v_idregistro
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE CREDITO A MiPyMEs")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*			
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE DEBITO A MiPyMEs")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*				
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("FACTURA B MiPyMEs")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*			
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE CREDITO B MiPyMEs")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE DEBITO B MiPyMEs")
-*!*					DO FORM facturas WITH pfc_idregistro
+************************************************************************
+************************************************************************
+FUNCTION FModTPago
+PARAMETERS pfm_idcomproba, pfm_id, pfm_Fecha, pfm_Hora, pfm_cn
+*#/----------------------------------------
+* FUNCION Modifica el registro de Movimientos de Tipos de Pago (Fecha y Hora) para un comprobante
+* PARAMETROS: 	pfm_idcomproba: id del tipo de comprobante que se pretende mostrar
+*				pfm_id: id del comprobante a mostrar en la tabla padre en la que se guarda
+*				pfm_Fecha: Nueva Fecha para el registro de movimiento
+*				pfm_Hora:  Nueva hora para el registro de movimiento
+*#/---
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("FACTURA C MiPyMEs")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE CREDITO C MiPyMEs")
-*!*					DO FORM facturas WITH pfc_idregistro
-*!*			
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdTipoCompro("NOTA DE DEBITO C MiPyMEs")
-*!*					DO FORM facturas WITH pfc_idregistro
+	IF pfm_idcomproba <= 0 OR pfm_id <= 0 THEN 
+		RETURN 
+	ENDIF 
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("RECIBO")
-*!*					DO FORM recibos WITH pfc_idregistro,0,0,0
+	IF TYPE("pfm_cn") = 'N' THEN 
+		IF pfm_cn > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionFM = pfm_cn
+		ELSE 
+			vconeccionFM = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionFM = abreycierracon(0,_SYSSCHEMA)	
+		pfm_cn = 0
+	ENDIF 
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("RECIBO A")
-*!*					DO FORM recibos WITH pfc_idregistro,0,0,0
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("RECIBO B")
-*!*					DO FORM recibos WITH pfc_idregistro,0,0,0
+* Busco registros para Detallecobros 
+	sqlmatriz(1) = " SELECT dc.idcomproba, dc.idregistro, dc.idtipopago, dc.importe, mp.fecha, mp.hora, mp.movimiento, mp.idmovitp FROM detallecobros dc "
+	sqlmatriz(2) = " left join movitpago mp     on mp.tablacp = 'detallecobros' 	and mp.idregicp   = dc.iddetacobro "
+	sqlmatriz(3) = " where ifnull(mp.idmovitp,0) > 0  and dc.idcomproba = "+ALLTRIM(STR(pfm_idcomproba))+" and dc.idregistro = "+ALLTRIM(STR(pfm_id))
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("RECIBO C")
-*!*					DO FORM recibos WITH pfc_idregistro,0,0,0
+	verror=sqlrun(vconeccionFM,"movitpago_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de la Tabla del Movimiento de Tipo de Pago  ",0+48+0,"Error")
+	    RETURN 
+	ENDIF 
+	SELECT movitpago_sql
+	GO TOP 
+	DO WHILE !EOF()
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("REMITO")
-*!*					DO FORM remitos WITH pfc_idregistro
+		vpfm_fecha = IIF(!EMPTY(pfm_Fecha),pfm_Fecha,movitpago_sql.fecha)
+		vpfm_Hora  = IIF(!EMPTY(pfm_Hora),pfm_Hora,movitpago_sql.hora)
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE PEDIDO")
-*!*					DO FORM np WITH pfc_idregistro			
-*!*				
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("ORDEN DE COMPRA")
-*!*					DO FORM oc WITH pfc_idregistro			
+		sqlmatriz(1)="update movitpago set fecha = '"+ALLTRIM(vpfm_Fecha)+"', hora = '"+ALLTRIM(vpfm_Hora)+"' WHERE idmovitp = " +ALLTRIM(STR(movitpago_sql.idmovitp))
+		verror=sqlrun(vconeccionFM,"ActuAC")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion de AsientosCompro (Fecha)",0+48+0,"Error")
+		ENDIF 
+	
+		SELECT movitpago_sql
+		SKIP 
+	ENDDO 
+	
+* Busco registros para Detallepagos 
+	sqlmatriz(1) = " SELECT dc.idcomproba, dc.idregistro, dc.idtipopago, dc.importe, mp.fecha, mp.hora, mp.movimiento, mp.idmovitp FROM detallepagos dc "
+	sqlmatriz(2) = " left join movitpago mp     on mp.tablacp = 'detallepagos' 	and mp.idregicp   = dc.iddetapago "
+	sqlmatriz(3) = " where ifnull(mp.idmovitp,0) > 0  and dc.idcomproba = "+ALLTRIM(STR(pfm_idcomproba))+" and dc.idregistro = "+ALLTRIM(STR(pfm_id))
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("PRESUPUESTO")
-*!*					DO FORM presupuesto WITH pfc_idregistro			
-*!*				
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("ORDEN DE PAGO")
-*!*					DO FORM pagosprov WITH pfc_idregistro,0,0,0
-*!*			
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("CAJA INGRESO")
-*!*					DO FORM cajaie WITH pfc_idregistro
-				
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("CAJA EGRESO")
-*!*					DO FORM cajaie WITH pfc_idregistro
+	verror=sqlrun(vconeccionFM,"movitpago_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de la Tabla del Movimiento de Tipo de Pago  ",0+48+0,"Error")
+	    RETURN 
+	ENDIF 
+	= abreycierracon(vconeccionFM,"")
+	SELECT movitpago_sql
+	GO TOP 
+	DO WHILE !EOF()
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("TRANSFERENCIAS")
-*!*					DO FORM transferencia WITH pfc_idregistro
+		vpfm_fecha = IIF(!EMPTY(pfm_Fecha),pfm_Fecha,movitpago_sql.fecha)
+		vpfm_Hora  = IIF(!EMPTY(pfm_Hora),pfm_Hora,movitpago_sql.hora)
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("TRANSFERENCIAS DE CAJAS")
-*!*					DO FORM transfecajas WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("CUMPLIMENTACION NP")
-*!*					DO FORM cumplimentacion WITH pfc_idregistro
+		sqlmatriz(1)="update movitpago set fecha = '"+ALLTRIM(vpfm_Fecha)+"', hora = '"+ALLTRIM(vpfm_Hora)+"' WHERE idmovitp = " +ALLTRIM(STR(movitpago_sql.idmovitp))
+		verror=sqlrun(vconeccionFM,"ActuAC")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion de AsientosCompro (Fecha)",0+48+0,"Error")
+		ENDIF 
+	
+		SELECT movitpago_sql
+		SKIP 
+	ENDDO 
+	
+	IF pfm_cn = 0 THEN && cierro la conexion si no la abrio al ingresar
+		=abreycierracon(vconeccionFM,"")
+	ENDIF 
 
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("CUMPLIMENTA OC")
-*!*					DO FORM cumpleoc WITH v_idregistro
-*!*			
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("PAGARES")
-*!*					DO FORM pagares WITH pfc_idregistro, 0			
-
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("COSTOS")
-*!*					DO FORM costos WITH pfc_idregistro			
-
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA PROV A")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-			
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA PROV B")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("FACTURA PROV C")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-*!*				
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO PROV A")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO PROV B")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE DEBITO PROV C")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-*!*				
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO PROV A")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO PROV B")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("NOTA DE CREDITO PROV C")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-*!*					
-*!*				CASE pfc_idtipocomp = tipoComproObjcFC.getIdtipocompro("LIQUIDACION CUPONES")
-*!*					DO FORM facturasprov WITH pfc_idregistro
-
-*!*				OTHERWISE			
-*!*			ENDCASE
-*!*			RELEASE tipoComproObjcFC 
-
-*!*	ENDFUNC 
+	RETURN 
+ENDFUNC 
