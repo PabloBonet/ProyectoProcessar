@@ -3751,15 +3751,33 @@ PARAMETERS p_idoc
 			sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'oc' and r.idregistro = "+ ALLTRIM(STR(v_idoc))
 			verror=sqlrun(vconeccionF,"ocextra_sql")
 			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las propiedades de la OC ",0+48+0,"Error")
 			ENDIF 		
+			
+			
+			*Anexo prop Detalle
+			sqlmatriz(1)=" SELECT CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(r.tabla,SPACE(15)) as tabla,sum(o.cantidad*d.valor) as valor  FROM ocd o left join reldatosextra r on o.articulo = r.idregic and r.tabla = 'articulos' "
+			sqlmatriz(2)=" left join datosextra d on r.iddatosex = d.iddatosex where d.imprimir = 'S' and d.operable = 'S' and o.idoc = "+ ALLTRIM(STR(v_idoc)) +" group by d.propiedad "
+			sqlmatriz(3)=" union "
+			sqlmatriz(4)=" SELECT CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(r.tabla,SPACE(15)) as tabla,sum(o.cantidad*d.valor) as valor  FROM ocd o left join reldatosextra r on o.idmate = r.idregistro and r.tabla = 'otmateriales' "
+			sqlmatriz(5)=" left join datosextra d on r.iddatosex = d.iddatosex where d.imprimir = 'S' and d.operable = 'S' and o.idoc = "+ ALLTRIM(STR(v_idoc)) +" group by d.propiedad "
+
+			verror=sqlrun(vconeccionF,"ocdextra_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las propiedades del detalle de la OC ",0+48+0,"Error")
+			ENDIF 		
+			
+
+			
+			
+			
 			
 			SELECT entidadextra_sql
 			GO TOP 
 			IF EOF() THEN 
 				CREATE TABLE entidadex ( propiedad c(50), valor m , tabla c(15)) 
 			ELSE
-				SELECT propiedad , valor , tabla FROM entidadextra_sql INTO TABLE .\entidadex ORDER BY propiedad 
+				SELECT propiedad , IIF(TYPE('valor')='N',ALLTRIM(STR(valor,13,2)),ALLTRIM(valor)) as valor, tabla FROM entidadextra_sql INTO TABLE .\entidadex ORDER BY propiedad 
 				ALTER table entidadex alter COLUMN valor m
 			ENDIF 
 			USE IN entidadextra_sql
@@ -3770,14 +3788,26 @@ PARAMETERS p_idoc
 			IF EOF() THEN 
 				CREATE TABLE ocex ( propiedad c(50), valor m , tabla c(15)) 
 			ELSE
-				SELECT propiedad , valor , tabla FROM ocextra_sql INTO TABLE .\ocex ORDER BY propiedad 
+				SELECT propiedad , IIF(TYPE('valor')='N',ALLTRIM(STR(valor,13,2)),ALLTRIM(valor)) as valor, tabla FROM ocextra_sql INTO TABLE .\ocex ORDER BY propiedad 
 				ALTER table ocex alter COLUMN valor m
 			ENDIF 
 			USE IN ocextra_sql 
 
 
+			SELECT ocdextra_sql
+			GO TOP 
+			
+			IF EOF() THEN 
+				CREATE TABLE ocdex ( propiedad c(50), valor m , tabla c(15)) 
+			ELSE
+				SELECT propiedad , IIF(TYPE('valor')='N',ALLTRIM(STR(valor,13,2)),ALLTRIM(valor)) as valor , tabla FROM ocdextra_sql INTO TABLE .\ocdex ORDER BY propiedad 
+				ALTER table ocdex alter COLUMN valor m
+			ENDIF 
+			USE IN ocdextra_sql 
+			
+			
 
-			DO FORM reporteform WITH "oc_impr;entidadex;ocex","occr;entidadexcr;ocexcr",v_idcomproba
+			DO FORM reporteform WITH "oc_impr;entidadex;ocex;ocdex","occr;entidadexcr;ocexcr;ocdexcr",v_idcomproba
 			
 			=abreycierracon(vconeccionF,"")	
 
@@ -6614,8 +6644,66 @@ PARAMETERS p_idremito, p_esElectronica
 			v_cuitEmpresa	= _SYSCUIT
 			
 		
+		
+		
+		
+		
+		
+		
+		
+			*Anexo prop Detalle
+*!*				sqlmatriz(1)=" SELECT CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(r.tabla,SPACE(15)) as tabla,sum(o.cantidad*d.valor) as valor  FROM ocd o left join reldatosextra r on o.articulo = r.idregic and r.tabla = 'articulos' "
+*!*				sqlmatriz(2)=" left join datosextra d on r.iddatosex = d.iddatosex where d.imprimir = 'S' and d.operable = 'S' group by d.propiedad "
+*!*				sqlmatriz(3)=" union "
+*!*				sqlmatriz(4)=" SELECT CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(r.tabla,SPACE(15)) as tabla,sum(o.cantidad*d.valor) as valor  FROM ocd o left join reldatosextra r on o.idmate = r.idregistro and r.tabla = 'otmateriales' "
+*!*				sqlmatriz(5)=" left join datosextra d on r.iddatosex = d.iddatosex where d.imprimir = 'S' and d.operable = 'S'  group by d.propiedad "
+
+
+			sqlmatriz(1)="SELECT CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(r.tabla,SPACE(15)) as tabla,sum(h.cantidad*d.valor) as valor  FROM remitosh h left join reldatosextra r on h.articulo = r.idregic and r.tabla = 'articulos' "
+			sqlmatriz(2)=" left join datosextra d on r.iddatosex = d.iddatosex where d.imprimir = 'S' and d.operable = 'S' and h.idremito = "+ ALLTRIM(STR(v_idremito)) +" group by d.propiedad "
+			sqlmatriz(3)=" union "
+			sqlmatriz(4)=" SELECT CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(r.tabla,SPACE(15)) as tabla,sum(h.cantidad*d.valor) as valor  FROM remitosh h left join reldatosextra r on h.articulo = r.idregic and r.tabla = 'otmateriales' "
+			sqlmatriz(5)=" left join datosextra d on r.iddatosex = d.iddatosex where d.imprimir = 'S' and d.operable = 'S' and h.idremito = "+ ALLTRIM(STR(v_idremito)) +" group by d.propiedad "
+
+
+			verror=sqlrun(vconeccionF,"remihextra_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las propiedades del detalle del Remito ",0+48+0,"Error")
+			ENDIF 		
 			
-			DO FORM reporteform WITH "remi","remitoscr",v_idcomproba
+
+			
+			
+
+
+			SELECT remihextra_sql
+			GO TOP 
+			
+			IF EOF() THEN 
+				CREATE TABLE remihex ( propiedad c(50), valor m , tabla c(15)) 
+			ELSE
+				SELECT propiedad , IIF(TYPE('valor')='N',ALLTRIM(STR(valor,13,2)),ALLTRIM(valor)) as valor , tabla FROM remihextra_sql INTO TABLE .\remihex ORDER BY propiedad 
+				ALTER table remihex alter COLUMN valor m
+			ENDIF 
+			USE IN remihextra_sql
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			
+			DO FORM reporteform WITH "remi;remihex","remitoscr;remihexcr",v_idcomproba
 			
 		ELSE
 			MESSAGEBOX("Error al cargar el remito para imprimir",0+48+0,"Error al cargar el remito")
