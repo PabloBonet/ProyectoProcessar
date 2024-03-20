@@ -749,7 +749,6 @@ ENDDO
 SELECT tbmenu
 USE 
 
-
 ENDFUNC 
 
 
@@ -6517,6 +6516,7 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 
 	v_retornod = ""
 
+
 	IF EMPTY(par_nomindice) THEN 
 		par_nomindice = obtenerCampoIndice(ALLTRIM(par_tabla))
 	ENDIF 
@@ -6566,7 +6566,6 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 	SELECT tabladescrip_sql
 	USE IN tabladescrip_sql
 
-	
 	IF !(TYPE('par_valindice')="C") THEN  && actualizo detalle de asientos solo si indice es numero --> comprobante
 		sqlmatriz(1)	="  update asientoscompro set detacompro = '"+ALLTRIM(SUBSTR(ALLTRIM(v_retornod)+SPACE(254),1,254))+"'"
 		sqlmatriz(2)	="  where  idregicomp = "+ALLTRIM(STR(par_valindice))+" and tabla = '"+ALLTRIM(par_tabla)+"'"
@@ -8105,6 +8104,9 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	    RETURN var_retorno
 	ENDIF
 
+
+
+
 	** Obtiene los registros que daran como resultado la cuenta a la cual debera imputarse el importe correspondiente calculado arriba ** 
 	sqlmatriz(1)=" Select a.idastomode, a.idastocuenta as idastocuen, a.idcpoconta, a.dh, a.detalle, "
 	sqlmatriz(2)="   	  c.tabla, c.campo, c.tipo, c.detalle as detacpo,   "
@@ -8139,7 +8141,9 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 	ALTER table AstoValorAC ADD importe y
 	ZAP 
 	SELECT AstoValorAC_sql 
+
 	GO TOP 
+
 
 
 	
@@ -8151,7 +8155,6 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		sqlmatriz(1)=" Select "+ALLTRIM(AstoValorAC_sql.campof)+" as valorcf, "+ALLTRIM(AstoValorAC_sql.campo)+" as importe from "+ALLTRIM(AstoValorAC_sql.tabla)
 		sqlmatriz(2)=" where "+v_indicetabla+"  = "+ALLTRIM(STR(par_registro))
 
-			
 		verror=sqlrun(vconeccionATO,"tablacampo")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA en el Campo a Imputar de la Tabla Seleccionada ",0+48+0,"Error")
@@ -8159,7 +8162,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 		    RETURN var_retorno
 		ENDIF
 
-SELECT * FROM tablacampo INTO TABLE tablacampo00 		
+		SELECT * FROM tablacampo INTO TABLE tablacampo00 		
 		
 		SELECT tablacampo 
 		GO top
@@ -8173,6 +8176,7 @@ SELECT * FROM tablacampo INTO TABLE tablacampo00
 
 
 *!*				var_valor = IIF(((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'  or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B') and (TYPE("tablacampo.valorcf")<>'C' )),tablacampo.valorcf,ALLTRIM(tablacampo.valorcf))  
+			
 			IF TYPE("tablacampo.valorcf")='C' THEN 
 				var_valor = IIF(((UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='I' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='D' or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='F'  or UPPER(SUBSTR(AstoValorAC_sql.tipo,1,1))='B')),VAL(tablacampo.valorcf),ALLTRIM(tablacampo.valorcf))  
 			ELSE
@@ -8221,10 +8225,12 @@ SELECT * FROM tablacampo INTO TABLE tablacampo00
 				CASE UPPER(AstoValorAC_sql.compara)="GRUPO"
 					var_valorgru = IIF(TYPE("var_valor")='C',var_valor,ALLTRIM(STR(var_valor)))
 					
+
 					IF GrupoCuentaContable (var_valorgru,AstoValorAC_sql.tablag,AstoValorAC_sql.campog,AstoValorAC_sql.tipog,AstoValorAC_sql.valor1, vconeccionATO) THEN 
 						v_incerta = .t.
 					ENDIF 
 
+					
 			ENDCASE 
 			
 			IF v_incerta = .t. THEN 
@@ -8237,15 +8243,18 @@ SELECT * FROM tablacampo INTO TABLE tablacampo00
 
 			ENDIF 
 
+			
 			SELECT tablacampo 
 			SKIP 
 		ENDDO 
-				
+
+			
 		SELECT AstoValorAC_sql
 		SKIP 
 	ENDDO 
 
 	SELECT AstoValorAC
+
 	REPLACE ALL importe WITH importe * opera 
 	
 *****************************************************************
@@ -8392,6 +8401,45 @@ SELECT * FROM tablacampo INTO TABLE tablacampo00
 		
 	ENDDO 
 
+
+** Aqui Obtengo la Cuenta en la que debo utilizar el redondeo si es necesario
+** Variable agregada con cuenta para Ajuste de Redondeos en Asientos contables 
+**  _SYSCONTACTAREDO = [CUENTA;MARGEN] 99.99.99.99.99;0.01' ******
+	
+	vr_codigocta_redo = ""
+	vr_redondeo_redo  = 0.00
+	vr_idpland_redo   = _SYSIDPLAN
+	vr_codigo_redo	  = ""
+	vr_nombrecta_redo = ""
+	
+	IF TYPE("_SYSCONTAJUSTE")="C" THEN 
+		IF !EMPTY(_SYSCONTAJUSTE) THEN 
+		
+			vr_codigocta_redo = SUBSTR(STRTRAN(SUBSTR(_SYSCONTAJUSTE,1,AT(';',_SYSCONTAJUSTE)-1),'.','')+'000000000000000000',1,18)
+			vr_redondeo_redo  = VAL(SUBSTR(_SYSCONTAJUSTE,AT(';',_SYSCONTAJUSTE)+1))
+			
+			sqlmatriz(1)=" Select idpland, codigo, nombrecta from plancuentasd where idplan = "+str(_SYSIDPLAN)+" and codigocta = '"+ALLTRIM(vr_codigocta_redo)+"'"
+			verror=sqlrun(vconeccionATO,"idpland_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del IDPLAN de la Cuenta del Asiento ",0+48+0,"Error")
+			    =abreycierracon(vconeccionATO,"")
+			    RETURN var_retorno
+			ENDIF
+			SELECT idpland_sql
+			IF !EOF() THEN 
+				vr_idpland_redo   = idpland_sql.idpland 
+				vr_codigo_redo	  = idpland_sql.codigo
+				vr_nombrecta_redo = idpland_sql.nombrecta
+			ENDIF 
+			USE IN idpland_sql 
+			
+		ENDIF 
+	ENDIF 
+*************************************************************************
+
+
+
+
 	 =abreycierracon(vconeccionATO,"")
 	 
 	 SELECT AstoCuentaA
@@ -8399,8 +8447,6 @@ SELECT * FROM tablacampo INTO TABLE tablacampo00
 
 
 	 GO TOP 
-
-	 
 
 	 ************* Union de las dos partes que componen el Asiento, ************************************
 	 ************* Se Unen el Valor o Importe a Imputar con la Cuenta que recibe la Imputación *********
@@ -8427,7 +8473,38 @@ SELECT * FROM tablacampo INTO TABLE tablacampo00
 	 
 	 SELECT AstoFinalA0 
 	 replace ALL debe WITH IIF(deoha >= 0, deoha, 0.00 ), haber WITH IIF(deoha <= 0, -deoha, 0.00 )
-	 SELECT  idastomode, codigocta, debe, haber, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo, nombrecta FROM AstoFinalA0 INTO TABLE &vpar_tablaret 
+	 CALCULATE SUM(debe-haber) TO vdif_debehaber 
+	 
+** Aqui debo intentar balancear el Asiento si hay diferencia de Redondeo
+** Variable agregada con cuenta para Ajuste de Redondeos en Asientos contables 
+**  _SYSCONTACTAREDO = [CUENTA;MARGEN] 99.99.99.99.99;0.01' ******
+	IF 	vr_redondeo_redo  <> 0.00 AND vdif_debehaber <> 0 THEN  && si hay establecida tolerancia  y hay diferencia
+		IF ABS(vdif_debehaber) <= vr_redondeo_redo THEN  && si la diferencia es menor o igual que la tolerancia 
+		
+			IF vdif_debehaber > 0 THEN 
+				vr_haber = ABS(vdif_debehaber)
+				vr_debe  = 0.00 
+			ELSE
+				vr_haber = 0.00
+				vr_debe  = ABS(vdif_debehaber)
+			ENDIF 
+			SELECT AstoFinalA0
+			vr_idastomode = AstoFinalA0.idastomode
+			vr_tabla	  = AstoFinalA0.tabla
+			vr_idfiltro	  = AstoFinalA0.idfiltro
+			vr_idtipoasi  = AstoFinalA0.idtipoasi
+			vr_fecha  	  = AstoFinalA0.fecha
+			vr_registro	  = AstoFinalA0.registro
+			vr_idastoe	  = AstoFinalA0.idastoe
+			
+			* inserto el registro con los datos de ajustes de tolerancia 
+ 			INSERT INTO AstoFinalA0 VALUES (vr_idastomode, vr_codigocta_redo, vr_debe , vr_haber ,0.00 , vr_tabla, vr_registro, vr_fecha , vr_idfiltro, vr_idtipoasi, vr_idastoe, vr_idpland_redo, vr_codigo_redo, vr_nombrecta_redo )
+		
+		ENDIF 
+	ENDIF 
+*************************************************************************
+	 SELECT  idastomode, codigocta, debe, haber, tabla, registro, fecha , idfiltro, idtipoasi, idastoe, idpland, codigo, nombrecta ;
+	 FROM AstoFinalA0 WHERE ( debe + haber ) <> 0 INTO TABLE &vpar_tablaret 
 	
 	 SELECT &vpar_tablaret 
 	 
@@ -8465,8 +8542,9 @@ PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 	
 	*var_pg_valorg = IIF((UPPER(SUBSTR(pg_tipog,1,1))='I' or UPPER(SUBSTR(pg_tipog,1,1))='D' or UPPER(SUBSTR(pg_tipog,1,1))='F'),ALLTRIM(STR(pg_valor,12,2)),"'"+ALLTRIM(pg_valor)+"'")	
 	var_pg_valorg = IIF((UPPER(SUBSTR(pg_tipog,1,1))='I' or UPPER(SUBSTR(pg_tipog,1,1))='D' or UPPER(SUBSTR(pg_tipog,1,1))='F'),ALLTRIM(pg_valor),"'"+ALLTRIM(pg_valor)+"'")	
-	
-	
+
+
+		
 	sqlmatriz(1)=" Select * from "+ALLTRIM(pg_tablag)+" where "+pg_campog+" = "+var_pg_valorg
 	verror=sqlrun(pg_vconeccion,"registro_sql")
 	IF verror=.f.  
@@ -8483,7 +8561,7 @@ PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 		v_tipoidxg  = ""
 		FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
 				
-			IF toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idgrupo"))= val(alltrim(pg_valor1)) AND toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tiporeg")) = "G" THEN 
+			IF toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idgrupo")) = val(alltrim(pg_valor1)) AND toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tiporeg")) = "G" THEN 
 				v_campoidxg = toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("campo"))
 				v_tipoidxg  = toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tipoc"))
 				EXIT 
@@ -8502,8 +8580,9 @@ PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 						
 				IF  toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tabla"))= alltrim(pg_tablag) AND ;
 					toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idgrupo"))= val(alltrim(pg_valor1)) AND ;
-					ALLTRIM(toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idmiembro")))= ALLTRIM(v_idmiembrog) AND ;					
+					ALLTRIM(toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idmiembro")))== ALLTRIM(v_idmiembrog) AND ;					
 					toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tiporeg")) = "M" THEN 
+
 					
 					vpertenece = .t. 
 					EXIT 			
@@ -27342,3 +27421,26 @@ PARAMETERS pfm_idcomproba, pfm_id, pfm_Fecha, pfm_Hora, pfm_cn
 
 	RETURN 
 ENDFUNC 
+
+
+
+FUNCTION ViewBarProgress
+PARAMETERS pv_cantidad, pv_Total, pv_Titulo
+*#/---------------------------
+*** Función de creación y Activacion de Objeto para Mostrar Progreso
+*** pv_cantidad = Numero de registro de avance
+*** pv_total	= Total de Registros a procesar
+*#/---------------------------
+IF pv_cantidad < 0 OR (pv_cantidad >= pv_Total) THEN  
+	RELEASE toolbarprogress
+	RETURN 
+ENDIF 
+IF !(TYPE("toolbarprogress") = "O") THEN 
+	PUBLIC  toolbarprogress
+	toolbarprogress = CREATEOBJECT('toolbarprogress')
+ENDIF 
+toolbarprogress.top = ( (_screen.Height / 4 ) * 3 ) - 23
+toolbarprogress.left = (_screen.Width /2 ) - ( toolbarprogress.width / 2)
+toolbarprogress.progreso( pv_cantidad, pv_total, pv_titulo )
+ENDFUNC 
+
