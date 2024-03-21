@@ -6941,12 +6941,48 @@ v_nombreCampo	= p_nombreCampo
 v_idregistro	= p_idregistro
 v_tablaDatos	= p_tablaDatos
 
+* Controlo que los articulos recibidos esten afectado a movimientos de stoc
+* y no sean conceptos que no mueven stock 
+
+**** Busco el comprobante asociado ***
+vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+	
+SELECT &v_tablaDatos
+ALTER table &v_tablaDatos ADD COLUMN ajustar c(1)
+GO TOP 
+
+DO WHILE !EOF()
+	sqlmatriz(1)=" Select * from articulos where TRIM(articulo) = '"+ALLTRIM(&v_tablaDatos..articulo)+"' and  ctrlstock = 'S'"
+	verror=sqlrun(vconeccionA,"ajustar_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de Articulos ",0+48+0,"Error")
+	    =abreycierracon(vconeccionA,"")
+	    RETURN .F.
+	ENDIF
+	SELECT ajustar_sql
+	GO TOP 
+	IF EOF() THEN 
+		v_ajustar = 'N'
+	ELSE
+		v_ajustar = 'S'
+	ENDIF 
+	USE 
+	SELECT &v_tablaDatos
+	replace ajustar WITH v_ajustar	
+	SKIP 
+ENDDO 
+DELETE FOR ajustar = 'N'
+PACK
+IF RECCOUNT() = 0 THEN 
+	=abreycierracon(vconeccionA,"")
+	RETURN .T.
+ENDIF 
 
 SELECT &v_tablaDatos
 GO TOP 
 
-	**** Busco el comprobante asociado ***
-	vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+*!*		**** Busco el comprobante asociado ***
+*!*		vconeccionA=abreycierracon(0,_SYSSCHEMA)	
 
 	*** Busco los comprobantes y sus respectivos puntos de venta 
 	sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla, t.pventa, "
@@ -6965,7 +7001,7 @@ IF v_idregistro	> 0
 	SELECT compSelecc
 	GO TOP 
 	
-	v_tabla	= compSelecc.tabla
+	v_tabla			= compSelecc.tabla
 	v_nombreComp	= compSelecc.nomcomp
 	
 	*** Busco el comprobante asociado
@@ -7135,7 +7171,9 @@ ENDIF
 		GO TOP 
 		
 		IF NOT EOF()
-			SELECT t.*,a.detalle FROM &v_tablaDatos t LEFT JOIN articulos_sql a ON t.articulo = a.articulo INTO TABLE articulosDatos
+			SELECT t.*,a.detalle FROM &v_tablaDatos t LEFT JOIN articulos_sql a ON ALLTRIM(t.articulo) == ALLTRIM(a.articulo) ;
+			INTO TABLE articulosDatos WHERE !ISNULL(a.detalle) 
+			
 			v_primerEti = 0
 			v_ultimaEti = 0
 			SELECT articulosDatos
