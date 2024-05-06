@@ -26746,7 +26746,7 @@ PARAMETERS pch_idcheque, pa_conexion
 	v_chobserva   = 'IDCHQ:'+ALLTRIM(STR(cheques_dife.idcheque))+";"
 
 	* Controlo que ya no haya una transferencia para este cheque
-	sqlmatriz(1)="select * from transferencia where observa like 'IDCHQ:"+ALLTRIM(STR(pch_idcheque))+";'"
+	sqlmatriz(1)="select * from transferencias where observa like 'IDCHQ:"+ALLTRIM(STR(pch_idcheque))+";'"
 	verror=sqlrun(vconeccionCH,"transferido_dife")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda Comprobantes de Transferencias ya hechos para el Cheque",0+48+0,"Error")
@@ -26757,7 +26757,7 @@ PARAMETERS pch_idcheque, pa_conexion
 	ENDIF 	
 	SELECT transferido_dife
 	GO TOP 
-	IF EOF()
+	IF !EOF()
 		USE IN transferido_dife
 	    IF pa_conexion = 0 THEN 
 			=abreycierracon(vconeccionCH,"")	
@@ -27481,4 +27481,63 @@ toolbarprogress.top = ( (_screen.Height / 4 ) * 3 ) - 23
 toolbarprogress.left = (_screen.Width /2 ) - ( toolbarprogress.width / 2)
 toolbarprogress.progreso( pv_cantidad, pv_total, pv_titulo )
 ENDFUNC 
+
+
+FUNCTION FVerGrafico
+PARAMETERS pfv_tabla, pfv_titulo, pfv_subtitulo, pfv_ejex, pfv_ejey, pfv_etiquetasx, pfv_detalletablax, pfv_series,  pfv_condicion
+*#/---------------------------
+*** Función de creación de Graficos 
+*** pfv_tabla		: Tabla que contiene los datos de las series
+*** pfv_titulo		: Titulo del Gráfico
+*** pfv_subtitulo 	: Subtitulo del Grafico
+*** pfv_ejex		: Leyenda que aparecera debajo del eje x
+*** pfv_ejey		: Leyenda a la izquierda del eje Y
+*** pfv_etiquetasx	: Etiquetas para cada uno de los valores de las series 
+*** pfv_detalletablax: Campo que se mostrará como detalle en la Tabla adjunta al Gráfico - Generalmente igualal etiquetasx
+*** pfv_series 		: Parametro que contiene la Leyenda de la serie y los valores que se graficaran
+*** pfv_condicion	: Condicion que permite un filtrado en la seleccion de los registros de la tabla origen
+*#/---------------------------
+ 
+	IF !EMPTY(pfv_tabla) THEN 
+		IF  !USED(pfv_tabla) THEN 
+			USE &pfv_tabla IN 0
+		ENDIF 
+	ELSE 
+		RETURN 
+	ENDIF 
+	pfv_tabla01 = pfv_tabla+"01"
+	
+	
+ 	vcan_series=alines( arrayseries, pfv_series, ";")
+	vfcampos = ""
+	FOR ise = 1 TO vcan_series
+		
+		vfcampos = vfcampos+", '"+SUBSTR(arrayseries(ise),1,AT(',',arrayseries(ise))-1)+"' as legen"+ALLTRIM(STRTRAN((STR(ise,5)),' ','0'))+" , "+ ;
+					+SUBSTR(arrayseries(ise),AT(',',(arrayseries(ise)))+1)+" as valor"+ALLTRIM(STRTRAN((STR(ise,5)),' ','0'))
+	ENDFOR 
+	
+	eje1 = " SELECT pfv_titulo AS titulo , pfv_subtitulo as subtitulo, pfv_ejex as ejex, pfv_ejey as ejey, "+pfv_etiquetasx+" as etiquetasx , "+STR(vcan_series)+" as cantidadgr, "+pfv_detalletablax+" as detallegrx, "
+	eje2 = SUBSTR(vfcampos,2)
+	eje3 = " FROM "+pfv_tabla+" into table "+pfv_tabla01+" "+IIF(!EMPTY(pfv_condicion)," where "+pfv_condicion,"")
+	ejecuta = eje1+eje2+eje3
+
+	&ejecuta 
+	SELECT &pfv_tabla01
+	GO TOP 
+	IF EOF() THEN 
+		USE IN &pfv_tabla01
+		RETURN 
+	ENDIF 
+	
+	USE IN &pfv_tabla01
+
+	DO FORM graficos WITH pfv_tabla01
+
+RETURN 
+
+
+
+
+
+
 
