@@ -28,6 +28,7 @@ namespace EntidadesClass
         private Double _importeOpEx;
         private Double _importeTrib;
         private Double _importeIva;
+        private Double _importeTotConc;
         private string _idMoneda;
         private Double _cotizacionMoneda;
         private List<AlicuotaIvaClass> _listaIva;
@@ -155,6 +156,15 @@ namespace EntidadesClass
         {
             get { return _importeOpEx; }
             set { _importeOpEx = value; }
+        }
+
+        /// <summary>
+        /// Retorna y asigna el Importe No Gravado
+        /// </summary>
+        public Double ImporteTotConc
+        {
+            get { return _importeTotConc; }
+            set { _importeTotConc = value; }
         }
 
         /// <summary>
@@ -394,6 +404,7 @@ namespace EntidadesClass
             _importeTotal = 0.0f;
             _importeNeto = 0.0f;
             _importeOpEx = 0.0f;
+            _importeTotConc = 0.0F;
             _importeTrib = 0.0f;
             _importeIva = 0.0f;
             _idMoneda = "";

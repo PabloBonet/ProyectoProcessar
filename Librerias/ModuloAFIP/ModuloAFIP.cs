@@ -444,9 +444,10 @@ namespace ModuloAFIP
                     List<AlicuotaIvaClass> listaIva = new List<AlicuotaIvaClass>();
                     List<TributoComprobanteClass> listaTributo = new List<TributoComprobanteClass>();
 
-                    Double totalIVA = 0;
-                    Double totalTributo = 0;
-                  
+                    Double totalIVA = 0.0f;
+                    Double totalTributo = 0.0f;
+                    Double totalImpEx = 0.0f;
+                    Double totalNoGrav = 0.0f;
 
                     // Cargo la lista de nodos del XML, cada nodo de la lista es un registro en la tabla de facturas de donde proviene el archivo xml
                     XmlNodeList listaNodosXml = compXML.SelectNodes("//tablafactura");
@@ -493,16 +494,30 @@ namespace ModuloAFIP
 
                                 totalTributo += importe;
                                 break;
+                            case "NO GRAVADO":
+                                totalNoGrav += baseImp;
+
+                                /*El importe neto en el comprobante debe ser el Neto Gravado: Al neto que trae el XML (Neto total) le resto el neto NO Gravado*/
+                                comprobante.ImporteNeto -= totalNoGrav;
+
+                                break;
+                            case "EXENTO":
+                                totalImpEx += baseImp;
+
+                                break;
                             default:
                                 break;
                         }
 
 
                     }
-                   
-                    comprobante.ImporteOpEx = Double.Parse((compXML.SelectSingleNode("//opexento").InnerText).Replace('.', ','));
+
+                    //comprobante.ImporteOpEx = Double.Parse((compXML.SelectSingleNode("//opexento").InnerText).Replace('.', ','));
+                    
                     comprobante.ImporteTributo = totalTributo;
                     comprobante.ImporteIva = totalIVA;
+                    comprobante.ImporteOpEx = totalImpEx;
+                    comprobante.ImporteTotConc = totalNoGrav;
                     comprobante.ImporteTotal = Double.Parse((compXML.SelectSingleNode("//total").InnerText).Replace('.', ','));
                     comprobante.IDMoneda = compXML.SelectSingleNode("//idmoneda").InnerText;
               

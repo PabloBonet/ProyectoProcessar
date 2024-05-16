@@ -509,24 +509,24 @@ namespace ModuloAFIP
                             }
 
                             /*** Armar RequerimientoAutorización*/
-                         //   UtilClass.EscribirArchivoLog("Antes de ArmarRequerimientoAutorizacion", _strLog, true);
+                            UtilClass.EscribirArchivoLog("Antes de ArmarRequerimientoAutorizacion PRUEBA", _strLog, true);
                            
 
                             ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAERequest reqAut = ArmarRequerimientoAutorizacion(autorizacionPru, comprobante);
-                            //  UtilClass.EscribirArchivoLog("Despues de ArmarRequerimientoAutorizacion", _strLog, true);
+                              UtilClass.EscribirArchivoLog("Despues de ArmarRequerimientoAutorizacion", _strLog, true);
                             
                             if (!_produccion)
                             {
-                                //  UtilClass.EscribirArchivoLog("NO es producciòn", _strLog, true);
+                                  UtilClass.EscribirArchivoLog("NO es producciòn", _strLog, true);
                                 
                                 if (comprobante.CAE == "" && comprobante.FechaVtoCAE == "" && comprobante.Resultado != "A")
                                 {
 
-                                    // UtilClass.EscribirArchivoLog("Antes de FECAESolicitar", _strLog, true);
+                                     UtilClass.EscribirArchivoLog("Antes de FECAESolicitar", _strLog, true);
                                    
                                     //Autorizar
                                     ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEResponse respuesta = _servicioPrueba.FECAESolicitar(autorizacionPru, reqAut);
-                                    //  UtilClass.EscribirArchivoLog("Despues de FECAESolicitar", _strLog, true);
+                                      UtilClass.EscribirArchivoLog("Despues de FECAESolicitar", _strLog, true);
                                    
                                     // Cargo en el comprobante los datos de la respuesta
                                     if (respuesta != null)
@@ -719,13 +719,13 @@ namespace ModuloAFIP
                                 }
                   */
 
-              /*  string inf = "DOC TIPO: " + comprobante.DocTipoCliente;
+                string inf = "DOC TIPO: " + comprobante.DocTipoCliente + "\n";
                 UtilClass.EscribirArchivoLog(inf, _strLog, true);
 
 
-                 inf = "Nro doc: " + comprobante.NroDocCliente;
+                 inf = "Nro doc: " + comprobante.NroDocCliente + "\n";
                 UtilClass.EscribirArchivoLog(inf, _strLog, true);
-              */
+              
                 if (comprobante.DocTipoCliente == 80)
                 {
                     string cuitSinGuiones = UtilClass.CambiarFormatoCuitSinGuiones(comprobante.NroDocCliente);
@@ -738,8 +738,8 @@ namespace ModuloAFIP
                     detReq.DocTipo = comprobante.DocTipoCliente;
                 }
 
-               /* inf = "Nro doc conv: " + v_docNro;
-                UtilClass.EscribirArchivoLog(inf, _strLog, true);*/
+                inf = "Nro doc conv: " + v_docNro+"\n";
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);
                 detReq.DocNro = v_docNro; //Nro documento
                 // detReq.DocTipo = 80; //CUIT: documento tipo 80
 
@@ -748,20 +748,58 @@ namespace ModuloAFIP
                 
                 detReq.CbteFch = comprobante.FechaComprobante;
 
-                detReq.ImpTotal = comprobante.ImporteTotal;
-                detReq.ImpTotal = Math.Round(detReq.ImpTotal, 2);
 
-                detReq.ImpNeto = comprobante.ImporteNeto;
-                detReq.ImpNeto = Math.Round(detReq.ImpNeto, 2);
+
+                /*Asigno los totales de los importes. Donde:
+                 * <impTotal> = <impTotConc> + <impNeto> + <impOpEx> + <impTrib> + <impIva>
+                 */
                
+                double compImpTotal = comprobante.ImporteTotal;
+                detReq.ImpTotal = Math.Round(compImpTotal, 2);
+
+                double compImpTotConc = comprobante.ImporteTotConc; // importe total exento
+                detReq.ImpTotConc = Math.Round(compImpTotConc, 2);
+
+                double compImpNeto = comprobante.ImporteNeto;
+                detReq.ImpNeto = Math.Round(compImpNeto, 2);
+
+                double compImpOpEx = comprobante.ImporteOpEx; // importe total exento
+                detReq.ImpOpEx = Math.Round(compImpOpEx, 2);
 
                 double compImpIvaTot = comprobante.ImporteIva; // importe total del iva
-               
-                compImpIvaTot = Math.Round(compImpIvaTot, 2);
+                detReq.ImpIVA = Math.Round(compImpIvaTot, 2);
 
-                detReq.ImpOpEx = 0;
-                detReq.ImpTotConc = 0;
-                if (compImpIvaTot == 0)
+                inf = "ImpTotal: " + detReq.ImpTotal + "\n";
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+                inf = "compImpTotConc: " + detReq.ImpNeto + "\n";
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+                inf = "ImpNeto: " + detReq.ImpNeto + "\n";
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+                inf = "compImpOpEx: " + compImpOpEx + "\n";
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+                inf = "compImpIvaTot: " + compImpIvaTot  + "\n";
+                UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+
+                /*   if (compImpIvaTot == 0)
+                   {
+                       double compImpTotConc = comprobante.ImporteNeto;
+                       //detReq.ImpTotConc = comprobante.imp_neto;
+                       detReq.ImpTotConc = Math.Round(compImpTotConc, 2);
+                       detReq.ImpOpEx = 0;
+                       detReq.ImpNeto = 0;
+                   }
+                   else
+                   {
+                       detReq.ImpIVA = compImpIvaTot;
+                   }*/
+
+           
+                /*if (compImpIvaTot == 0)
                 {
                     double compImpTotConc = comprobante.ImporteNeto;
                     //detReq.ImpTotConc = comprobante.imp_neto;
@@ -772,7 +810,7 @@ namespace ModuloAFIP
                 else
                 {
                     detReq.ImpIVA = compImpIvaTot;
-                }
+                }*/
 
                 detReq.FchServDesde = "";
                 detReq.FchServHasta = "";
@@ -825,46 +863,60 @@ namespace ModuloAFIP
                
                 if (detReq.ImpIVA >= 0)
                 {
-                    
-                    List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva> listIva = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva>();
+                    int cantElemIva = comprobante.ListaIva.Count();
 
-                    ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva aiva = null;
-                    foreach (AlicuotaIvaClass a in comprobante.ListaIva)
+                    inf = "cantElemIva: " + cantElemIva + "\n";
+                    UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+                    if (cantElemIva > 0)
                     {
-                        aiva = new ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva();
-                        aiva.Id = 0;
-                        aiva.BaseImp = 0;
-                        aiva.Importe = 0;
+                        List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva> listIva = new List<ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva>();
 
-                        aiva.Id = a.ID;
-                        aiva.BaseImp = Math.Round(a.BaseImp, 2);    //CONTROLAR SI ESTO ESTÁ BIEN, COMPARANDOLO CON EL MODULO DEL AFIP HECHO
-                        aiva.Importe = Math.Round(a.Importe, 2);
+                        ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva aiva = null;
 
-
-                        /* if (aiva.Id > 0 && aiva.BaseImp > 0 && aiva.Importe > 0)
-                         {
-                             listIva.Add(aiva);
-                         }
-                         else
-                         {
-                             Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
-                             throw e;
-                         }*/
-
-
-                         if (aiva.Id > 0 )
+                   
+                        foreach (AlicuotaIvaClass a in comprobante.ListaIva)
                         {
-                            listIva.Add(aiva);
+                            aiva = new ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva();
+                            aiva.Id = 0;
+                            aiva.BaseImp = 0;
+                            aiva.Importe = 0;
+
+                            aiva.Id = a.ID;
+                            aiva.BaseImp = Math.Round(a.BaseImp, 2);    //CONTROLAR SI ESTO ESTÁ BIEN, COMPARANDOLO CON EL MODULO DEL AFIP HECHO
+                            aiva.Importe = Math.Round(a.Importe, 2);
+
+                            inf = "aiva.Id: " + aiva.Id + "; aiva.BaseImp: " + aiva.BaseImp + "; aiva.Importe: " + aiva.Importe + "\n";
+                            UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+
+
+                            /* if (aiva.Id > 0 && aiva.BaseImp > 0 && aiva.Importe > 0)
+                             {
+                                 listIva.Add(aiva);
+                             }
+                             else
+                             {
+                                 Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
+                                 throw e;
+                             }*/
+
+
+                            if (aiva.Id > 0)
+                            {
+                                listIva.Add(aiva);
+                            }
+                            else
+                            {
+                                Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
+                                throw e;
+                            }
                         }
-                        else
-                        {
-                            Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
-                            throw e;
-                        }
+
+                        ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva[] arrayIva = listIva.ToArray();
+                        detReq.Iva = arrayIva;
                     }
-                  
-                    ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva[] arrayIva = listIva.ToArray();
-                    detReq.Iva = arrayIva;
+                   
                    
                 }
 
@@ -915,9 +967,14 @@ namespace ModuloAFIP
                         op.Valor = c.Valor;
 
 
+
+
                         if ((op.Id.Trim()).Length > 0 && (op.Valor.Trim()).Length > 0)
                         {
-                           
+                            inf = "op.Id: " + op.Id + ";  op.Valor: " + op.Valor + "\n";
+                            UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+
                             listaOpcionales.Add(op);
                         }
                        
@@ -938,8 +995,50 @@ namespace ModuloAFIP
                 ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAEDetRequest[] arrayDetalle = listaDetalle.ToArray();
                 reqAut.FeDetReq = arrayDetalle;
 
-              
+                UtilClass.EscribirArchivoLog("\n ANTES DE CORREGIR ImpTotal: " + reqAut.FeDetReq.First().ImpTotal, _strLog, true);
+
+
+
                 reqAut = CorregirImpuestos(reqAut);
+
+
+                ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva[] listaIva = reqAut.FeDetReq.First().Iva;
+                UtilClass.EscribirArchivoLog("DESPUES DE CORREGIR \n", _strLog, true);
+
+                if (listaIva != null && listaIva.Count() > 0)
+                {
+                    foreach (ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva i in listaIva)
+                    {
+
+                        double baseImp = i.BaseImp;
+                        int id = i.Id;
+                        double importe = i.Importe;
+
+                        double razon = ObtenerRazonImpuesto(id);
+
+                        razon = razon / 100.00;
+
+                        UtilClass.EscribirArchivoLog("baseImp: " + baseImp, _strLog, true);
+                        UtilClass.EscribirArchivoLog("importe: " + importe, _strLog, true);
+                        UtilClass.EscribirArchivoLog("id: " + id, _strLog, true);
+
+
+                    }
+
+                    UtilClass.EscribirArchivoLog("ImpIVA: " + reqAut.FeDetReq.First().ImpIVA, _strLog, true);
+                    UtilClass.EscribirArchivoLog("ImpNeto: " + reqAut.FeDetReq.First().ImpNeto, _strLog, true);
+                    UtilClass.EscribirArchivoLog("ImpOpEx: " + reqAut.FeDetReq.First().ImpOpEx, _strLog, true);
+                    UtilClass.EscribirArchivoLog("ImpTotal: " + reqAut.FeDetReq.First().ImpTotal, _strLog, true);
+                    UtilClass.EscribirArchivoLog("ImpTrib: " + reqAut.FeDetReq.First().ImpTrib, _strLog, true);
+
+                    foreach (AlicuotaIvaClass a in comprobante.ListaIva)
+                    {
+
+                        inf = "DESPUES DE CORREGIR:  a.ID: " + a.ID + "; a.BaseImp: " + a.BaseImp + "; a.Importe: " + a.Importe + "\n";
+                        UtilClass.EscribirArchivoLog(inf, _strLog, true);
+
+                    }
+                }
                
 
             }
@@ -1044,18 +1143,44 @@ namespace ModuloAFIP
 
                 detReq.CbteFch = comprobante.FechaComprobante;
 
-                detReq.ImpTotal = comprobante.ImporteTotal;
-                detReq.ImpTotal = Math.Round(detReq.ImpTotal, 2);
+                /*detReq.ImpTotal = comprobante.ImporteTotal;
+                 detReq.ImpTotal = Math.Round(detReq.ImpTotal, 2);
 
-                detReq.ImpNeto = comprobante.ImporteNeto;
-                detReq.ImpNeto = Math.Round(detReq.ImpNeto, 2);
+                 detReq.ImpNeto = comprobante.ImporteNeto;
+                 detReq.ImpNeto = Math.Round(detReq.ImpNeto, 2);
+
+                 double compImpIvaTot = comprobante.ImporteIva; // importe total del iva
+                 compImpIvaTot = Math.Round(compImpIvaTot, 2);
+
+                 detReq.ImpOpEx = 0;
+                 detReq.ImpTotConc = 0;
+
+
+                 double compImpOpEx = comprobante.ImporteOpEx; // importe total exento
+                 compImpOpEx = Math.Round(compImpOpEx, 2);
+
+                 double compImpTotConc = comprobante.ImporteTotConc; // importe total exento
+                 compImpTotConc = Math.Round(compImpTotConc, 2);
+                */
+
+                double compImpTotal = comprobante.ImporteTotal;
+                detReq.ImpTotal = Math.Round(compImpTotal, 2);
+
+                double compImpTotConc = comprobante.ImporteTotConc; // importe total exento
+                detReq.ImpTotConc = Math.Round(compImpTotConc, 2);
+
+                double compImpNeto = comprobante.ImporteNeto;
+                detReq.ImpNeto = Math.Round(compImpNeto, 2);
+
+                double compImpOpEx = comprobante.ImporteOpEx; // importe total exento
+                detReq.ImpOpEx = Math.Round(compImpOpEx, 2);
 
                 double compImpIvaTot = comprobante.ImporteIva; // importe total del iva
-                compImpIvaTot = Math.Round(compImpIvaTot, 2);
-                
-                detReq.ImpOpEx = 0;
-                detReq.ImpTotConc = 0;
-                if (compImpIvaTot == 0)
+                detReq.ImpIVA = Math.Round(compImpIvaTot, 2);
+
+
+                /*
+               if (compImpIvaTot == 0)
                 {
                     double compImpTotConc = comprobante.ImporteNeto;
                     detReq.ImpTotConc = Math.Round(compImpTotConc, 2);
@@ -1066,6 +1191,8 @@ namespace ModuloAFIP
                 {
                     detReq.ImpIVA = compImpIvaTot;
                 }
+                */
+                //detReq.ImpIVA = compImpIvaTot;
 
                 detReq.FchServDesde = "";
                 detReq.FchServHasta = "";
@@ -1120,46 +1247,51 @@ namespace ModuloAFIP
 
                 if (detReq.ImpIVA >= 0)
                 {
+                    int cantElemIva = comprobante.ListaIva.Count();
 
-                    List<ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva> listIva = new List<ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva>();
-
-                    ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva aiva = null;
-                    foreach (AlicuotaIvaClass a in comprobante.ListaIva)
+                    if (cantElemIva > 0)
                     {
-                        aiva = new ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva();
-                        aiva.Id = 0;
-                        aiva.BaseImp = 0;
-                        aiva.Importe = 0;
+                        List<ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva> listIva = new List<ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva>();
 
-                        aiva.Id = a.ID;
-                        aiva.BaseImp = Math.Round(a.BaseImp, 2);    //CONTROLAR SI ESTO ESTÁ BIEN, COMPARANDOLO CON EL MODULO DEL AFIP HECHO
-                        aiva.Importe = Math.Round(a.Importe, 2);
-
-                        /* if (aiva.Id > 0 && aiva.BaseImp > 0 && aiva.Importe > 0)
-                         {
-                             listIva.Add(aiva);
-                         }
-                         else
-                         {
-                             Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
-                             throw e;
-                         }*/
-
-                        if (aiva.Id > 0)
+                        ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva aiva = null;
+                        foreach (AlicuotaIvaClass a in comprobante.ListaIva)
                         {
-                            listIva.Add(aiva);
-                        }
-                        else
-                        {
-                            Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
-                            throw e;
-                        }
+                            aiva = new ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva();
+                            aiva.Id = 0;
+                            aiva.BaseImp = 0;
+                            aiva.Importe = 0;
+
+                            aiva.Id = a.ID;
+                            aiva.BaseImp = Math.Round(a.BaseImp, 2);    //CONTROLAR SI ESTO ESTÁ BIEN, COMPARANDOLO CON EL MODULO DEL AFIP HECHO
+                            aiva.Importe = Math.Round(a.Importe, 2);
+
+                            /* if (aiva.Id > 0 && aiva.BaseImp > 0 && aiva.Importe > 0)
+                             {
+                                 listIva.Add(aiva);
+                             }
+                             else
+                             {
+                                 Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
+                                 throw e;
+                             }*/
+
+                            if (aiva.Id > 0)
+                            {
+                                listIva.Add(aiva);
+                            }
+                            else
+                            {
+                                Exception e = new Exception("La alicuota de iva tiene un valor Incorrecto");
+                                throw e;
+                            }
 
 
+                        }
+
+                        ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva[] arrayIva = listIva.ToArray();
+                        detReq.Iva = arrayIva;
                     }
-                                       
-                    ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva[] arrayIva = listIva.ToArray();
-                    detReq.Iva = arrayIva;
+                       
                    
 
                 }
@@ -1229,6 +1361,9 @@ namespace ModuloAFIP
                 reqAut.FeDetReq = arrayDetalle;
 
                 reqAut = CorregirImpuestos(reqAut);
+
+
+
             }
             catch (Exception e)
             {
@@ -1639,11 +1774,11 @@ namespace ModuloAFIP
             return comprobante;
         }
 
-/// <summary>
-/// Función para corregir impuestos de iva
-/// </summary>
-/// <param name="reqAut">Requerimiento del afip a corregir</param>
-/// <returns>Retorna el requerimiento corregido</returns>
+        /// <summary>
+        /// Función para corregir impuestos de iva
+        /// </summary>
+        /// <param name="reqAut">Requerimiento del afip a corregir</param>
+        /// <returns>Retorna el requerimiento corregido</returns>
         private ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAERequest CorregirImpuestos(ClienteLoginCms_CS.ar.gov.afip.wswhomo.FECAERequest reqAut)
         {
 
@@ -1653,52 +1788,116 @@ namespace ModuloAFIP
             double total = reqAut.FeDetReq.First().ImpTotal;
             double totalCon = reqAut.FeDetReq.First().ImpTotConc;
             double totalImpTrib = reqAut.FeDetReq.First().ImpTrib;
-            ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva[] listaIva = reqAut.FeDetReq.First().Iva;
 
+
+
+            UtilClass.EscribirArchivoLog("VALORES ANTES DE CORRECCIONES\n", _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpIVA: " + reqAut.FeDetReq.First().ImpIVA, _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpNeto: " + reqAut.FeDetReq.First().ImpNeto, _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpOpEx: " + reqAut.FeDetReq.First().ImpOpEx, _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpTotConc: " + reqAut.FeDetReq.First().ImpTotConc, _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpTrib: " + reqAut.FeDetReq.First().ImpTrib, _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpTotal: " + reqAut.FeDetReq.First().ImpTotal, _strLog, true);
+           
+
+
+            ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva[] listaIva = reqAut.FeDetReq.First().Iva;
+            UtilClass.EscribirArchivoLog("Despues de obtener lista Iva\n", _strLog, true);
             double nuevoTotalIVA = 0.00;
 
             double nuevoNetoIVA = 0.00;
-            // Corrijo los valores de impuestos
-            foreach (ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva i in listaIva)
+
+            if (listaIva != null)
             {
-                
-                double baseImp = i.BaseImp;
-                int id = i.Id;
-                double importe = i.Importe;
-               
-                double razon = ObtenerRazonImpuesto(id);
-                
-                razon = razon / 100.00;
+                int cantLista = listaIva.Count();
 
-               
-                if (razon >= 0)
+
+                UtilClass.EscribirArchivoLog("ANtes de IF cant lista\n", _strLog, true);
+                if (cantLista > 0)
                 {
-                  
 
-                    double totalImpuesto = baseImp + importe;
-                   
-                    double nuevoNeto = Math.Round((totalImpuesto / (1 + razon)), 2);
-                    double nuevoImpuesto = Math.Round((totalImpuesto - nuevoNeto), 2);
+                    UtilClass.EscribirArchivoLog("CantLista > 0\n", _strLog, true);
+                    // Corrijo los valores de impuestos
+                    foreach (ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva i in listaIva)
+                    {
 
-                    i.BaseImp = nuevoNeto;
-                    i.Importe = nuevoImpuesto;
-                                       
+                        double baseImp = i.BaseImp;
+                        int id = i.Id;
+                        double importe = i.Importe;
 
-                    nuevoTotalIVA += nuevoImpuesto;
-                    nuevoNetoIVA += nuevoNeto;
+                        double razon = ObtenerRazonImpuesto(id);
 
+                        razon = razon / 100.00;
+
+                        UtilClass.EscribirArchivoLog("BaseImp Ant: " + baseImp, _strLog, true);
+                        UtilClass.EscribirArchivoLog("importe Ant: " + importe, _strLog, true);
+
+                        if (razon >= 0)
+                        {
+
+
+                            double totalImpuesto = baseImp + importe;
+
+                            double nuevoNeto = Math.Round((totalImpuesto / (1 + razon)), 2);
+                            double nuevoImpuesto = Math.Round((totalImpuesto - nuevoNeto), 2);
+
+                            i.BaseImp = nuevoNeto;
+                            i.Importe = nuevoImpuesto;
+
+                            UtilClass.EscribirArchivoLog("BaseImp Nue: " + nuevoNeto, _strLog, true);
+                            UtilClass.EscribirArchivoLog("importe Nue: " + nuevoImpuesto, _strLog, true);
+
+                            nuevoTotalIVA += nuevoImpuesto;
+                            nuevoNetoIVA += nuevoNeto;
+
+                        }
+
+
+
+                    }
                 }
 
             }
 
 
+
+            UtilClass.EscribirArchivoLog("nuevoTotalIVA: " + nuevoTotalIVA, _strLog, true);
+            UtilClass.EscribirArchivoLog("nuevoNetoIVA: " + nuevoNetoIVA, _strLog, true);
+
             // Corrijo totales
             reqAut.FeDetReq.First().ImpIVA = Math.Round(nuevoTotalIVA, 2);
             reqAut.FeDetReq.First().ImpNeto = Math.Round(nuevoNetoIVA, 2);
 
-            double nuevoTotal = (reqAut.FeDetReq.First().ImpIVA) + (reqAut.FeDetReq.First().ImpNeto) + (reqAut.FeDetReq.First().ImpOpEx) + (reqAut.FeDetReq.First().ImpTotConc) + (reqAut.FeDetReq.First().ImpTrib);
-            reqAut.FeDetReq.First().ImpTotal = Math.Round(nuevoTotal,2);
+            /*     double nuevoTotal = 0.00;
+             if (totalCon > 0)
+             {
+                 //reqAut.FeDetReq.First().ImpNeto = 0.00;
+                  nuevoTotal = (reqAut.FeDetReq.First().ImpIVA) + (reqAut.FeDetReq.First().ImpOpEx) + (reqAut.FeDetReq.First().ImpTotConc) + (reqAut.FeDetReq.First().ImpTrib);
+             }
+             else
+             {
+                  nuevoTotal = (reqAut.FeDetReq.First().ImpIVA) + (reqAut.FeDetReq.First().ImpNeto) + (reqAut.FeDetReq.First().ImpOpEx) + (reqAut.FeDetReq.First().ImpTrib);
+             }
 
+             */
+
+
+
+
+            UtilClass.EscribirArchivoLog("VALORES DESPUES DE CORRECCIONES\n", _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpIVA: " + reqAut.FeDetReq.First().ImpIVA, _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpNeto: " + reqAut.FeDetReq.First().ImpNeto, _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpOpEx: " + reqAut.FeDetReq.First().ImpOpEx, _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpTotConc: " + reqAut.FeDetReq.First().ImpTotConc, _strLog, true);
+            UtilClass.EscribirArchivoLog("ImpTrib: " + reqAut.FeDetReq.First().ImpTrib, _strLog, true);
+          
+
+            double nuevoTotal = (reqAut.FeDetReq.First().ImpIVA) + (reqAut.FeDetReq.First().ImpNeto) + (reqAut.FeDetReq.First().ImpOpEx) + (reqAut.FeDetReq.First().ImpTotConc) + (reqAut.FeDetReq.First().ImpTrib);
+
+            reqAut.FeDetReq.First().ImpTotal = Math.Round(nuevoTotal, 2);
+            UtilClass.EscribirArchivoLog("ImpTotal: " + reqAut.FeDetReq.First().ImpTotal, _strLog, true);
+        
+            
             return reqAut;
         }
 
@@ -1724,38 +1923,48 @@ namespace ModuloAFIP
             double nuevoTotalIVA = 0.00;
 
             double nuevoNetoIVA = 0.00;
-            // Corrijo los valores de impuestos
-            foreach (ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva i in listaIva)
+
+            if (listaIva != null)
             {
+                int cantLista = listaIva.Count();
 
-                double baseImp = i.BaseImp;
-                int id = i.Id;
-                double importe = i.Importe;
-
-                double razon = ObtenerRazonImpuesto(id);
-
-                razon = razon / 100.00;
-
-
-                if (razon >= 0)
+                if (cantLista > 0)
                 {
+                    // Corrijo los valores de impuestos
+                    foreach (ClienteLoginCms_CS.ar.gov.afip.servicios1.AlicIva i in listaIva)
+                    {
+
+                        double baseImp = i.BaseImp;
+                        int id = i.Id;
+                        double importe = i.Importe;
+
+                        double razon = ObtenerRazonImpuesto(id);
+
+                        razon = razon / 100.00;
 
 
-                    double totalImpuesto = baseImp + importe;
-
-                    double nuevoNeto = Math.Round((totalImpuesto / (1 + razon)), 2);
-                    double nuevoImpuesto = Math.Round((totalImpuesto - nuevoNeto), 2);
-
-                    i.BaseImp = nuevoNeto;
-                    i.Importe = nuevoImpuesto;
+                        if (razon >= 0)
+                        {
 
 
-                    nuevoTotalIVA += nuevoImpuesto;
-                    nuevoNetoIVA += nuevoNeto;
+                            double totalImpuesto = baseImp + importe;
 
+                            double nuevoNeto = Math.Round((totalImpuesto / (1 + razon)), 2);
+                            double nuevoImpuesto = Math.Round((totalImpuesto - nuevoNeto), 2);
+
+                            i.BaseImp = nuevoNeto;
+                            i.Importe = nuevoImpuesto;
+
+
+                            nuevoTotalIVA += nuevoImpuesto;
+                            nuevoNetoIVA += nuevoNeto;
+
+                        }
+
+                    }
                 }
-
             }
+               
 
 
             // Corrijo totales
