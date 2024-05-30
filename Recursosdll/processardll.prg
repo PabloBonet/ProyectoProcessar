@@ -1,0 +1,184 @@
+DEFINE CLASS CodigoBarras AS Custom olepublic
+
+TablaCompro = ""
+CuitEmpresa = ""
+
+
+	PROCEDURE CargarBarras
+		PARAMETERS x,c
+		TablaCompro = x
+		CuitEmpresa = STRTRAN(c,'-','')
+		
+		USE &TablaCompro IN 0
+		v_bar_codigo = this.BarCodigo(0)	&& CODIGO BARRA COSEMAR Y TELENORTE LOCALES			
+		ALTER table &TablaCompro ADD COLUMN cb_empresa C(100)
+		REPLACE all cb_empresa WITH v_bar_codigo 
+		GO TOP 
+		
+		DO CASE 
+			CASE CuitEmpresa == "30545784897" 
+
+				v_bar_codigo = this.BarCodigo(2)	&& CODIGO BARRA COSEMAR 			
+				ALTER table &TablaCompro ADD COLUMN cb_nbsf C(100)
+				REPLACE all cb_nbsf WITH v_bar_codigo 
+				GO TOP 
+				
+			CASE CuitEmpresa == "30674401953"
+
+				v_bar_codigo = this.BarCodigo(1)	&& CODIGO BARRA TELENORTE 
+				ALTER table &TablaCompro ADD COLUMN cb_nbsf C(100)
+				REPLACE all cb_nbsf WITH v_bar_codigo 
+				GO TOP 
+					
+			OTHERWISE 
+		ENDCASE 
+		
+		USE 
+	ENDPROC 
+
+
+
+		**************************************************************************************
+		** RETORNA LA CADENA DE CARACTERES A IMPRIMIR SEGUN EL PARAMETRO DE SELECCION RECIBIDO
+		***************************************************************************************
+		PROCEDURE BarCodigo
+		PARAMETERS P_Elige
+		RETCODIGO = ""
+		DO CASE
+
+
+			CASE P_Elige = 0 && COSEMAR Y TELENORTE MODULO COBRANZA PROPIO
+				RETCODIGO =  "00010001"+RIGHT(REPLICATE("0",15)+ALLTRIM(STR(idfactura)),15)+'00'
+		
+
+			CASE P_ELIGE = 1 && IMPRESION DEL NUEVO BANCO DE SANTA FE TELENORTE 2 VENCIMIENTOS
+				
+				IF !EMPTY(fechavenc1) AND !EMPTY(fechavenc2) THEN 
+				
+					RETCODIGO1 = "11122222"+;
+							SUBSTR(ALLTRIM(STR(entidad+10000)),2,4)+ ;
+							SUBSTR(ALLTRIM(STR(servicio+100)),2,2)+ ;
+							SUBSTR(ALLTRIM(STR(cuenta+100)),2,2)+ ;
+							ALLTRIM(RIGHT(REPLICATE("0",12)+ALLTRIM(STR(idfactura)),12))+"0"+ ;
+							this.DIAJULIANO(DATE(VAL(SUBSTR(fechavenc1,1,4)),VAL(SUBSTR(fechavenc1,5,2)),VAL(SUBSTR(fechavenc1,7,2))))+ ;
+							STRTRAN(STRTRAN(STR(total,9,2)," ","0"),".","")+ ; 
+							this.DIAJULIANO(DATE(VAL(SUBSTR(fechavenc2,1,4)),VAL(SUBSTR(fechavenc2,5,2)),VAL(SUBSTR(fechavenc2,7,2))))+ ;
+							STRTRAN(STRTRAN(STR((total+recargo1),9,2)," ","0"),".","")  
+					RETCODIGO2 =  RETCODIGO1 + this.VERIFICADOR(RETCODIGO1)
+					RETCODIGO  = this.BAR25(RETCODIGO2)
+				ENDIF 
+
+			CASE P_ELIGE = 2 && CODIGO BARRA NUEVO BANCO DE SANTA FE PARA COSEMAR ( en blanco falta acuerdo )
+				
+				IF !EMPTY(fechavenc1) AND !EMPTY(fechavenc2) THEN 
+				
+*!*						RETCODIGO1 = "11122222"+;
+*!*								SUBSTR(ALLTRIM(STR(entidad+10000)),2,4)+ ;
+*!*								SUBSTR(ALLTRIM(STR(servicio+100)),2,2)+ ;
+*!*								SUBSTR(ALLTRIM(STR(cuenta+100)),2,2)+ ;
+*!*								ALLTRIM(RIGHT(REPLICATE("0",12)+ALLTRIM(STR(idfactura)),12))+"0"+ ;
+*!*								this.DIAJULIANO(DATE(VAL(SUBSTR(fechavenc1,1,4)),VAL(SUBSTR(fechavenc1,5,2)),VAL(SUBSTR(fechavenc1,7,2))))+ ;
+*!*								STRTRAN(STRTRAN(STR(total,9,2)," ","0"),".","")+ ; 
+*!*								this.DIAJULIANO(DATE(VAL(SUBSTR(fechavenc2,1,4)),VAL(SUBSTR(fechavenc2,5,2)),VAL(SUBSTR(fechavenc2,7,2))))+ ;
+*!*								STRTRAN(STRTRAN(STR((total+recargo1),9,2)," ","0"),".","")  
+*!*						RETCODIGO2 =  RETCODIGO1 + this.VERIFICADOR(RETCODIGO1)
+*!*						RETCODIGO  = this.BAR25(RETCODIGO2)
+					RETCODIGO = "  "
+				ENDIF 				
+			
+			OTHERWISE 
+				
+		ENDCASE
+		RETURN RETCODIGO
+
+
+
+
+
+
+	************************************************************
+	** Función de Retorno del Dia Juliano de acuerdo a una fecha dada
+	** en 4 digitos 1 posicion ultimo digito del año y 2 a 4 el dia
+	************************************************************
+	PROCEDURE DiaJuliano
+	PARAMETERS eldia
+		ano=SUBSTR(ALLTRIM(STR(YEAR(eldia))),4,1)
+		diaj=SUBSTR(STR(((eldia-DATE(YEAR(eldia),01,01)+1)+1000),4),2)
+		ret=ano+diaj
+		RETURN ret 
+	ENDFUNC 
+
+	************************************************************
+	** Función de Retorno de Dígito Verificador
+	** Recibe el string y devuelve el digito verificador
+	************************************************************
+	PROCEDURE Verificador(t)
+		L = LEN(t)
+		DIMENSION arreglo(3,L)
+		DIMENSION serie (1,4)
+		serie(1,1) = 3
+		serie(1,2) = 5
+		serie(1,3) = 7
+		serie(1,4) = 9
+		arreglo(2,1)=1
+		suma= 0
+		y = 1
+		FOR x = 1 TO L
+			arreglo(1,x)= VAL(SUBSTR(t,x,1))
+			IF x > 1 THEN 
+				arreglo(2,x)=serie(1,y)
+				IF y = 4 then
+					y = 1
+				ELSE
+					y = y + 1
+				ENDIF 
+			ENDIF 
+			arreglo(3,x) = arreglo(1,x)*arreglo(2,x)
+			suma = suma + arreglo(3,x)
+		NEXT 
+		mitad=INT(suma/2)
+		dg = ALLTRIM(STR(MOD(mitad,10)))
+	RETURN dg			
+
+
+
+	************************************************************
+	** Esta funcion enviada por el Provincia para la conversion
+	** en la impresion de las barras en codigo Interleave 2 de 5
+	************************************************************
+	PROCEDURE bar25(t)
+	a=CHR(33)
+
+	FOR x = 1 TO LEN(T) STEP 2 
+		v= VAL(SUBSTR(t,x,2)) 
+		DO CASE 
+			CASE v >= 0 AND v<=91
+				c=CHR(v+35)
+			CASE v=92
+				c=CHR(196)
+			CASE v=93
+				c=CHR(197)
+			CASE v=94
+			    c=CHR(199)
+			CASE v=95
+			    c=CHR(201)
+			CASE v=96
+			    c=CHR(209)
+			CASE v=97
+			    c=CHR(214)
+			CASE v=98
+				c=CHR(220)
+			CASE v=99
+				c=CHR(225)
+		ENDCASE 
+		a=a+c
+		NEXT 
+		a = a + CHR(34)
+	RETURN a
+
+
+
+
+
+ENDDEFINE 
+

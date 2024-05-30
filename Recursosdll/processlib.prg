@@ -1,0 +1,548 @@
+DEFINE CLASS ConsultaSQL AS Custom olepublic
+
+DIMENSION sqlmatriz [20,1]
+DIMENSION lamatriz [20,1]
+DIMENSION _sysvar [20,2]
+
+conexion = 0 
+
+ErroresOBJ = ""
+
+PROCEDURE LimpiaMatriz
+	FOR I = 1 TO 20
+		this.sqlmatriz(I)=""
+	ENDFOR 	
+ENDPROC 
+
+PROCEDURE LimpiaLaMatriz
+	DIMENSION this.lamatriz [20,2]
+	FOR I = 1 TO 20
+		this.lamatriz(I,1)=""
+		this.lamatriz(I,2)=""
+	ENDFOR 	
+ENDPROC 
+
+
+PROCEDURE inivariables
+	v_variables_pl = STRCONV(FILETOSTR("variables._c"),14)
+	STRTOFILE(v_variables_pl ,"variables._s")
+	CREATE TABLE sysvar (variable c(100))
+	APPEND FROM variables._s TYPE SDF 
+	v_cantidad = RECCOUNT()
+	DIMENSION this._sysvar(v_cantidad,2)
+	GO TOP 
+	FOR  inx = 1 to v_cantidad 
+		this._sysvar(inx,1)=SUBSTR(ALLTRIM(sysvar.variable),1,ATC('=',sysvar.variable)-1)
+		v_valor = ALLTRIM(SUBSTR(ALLTRIM(sysvar.variable),ATC('=',sysvar.variable)+1))
+		this._sysvar(inx,2)=IIF(SUBSTR(v_valor,1,1)='"',STRTRAN(v_valor,'"',''),VAL(v_valor))
+		SKIP 
+	ENDFOR 
+	USE IN sysvar
+	DELETE FILE sysvar.dbf 
+*!*		DELETE FILE variables._s
+	RETURN v_cantidad
+ENDPROC 
+
+
+
+Function getVarPublica
+PARAMETERS p_nomVar
+	p_nomVar = UPPER(p_nomVar)
+	IF TYPE("p_nomVar") = 'C' THEN 
+		v_id = 	ASCAN(this._sysvar,p_nomVar)
+		IF v_id > 0 THEN 
+			v_row = ASUBSCRIPT(this._sysvar,v_id,1)
+			RETURN this._sysvar(v_row,2)
+		ELSE 
+			RETURN "VARIABLE-NO-VALIDA"		
+		ENDIF 
+	ELSE 
+		RETURN "VARIABLE-NO-VALIDA"
+	ENDIF 
+ENDPROC 
+
+
+
+PROCEDURE constructor
+	this.limpiamatriz
+	this.limpialamatriz
+	this.inivariables 
+	this.abreycierracon (0,"Abre")
+	eje ="SET DEFAULT TO "+ALLTRIM(this.getVarPublica("_sysestacion"))
+	&eje
+	RETURN 
+ENDPROC 
+
+
+
+***************************************************
+FUNCTION AbreyCierraCon
+PARAMETERS co,conex
+* Abre y Cierra conexiones con base de datos
+* Recibe como parametros el nombre de la base de datos 
+* Si lo que se desea es cerrar la conexion, recibe como parametro
+* "co" = al numero de la conexión y "conex" = ""
+conectar = 0
+IF !(ALLTRIM(conex) == "") then
+	ccDataBaseSQL = ALLTRIM(this.getVarPublica("_SYSSCHEMA"))
+
+		IF this.conexion = 0 THEN 
+			conectar = this.conMySQL(ccDataBaseSQL) && realiza la conexion con la base de datos por unica vez
+		ELSE 
+			conectar = this.conexion 
+		ENDIF 
+	*seteo las variables de entorno para la conexion
+	this.conexion = conectar 
+
+	IF conectar < 0 then
+		ON ERROR errores= .f.
+		QUIT 
+	ENDIF
+	=this.MySQLVarSession()
+ELSE
+	*verfico si es una conexion a visual foxpro cierro la conexion desde aqui (en mysql se encarga de abrir y cerrar ConMysql)
+	**********************************
+	conectar = 0
+ENDIF
+RETURN conectar 
+***************************************************
+
+
+
+FUNCTION ConMySQL
+PARAMETERS pbase
+	pbase2 = LOWER(ALLTRIM(pbase))
+
+	lnHandle = 0
+	IF !EMPTY(pbase2) THEN 
+		SQLDISCONNECT(lnHandle)
+		lcServer=ALLTRIM(this.getVarPublica("_sysmysql_server"))
+		lcDatabase=ALLTRIM(pbase2)
+		lcUser=ALLTRIM(this.getVarPublica("_sysmysql_user"))
+		lcPassword=ALLTRIM(this.getVarPublica("_sysmysql_pass"))
+		lcDriver=ALLTRIM(this.getVarPublica("_SYSDRVMYSQL"))
+		lcPort=ALLTRIM(this.getVarPublica("_sysmysql_port"))
+		lcStringConn="Driver="+lcDriver+";Port="+lcPort+;
+		";Server="+lcServer+;
+		";Database="+lcDatabase+;
+		";Uid="+lcUser+;
+		";Pwd="+lcPassWord
+		lnHandle=SQLSTRINGCONNECT(lcStringConn)
+				
+	ENDIF 
+	
+	RETURN lnHandle
+ENDFUNC 
+
+
+********************************************************************
+********************************************************************
+FUNCTION Sqlrun
+* Ejecuta la sentencia SQL ingresada en la matriz SQLMATRIZ 
+* recibe como parametro en "co" la conexion sobre la cual ejecutar la SQL
+* y en "pcursor" el nombre del cursor en el cual se devuelve la consulta
+* retorna falso si no se pudo ejecutar la consulta y limpia la matriz SQL siempre
+    PARAMETERS pcursor
+    LOCAL vrreturn
+    local r
+	
+	* Esta rutina pone en minuscula los caracteres de sqlmatriz(i), 
+	* salvo que el caractere se encuentre en una cadena encerrada en ''
+	V_FLAG     = 1 && SI VALE 0 LA CADENA ESTÁ ABIERTA - SI VALE 1 LA CADENA CERRADA
+	
+	FOR I = 1 TO 20 STEP 1
+		V_ORIGINAL = this.SQLMATRIZ(I)
+		V_NUEVOSTR = ''
+		V_TAMAÑO   = LEN(this.SQLMATRIZ(I)) 
+*		V_FLAG     = 1 && SI VALE 0 LA CADENA ESTÁ ABIERTA - SI VALE 1 LA CADENA CERRADA
+		* Proceso el string de sqlmatriz(i)
+		FOR J=1 TO V_TAMAÑO STEP 1
+			v_char = SUBSTR(v_original,j,1)
+			IF v_char = "'" THEN 
+				IF v_flag = 0 THEN 
+					v_flag = 1
+				ELSE 
+					v_flag = 0
+				ENDIF 
+			ELSE
+				IF v_flag = 0 THEN
+					* lo dejo como esta
+				ELSE 
+					v_char = LOWER(v_char)
+				ENDIF 
+			ENDIF 
+			V_NUEVOSTR = V_NUEVOSTR + v_char
+		ENDFOR 
+		
+		this.SQLMATRIZ(I) = V_NUEVOSTR
+	ENDFOR     
+	LOCAL laError, lcMsg, ln
+	DIMENSION laError[1]   
+    
+*!*	    RETURN this.SQLMATRIZ(1)+this.SQLMATRIZ(2)+this.SQLMATRIZ(3)+this.SQLMATRIZ(4)+this.SQLMATRIZ(5)+this.SQLMATRIZ(6)+this.SQLMATRIZ(7)+this.SQLMATRIZ(8)+ ;
+*!*		this.SQLMATRIZ(9)+this.SQLMATRIZ(10)+this.SQLMATRIZ(11)+this.SQLMATRIZ(12)+this.SQLMATRIZ(13)+this.SQLMATRIZ(14)+this.SQLMATRIZ(15)+this.SQLMATRIZ(16)+this.SQLMATRIZ(17)+ ;
+*!*		this.SQLMATRIZ(18)+this.SQLMATRIZ(19)+this.SQLMATRIZ(20)
+	
+	r=SQLEXEC(this.conexion ,this.SQLMATRIZ(1)+this.SQLMATRIZ(2)+this.SQLMATRIZ(3)+this.SQLMATRIZ(4)+this.SQLMATRIZ(5)+this.SQLMATRIZ(6)+this.SQLMATRIZ(7)+this.SQLMATRIZ(8)+ ;
+	this.SQLMATRIZ(9)+this.SQLMATRIZ(10)+this.SQLMATRIZ(11)+this.SQLMATRIZ(12)+this.SQLMATRIZ(13)+this.SQLMATRIZ(14)+this.SQLMATRIZ(15)+this.SQLMATRIZ(16)+this.SQLMATRIZ(17)+ ;
+	this.SQLMATRIZ(18)+this.SQLMATRIZ(19)+this.SQLMATRIZ(20),pcursor)
+	IF r < 0
+	  *MANEJO DE ERRORES * ALEJANDRO
+*!*		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+this.SQLMATRIZ(1)+this.SQLMATRIZ(2)+this.SQLMATRIZ(3)+this.SQLMATRIZ(4)+this.SQLMATRIZ(5)+this.SQLMATRIZ(6)+ ;
+*!*		  this.SQLMATRIZ(7)+this.SQLMATRIZ(8)+this.SQLMATRIZ(9)+this.SQLMATRIZ(10)+this.SQLMATRIZ(11)+this.SQLMATRIZ(12)+this.SQLMATRIZ(13)+this.SQLMATRIZ(14)+this.SQLMATRIZ(15)+this.SQLMATRIZ(16)+ ;
+*!*		  this.SQLMATRIZ(17)+this.SQLMATRIZ(18)+this.SQLMATRIZ(19)+this.SQLMATRIZ(20),0+64,'SQLRUN')
+	  IF AERROR(laError) > 0
+	    *-- Ocurrio un error
+	    * DISPLAY MEMORY LIKE laError
+	    lcMsg = ""
+	    FOR ln = 1 TO ALEN(laError,2)
+	      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+	    ENDFOR
+*!*		    MESSAGEBOX(lcMsg, 64, "SQLRUN (ERROR)")
+	  ENDIF
+	  *FIN INFORME DE ERROR OCURRIDO	
+		vrreturn=.f.
+    ELSE
+    	vrreturn=.t.
+    ENDIF 
+	this.LimpiaMatriz()	
+RETURN vrreturn
+
+
+PROCEDURE DefineLaMatriz 
+	PARAMETERS x
+	DIMENSION this.lamatriz(x,2) 
+ENDPROC 
+
+
+**********************************************************************************
+FUNCTION SentenciaSQL
+PARAMETERS p_tabla, p_tipoope, p_condicion
+
+	*quito caracter ' de los valores de la matriz
+*!*		elementos = ALEN(&p_matriz,1)
+	elementos = ALEN(this.lamatriz,1)
+	FOR fila = 1 TO elementos STEP 1
+		valormatriz = IIF(substr(ALLTRIM(this.lamatriz(fila,2)),1,1)=="'","'"+STRTRAN(substr(ALLTRIM(this.lamatriz(fila,2)),2,LEN(ALLTRIM(this.lamatriz(fila,2)))-2),"'","´")+"'",ALLTRIM(this.lamatriz(fila,2)))	
+		this.lamatriz(fila,2) = valormatriz
+	ENDFOR 
+
+	ErrorSQL = .F.
+	DO CASE 
+		CASE p_tipoope = 'I' && INSERT 
+			this.limpiamatriz() 
+			pos = 1
+			elementos = ALEN(this.lamatriz,1)
+			this.sqlmatriz(pos) = "INSERT INTO "+ALLTRIM(p_tabla)+" ("
+			FOR fila = 1 TO elementos STEP 1
+				IF LEN(ALLTRIM(this.sqlmatriz(pos))) + LEN(ALLTRIM(this.lamatriz(fila,1))) < 240 THEN 
+					* no hago nada
+				ELSE 
+					pos  = pos + 1
+				ENDIF
+				IF fila < elementos THEN 
+					this.sqlmatriz(pos) = this.sqlmatriz(pos)+ALLTRIM(this.lamatriz(fila,1))+","
+				ELSE 
+					this.sqlmatriz(pos) = this.sqlmatriz(pos)+ALLTRIM(this.lamatriz(fila,1))
+				ENDIF 
+		 	ENDFOR 
+		 	this.sqlmatriz(pos) = this.sqlmatriz(pos)+ ") values ("
+		 	
+		 	
+			FOR fila = 1 TO ALEN(this.lamatriz,1) STEP 1
+			
+				IF LEN(ALLTRIM(this.sqlmatriz(pos))) + LEN(ALLTRIM(this.lamatriz(fila,2))) < 240 THEN 
+					* no hago nada
+				ELSE 
+					pos  = pos + 1
+				ENDIF
+				IF fila < elementos THEN 
+					this.sqlmatriz(pos) = this.sqlmatriz(pos)+ALLTRIM(this.lamatriz(fila,2))+","
+				ELSE 
+					this.sqlmatriz(pos) = this.sqlmatriz(pos)+ALLTRIM(this.lamatriz(fila,2))
+				ENDIF 
+		 	ENDFOR 
+		 	this.sqlmatriz(pos) = this.sqlmatriz(pos)+")"
+		 	
+
+		 	this.logSistema(p_tabla, p_tipoope)
+
+		 	ErrorSQL=this.sqlrun("nosuo")
+		 	
+		 	
+		CASE p_tipoope = 'U' && UPDATE
+			this.limpiamatriz()
+			pos = 1
+			elementos = ALEN(this.lamatriz,1)
+			this.sqlmatriz(pos) = "UPDATE "+ALLTRIM(p_tabla)+" SET "
+			FOR fila = 1 TO elementos STEP 1
+				IF LEN(ALLTRIM(this.sqlmatriz(pos))) + LEN(ALLTRIM(this.lamatriz(fila,1))) + 3 + LEN(ALLTRIM(this.lamatriz(fila,2))) < 240 THEN 
+					* no hago nada
+				ELSE 
+					pos  = pos + 1
+				ENDIF
+				IF fila < elementos THEN 
+					this.sqlmatriz(pos) = this.sqlmatriz(pos)+ALLTRIM(this.lamatriz(fila,1))+" = "+ALLTRIM(this.lamatriz(fila,2))+","
+				ELSE 
+					this.sqlmatriz(pos) = this.sqlmatriz(pos)+ALLTRIM(this.lamatriz(fila,1))+" = "+ALLTRIM(this.lamatriz(fila,2))
+				ENDIF 
+		 	ENDFOR 
+		 	IF LEN(ALLTRIM(this.sqlmatriz(pos))) + LEN(" WHERE "+ALLTRIM(p_condicion)) < 240 THEN
+		 		* no hago nada
+		 	ELSE  
+		 		pos = pos + 1
+		 	ENDIF 
+		 	this.sqlmatriz(pos) = this.sqlmatriz(pos)+" WHERE "+ALLTRIM(p_condicion)
+		 	this.logSistema(p_tabla, p_tipoope)
+		 	ErrorSQL=this.sqlrun("nosuo")			
+			
+			
+		CASE p_tipoope = 'D' && DELETE
+			this.sqlmatriz(1) = "DELETE FROM "+ALLTRIM(p_tabla)+" WHERE "+ALLTRIM(p_condicion)
+			this.logSistema(p_tabla, p_tipoope)
+			ErrorSQL=this.sqlrun("nosuo")
+			
+		
+		OTHERWISE 
+*!*				MESSAGEBOX("Operación NO Válida",0+48+0,"Sentencia SQL")			
+			ErrorSQL = .F.
+	ENDCASE 
+	
+	this.limpialamatriz()
+	RETURN ErrorSQL
+ENDFUNC 
+
+
+
+**-- FUNCION DE SETEO DE VARIALBES DE SESION EN ENTORNO MYSQL
+** carga en mysql las variables definidas como publicas y que deben
+** enviarse a la base de datos como entorno de sesion de la aplicacion
+FUNCTION MySQLVarSession
+*!*	PARAMETERS pv_conexion 
+	v_consulta="select variable FROM varpublicas WHERE variable like '_SQL%' " 
+		
+	r=SQLEXEC(this.conexion ,V_consulta,"SetVariables")
+	
+	IF r < 0
+	  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+V_consulta,0+64,'SQLRUN')
+	  IF AERROR(laError) > 0
+		    *-- Ocurrio un error
+		    * DISPLAY MEMORY LIKE laError
+	    lcMsg = ""
+	    FOR ln = 1 TO ALEN(laError,2)
+	      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+	    ENDFOR
+	    MESSAGEBOX(lcMsg, 64, "SQLRUN (ERROR)")
+	  ENDIF
+	  *FIN INFORME DE ERROR OCURRIDO	
+		ErrorSql=.t.
+		RETURN 
+	ENDIF 
+
+	SELECT SetVariables
+	GO TOP 
+	DO WHILE !EOF()
+		
+		v_ida  = ASCAN(this._sysvar,ALLTRIM(SetVariables.variable))
+		v_rowa = ASUBSCRIPT(this._sysvar,v_ida,1)
+		var_tipo= "this._sysvar("+ALLTRIM(STR(v_rowa))+",2)"
+		
+		IF !(TYPE(var_tipo)='U') THEN 
+			IF TYPE(var_tipo)='C' THEN 
+				eje =" valorv = this._sysvar("+ALLTRIM(STR(v_rowa))+",2)"
+				&eje
+				v_consulta = "set @"+ALLTRIM(LOWER(setVariables.variable))+":='"+valorv+"'"
+			ELSE
+				eje = "valorv = ALLTRIM(STR(this._sysvar("+ALLTRIM(STR(v_rowa))+",2)))"
+				&eje
+				v_consulta = "set @"+ALLTRIM(LOWER(setVariables.variable))+":="+valorv
+			ENDIF 
+			r=SQLEXEC(this.conexion ,v_consulta,"seteo")
+	
+		ELSE
+
+		ENDIF 		
+		SELECT SetVariables
+		SKIP 
+	ENDDO 	
+	USE IN SetVariables 
+	RETURN  
+ENDFUNC 
+
+
+
+
+*****************************************************************
+PROCEDURE ConsultaProcessar
+	PARAMETERS pconsu, parchivo
+
+	this.sqlmatriz(1)=pconsu
+	verror=this.sqlrun("consutmp")
+	IF !verror THEN 
+		MESSAGEBOX('Ha ocurrido un error al obtener los datos de la Empresa',0+64,'Error')
+	ENDIF 
+	SELECT consutmp
+	SELECT * FROM consutmp INTO TABLE &parchivo
+	USE IN consutmp
+	USE IN &parchivo
+	
+	RETURN 	
+
+ENDPROC 
+
+
+********** LOG DE SISTEMA ++++++
+** --------------------------------------------------------------
+* Graba en la tabla Logsystem de la base de datos todos los 
+* movimientos de las tablas seleccionadas para grabar sus log
+*----------------------------------------------------------------
+FUNCTION logSistema
+PARAMETERS p_tablalog, p_tipoopelog
+	
+*!*		IF _SYSSCHEMA = 'admindb' THEN 
+*!*			RETURN 
+*!*		ENDIF 
+	
+	ErrorSql = .F.
+	
+	
+	*** Consulto por la tabla de seteo para obtener el campo id y el tipo ***
+	v_sentenciaL = "select * from seteolog where tabla = '"+ALLTRIM(p_tablalog)+"' and log = 'S'"
+	
+	LOCAL laError, lcMsg, ln
+	DIMENSION laError[1]
+
+
+	r=SQLEXEC(this.conexion,v_sentenciaL,"seteoCur")
+
+	IF r < 0
+	  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+v_sentenciaL,0+64,'SQLRUN')
+	  IF AERROR(laError) > 0
+	    *-- Ocurrio un error
+	    * DISPLAY MEMORY LIKE laError
+	    lcMsg = ""
+	    FOR ln = 1 TO ALEN(laError,2)
+	      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+	    ENDFOR
+	    MESSAGEBOX(lcMsg, 64, "SQLRUN (ERROR)")
+	  ENDIF
+	  *FIN INFORME DE ERROR OCURRIDO	
+		ErrorSql=.t.
+    ELSE
+    	SELECT seteoCur
+    	GO TOP 
+    	IF EOF()
+	    	RETURN 
+    	ENDIF 
+    	v_campo = seteoCur.campo
+    	v_tipo	= seteoCur.tipo
+    
+ 		v_elementosm = ALEN(this.lamatriz,1)
+    	
+    	
+    	FOR fila = 1 TO v_elementosm 
+    		v_campoMat = ALLTRIM(this.lamatriz(fila,1))
+     		IF ALLTRIM(v_campoMat) = ALLTRIM(v_campo) THEN 
+       			v_valor		=  this.lamatriz(fila,2)
+  			fila = v_elementosm
+   			ENDIF  
+    	ENDFOR 
+
+  
+    	
+   	*** Inserto los campos en la tabla logsystem ***
+  
+	*INTEGER
+	v_tipocampo = "I"
+	V_consulta="UPDATE tablasidx set maxvalori = ( maxvalori + 1 ) WHERE campo = 'idlog' and tabla = 'logsystem' and tipocampo = 'I'"
+	
+	r=SQLEXEC(this.conexion,V_consulta,"ActuCur")
+		IF r < 0 THEN 
+		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+V_consulta,0+64,'SQLRUN')
+		  IF AERROR(laError) > 0
+		    *-- Ocurrio un error
+		    * DISPLAY MEMORY LIKE laError
+		    lcMsg = ""
+		    FOR ln = 1 TO ALEN(laError,2)
+		      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+		    ENDFOR
+*!*			    MESSAGEBOX(lcMsg, 64, "SQLRUN (ERROR)")
+		  ENDIF
+		  *FIN INFORME DE ERROR OCURRIDO	
+			ErrorSql=.t.
+			
+		ENDIF 
+    	
+	
+	*** Vuelvo a buscar para corroborar
+	
+	v_consulta=" select maxvalori as maxnro FROM tablasidx WHERE campo = 'idlog' and tabla = 'logsystem' and tipocampo = 'I' " 
+		
+	r=SQLEXEC(this.conexion,V_consulta,"MaxCur")
+		IF r < 0 THEN 
+		  MESSAGEBOX("HA OCURRIDO UN ERROR AL EJECUTAR LA SIGUIENTE SENTENCIA:"+CHR(13)+V_consulta,0+64,'SQLRUN')
+		  IF AERROR(laError) > 0
+		    *-- Ocurrio un error
+		    * DISPLAY MEMORY LIKE laError
+		    lcMsg = ""
+		    FOR ln = 1 TO ALEN(laError,2)
+		      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) + CHR(13)
+		    ENDFOR
+		  ENDIF
+			ErrorSql=.t.
+		ENDIF 
+	
+	SELECT maxCur
+	v_maximo = IIF(ISNULL(maxCur.maxnro),0,maxCur.maxnro)
+
+	SELECT maxCur
+	USE IN maxCur
+
+	v_idlog = v_maximo
+	
+	   	v_fechalogsys = TTOC(DATETIME(),1)
+    	v_usuario	= this.getVarPublica("_SYSUSUARIO")
+    	v_ip		= this.getVarPublica("_SYSIP")
+    	v_host		= this.getVarPublica("_SYSHOST")
+ 
+    	v_sentencia = " INSERT INTO logsystem values ("+ALLTRIM(STR(v_idlog))+",'"+ALLTRIM(v_fechalogsys)+"','"+ALLTRIM(v_usuario)+"','"+ ;
+    	ALLTRIM(p_tabla)+"','"+ALLTRIM(v_campo)+"','"+ALLTRIM(v_tipo)+"','"+ALLTRIM(STRTRAN(v_valor,"'",""))+"','"+ALLTRIM(p_tipoopelog)+"','"+ALLTRIM(v_ip)+"','"+ALLTRIM(v_host)+"'"
+		
+		v_sentencia2 = STRTRAN(this.SQLMATRIZ(1)+this.SQLMATRIZ(2)+this.SQLMATRIZ(3)+this.SQLMATRIZ(4)+this.SQLMATRIZ(5)+this.SQLMATRIZ(6)+this.SQLMATRIZ(7)+this.SQLMATRIZ(8)+this.SQLMATRIZ(9)+this.SQLMATRIZ(10),"'","") ;
+		+STRTRAN(this.SQLMATRIZ(11)+this.SQLMATRIZ(12)+this.SQLMATRIZ(13)+this.SQLMATRIZ(14)+this.SQLMATRIZ(15)+this.SQLMATRIZ(16)+this.SQLMATRIZ(17)+this.SQLMATRIZ(18)+this.SQLMATRIZ(19)+this.SQLMATRIZ(20),"'","")
+		
+		this.erroresobj = STR(this.conexion)+ ALLTRIM(v_sentencia)+",'"+ALLTRIM(v_sentencia2)+"')"
+		
+		r=SQLEXEC(this.conexion,ALLTRIM(v_sentencia)+",'"+v_sentencia2+"')","InsertCur")
+		IF r < 0
+		  IF AERROR(laError) > 0
+		    *-- Ocurrio un error
+		    lcMsg = ""
+		    FOR ln = 1 TO ALEN(laError,2)
+		      lcMsg = lcMsg + TRANSFORM(laError(1,ln)) 
+		    ENDFOR
+		  ENDIF
+		  *FIN INFORME DE ERROR OCURRIDO	
+			ErrorSql=.t.
+			
+		ENDIF 
+    	
+ 
+    ENDIF 
+	
+	
+	RETURN ErrorSql
+
+ENDFUNC 
+
+*******************************************************************
+
+
+
+
+
+ENDDEFINE 
+
+
+
+

@@ -1,0 +1,34 @@
+SET DEFAULT TO C:\processtmp\294\
+oo = CREATEOBJECT("processlib.consultaSQL")
+?oo.constructor
+
+oo.DefineLaMatriz(7)			
+oo.lamatriz(1,1)='linea'
+oo.lamatriz(1,2)="'17'"
+oo.lamatriz(2,1)='detalle'
+oo.lamatriz(2,2)="'linea nueva 10'"
+oo.lamatriz(3,1)='codigoctac'
+oo.lamatriz(3,2)="'01.01.01.02'"
+oo.lamatriz(4,1)='codigoctav'
+oo.lamatriz(4,2)="'01.01.01.02'"
+oo.lamatriz(5,1)='margen'
+oo.lamatriz(5,2)="50"
+oo.lamatriz(6,1)='codmin'
+oo.lamatriz(6,2)="'1'"
+oo.lamatriz(7,1)='codmax'
+oo.lamatriz(7,2)="'2'"
+				
+p_tabla     = 'lineas'
+p_tipoope     = 'I'
+p_condicion   = ""
+
+?oo.SentenciaSQL(p_tabla,p_tipoope,p_condicion)
+?oo.erroresobj
+*!*	IF oo.SentenciaSQL(p_tabla,p_tipoope,p_condicion) = .F.  
+*!*	  MESSAGEBOX("Ha Ocurrido un Error en  ",0+48+0,"Error")
+*!*	ENDIF	
+*?"lamatriz = "+oo.lamatriz(1)+oo.lamatriz(2)+oo.lamatriz(3)+oo.lamatriz(4)
+*?"sqlmatriz = "+oo.sqlmatriz(1)+oo.sqlmatriz(2)+oo.sqlmatriz(3)+oo.sqlmatriz(4)
+*?oo.getVarPublica("_sysschema")
+aa= oo.erroresobj
+RELEASE oo

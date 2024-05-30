@@ -11,7 +11,7 @@
 * Variables que indican el comportamiento de la funcion para comunicar resultados 
 * Es necesario para saber si la función se ejecuto correctamente o se produjeron errores
 
-* valor a devolver:
+* valor a devolver:CargaCtaCteCliRenumera
 *   'CHECK'   =  9 : Indica que solo se realiza un chequeo de la existencia de la funcion - retorna 9 si la funcion existe
 *	 'MUESTRA' =  2 : Muestra los registros Importados
 *	 'GUARDO'  =  1 : Indica que si se realizó una grabación, esta efectivamente se realizó .
@@ -2840,7 +2840,10 @@ FUNCTION CargaCtaCteClientes
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
  		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
 		&eje
-
+		
+		ALTER table ctasctesentcar ADD COLUMN cargarcomp l 
+		replace ALL cargarcomp WITH .t. 
+		
 *** AQUI AGREGAR LOGICA PARA CONSULTAR Y ELIMINAR FACTURAS SI ASI LO DESEA QUIEN IMPORTA ***
 		rta =MESSAGEBOX("Desea Eliminar los Comprobantes Existentes en las Cuentas Corrientes",3+32+256,"Eliminar Comprobantes ")
 		IF rta=6  THEN 
@@ -2972,7 +2975,8 @@ FUNCTION CargaCtaCteClientes
 	ENDIF 
 
 	SET ENGINEBEHAVIOR 70
-	SELECT entidad,servicio,cuenta,fecha,numerocomp,SUM(monto) as monto,cuota,vtocta,fechavenc1,fechavenc2,fechavenc3 FROM ctasctesentcar GROUP BY entidad,numerocomp INTO TABLE ctasctesentcarA
+	SELECT entidad,servicio,cuenta,fecha,numerocomp,SUM(monto) as monto,cuota,vtocta,fechavenc1,fechavenc2,fechavenc3 FROM ctasctesentcar ;
+		 GROUP BY entidad,numerocomp INTO TABLE ctasctesentcarA WHERE cargarcomp = .t. 
 	SET ENGINEBEHAVIOR 90
 	v_pventaIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,1,2)))
 	v_idcompIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,3,2)))
@@ -3110,6 +3114,7 @@ FUNCTION CargaCtaCteClientes
 			v_numero = maxnumerocom(v_idcom,v_pventa  ,1)
 			v_tipo	 = compIngEgr_sql.tipo
 			
+			
 			DO CASE 
 	
 									
@@ -3117,7 +3122,7 @@ FUNCTION CargaCtaCteClientes
 						
 					SELECT entidades_sql
 					GO TOP 
-					LOCATE FOR entidad = a_entidad AND servicio = 0 AND cuenta = 0 
+					LOCATE FOR entidad = a_entidad 
 					
 					
 					***Factura a ENTIDAD
@@ -3173,6 +3178,7 @@ FUNCTION CargaCtaCteClientes
 					v_ruta2 	= entidades_sql.ruta2
 					v_folio2 	= entidades_sql.folio2
 			ENDCASE 
+
 						
 			v_dirEntrega = ""
 			v_transporte = 0
@@ -3527,7 +3533,7 @@ FUNCTION CargaCtaCteCliRenumera
 
 	SELECT facturascli_sql
 	GO TOP 
-	BROWSE 
+	
 	
 	DO WHILE !EOF()
 		
@@ -3549,7 +3555,6 @@ FUNCTION CargaCtaCteCliRenumera
 		
 		vf_numero =INT(VAL(SUBSTR(vf_observa1,8,8)))
 
-		MESSAGEBOX(vf_observa1)
 		
 		IF vf_numero > 0 AND vf_longitudobs = 15 THEN 
 			lamatriz1(1,1)='idfactura'
@@ -4149,6 +4154,7 @@ ENDIF
 					***Factura a ENTIDAD
 					***Toma los datos de la tabla Entidad
 					SELECT entidades_sql
+
 				
 					v_apellido = ALLTRIM(entidades_sql.compania)+' '+ALLTRIM(entidades_sql.apellido)
 					v_nombre   = IIF(EMPTY(ALLTRIM(entidades_sql.compania)),ALLTRIM(entidades_sql.nombre),'') &&entidad.nombre
@@ -5043,6 +5049,8 @@ FUNCTION AsociarCablemodems
 			    RETURN 0
 			ENDIF
 
+			SELECT * FROM cablemodems INTO TABLE cablemodems00
+			USE IN cablemodems00
 			SELECT cablemodems		
 			GO TOP 
 			DIMENSION lamatriz1(15,2)
