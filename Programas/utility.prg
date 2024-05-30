@@ -23371,13 +23371,13 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 
 
 	******************************************************************************************************
-	SELECT * FROM entidades0_sql INTO TABLE entidades_sql
-	ALTER table entidades_sql alter COLUMN servicio i
-	ALTER table entidades_sql alter COLUMN cuenta i
-	ALTER table entidades_sql alter COLUMN ruta1 i
-	ALTER table entidades_sql alter COLUMN folio1 i
-	ALTER table entidades_sql alter COLUMN ruta2 i
-	ALTER table entidades_sql alter COLUMN folio2 i
+	SELECT * FROM entidades0_sql INTO TABLE entidadesax_sql
+	ALTER table entidadesax_sql alter COLUMN servicio i
+	ALTER table entidadesax_sql alter COLUMN cuenta i
+	ALTER table entidadesax_sql alter COLUMN ruta1 i
+	ALTER table entidadesax_sql alter COLUMN folio1 i
+	ALTER table entidadesax_sql alter COLUMN ruta2 i
+	ALTER table entidadesax_sql alter COLUMN folio2 i
 	USE IN entidades0_sql 
 		
 		
@@ -23418,21 +23418,21 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 									
 		CASE ( a_servicio = 0  OR a_cuenta = 0 ) AND a_entidad <> 0
 						
-			SELECT entidades_sql
+			SELECT entidadesax_sql
 			GO TOP 
 					
 			***Factura a ENTIDAD
 			***Toma los datos de la tabla Entidad
-			SELECT entidades_sql
+			SELECT entidadesax_sql
 				
-			v_apellido 	= ALLTRIM(entidades_sql.companiah)+' '+IIF(EMPTY(ALLTRIM(entidades_sql.companiah)),ALLTRIM(entidades_sql.apellidoh),'')
-			v_nombre 	=  IIF(EMPTY(ALLTRIM(entidades_sql.companiah)),ALLTRIM(entidades_sql.nombreh),'')  &&cuentaSel.nombre
-			v_direccion = entidades_sql.direccion
-			v_localidad = entidades_sql.localidad
-			v_iva 		= entidades_sql.iva
-			v_cuit 		= entidades_sql.cuit
+			v_apellido 	= ALLTRIM(entidadesax_sql.companiah)+' '+IIF(EMPTY(ALLTRIM(entidadesax_sql.companiah)),ALLTRIM(entidadesax_sql.apellidoh),'')
+			v_nombre 	=  IIF(EMPTY(ALLTRIM(entidadesax_sql.companiah)),ALLTRIM(entidadesax_sql.nombreh),'')  &&cuentaSel.nombre
+			v_direccion = entidadesax_sql.direccion
+			v_localidad = entidadesax_sql.localidad
+			v_iva 		= entidadesax_sql.iva
+			v_cuit 		= entidadesax_sql.cuit
 			v_docTipo 	= '80'
-			v_dni 		= entidades_sql.dni
+			v_dni 		= entidadesax_sql.dni
 			*v_cuit 			= IIF(thisform.tb_cuit.Tag= "1",thisform.tb_cuit.Value,&ventidad..cuit)
 *!*			v_docTIpo = entidad.tipodoc
 			*v_docTipoS 		= &ventidad..codafip 
@@ -23446,10 +23446,10 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 			OTHERWISE
 				v_docTIpo = "99"
 			ENDCASE
-			v_telefono 	= entidades_sql.telefono
-			v_cp 		= entidades_sql.cp
-			v_fax 		= entidades_sql.fax
-			v_email 	= entidades_sql.email
+			v_telefono 	= entidadesax_sql.telefono
+			v_cp 		= entidadesax_sql.cp
+			v_fax 		= entidadesax_sql.fax
+			v_email 	= entidadesax_sql.email
 			v_zona 		= ""
 			v_ruta1 	= 0
 			v_folio1 	= 0
@@ -23459,14 +23459,14 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 		CASE a_entidad <> 0 AND a_servicio <> 0  AND a_cuenta <> 0 
 			***Factura a una SUBCUENTA de la ENTIDAD
 			***Toma los datos de la tabla CuentaSel
-			SELECT entidades_sql
+			SELECT entidadesax_sql
 			GO TOP 
 					
-			v_apellido 	= ALLTRIM(entidades_sql.companiah)+' '+IIF(EMPTY(ALLTRIM(entidades_sql.companiah)),ALLTRIM(entidades_sql.apellidoh),'')
-			v_nombre 	=  IIF(EMPTY(ALLTRIM(entidades_sql.companiah)),ALLTRIM(entidades_sql.nombreh),'')  &&cuentaSel.nombre
-			v_direccion = entidades_sql.direccionh
-			v_localidad = entidades_sql.localidadh
-			v_iva 		= entidades_sql.ivah
+			v_apellido 	= ALLTRIM(entidadesax_sql.companiah)+' '+IIF(EMPTY(ALLTRIM(entidadesax_sql.companiah)),ALLTRIM(entidadesax_sql.apellidoh),'')
+			v_nombre 	=  IIF(EMPTY(ALLTRIM(entidadesax_sql.companiah)),ALLTRIM(entidadesax_sql.nombreh),'')  &&cuentaSel.nombre
+			v_direccion = entidadesax_sql.direccionh
+			v_localidad = entidadesax_sql.localidadh
+			v_iva 		= entidadesax_sql.ivah
 		*	v_cuit 			= IIF(thisform.tb_cuit.Tag= "1",thisform.tb_cuit.Value,&vcuentaSel..cuit)
 *!*			v_docTIpo = cuentaSel.tipodoc
 		*	v_docTipoS 		= &vcuentaSel..codafip 
@@ -23481,15 +23481,15 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 				v_docTIpo = "99"
 			ENDCASE
 			
-			v_telefono 	= entidades_sql.telefonoh
-			v_cp 		= entidades_sql.cph
-			v_fax 		= entidades_sql.faxh
-			v_email 	= entidades_sql.emailh
+			v_telefono 	= entidadesax_sql.telefonoh
+			v_cp 		= entidadesax_sql.cph
+			v_fax 		= entidadesax_sql.faxh
+			v_email 	= entidadesax_sql.emailh
 			v_zona 		= ""
-			v_ruta1 	= entidades_sql.ruta1
-			v_folio1 	= entidades_sql.folio1
-			v_ruta2 	= entidades_sql.ruta2
-			v_folio2 	= entidades_sql.folio2
+			v_ruta1 	= entidadesax_sql.ruta1
+			v_folio1 	= entidadesax_sql.folio1
+			v_ruta2 	= entidadesax_sql.ruta2
+			v_folio2 	= entidadesax_sql.folio2
 		
 		ENDCASE 
 						
@@ -23745,8 +23745,8 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
  	USE IN compIngEgr_sql
  	sele &p_tablaarti
  	USE IN &p_tablaarti
-	SELECT entidades_sql 	
-	USE IN entidades_sql 
+	SELECT entidadesax_sql 	
+	USE IN entidadesax_sql 
 	
  	v_retornoidfactura  = v_idfacturaag
 	RETURN v_retornoidfactura 
@@ -23833,6 +23833,7 @@ PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaR
 	IF 	P_IdReciboRec > 0 THEN 
 
 		sqlmatriz(1)="SELECT r.*, s.saldo from recibos r left join r_recibossaldo s on s.idrecibo = r.idrecibo where r.idrecibo = "+ALLTRIM(STR(P_IdReciboRec))
+
 		verror=sqlrun(vconeccionR ,"reciborec_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Recibo que cancela el Recargo  ",0+48+0,"Error")
@@ -23851,6 +23852,7 @@ PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaR
 
 		sqlmatriz(1)=" SELECT idfactura, recargo FROM cobros  "
 		sqlmatriz(5)=" WHERE  idregipago = "+ALLTRIM(STR(P_IdReciboRec))+" and  idcomproba = "+ALLTRIM(STR(V_idcomproRERec))+" "
+	
 		verror=sqlrun(vconeccionR ,"FacturasRec_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las Facturas asociadas a la ND  ",0+48+0,"Error")
@@ -26746,7 +26748,7 @@ PARAMETERS pch_idcheque, pa_conexion
 	v_chobserva   = 'IDCHQ:'+ALLTRIM(STR(cheques_dife.idcheque))+";"
 
 	* Controlo que ya no haya una transferencia para este cheque
-	sqlmatriz(1)="select * from transferencias where observa like 'IDCHQ:"+ALLTRIM(STR(pch_idcheque))+";'"
+	sqlmatriz(1)="select * from transferencia where observa like 'IDCHQ:"+ALLTRIM(STR(pch_idcheque))+";'"
 	verror=sqlrun(vconeccionCH,"transferido_dife")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda Comprobantes de Transferencias ya hechos para el Cheque",0+48+0,"Error")
@@ -26757,7 +26759,7 @@ PARAMETERS pch_idcheque, pa_conexion
 	ENDIF 	
 	SELECT transferido_dife
 	GO TOP 
-	IF !EOF()
+	IF EOF()
 		USE IN transferido_dife
 	    IF pa_conexion = 0 THEN 
 			=abreycierracon(vconeccionCH,"")	
@@ -27481,63 +27483,4 @@ toolbarprogress.top = ( (_screen.Height / 4 ) * 3 ) - 23
 toolbarprogress.left = (_screen.Width /2 ) - ( toolbarprogress.width / 2)
 toolbarprogress.progreso( pv_cantidad, pv_total, pv_titulo )
 ENDFUNC 
-
-
-FUNCTION FVerGrafico
-PARAMETERS pfv_tabla, pfv_titulo, pfv_subtitulo, pfv_ejex, pfv_ejey, pfv_etiquetasx, pfv_detalletablax, pfv_series,  pfv_condicion
-*#/---------------------------
-*** Función de creación de Graficos 
-*** pfv_tabla		: Tabla que contiene los datos de las series
-*** pfv_titulo		: Titulo del Gráfico
-*** pfv_subtitulo 	: Subtitulo del Grafico
-*** pfv_ejex		: Leyenda que aparecera debajo del eje x
-*** pfv_ejey		: Leyenda a la izquierda del eje Y
-*** pfv_etiquetasx	: Etiquetas para cada uno de los valores de las series 
-*** pfv_detalletablax: Campo que se mostrará como detalle en la Tabla adjunta al Gráfico - Generalmente igualal etiquetasx
-*** pfv_series 		: Parametro que contiene la Leyenda de la serie y los valores que se graficaran
-*** pfv_condicion	: Condicion que permite un filtrado en la seleccion de los registros de la tabla origen
-*#/---------------------------
- 
-	IF !EMPTY(pfv_tabla) THEN 
-		IF  !USED(pfv_tabla) THEN 
-			USE &pfv_tabla IN 0
-		ENDIF 
-	ELSE 
-		RETURN 
-	ENDIF 
-	pfv_tabla01 = pfv_tabla+"01"
-	
-	
- 	vcan_series=alines( arrayseries, pfv_series, ";")
-	vfcampos = ""
-	FOR ise = 1 TO vcan_series
-		
-		vfcampos = vfcampos+", '"+SUBSTR(arrayseries(ise),1,AT(',',arrayseries(ise))-1)+"' as legen"+ALLTRIM(STRTRAN((STR(ise,5)),' ','0'))+" , "+ ;
-					+SUBSTR(arrayseries(ise),AT(',',(arrayseries(ise)))+1)+" as valor"+ALLTRIM(STRTRAN((STR(ise,5)),' ','0'))
-	ENDFOR 
-	
-	eje1 = " SELECT pfv_titulo AS titulo , pfv_subtitulo as subtitulo, pfv_ejex as ejex, pfv_ejey as ejey, "+pfv_etiquetasx+" as etiquetasx , "+STR(vcan_series)+" as cantidadgr, "+pfv_detalletablax+" as detallegrx, "
-	eje2 = SUBSTR(vfcampos,2)
-	eje3 = " FROM "+pfv_tabla+" into table "+pfv_tabla01+" "+IIF(!EMPTY(pfv_condicion)," where "+pfv_condicion,"")
-	ejecuta = eje1+eje2+eje3
-
-	&ejecuta 
-	SELECT &pfv_tabla01
-	GO TOP 
-	IF EOF() THEN 
-		USE IN &pfv_tabla01
-		RETURN 
-	ENDIF 
-	
-	USE IN &pfv_tabla01
-
-	DO FORM graficos WITH pfv_tabla01
-
-RETURN 
-
-
-
-
-
-
 

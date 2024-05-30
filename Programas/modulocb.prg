@@ -2017,7 +2017,7 @@ FUNCTION ImportarCobros
 							
 							SELECT &p_tablaCobros
 							GO TOP 
-							v_cantRegistros  = RECCOUNT()
+							v_cantRegistros  = RECCOUNT() 
 							
 							SELECT SUM(impCobro) as total FROM &p_tablaCobros INTO TABLE totalCob
 							
@@ -2155,6 +2155,17 @@ FUNCTION ImputarCobros
 	    RETURN 
 	ENDIF
 
+	sqlmatriz(1)=" select * "
+	sqlmatriz(2)=" from cbcobrador " 
+	
+	verror=sqlrun(vconeccionF,"cbcobradores_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error al Buscar cobradores",0+48+0,"Error")
+	    RETURN 
+	ENDIF
+
+
+
 
 	* me desconecto	
 	=abreycierracon(vconeccionF,"")
@@ -2164,6 +2175,18 @@ FUNCTION ImputarCobros
 	GO TOP 
 	USE IN compReci_sql
 
+	
+	** BUsco los datos de la cuenta del cobrador
+	SELECT cbcobrador_sql
+	GO TOP 
+	
+	IF NOT EOF()
+		
+	ELSE
+		MESSAGEBOX("No se encuentran los datos del cobrador ingresado",0+16+256,"Error")
+		RETURN 
+	
+	ENDIF 
 	
 	*** Creo un comprobante del tipo de recibo por cada factura ***
 	** El recibo se hace por el total del cobro. EN caso de que el monto del recibo sea mayor al saldo de la factura, el exedente queda a cuenta **
@@ -2178,6 +2201,36 @@ FUNCTION ImputarCobros
 
 			SELECT comprobareci
 
+
+				** BUsco los datos de la cuenta del cobrador
+			SELECT cbcobradores_sql
+			GO TOP 
+			
+			IF NOT EOF()
+				v_idcbcobra = cbcobradores_sql.idcbcobra
+				SELECT cbcobradores_sql
+				GO TOP 
+				LOCATE FOR idcbcobra = v_idcbcobra
+				
+				IF NOT EOF()
+				
+					id_cajabco = cbcobrador_sql.idcajabco
+				ELSE
+					MESSAGEBOX("No se encuentran los datos del cobrador ingresado",0+16+256,"Error")
+					RETURN 
+			
+			
+				ENDIF 
+				
+			
+			ELSE
+				MESSAGEBOX("No se encuentran los datos del cobrador ingresado",0+16+256,"Error")
+				RETURN 
+			
+			ENDIF 
+	
+	
+	
 			vconeccionF = abreycierracon(0,_SYSSCHEMA)
 	
 			v_recibo_idcomproba = v_idcomp
@@ -2190,7 +2243,7 @@ FUNCTION ImputarCobros
 			v_nombre = &p_tablacom..entidad
 			v_recibo_importe = &p_tablacom..importeCob 
 			v_idcobro	= &p_tablacom..idcobro
-			v_concepto 		= "Imputación de cobro según cobro N°: "+ALLTRIM(REPLICATE('0',8-LEN(ALLTRIM(STR(v_idcobro))))+ALLTRIM(STR(v_idcobro)))+" del cobrador N°: "+ALLTRIM(REPLICATE('0',8-LEN(ALLTRIM(STR(v_idcobro))))+ALLTRIM(STR(v_idcobro)))
+			v_concepto 		= "Imputación de cobro según cobro N°: "+ALLTRIM(REPLICATE('0',8-LEN(ALLTRIM(STR(v_idcobro))))+ALLTRIM(STR(v_idcobro)))+" del cobrador N°: "+ALLTRIM(REPLICATE('0',8-LEN(ALLTRIM(STR(v_idcbcobra))))+ALLTRIM(STR(v_idcbcobra)))
 		
 			DIMENSION lamatriz8(10,2)
 			
@@ -2354,7 +2407,7 @@ FUNCTION ImputarCobros
 				v_idtipopagoTra				= tipopagoObj.gettipospagos('TRANSFERENCIA')
 				v_idtipoPago 				= v_idtipopagoTra		
 				
-				id_cajabco					= _SYSCTAIMPUTACB
+				*id_cajabco					= _SYSCTAIMPUTACB
 								
 				
 				DIMENSION lamatriz5(6,2)
@@ -2442,11 +2495,31 @@ FUNCTION ImputarCobros
 		
 		
 
+			
+			** GENERO EL ASIENTO PARA EL RECIBO			
+			v_cargo = ContabilizaCompro('recibos', v_idrecibo, vconeccionF, v_recibo_importe)
+			
+			v_ret = ctaCteBancos('RECIBOS',v_idrecibo,0)
+			
+			
 			* me desconecto	
 			=abreycierracon(vconeccionF,"")
-
-	
 			
+			
+			** Creo la ND de recargo **
+			v_interesFin = 0.00
+			
+			IF TYPE("_SYSNDRECARGOS")='C' THEN 
+				IF (v_recargo > 0 OR  v_interesFin> 0) AND ( v_impcobro > 0 ) AND !(SUBSTR(_SYSNDRECARGOS,1,1)='N') THEN 
+						v_nd_idrecibo = v_idrecibo
+						v_nd_entidad  = v_entidadRecibo
+						ndreto =GenNDRecargo( v_nd_entidad , v_recargo,v_interesFin, 0, 0, v_nd_idrecibo , 0 )
+				ENDIF 
+			ENDIF 
+
+
+
+
 		SELECT &p_tablacom
 		SKIP 1
 
