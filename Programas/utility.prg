@@ -14699,39 +14699,40 @@ PARAMETERS p_tabla,p_campo,p_idregistro,p_coneccion,p_registrar
 		
 			v_observaFijo = FiltroObserva(p_tabla, v_idregistrostr,p_coneccion)		
 			
-			DIMENSION lamatriz1(5,2)
-					
-			v_idobsreg = 0
-			
-			v_campo = p_campo
-			v_tabla	= p_tabla
-					
-			
-			lamatriz1(1,1)='idobsreg'
-			lamatriz1(1,2)= ALLTRIM(STR(v_idobsreg))
-			lamatriz1(2,1)='idregistro'
-			lamatriz1(2,2)= ALLTRIM(v_idregistrostr)
-			lamatriz1(3,1)='campo'
-			lamatriz1(3,2)= "'"+ALLTRIM(v_campo)+"'"
-			lamatriz1(4,1)='tabla'
-			lamatriz1(4,2)= "'"+ALLTRIM(v_tabla)+"'"
-			lamatriz1(5,1)='observa'
-			lamatriz1(5,2)= "'"+ALLTRIM(v_observaFijo)+"'"
-
-
+			IF !EMPTY(ALLTRIM(v_observaFijo)) THEN 
+				DIMENSION lamatriz1(5,2)
+						
+				v_idobsreg = 0
 				
-			i_tipoope     = 'I'
-			i_condicion   = ''
-			i_titulo      = " EL ALTA "
-			i_tabla     = 'observareg'
-			i_matriz    = 'lamatriz1'
-			i_conexion  = p_coneccion
-			IF SentenciaSQL(i_tabla,i_matriz,i_tipoope,i_condicion,i_conexion) = .F.  
-			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
-			    RETURN ""
-			ENDIF	
-			
-			RELEASE lamatriz1	
+				v_campo = p_campo
+				v_tabla	= p_tabla
+						
+				
+				lamatriz1(1,1)='idobsreg'
+				lamatriz1(1,2)= ALLTRIM(STR(v_idobsreg))
+				lamatriz1(2,1)='idregistro'
+				lamatriz1(2,2)= ALLTRIM(v_idregistrostr)
+				lamatriz1(3,1)='campo'
+				lamatriz1(3,2)= "'"+ALLTRIM(v_campo)+"'"
+				lamatriz1(4,1)='tabla'
+				lamatriz1(4,2)= "'"+ALLTRIM(v_tabla)+"'"
+				lamatriz1(5,1)='observa'
+				lamatriz1(5,2)= "'"+ALLTRIM(v_observaFijo)+"'"
+
+
+					
+				i_tipoope     = 'I'
+				i_condicion   = ''
+				i_titulo      = " EL ALTA "
+				i_tabla     = 'observareg'
+				i_matriz    = 'lamatriz1'
+				i_conexion  = p_coneccion
+				IF SentenciaSQL(i_tabla,i_matriz,i_tipoope,i_condicion,i_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+				    RETURN ""
+				ENDIF	
+				RELEASE lamatriz1	
+			ENDIF 			
 		ELSE
 			sqlmatriz(1)=" select observa from observareg  "
 			sqlmatriz(2)=" where idregistro = "+ALLTRIM(STR(p_idregistro))+" and campo = '"+ALLTRIM(p_campo)+"' and tabla = '"+ALLTRIM(p_tabla)+"'"

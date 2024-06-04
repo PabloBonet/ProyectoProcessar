@@ -155,11 +155,12 @@ PARAMETERS par_idperiodo, par_ordenfa
 
 	
 	*/*************
-	* Obtengo las entidades a facturar para el lote solicitado 
+	* Obtengo las entidades a facturar para el lote solicitado  
 	*/
-	sqlmatriz(1)=" Select e.idperiodoe, h.*, a.codafip from factulotese e left join entidadesh h on h.identidadh = e.identidadh "
-	sqlmatriz(2)=" left join afiptipodocu a on a.idafiptipod = h.tipodoc "
-	sqlmatriz(3)=" where h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(1)=" Select e.idperiodoe, h.*, a.codafip "
+	sqlmatriz(2)=" from factulotese e left join entidadesh h on h.identidadh = e.identidadh "
+	sqlmatriz(3)=" left join afiptipodocu a on a.idafiptipod = h.tipodoc "
+	sqlmatriz(4)=" where h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	verror=sqlrun(vconeFacturar,"entidadeshf_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades a Facturar del Período a Facturar ",0+48+0,"Error")
@@ -173,6 +174,19 @@ PARAMETERS par_idperiodo, par_ordenfa
 		RETURN var_retorno  
 	ENDIF 
 
+
+	*/*************
+	* Obtengo las Los grupos de Sepelios para agregar al detalle de la factura 
+	*/
+	sqlmatriz(1)=" SELECT  identidadh ,group_concat(concat('  ',parentesco,':',apellido,' ',nombre)) as observa1  FROM gruposepelio group by identidadh "
+	verror=sqlrun(vconeFacturar,"gruposepelio_sql"+vartmp)
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Grupos de Sepelios para facturar ",0+48+0,"Error")
+	ENDIF 
+	vgruposepelio_sql = 'gruposepelio_sql'+vartmp
+	vgruposepeliof_sql = 'gruposepeliof_sql'+vartmp
+	SELECT identidadh, SUBSTR(ALLTRIM(observa1)+SPACE(253),1,253) as observa1 FROM &vgruposepelio_sql INTO TABLE &vgruposepeliof_sql 
+	USE IN &vgruposepelio_sql 
 
 	*/*************
 	* Obtengo las Bocas de Servicios 
@@ -496,13 +510,17 @@ PARAMETERS par_idperiodo, par_ordenfa
 	vfacturastmp0 ='facturastmp0'+vartmp
 	**/ Cabecera para Facturacion 
 	vfacturastmp = 'facturastmp'+vartmp 
+	
 	SELECT h.* , h.identidadh as idfactura, h.identidadh as idcomproba, h.identidadh as pventa, h.identidadh as numero, 'X' as tipo,   ;
 			&vfactulotes_sql..fechaemite as fecha, &vfactulotes_sql..idperiodo as idperiodo, &vfactulotes_sql..fechavenc1 as fechavenc1, ;
 			&vfactulotes_sql..fechavenc2 as fechavenc2, &vfactulotes_sql..fechavenc3 as fechavenc3,&vfactulotes_sql..proxvenc as proxvenc, ;
 			&vfactulotes_sql..cesp as cespcae, &vfactulotes_sql..cespvence as caevence, &vfactulotes_sql..interesd as interesd, ; 
 			1 as idtipopera, SUM(d.neto) as neto, SUM(d.neto) as subtotal, 0 as descuento, 0 as recargo, SUM(d.total) as total, ;
-			SUM(d.impuestos) as totalimpu, 'N' as operexenta, 'N' as anulado, "" as observa1, "" as observa2, "" as observa3, "" as observa4 ;
-		FROM &vdetafactutmp d LEFT JOIN &ventidadeshf_sql h ON h.identidadh = d.identidadh INTO TABLE &vfacturastmp0 ORDER BY h.identidadh GROUP BY h.identidadh
+			SUM(d.impuestos) as totalimpu, 'N' as operexenta, 'N' as anulado, STRTRAN(IIF(ISNULL(s.observa1),SPACE(254),s.observa1),',','') as observa1, "" as observa2, "" as observa3, "" as observa4 ;
+		FROM &vdetafactutmp d LEFT JOIN &ventidadeshf_sql h ON h.identidadh = d.identidadh LEFT JOIN &vgruposepeliof_sql s ON s.identidadh = h.identidadh ;
+		INTO TABLE &vfacturastmp0 ORDER BY h.identidadh GROUP BY h.identidadh
+
+
 	
 	**/ Establezco el orden de generacion de facturas 
 	vsetorden = " "
@@ -643,6 +661,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	USE IN &vdetafactutmp 
 	USE IN &vfacturastmp 
 	USE IN &vbocaserviciosftmp 
+	USE IN &vgruposepeliof_sql 
 
 	WAIT CLEAR 
 
