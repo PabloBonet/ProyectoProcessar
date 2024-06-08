@@ -9552,6 +9552,60 @@ ENDFUNC
 
 
 
+***************************************************************************************************
+
+FUNCTION imprimirCBTicket
+PARAMETERS p_lotecobro
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR EL TICKET DE COBRO
+* PARAMETROS: p_lotecobro
+*#/----------------------------------------
+
+
+	v_lotecobro = p_lotecobro
+	
+	IF v_lotecobro > 0
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+		
+		*** Busco los datos del cobro
+			
+			sqlmatriz(1)=" SELECT c.*,b.idcomp,b.descrip,b.bc,a.empresaid, a.nombre, a.cuit,a.empresaid,a.subcodid "
+			sqlmatriz(2)=" FROM cbcobros c left join cbcomprobantes b on c.idcbcompro = b.idcbcompro left join cbasociadas a on b.idcbasoci = a.idcbasoci "
+			sqlmatriz(3)=" where c.lotecobro = "+ALLTRIM(STR(v_lotecobro))
+			
+			
+			
+			verror=sqlrun(vconeccionF,"cobros_sql_a")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del cobro",0+48+0,"Error")
+			ENDIF
+			
+		SELECT * FROM cobros_sql_a INTO TABLE cbticket
+
+
+		SELECT cbticket
+		GO TOP 
+		IF NOT EOF()		
+		
+			
+			DO FORM reporteform WITH "cbticket","cbticketcr","cbticket" 
+			
+		ELSE
+			MESSAGEBOX("Error al cargar el cobro para imprimir",0+48+0,"Error al cargar el cobro")
+			RETURN 	
+		ENDIF 
+				
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar el cobro  el LOTE <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
+
+
 
 FUNCTION getSectorUsu
 PARAMETERS p_usuario
