@@ -1298,7 +1298,7 @@ FUNCTION ExportarComprobantes
 		GO TOP 
 		
 		IF NOT EOF()
-		
+			v_nroLinea = 1
 			** Creo el archivo **
 			v_adminArc = FCREATE(p_archivo)
 	
@@ -1322,7 +1322,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+v_empresaid && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'secuencia de retorno' representado en el campo 'r0secuencia' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'secuencia de retorno' representado en el campo 'r0secuencia' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1338,7 +1338,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+v_secArc && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'secuencia de retorno' representado en el campo 'r0secuencia' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'secuencia de retorno' representado en el campo 'r0secuencia' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 					
@@ -1363,7 +1363,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+ALLTRIM(v_fechaPJ) && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'fechaPeriodo' representado en el campo 'eperiodo' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'fechaPeriodo' representado en el campo 'eperiodo' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1388,7 +1388,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+v_codcobrador&& Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'CodEntidad' representado en el campo 'ebceid' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'CodEntidad' representado en el campo 'ebceid' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 							
@@ -1408,7 +1408,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+v_subcodcobrador&& Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'CodSubCod' representado en el campo 'ebcsid' es mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'CodSubCod' representado en el campo 'ebcsid' es mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1428,7 +1428,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+v_codebccompstr && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'CodComprobante' representado en el campo 'ebcidcomp' es mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'CodComprobante' representado en el campo 'ebcidcomp' es mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1437,7 +1437,6 @@ FUNCTION ExportarComprobantes
 				*********************************************
 				** Valido la Longitud del código de barras **
 				*********************************************
-				*v_elong 		= ALLTRIM(cbcobrador_sql.elong)
 								
 				v_tamCodBarra = ALLTRIM(cbcobrador_sql.ebc)
 				ALINES(ARR_ebccodbarra,v_tamCodBarra,'-')
@@ -1447,7 +1446,7 @@ FUNCTION ExportarComprobantes
 				v_CodBarra = SUBSTR(v_linea,v_posIniCodBarra,v_tamebccodbarra)
 			
 				IF LEN(ALLTRIM(v_codBarra)) != v_tamebccodbarra
-					MESSAGEBOX("El tamaño del código 'CodBarra' representado en el campo 'ebc' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'CodBarra' representado en el campo 'ebc' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 									
 				ENDIF 
@@ -1472,7 +1471,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+ALLTRIM(v_total1str) && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'ImporteVenc1' representado en el campo 'etotal1' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'ImporteVenc1' representado en el campo 'etotal1' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1494,7 +1493,7 @@ FUNCTION ExportarComprobantes
 				IF LEN(ALLTRIM(v_fechaVence1J)) = v_tamevence1 
 					v_linea = v_linea+ALLTRIM(v_fechaVence1J) && Si está correcto: lo agrego a la linea
 				ELSE
-					MESSAGEBOX("El tamaño del código 'fechaVence1' representado en el campo 'evence1' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'fechaVence1' representado en el campo 'evence1' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1517,7 +1516,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+ALLTRIM(v_total2str) && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'ImporteVenc2' representado en el campo 'etotal2' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'ImporteVenc2' representado en el campo 'etotal2' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1539,7 +1538,7 @@ FUNCTION ExportarComprobantes
 				IF LEN(ALLTRIM(v_fechaVence2J)) = v_tamevence2
 					v_linea = v_linea+ALLTRIM(v_fechaVence2J) && Si está correcto: lo agrego a la linea
 				ELSE
-					MESSAGEBOX("El tamaño del código 'fechaVence2' representado en el campo 'evence2' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'fechaVence2' representado en el campo 'evence2' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1562,7 +1561,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+ALLTRIM(v_total3str) && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'ImporteVenc3' representado en el campo 'etotal3' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'ImporteVenc3' representado en el campo 'etotal3' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1584,7 +1583,7 @@ FUNCTION ExportarComprobantes
 				IF LEN(ALLTRIM(v_fechaVence3J)) = v_tamevence3
 					v_linea = v_linea+ALLTRIM(v_fechaVence3J) && Si está correcto: lo agrego a la linea
 				ELSE
-					MESSAGEBOX("El tamaño del código 'fechaVence3' representado en el campo 'evence3' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'fechaVence3' representado en el campo 'evence3' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1606,7 +1605,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+ALLTRIM(v_eentidadstr) && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'CodEntidad' representado en el campo 'eentidad' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'CodEntidad' representado en el campo 'eentidad' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1629,7 +1628,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+ALLTRIM(v_eserviciostr) && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'Codservicio' representado en el campo 'eservicio' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'Codservicio' representado en el campo 'eservicio' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1651,7 +1650,7 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+ALLTRIM(v_ecuentastr) && Si está correcto: lo agrego a la linea
 					
 				ELSE
-					MESSAGEBOX("El tamaño del código 'Codcuenta' representado en el campo 'ecuenta' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'Codcuenta' representado en el campo 'ecuenta' es Mayor al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
 					RETURN 0
 				ENDIF
 				
@@ -1712,9 +1711,44 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+ALLTRIM(v_edescripenstr)
 					
 				ENDIF
+				
+				
+				****************************************
+				*** Compruebo la logitud de la linea ***
+				****************************************
+				v_elong 		= ALLTRIM(cbcobrador_sql.elong)
+		
+			
+				ALINES(ARR_elong,v_elong,'-')
+				v_tamelong = VAL(ARR_elong(2))
+
+				
+		
+				v_longLinea = LEN(v_linea)
+			
+				
+				v_dif = v_tamelong - v_longLinea 
+			
+				IF v_dif >= v_tamelong 
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño de la linea no coincide con el tamaño descripto en la configuración (Tam linea: "+ALLTRIM(STR(v_longLinea))+" debe tener:" +ALLTRIM(STR(v_tamelong)),0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ELSE
+					v_linea = v_linea + REPLICATE(' ',v_dif)
+				ENDIF 
+				
+				v_longLinea = LEN(v_linea)
+				
+				v_dif = v_tamelong - v_longLinea 
+				IF v_dif > 0
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño de la linea no coincide con el tamaño descripto en la configuración (Tam linea: "+ALLTRIM(STR(v_longLinea))+" debe tener:" +ALLTRIM(STR(v_tamelong)),0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF 
+				
 							
 				FPUTS(v_adminArc,v_linea)
 
+				v_nroLinea = v_nroLinea  + 1
+	
 			SELECT &p_tablaComprobantes
 			SKIP 1
 			
