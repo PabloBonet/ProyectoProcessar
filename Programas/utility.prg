@@ -1679,13 +1679,161 @@ ENDFUNC
   **********************************
   ***** FUNCIONES DE IMPRESIÓN******
   **********************************
-  
+FUNCTION ImprimirLoteFactura
+PARAMETERS p_tabla,p_ubicacion
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR UN LOTE DE FACTURAS (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
+* PARAMETROS:  p_tabla (idfactura),p_ubicacion
+*#/----------------------------------------
+
+IF TYPE('p_tabla')='U'
+
+
+	MESSAGEBOX("La tabla pasada como parámetro es incorrecta",0+16+256,"Error al imprimir por lote")
+	RETURN .F.
+	
+
+ELSE
+
+	SELECT &p_tabla 
+	p_archivolotecsv= STRTRAN(_sysestacion,'\','/')+"/p_lotefactura"+frandom()+".csv"
+	COPY TO &p_archivolotecsv DELIMITED WITH ";"
+	USE IN &p_tabla 
+	
+	vconeccionp=abreycierracon(0,_SYSSCHEMA)
+						
+					
+					
+	
+	sqlmatriz(1)=" CREATE TEMPORARY TABLE tmplotefac (idfactura INT);"
+	
+	verror=sqlrun(vconeccionp,'tmplotefac')
+
+	IF !verror THEN 
+		MESSAGEBOX('Ha ocurrido un error al generar la tabla temporal',0+64,'Error')
+	ENDIF 
+
+	sqlmatriz(1)=" LOAD DATA LOCAL INFILE '"+p_archivolotecsv+"'"
+	sqlmatriz(2)=" INTO TABLE tmplotefac fields terminated by ',' "
+	sqlmatriz(3)=" ENCLOSED BY ';' "
+	sqlmatriz(4)=" LINES TERMINATED BY '\r\n' "
+
+	verror=sqlrun(vconeccionp,"loadlf")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Carga de lote de facturas (LOAD DATA ",0+48+0,"Error")
+	    RETURN 
+	ENDIF
+	
+	
+	
+	*sqlmatriz(1)="SELECT f.idfactura from facturas f where idfactura in (select idfactura from tmplotefac)"
+	sqlmatriz(1)="SELECT f.idfactura,p.electronica as electro, ifnull(h.email,'') as emailh, e.email "
+	sqlmatriz(2)=" FROM facturas f left join puntosventa p on f.pventa = p.pventa left join entidadesh h on f.identidadh = h.identidadh left join entidades e on f.entidad = e.entidad "
+	sqlmatriz(3)=" where f.idfactura in (select idfactura from tmplotefac)"
+
+	
+	verror=sqlrun(vconeccionp,"lotefact_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Carga de lote de facturas (Consulta facturas) ",0+48+0,"Error")
+	    RETURN 
+	ENDIF
+	
+	
+	abreycierracon(vconeccionp,"")
+	
+	SELECT lotefact_sql
+	GO TOP 
+	IF NOT EOF()
+	
+		vcanregi = RECCOUNT()
+		
+		=ViewBarProgress(0,vcanregi,"Imprimiento...")
+		v_comp_email = p_ubicacion+"comp_email.csv"
+		
+			p=FCREATE(v_comp_email)
+			FCLOSE(p)
+		 
+		p=fopen(v_comp_email,1)
+		SELECT lotefact_sql
+		GO TOP 
+		
+		DO WHILE NOT EOF() 
+			v_idfactura = lotefact_sql.idfactura
+			v_electroSN = lotefact_sql.electro
+			v_emailh = lotefact_sql.emailh
+			v_emaile = lotefact_sql.email
+			v_email = ""
+			IF EMPTY(ALLTRIM(v_emailh))= .F.
+				v_email = v_emailh
+			ELSE
+				IF EMPTY(ALLTRIM(v_emaile))= .F.
+					v_email = v_emaile
+				
+				ENDIF 
+			ENDIF 
+			
+			IF EMPTY(ALLTRIM(v_email))= .F.
+				v_electronica = IIF(v_electroSN= 'S',.T.,.F.)
+				v_compPdf = p_ubicacion+"Comp_"+REPLICATE('0',10-LEN(ALLTRIM(STR(v_idfactura))))+ALLTRIM(STR(v_idfactura))+".pdf"
+			
+				
+				imprimirFactura(v_idfactura, v_electronica ,3,v_compPdf)
+			
+						
+				**Guardo en el archivo si se genero el pdf
+				
+				IF file(v_compPdf) THEN
+
+					v_linea = ALLTRIM(JUSTFNAME(v_compPdf))+";"+alltrim(v_email)
+										
+*!*							=FSEEK(p,0, 2)
+						=fputs(p, v_linea )
+						
+				ENDIF
+			
+			
+			
+			ENDIF 
+			
+			
+							
+			
+				=ViewBarProgress(RECNO(),vcanregi,"Imprimiento...")
+				
+			SELECT lotefact_sql
+			SKIP 1
+		ENDDO
+		
+		FCLOSE(p)
+		
+	ENDIF 
+	
+		
+	
+	
+	
+	
+ENDIF 
+
+
+
+
+
+
+
+
+*!*	FUNCTION imprimirFactura
+*!*	PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
+
+
+
+ENDFUNC  
 
 FUNCTION imprimirFactura
-PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
+PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 *#/----------------------------------------
 * FUNCIÓN PARA IMPRIMIR UNA FACTURA (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
-* PARAMETROS: P_IDFACTURA, P_ESELECTRONICA
+* PARAMETROS: P_IDFACTURA, P_ESELECTRONICA,pEnviarImpresora,pArchivo
 *#/----------------------------------------
 
 
@@ -2090,9 +2238,9 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 			=abreycierracon(vconeccionF,"")
 				
 			IF v_buscasaldo = .T.
-				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes;hissaldo","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc;hissaldorc",v_idcomproba,.F.,pEnviarImpresora
+				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes;hissaldo","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc;hissaldorc",v_idcomproba,.F.,pEnviarImpresora,pArchivo
 			ELSE
-				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc",v_idcomproba,.F.,pEnviarImpresora
+				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc",v_idcomproba,.F.,pEnviarImpresora,pArchivo
 			ENDIF 
 
 			
