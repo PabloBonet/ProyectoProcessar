@@ -1680,7 +1680,7 @@ ENDFUNC
   ***** FUNCIONES DE IMPRESIÓN******
   **********************************
 FUNCTION ImprimirLoteFactura
-PARAMETERS p_tabla,p_ubicacion
+PARAMETERS p_tabla,p_ubicacion,p_modogen
 *#/----------------------------------------
 * FUNCIÓN PARA IMPRIMIR UN LOTE DE FACTURAS (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
 * PARAMETROS:  p_tabla (idfactura),p_ubicacion
@@ -1688,22 +1688,29 @@ PARAMETERS p_tabla,p_ubicacion
 
 IF TYPE('p_tabla')='U'
 
-
 	MESSAGEBOX("La tabla pasada como parámetro es incorrecta",0+16+256,"Error al imprimir por lote")
 	RETURN .F.
-	
 
 ELSE
 
+
+	p_ubicacion = STRTRAN((p_ubicacion+'\'),'\\','\')
+
+	IF !USED(p_tabla) THEN 
+		USE &p_tabla IN 0
+	ENDIF 
+	
 	SELECT &p_tabla 
+	SELECT idfactura FROM &p_tabla INTO TABLE p_tabla00
+	USE IN &p_tabla 
+	
+	SELECT p_tabla00
 	p_archivolotecsv= STRTRAN(_sysestacion,'\','/')+"/p_lotefactura"+frandom()+".csv"
 	COPY TO &p_archivolotecsv DELIMITED WITH ";"
-	USE IN &p_tabla 
+	USE IN p_tabla00
 	
 	vconeccionp=abreycierracon(0,_SYSSCHEMA)
 						
-					
-					
 	
 	sqlmatriz(1)=" CREATE TEMPORARY TABLE tmplotefac (idfactura INT);"
 	
@@ -1724,14 +1731,10 @@ ELSE
 	    RETURN 
 	ENDIF
 	
-	
-	
-	*sqlmatriz(1)="SELECT f.idfactura from facturas f where idfactura in (select idfactura from tmplotefac)"
-	sqlmatriz(1)="SELECT f.idfactura,p.electronica as electro, ifnull(h.email,'') as emailh, e.email "
+	sqlmatriz(1)="SELECT f.idfactura,p.electronica as electro, ifnull(h.email,'') as emailh, e.email, p.puntov, f.numero, f.tipo, f.entidad, f.servicio, f.cuenta, f.apellido, f.nombre  "
 	sqlmatriz(2)=" FROM facturas f left join puntosventa p on f.pventa = p.pventa left join entidadesh h on f.identidadh = h.identidadh left join entidades e on f.entidad = e.entidad "
 	sqlmatriz(3)=" where f.idfactura in (select idfactura from tmplotefac)"
 
-	
 	verror=sqlrun(vconeccionp,"lotefact_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la Carga de lote de facturas (Consulta facturas) ",0+48+0,"Error")
@@ -1756,6 +1759,8 @@ ELSE
 		p=fopen(v_comp_email,1)
 		SELECT lotefact_sql
 		GO TOP 
+		v_linea = ALLTRIM(DTOS(DATE())+TIME())+SPACE(13)+";E-Mail Asociado ;Razon Social"
+		=fputs(p, v_linea )
 		
 		DO WHILE NOT EOF() 
 			v_idfactura = lotefact_sql.idfactura
@@ -1763,6 +1768,8 @@ ELSE
 			v_emailh = lotefact_sql.emailh
 			v_emaile = lotefact_sql.email
 			v_email = ""
+			v_cmnumero = ALLTRIM(lotefact_sql.tipo)+ALLTRIM(lotefact_sql.puntov)+"_"+STRTRAN(STR(lotefact_sql.numero,8),' ','0')
+			v_nombree  = ALLTRIM(STR(lotefact_sql.entidad))+"-"+ALLTRIM(STR(lotefact_sql.servicio))+"-"+ALLTRIM(STR(lotefact_sql.cuenta))+" "+ALLTRIM(lotefact_sql.apellido)+" "+ALLTRIM(lotefact_sql.nombre)
 			IF EMPTY(ALLTRIM(v_emailh))= .F.
 				v_email = v_emailh
 			ELSE
@@ -1772,33 +1779,23 @@ ELSE
 				ENDIF 
 			ENDIF 
 			
-			IF EMPTY(ALLTRIM(v_email))= .F.
+			IF EMPTY(ALLTRIM(v_email))= .F. OR p_modogen = .t. THEN 
 				v_electronica = IIF(v_electroSN= 'S',.T.,.F.)
-				v_compPdf = p_ubicacion+"Comp_"+REPLICATE('0',10-LEN(ALLTRIM(STR(v_idfactura))))+ALLTRIM(STR(v_idfactura))+".pdf"
-			
-				
+				v_compPdf = p_ubicacion+v_cmnumero+"_"+REPLICATE('0',10-LEN(ALLTRIM(STR(v_idfactura))))+ALLTRIM(STR(v_idfactura))+".pdf"
+
 				imprimirFactura(v_idfactura, v_electronica ,3,v_compPdf)
-			
 						
 				**Guardo en el archivo si se genero el pdf
 				
 				IF file(v_compPdf) THEN
-
-					v_linea = ALLTRIM(JUSTFNAME(v_compPdf))+";"+alltrim(v_email)
-										
-*!*							=FSEEK(p,0, 2)
-						=fputs(p, v_linea )
-						
+					v_linea = ALLTRIM(JUSTFNAME(v_compPdf))+";"+alltrim(v_email)+";"+ALLTRIM(v_nombree)
+					=fputs(p, v_linea )
 				ENDIF
-			
-			
 			
 			ENDIF 
 			
 			
-							
-			
-				=ViewBarProgress(RECNO(),vcanregi,"Imprimiento...")
+			=ViewBarProgress(RECNO(),vcanregi,"Imprimiento...")
 				
 			SELECT lotefact_sql
 			SKIP 1
@@ -1808,10 +1805,7 @@ ELSE
 		
 	ENDIF 
 	
-		
-	
-	
-	
+
 	
 ENDIF 
 
@@ -17649,7 +17643,7 @@ sleep(2000)  && delay time to come  back
 lcping=FILETOSTR(lcParas)
  *** sleep value  can be reduced according to your need
 CLEAR DLLS ShellExecute
-DELETE FILE &lcParas
+DELETE FILE &lcParas 
 * --- Return to caller.
 IF ATC('recibidos = 1,',lcping) = 0 then 
 	RETURN .f.
