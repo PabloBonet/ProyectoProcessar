@@ -10435,18 +10435,27 @@ FUNCTION obtenerCorreos
 ENDFUNC 
 
 
-FUNCTION cargaCfgCorreo
+FUNCTION cargaCfgCorreo(pusuarioEnv)
 *#/----------------------------------------
 * Busca la configuración de correo para el usuario logeado
+* Parámetro: pusuarioEnv: Usuario de envio del correo. Si no se pasa el usuario se va a tomar el usuario  abierto
 * Retorna: objeto de configuración
 *#/----------------------------------------
 
+v_usuarioEnvio = ""
+IF ALLTRIM(TYPE('pusuarioEnv')) = 'C' AND EMPTY(ALLTRIM(pusuarioEnv)) = .F.
+	v_usuarioEnvio = pusuarioEnv
+	
+ELSE
+	v_usuarioEnvio = _SYSUSUARIO 
+	
+ENDIF 
 
 vconeccionM = abreycierracon(0,_SYSSCHEMA)
 
 
 	sqlmatriz(1)=" select * FROM correoconf "
-	sqlmatriz(2)= " where usuario = '"+ALLTRIM(_SYSUSUARIO )+"'"
+	sqlmatriz(2)= " where usuario = '"+ALLTRIM(v_usuarioEnvio)+"'"
 
 	verror=sqlrun(vconeccionM,"correoconf_sql")
 	IF verror=.f.  
@@ -10493,7 +10502,7 @@ vconeccionM = abreycierracon(0,_SYSSCHEMA)
 		
 		IF v_respuesta > 0
 					
-			v_res = cargaCfgCorreo()
+			v_res = cargaCfgCorreo(pusuarioEnv)
 			
 			RETURN v_res
 			
@@ -27750,7 +27759,358 @@ RETURN
 
 
 
+***Función para enviar correo desde un archivo ***
 
+FUNCTION enviarCorreoArchivo
+PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
+*#/---------------------------
+*** Función para el envio de comprobantes por correo.
+*** pfv_tabla		: Tabla que contiene los datos de las series
+*** La función recibe una ubicación y busca en todas las subcarpetas el  encuentre el archivo 'pNombreArchivo'
+*** Una vez que lo encuentra, lo abre e intenta enviar los comprobantes que estan en el correo. una vez que lo manda lo marca con un '*'.
+*** Marcados todos los registros del archivo csv, renombra el archivo a '*comp_email.csv'
+*#/---------------------------
+
+	IF (TYPE('pUbicacion')<>'C') OR (TYPE('pNombreArchivo')<>'C')
+		RETURN .F.
+	ENDIF 
+	
+	v_existe = DIRECTORY(pUbicacion)
+		
+	IF v_existe = .F.
+		RETURN .f.
+	ENDIF 
+	
+	v_archivo = pUbicacion+pNombreArchivo
+	
+	v_existeArchivo = FILE(v_archivo) 
+	IF v_existeArchivo = .T.
+			** Si el archivo existe -> abro y busco para enviar
+		
+		IF TYPE('tmpenvio') ='U'
+			CREATE TABLE tmpenvio FREE (archivo C(250), correo c(250))		
+		ENDIF 
+			
+		SELECT tmpenvio 
+	
+		eje = "APPEND FROM "+ALLTRIM(v_archivo)+" DELIMITED WITH CHARACTER ';'"
+		&eje
+
+
+		SELECT * FROM tmpenvio  order BY correo INTO TABLE envCorreo
+		v_correoDes = ""
+		v_archivosEnv = ""
+		SELECT envCorreo
+		GO TOP 
+		IF NOT EOF()
+			
+			v_usuarioEnv = ""
+			v_encontroConf = .F.
+			v_tamArreglo = 0
+			v_indice = 0
+			
+			IF ALLTRIM(TYPE('pidtipocm'))='N'
+				** Busco los correos para el envío **
+				
+				vconeccionCO = abreycierracon(0,_SYSSCHEMA)
+				
+				sqlmatriz(1)= "SELECT group_concat(usuario) as usuarios FROM correoconf where idtipocm = "+ALLTRIM(STR(pidtipocm))
+				
+				verror=sqlrun(vconeccionCO,"correoconf_sql")
+				
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de la Tabla de la configuración de correo",0+48+0,"Error")
+				ENDIF 
+				= abreycierracon(vconeccionCO,"")
+				
+				SELECT correoconf_sql
+				GO top
+				
+				IF NOT EOF()
+					v_usuarios = correoconf_sql.usuarios
+					
+					v_encontroConf = .T.
+					ALINES(usuarioscm, v_usuarios,",")
+					
+					v_tamArreglo = alen(usuarioscm)
+								
+					
+				ENDIF 
+			ENDIF 
+						
+		
+			SELECT envCorreo
+			GO TOP 
+		
+			DO WHILE NOT EOF()
+				
+				v_correo = envCorreo.correo
+				v_archivo = envCorreo.archivo
+				
+				v_archivo = pUbicacion+v_archivo
+												
+				
+				IF ALLTRIM(v_correo) == ALLTRIM(v_correoDes)
+					v_archivosEnv = v_archivosEnv +"#"+ ALLTRIM(v_archivo)
+					
+				ELSE
+				
+					IF EMPTY(ALLTRIM(v_correoDes)) =.F.
+						
+						IF v_encontroConf = .T. AND v_tamArreglo > 0
+						
+						
+							v_elemento = (v_indice%v_tamArreglo)+1
+							
+							v_usuarioEnv = usuarioscm[v_elemento]
+							
+												
+								v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv)
+								v_archivosEnv  = ""
+								
+								v_indice = v_indice + 1 
+							
+													
+						ELSE	
+						
+							v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
+							v_archivosEnv  = ""
+							
+						ENDIF 
+						
+															
+					ENDIF 
+						v_correoDes= v_correo
+						v_archivosEnv = ALLTRIM(v_archivo)
+							
+				
+				ENDIF 
+				
+			
+				SELECT envCorreo
+				SKIP 1
+
+			ENDDO
+					
+			
+			SELECT envCorreo
+			IF EOF()
+			
+			
+				IF EMPTY(ALLTRIM(v_correoDes)) =.F.
+					
+					IF v_encontroConf = .T. AND v_tamArreglo > 0
+						
+						
+							v_elemento = (v_indice%v_tamArreglo)+1
+							
+							v_usuarioEnv = usuarioscm[v_elemento]
+						
+								v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv)
+								v_archivosEnv  = ""
+															
+							
+						ELSE	
+						
+							v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
+							v_archivosEnv  = ""
+							
+						ENDIF 
+						
+							
+				ENDIF 
+			
+			ENDIF 
+		
+		
+		ENDIF 
+						
+			
+*!*			
+*!*			IF EMPTY(ALLTRIM(v_correoEnv)) =.F.
+*!*				v_ret = enviarCorreo(v_correoEnv , v_archivosEnv , pasunto, pcuerpo)
+*!*			
+*!*					
+*!*			ENDIF 
+		
+		
+*!*			USE tmpenvio
+	ENDIF 
+
+	
+	*** Obtengo la lista de subdirectorios ***
+	nSubd = Adir(aArreglo,pUbicacion+"*.*", "D")
+	LOCAL x
+	x = 1
+
+	If nSubd > 0
+			
+		DO WHILE x <= nsubd
+			
+				v_nSubD = aArreglo[x,1]
+				 v_atributo = aArreglo[x,5]
+		
+				IF ATC('D',ALLTRIM(v_atributo))>0
+				
+					IF  v_nSubD  <> "." AND v_nSubD <> ".."
+					
+						v_nSubD = pUbicacion+v_nSubD+"\" 
+						
+					
+						v_ret  = enviarCorreoArchivo(v_nSubD,pNombreArchivo, pasunto, pcuerpo,pidtipocm)
+						
+					ENDIF 
+				ENDIF 
+
+			x = x+1
+			
+		ENDDO
+*!*			If nSubd > 0
+*!*				MESSAGEBOX(nSubd)
+*!*				FOR EACH 
+
+*!*				ENDFOR
+*!*				For x=1 To nSubd 
+*!*	*!*						If !("D"$aArchivos[x,5]) Or ;
+*!*	*!*						aArchivos[x,1] == "." Or aArchivos[x,1] == ".."
+
+*!*					v_nSubD = aArreglo[x,1]
+*!*					 v_atributo = aArreglo[x,5]
+*!*					 
+*!*					IF v_atributo ="D" 
+*!*						MESSAGEBOX(v_nSubD)
+*!*						IF  v_nSubD  <> "." AND v_nSubD <> ".."
+*!*							v_ret  = enviarCorreoArchivo(v_nSubD,pNombreArchivo)
+*!*						ENDIF 
+*!*					ENDIF 
+
+*!*					
+*!*				ENDFOR  
+		ENDIF
+	
+	
+	RETURN .T.
+	
+ENDFUNC 
+ 
+ 
+ 
+ 
+ FUNCTION enviarCorreo
+ PARAMETERS pcorreos, parchivos, pasunto, pcuerpo,pusuarioEnv
+*#/---------------------------
+*** Función para el envio de correo.
+*** pcorreos : Lista de correos destinos, separados por ';'
+*** parchivos: Lista de arhivos destino, separados por '#'
+*** pasunto : Asunto del correo
+*** pcuerpo : Cuerpo del correo
+***	pusuarioEnv: Usuario que se utiliza para el envio de correo
+*** Retorno: 1: si es correcto; -1 si falta correo destino; -2 si no puede obtener el correo para envio; -3 si hubo un error en la configuración
+*#/---------------------------
+	 
+	 IF EMPTY(ALLTRIM(pcorreos)) = .T.
+	 	 	
+	 	RETURN -1
+	 
+	 ENDIF 
+	 
+	 v_correocfg	= cargaCfgCorreo(pusuarioEnv)
+	 
+	LOCAL loMsg, lcFile, loErr
+
+	TRY
+		
+		
+
+	  SELECT correoconf_sql
+	  
+	  IF EOF()
+	 
+	  	MESSAGEBOX("NO se pudo obtener el correo del usuario",0+16+0,"Error al obtener el correo")
+		RETURN -2
+	  ENDIF 
+
+	  v_correoEnv	= correoconf_sql.correo
+	  
+	  ** Verifica el correo de copia del sistema para recepcion de mails enviados _SYSMAILENVIADOS
+	  v_sysmailenviados = ""
+	  IF TYPE("_SYSMAILENVIADOS")= "C" THEN 
+	  		IF AT('@',_SYSMAILENVIADOS) > 0 THEN
+		  		v_sysmailenviados = _SYSMAILENVIADOS  
+			ENDIF 
+	  ENDIF 
+	  
+	  loMsg = CREATEOBJECT ("CDO.Message")
+	  WITH loMsg
+	    .Configuration = v_correocfg
+	    *-- Remitenete y destinatarios
+
+	    .From = v_correoEnv
+
+		.To = ALLTRIM(pcorreos)
+	*!*	    *- Notificación de lectura
+	*!*	    .Fields("urn:schemas:mailheader:disposition-notification-to") = .From
+	*!*	    .Fields("urn:schemas:mailheader:return-receipt-to") = .From
+	*!*	    .Fields.Update
+
+	    *-- Tema
+	    .Subject = pasunto
+	    *-- Formato HTML desde la Web
+	*!*	    .CreateMHTMLBody("http://comunidadvfp.blogspot.com/p/acerca-de.html", 0)
+		.TextBody = pcuerpo
+	   
+	*!*	   
+	*!*	    *-- Archivo adjunto
+	*!*	    lcFile = GETFILE()
+	*!*	    IF NOT EMPTY(lcFile)
+
+	*!*		
+	*!*	      .AddAttachment(lcFile)
+	*!*	    ENDIF
+	*!*	    
+	
+		v_adjuntos = ""
+		IF EMPTY(ALLTRIM(parchivos)) = .F.
+			v_cantArc = ALINES(arreglo,parchivos,'#')
+			FOR i=1 TO v_cantArc
+			
+				v_archEnv = arreglo(i)
+					.AddAttachment(v_archEnv)
+				
+			ENDFOR  
+		
+		ENDIF 
+	      
+
+	    *-- Envio el mensaje
+	    .Send()
+	  ENDWITH
+	CATCH TO loErr 
+	  MESSAGEBOX("No se pudo enviar el mensaje" + CHR(13) + ;
+	    "Error: " + TRANSFORM(loErr.ErrorNo) + CHR(13) + ;
+	    "Mensaje: " + loErr.Message , 16, "Error")
+	      loMsg = NULL
+		  v_correocfg = NULL
+	    	
+	FINALLY
+	  loMsg = NULL
+
+	ENDTRY
+	
+	IF ISNULL(v_correocfg)
+		MESSAGEBOX("Correo NO enviado: "+ALLTRIM(pcorreos),0+16+0,"Enviar Correo",2000)
+		
+		RETURN -3
+	ELSE
+		MESSAGEBOX("Correo enviado correctamente: "+ALLTRIM(pcorreos),0+64+256,"Enviar Correo",2000)
+		
+		RETURN 1
+	ENDIF 
+
+ 
+ 
+ENDFUNC 
+ 
 
 
 
