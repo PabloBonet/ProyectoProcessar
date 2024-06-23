@@ -285,9 +285,10 @@ PARAMETERS p_codBarra,P_nombreTabla
 	* Me conecto a la base de datos
 	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
 
-	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,descrip as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
-	sqlmatriz(2)=" from ultcbcomplote " 
-	sqlmatriz(3)=" where bc ='"+ALLTRIM(p_codBarra)+"'"
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia, descrip as compro, entidad, servicio, cuenta, descripen,"
+	sqlmatriz(2)=" total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(3)=" from ultcbcomplote " 
+	sqlmatriz(4)=" where bc ='"+ALLTRIM(p_codBarra)+"'"
 
 	verror=sqlrun(vconeccionD,"comprobante_sql")
 	IF verror=.f.  
@@ -361,9 +362,10 @@ PARAMETERS p_codEnt,p_subCodEnt,p_idcomp,P_nombreTabla
 	* Me conecto a la base de datos
 	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
 
-	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,descrip as compro, total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
-	sqlmatriz(2)=" from ultcbcomplote " 
-	sqlmatriz(3)=" where codigo ='"+ALLTRIM(v_codigoBusqueda)+"'"
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,descrip as compro, entidad, servicio, cuenta, descripen, "
+	sqlmatriz(2)=" total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(3)=" from ultcbcomplote " 
+	sqlmatriz(4)=" where codigo ='"+ALLTRIM(v_codigoBusqueda)+"'"
 
 	verror=sqlrun(vconeccionD,"comprobante_sql")
 	IF verror=.f.  
@@ -858,6 +860,7 @@ FUNCTION ExportarCobro
 			
 		SELECT &p_tablaCobros
 		GO TOP 
+
 		
 		IF NOT EOF()
 		
@@ -1137,7 +1140,7 @@ FUNCTION ExportarCobro
 			****************
 			
 			
-		FCLOSE(v_adminArc)
+			FCLOSE(v_adminArc)
 			
 		ELSE
 			MESSAGEBOX("Error al obtener la tabla temporal de cobros",0+48+0,"Error al Exportar cobros")
@@ -1331,7 +1334,6 @@ FUNCTION ExportarComprobantes
 				**************************************
 				v_eesecuencia 		= ALLTRIM(cbcobrador_sql.eesecuencia)
 				ALINES(ARR_esecuencia,v_eesecuencia,'-')
-
 				v_tamrsec = VAL(ARR_esecuencia(2))
 				IF LEN(ALLTRIM(v_secArc)) = v_tamrsec 
 					
@@ -1840,6 +1842,7 @@ FUNCTION ImportarCobros
 			** Compruebo el nombre del archivo **
 			v_entArc = SUBSTR(v_nombreArchivo,1,v_longArcRet)
 			v_secArc = SUBSTR(v_nombreArchivo,v_longArcRet+1)
+			
 			
 			IF ALLTRIM(v_entArc) != ALLTRIM(v_nombArchivoRet)
 				MESSAGEBOX("El nombre del archivo no se corresponde con el cobrador",0+48+0,"Error al Importar cobros")
