@@ -27788,7 +27788,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 			** Si el archivo existe -> abro y busco para enviar
 		
 		IF TYPE('tmpenvio') ='U'
-			CREATE TABLE tmpenvio FREE (archivo C(250), correo c(250))		
+			CREATE TABLE tmpenvio FREE (archivo C(250), correo c(250), cliente c(250))		
 		ENDIF 
 			
 		SELECT tmpenvio 
@@ -27797,7 +27797,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 		&eje
 
 
-		SELECT * FROM tmpenvio  order BY correo INTO TABLE envCorreo
+		SELECT * FROM tmpenvio  order BY correo INTO TABLE envCorreo WHERE (!(UPPER(ALLTRIM(correo))=="E-MAIL ASOCIADO") AND !EMPTY(correo) AND !(SUBSTR(correo,1,1)=='*'))
+		
 		v_correoDes = ""
 		v_archivosEnv = ""
 		SELECT envCorreo
@@ -27826,7 +27827,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 				SELECT correoconf_sql
 				GO top
 				
-				IF NOT EOF()
+				IF !EOF() AND !(correoconf_sql.usuarios = null) then
 					v_usuarios = correoconf_sql.usuarios
 					
 					v_encontroConf = .T.
@@ -27841,13 +27842,19 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 		
 			SELECT envCorreo
 			GO TOP 
-		
+
+
+			vcanregi = RECCOUNT()
+			=ViewBarProgress(0,vcanregi,"Consultando Comprobantes:")		
+
 			DO WHILE NOT EOF()
 				
 				v_correo = envCorreo.correo
 				v_archivo = envCorreo.archivo
 				
 				v_archivo = pUbicacion+v_archivo
+				
+				v_marcaenvio = ""
 												
 				
 				IF ALLTRIM(v_correo) == ALLTRIM(v_correoDes)
@@ -27867,7 +27874,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 												
 								v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv)
 								v_archivosEnv  = ""
-								
+								v_marcaenvio = "*"
+							
 								v_indice = v_indice + 1 
 							
 													
@@ -27875,7 +27883,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 						
 							v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
 							v_archivosEnv  = ""
-							
+							v_marcaenvio = "*"
+
 						ENDIF 
 						
 															
@@ -27888,6 +27897,9 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 				
 			
 				SELECT envCorreo
+				replace correo WITH v_marcaenvio+ALLTRIM(correo)
+				=ViewBarProgress(RECNO(),vcanregi,"Consultando Comprobantes:")	
+					
 				SKIP 1
 
 			ENDDO
@@ -27896,45 +27908,63 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 			SELECT envCorreo
 			IF EOF()
 			
-			
-				IF EMPTY(ALLTRIM(v_correoDes)) =.F.
+				v_marcaenvio = ""
+				IF EMPTY(ALLTRIM(v_correoDes)) =.F. THEN 
 					
 					IF v_encontroConf = .T. AND v_tamArreglo > 0
 						
 						
-							v_elemento = (v_indice%v_tamArreglo)+1
+						v_elemento = (v_indice%v_tamArreglo)+1
 							
-							v_usuarioEnv = usuarioscm[v_elemento]
+						v_usuarioEnv = usuarioscm[v_elemento]
 						
-								v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv)
-								v_archivosEnv  = ""
+						v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv)
+						v_archivosEnv  = ""
 															
 							
-						ELSE	
+					ELSE	
 						
-							v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
-							v_archivosEnv  = ""
+						v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
+						v_archivosEnv  = ""
 							
-						ENDIF 
-						
-							
+					ENDIF 
+					SELECT envCorreo
+					v_marcaenvio = "*"
+					replace correo WITH v_marcaenvio+ALLTRIM(correo)
 				ENDIF 
 			
 			ENDIF 
-		
-		
+
+			*Marco el archivo con los archivos enviados 
+			SELECT envCorreo
+			GO TOP 
+			DO WHILE !EOF()
+				IF SUBSTR(envCorreo.correo,1,1)=='*' THEN 
+					SELECT tmpenvio
+					UPDATE tmpenvio SET correo = envCorreo.correo WHERE ALLTRIM(correo)==ALLTRIM(SUBSTR(envCorreo.correo,2)) AND !EMPTY(correo)
+				ENDIF 
+				SELECT envCorreo
+				SKIP 
+			ENDDO 			
+			SELECT tmpenvio 
+			v_archivo_nuevo = pUbicacion+LOWER(pNombreArchivo)			
+			DELETE FILE &v_archivo_nuevo 
+			p=fcreate(v_archivo_nuevo,0)
+			SELECT tmpenvio 
+			GO TOP 
+
+			DO WHILE NOT EOF() 
+				v_linea = ALLTRIM(tmpenvio.archivo)+";"+alltrim(tmpenvio.correo)+";"+ALLTRIM(tmpenvio.cliente)
+				=fputs(p, v_linea )
+				SELECT  tmpenvio
+				SKIP 
+			ENDDO 		
+			=fclose(p)
+			
+									
 		ENDIF 
 						
 			
-*!*			
-*!*			IF EMPTY(ALLTRIM(v_correoEnv)) =.F.
-*!*				v_ret = enviarCorreo(v_correoEnv , v_archivosEnv , pasunto, pcuerpo)
-*!*			
-*!*					
-*!*			ENDIF 
-		
-		
-*!*			USE tmpenvio
 	ENDIF 
 
 	
@@ -27986,9 +28016,9 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 
 *!*					
 *!*				ENDFOR  
-		ENDIF
-	
-	
+	ENDIF
+
+
 	RETURN .T.
 	
 ENDFUNC 
@@ -28007,7 +28037,7 @@ ENDFUNC
 ***	pusuarioEnv: Usuario que se utiliza para el envio de correo
 *** Retorno: 1: si es correcto; -1 si falta correo destino; -2 si no puede obtener el correo para envio; -3 si hubo un error en la configuración
 *#/---------------------------
-	 
+ 
 	 IF EMPTY(ALLTRIM(pcorreos)) = .T.
 	 	 	
 	 	RETURN -1

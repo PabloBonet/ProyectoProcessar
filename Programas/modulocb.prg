@@ -2563,8 +2563,108 @@ FUNCTION ImputarCobros
 	ENDDO
 	
 	
-	
-	
 		RETURN 1
 	
+ENDFUNC 
+
+
+
+
+
+FUNCTION CBSaldoCompro
+PARAMETERS pcb_EmpresaID, pcb_EmpresaSID, pcb_IdFactura
+*#/----------------------------------------
+*** Función Obtener el Saldo del Comprobante en la Base Maestra de Casa Central
+*** Parameter:
+***		pcb_EmpresaID, pcb_EmpresaSID, pcb_IdFactura
+***	Retorno
+*** 	pcb_retorno: Devuelve una variable de tipo caracter 'S[saldo comprobante]', o 'N' si no tiene que controlar saldo
+*** Si devuelve S, seguida del saldo es porque encontró y debe controlar el saldo, de otra forma devuelve 'N' 
+**  Se debe llamar a la funcion sin ninguna conexion abierta, ya que cierra y abre una conexion a otra base de datos
+*#/----------------------------------------
+	pcb_Retorno = "N" && variable de retorno
+	
+
+	vconeccionCB=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+
+	v_llave = ALLTRIM(pcb_EmpresaID)+"Pr0$$3"+ALLTRIM(pcb_EmpresaSID)
+	sqlmatriz(1)=" Select host, port, schemma, aes_decrypt(usuario,'"+v_llave+"') as usuario, aes_decrypt(password,'"+v_llave+"') as password, controldb from cbasociadas where TRIM(empresaid) = '"+ALLTRIM(pcb_EmpresaID)+"' and  TRIM(subcodid) = '"+ALLTRIM(pcb_EmpresaSID)+"'"
+	verror=sqlrun(vconeccionCB,"asociadactrl_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la Empresa Asociada para Control de Saldos ",0+48+0,"Error")
+	    =abreycierracon(vconeccionCB,"")
+	    RETURN pcb_Retorno 
+	ENDIF
+	SELECT asociadactrl_sql
+	GO TOP 
+	IF EOF() THEN 
+		pcb_Retorno = 'N'
+	ELSE
+	
+		IF ALLTRIM(asociadactrl_sql.controldb)=='S' THEN 
+
+			=abreycierracon(vconeccionCB,"")
+			
+			cdb_host	 = asociadactrl_sql.host
+			cdb_port	 = asociadactrl_sql.port
+			cdb_schemma	 = asociadactrl_sql.schemma
+			cdb_usuario	 = asociadactrl_sql.usuario
+			cdb_password = asociadactrl_sql.password
+			
+
+			** Guardo las Variables Actuales de Conexion al Servidor para restaurarlas
+			** antes de abandonar la función 
+
+			_SYSMYSQL_SERVER_TMP 	= _SYSMYSQL_SERVER 
+			_SYSMYSQL_USER_TMP	 	= _SYSMYSQL_USER   
+			_SYSMYSQL_PASS_TMP   	= _SYSMYSQL_PASS   
+			_SYSMYSQL_PORT_TMP   	= _SYSMYSQL_PORT   
+			_SYSSCHEMA_TMP     		= _SYSSCHEMA   
+			_SYSDESCRIP_TMP			= _SYSDESCRIP
+			
+			** Intento conectarme con la base de datos maestra del asociado 
+			_SYSMYSQL_SERVER = cdb_host	
+			_SYSMYSQL_USER   = cdb_usuario
+			_SYSMYSQL_PASS   = cdb_password 	
+			_SYSMYSQL_PORT   = cdb_port
+			_SYSSCHEMA 		 = cdb_schemma
+
+			vconeccionCBA=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+
+			IF vconeccionCBA > 0 THEN 
+				sqlmatriz(1)=" Select idfactura, saldof  from r_facturasaldo where idfactura = "+ALLTRIM(STR(pcb_IdFactura))
+				verror=sqlrun(vconeccionCBA,"saldoctrl_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del Saldo de La Factura ",0+48+0,"Error")
+				    =abreycierracon(vconeccionCBA,"")
+				ENDIF
+				SELECT saldoctrl_sql
+				GO TOP 
+				IF EOF() THEN 
+					pcb_Retorno = 'N'
+				ELSE
+					pcb_Retorno = 'S'+STR(saldoctrl_sql.saldof,13,2)
+				ENDIF 
+				USE IN saldoctrl_sql 
+			ELSE 
+				pcb_Retorno = 'N'
+			ENDIF 
+			=abreycierracon(vconeccionCBA,"")
+			
+			** Restauro las variables de conexión a la base de datos 
+			** antes de abandonar la función 
+			_SYSMYSQL_SERVER = _SYSMYSQL_SERVER_TMP 	
+			_SYSMYSQL_USER   = _SYSMYSQL_USER_TMP 
+			_SYSMYSQL_PASS   = _SYSMYSQL_PASS_TMP   	
+			_SYSMYSQL_PORT   = _SYSMYSQL_PORT_TMP
+			_SYSSCHEMA 		 = _SYSSCHEMA_TMP   
+			_SYSDESCRIP 	 = _SYSDESCRIP_TMP
+		
+		ELSE 
+			pcb_Retorno = 'N'
+		ENDIF 
+	ENDIF 
+	
+	USE IN asociadactrl_sql
+	RETURN pcb_Retorno
 ENDFUNC 
