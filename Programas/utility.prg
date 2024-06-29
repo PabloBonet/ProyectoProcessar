@@ -27827,7 +27827,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 				SELECT correoconf_sql
 				GO top
 				
-				IF !EOF() AND !(correoconf_sql.usuarios = null) then
+				IF !EOF() AND !(ISNULL(correoconf_sql.usuarios)) then
+
 					v_usuarios = correoconf_sql.usuarios
 					
 					v_encontroConf = .T.
@@ -27838,6 +27839,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 					
 				ENDIF 
 			ENDIF 
+
 						
 		
 			SELECT envCorreo
@@ -27849,10 +27851,9 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 
 			DO WHILE NOT EOF()
 				
-				v_correo = envCorreo.correo
-				v_archivo = envCorreo.archivo
-				
-				v_archivo = pUbicacion+v_archivo
+				v_correo 	= envCorreo.correo
+				v_archivo 	= envCorreo.archivo
+				v_archivo 	= pUbicacion+v_archivo
 				
 				v_marcaenvio = ""
 												
@@ -27871,26 +27872,25 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 							
 							v_usuarioEnv = usuarioscm[v_elemento]
 							
-												
-								v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv)
-								v_archivosEnv  = ""
-								v_marcaenvio = "*"
+							v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv)
+							v_archivosEnv  = ""
+							v_marcaenvio = "*"
 							
-								v_indice = v_indice + 1 
+							v_indice = v_indice + 1 
 							
 													
 						ELSE	
 						
-							v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
-							v_archivosEnv  = ""
-							v_marcaenvio = "*"
+*!*								v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
+*!*								v_archivosEnv  = ""
+*!*								v_marcaenvio = "*"
 
 						ENDIF 
 						
 															
 					ENDIF 
-						v_correoDes= v_correo
-						v_archivosEnv = ALLTRIM(v_archivo)
+					v_correoDes= v_correo
+					v_archivosEnv = ALLTRIM(v_archivo)
 							
 				
 				ENDIF 
@@ -27924,8 +27924,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 							
 					ELSE	
 						
-						v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
-						v_archivosEnv  = ""
+*!*							v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
+*!*							v_archivosEnv  = ""
 							
 					ENDIF 
 					SELECT envCorreo
@@ -28105,7 +28105,10 @@ ENDFUNC
 			FOR i=1 TO v_cantArc
 			
 				v_archEnv = arreglo(i)
+				
+				IF FILE(v_archEnv) THEN 
 					.AddAttachment(v_archEnv)
+				ENDIF 
 				
 			ENDFOR  
 		
