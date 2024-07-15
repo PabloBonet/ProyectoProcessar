@@ -10480,17 +10480,18 @@ vconeccionM = abreycierracon(0,_SYSSCHEMA)
 		v_smtpusessl	= IIF(correoconf_sql.smtpusessl == 'S', .T.,.F.)
 		v_correoEnv		= correoconf_sql.correo
 		v_clave			= correoconf_sql.clave
-		
+
+
 		
 	 	loCfg = CREATEOBJECT("CDO.Configuration")
   		WITH loCfg.Fields
-		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = v_smtpserver
-		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = v_smtpport
-		    .Item("http://schemas.microsoft.com/cdo/configuration/sendusing") = v_sendusing
+		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") 		= v_smtpserver
+		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") 	= v_smtpport
+		    .Item("http://schemas.microsoft.com/cdo/configuration/sendusing") 		= v_sendusing
 		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate") = v_smtpaut
-		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpusessl") = v_smtpusessl
-		    .Item("http://schemas.microsoft.com/cdo/configuration/sendusername") = v_correoEnv
-		    .Item("http://schemas.microsoft.com/cdo/configuration/sendpassword") = v_clave
+		    .Item("http://schemas.microsoft.com/cdo/configuration/smtpusessl") 		= v_smtpusessl
+		    .Item("http://schemas.microsoft.com/cdo/configuration/sendusername") 	= v_correoEnv
+		    .Item("http://schemas.microsoft.com/cdo/configuration/sendpassword") 	= v_clave
 		    .Update
   		ENDWITH
   		
@@ -23634,6 +23635,7 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 	v_numero = maxnumerocom(v_idcom,v_pventa  ,1)
 	v_tipo	 = compIngEgr_sql.tipo
 	v_electroag = compIngEgr_sql.electronica
+	v_comprobantenom = compIngEgr_sql.comprobante
 	
 	DO CASE 
 	
@@ -23956,7 +23958,7 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular
 
 			*** IMPRIMIR ***
 						
-			sino = MESSAGEBOX("¿Desea imprimir el comprobante?",4+32,"Imprimir comprobante")
+			sino = MESSAGEBOX("¿Desea imprimir el comprobante: "+v_comprobantenom+"?",4+32,"Imprimir comprobante")
 			IF sino = 6
 				*SI
 				v_eselectro = IIF(v_electroag ='S',.t.,.f.)
@@ -26114,8 +26116,126 @@ PARAMETERS p_tablaarticulos, pa_conexion
 	ENDIF 	
 
 RETURN Rta_SN
+ENDFUNC 
 
 
+********************************************************************************************************
+********************************************************************************************************
+********************************************************************************************************
+
+
+
+FUNCTION DescuStockmaSN
+PARAMETERS p_tablamateriales, pa_conexion
+*#/----------------------------------------
+* Función que devuelve verdadero o Falso si se puede descontar stock de Materiales
+* de deposito pasado como parametro en la tabla
+* - PARAMETROS p_tablamateriales : ( idmate i, cantidad y, deposito I )
+* Retorna Verdadero o Falso segun se pueda hacer el descuento de stock o no en función de 
+* la existencia del material en Stock,
+* Basta que al menos uno no tenga disponibilidad para que devuelva falso 
+*#/----------------------------------------
+	* Si no esta hablitado el descuento de Stock devuelve siempre .t. = Puede descontar stock 
+	IF ALLTRIM(_SYSSTOCKMCTRL) = 'N' THEN 
+		RETURN .T.
+	ENDIF 
+
+	LOCAL Rta_SN 
+	Rta_SN = .T.
+	
+	IF !USED(p_tablamateriales) THEN 
+		USE &p_tablamateriales IN 0
+	ENDIF 
+	SELECT &p_tablamateriales
+
+	IF TYPE("pa_conexion") = 'N' THEN 
+		IF pa_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionDV = pa_conexion
+		ELSE 
+			vconeccionDV = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionDV = abreycierracon(0,_SYSSCHEMA)	
+		pa_conexion = 0
+	ENDIF 
+	
+	SELECT &p_tablamateriales
+	GO TOP 
+
+
+	DO WHILE !EOF() 
+
+		IF &p_tablamateriales..cantidad > 0 THEN 
+		
+			*Veo si el Articulo es de Stock , si no lo es retorna .t. = hay stock suficiente ( no se controla)
+			
+			sqlmatriz(1)=" select idmate, ctrlstock from otmateriales "
+			sqlmatriz(2)=" where idmate = "+ALLTRIM(STR(&p_tablamateriales..idmate))
+			verror=sqlrun(vconeccionDV,"star_art")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Material de Stock ",0+48+0,"Error")
+			    RETURN .F.
+			ENDIF
+			
+			v_ctrlstockc = .t.
+			SELECT star_art
+			IF !EOF() THEN 
+				IF star_art.ctrlstock = 'N' THEN 
+					v_ctrlstockc = .f.
+				ENDIF 
+			ENDIF 
+			USE IN star_art		
+		
+		
+			IF v_ctrlstockc = .t. THEN  && tengo que controlar el descuento de stock 
+ 
+ 
+				sqlmatriz(1)=" select r.iddepo, r.idmate , r.stock, a.ctrlstock from otdepostock r "
+				sqlmatriz(2)=" left join otmateriales a on a.idmate = r.idmate "
+				sqlmatriz(3)=" where r.idmate = "+ALLTRIM(STR(&p_tablamateriales..idmate))+" and r.iddepo="+ALLTRIM(STR(&p_tablamateriales..iddepo))
+				verror=sqlrun(vconeccionDV,"stde_art")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de stock X depositos ",0+48+0,"Error")
+				    RETURN .F.
+				ENDIF
+ 
+				
+				SELECT stde_art
+				GO TOP 
+
+				IF !EOF() THEN 
+					IF ( stde_art.stock - &p_tablamateriales..cantidad) < 0 THEN 
+						Rta_SN = .F.
+						SELECT &p_tablamateriales
+						GO BOTT
+					ENDIF 
+				ELSE 
+					Rta_SN = .F.
+					SELECT &p_tablamateriales
+					GO BOTT				
+				ENDIF 		
+				USE IN stde_art
+			ENDIF 
+			
+		ENDIF 		 
+		SELECT &p_tablamateriales
+		SKIP 
+	ENDDO 
+	
+	SELECT &p_tablamateriales
+	USE 
+	IF pa_conexion = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		= abreycierracon(vconeccionDV ,"")
+	ENDIF 	
+
+RETURN Rta_SN
+ENDFUNC 
+
+
+
+****************************************************************************
+****************************************************************************
+****************************************************************************
 FUNCTION registarCajaOrigen
 PARAMETERS p_idcajamovih, p_idcajareca
 *#/----------------------------------------
@@ -27793,6 +27913,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 			
 		SELECT tmpenvio 
 	
+	
 		eje = "APPEND FROM "+ALLTRIM(v_archivo)+" DELIMITED WITH CHARACTER ';'"
 		&eje
 
@@ -27917,7 +28038,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 						v_elemento = (v_indice%v_tamArreglo)+1
 							
 						v_usuarioEnv = usuarioscm[v_elemento]
-						
+											
 						v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv)
 						v_archivosEnv  = ""
 															
