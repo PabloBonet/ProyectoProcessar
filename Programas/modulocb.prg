@@ -114,9 +114,10 @@ FUNCTION ImportarComprobantes
 		v_ecuenta		= ALLTRIM(cbasociada_sql.ecuenta)
 		v_edescrip		= ALLTRIM(cbasociada_sql.edescrip)
 		v_edescripen	= ALLTRIM(cbasociada_sql.edescripen)		
+		v_ecobromax		= ALLTRIM(cbasociada_sql.ecobromax)
 				
-		v_sentenciaCrea1 = "create table "+ALLTRIM(p_tablaComprobantes)+ " (ident I, narchivo C(100), lote I, eperiodo C(20), esecuencia C(10), comproba C(100),idcomp I, total1 Y, vence1 C(8),total2 Y, vence2 C(8), total3 Y, vence3 C(8), bc C(254), "
-		v_sentenciaCrea2 = " eentidad I, eservicio I, ecuenta I, edescrip C(250), edescripen C(250))"
+		v_sentenciaCrea1 = "create table "+ALLTRIM(p_tablaComprobantes)+ " (ident I, narchivo C(100), lote I, eperiodo C(20), esecuencia C(10), comproba C(100),idcomp I, total1 N(13,2), vence1 C(8),total2 N(13,2), vence2 C(8), total3 N(13,2), vence3 C(8), bc C(254), "
+		v_sentenciaCrea2 = " eentidad I, eservicio I, ecuenta I, edescrip C(250), edescripen C(250), ecobromax N(13,2))"
 		v_sentenciaCrea = v_sentenciaCrea1 + v_sentenciaCrea2
 		&v_sentenciaCrea
 	
@@ -230,15 +231,21 @@ FUNCTION ImportarComprobantes
 							ALINES(ARR_edescripen,v_edescripen,'-')
 							COD_edescripen = SUBSTR(v_linea,VAL(ARR_edescripen(1)),VAL(ARR_edescripen(2)))
 							
+							** Cobro maximo diario**
+							ALINES(ARR_ecobromax,v_ecobromax,'-')
+							COD_ecobromax = SUBSTR(v_linea,VAL(ARR_ecobromax(1)),VAL(ARR_ecobromax(2)))
 							
+							** Convierto COD_ecobromax a float **
+							v_NUM_ecobm = VAL(COD_ecobromax)
+							NUM_ecobromax = (v_NUM_ecobm/100)
 							
 							v_lote = 0
 							
 																									
-							v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaComprobantes)+ " (ident, narchivo, lote, eperiodo, esecuencia, idcomp, total1, vence1,total2, vence2, total3, vence3, bc,eentidad,eservicio,ecuenta,edescrip, edescripen) "
+							v_sentenciaIns1 = " insert into "+ALLTRIM(p_tablaComprobantes)+ " (ident, narchivo, lote, eperiodo, esecuencia, idcomp, total1, vence1,total2, vence2, total3, vence3, bc,eentidad,eservicio,ecuenta,edescrip, edescripen, ecobromax) "
 							v_sentenciaIns2 = " values ("+ALLTRIM(STR(p_idcbasociada))+",'"+ALLTRIM(v_nombArchivoEnv)+"',"+ALLTRIM(STR(v_lote))+",'"+ALLTRIM(COD_eperiodo)+"','"+ALLTRIM(COD_eesecuencia)+"',"+ALLTRIM(STR(NUM_ebcidcomp))+","
 							v_sentenciaIns3 = ALLTRIM(STR(NUM_ebctotal1,13,2))+",'"+ALLTRIM(COD_ebcvence1)+"',"+ALLTRIM(STR(NUM_ebctotal2,13,2))+",'"+ALLTRIM(COD_ebcvence2)+"',"+ALLTRIM(STR(NUM_ebctotal3,13,2))+",'"+ALLTRIM(COD_ebcvence3)+"','"+alltrim(COD_ebc)+"',"
-							v_sentenciaIns4 = ALLTRIM(COD_eentidad)+","+ALLTRIM(COD_eservicio)+","+ALLTRIM(COD_ecuenta)+",'"+ALLTRIM(COD_edescrip)+"','"+ALLTRIM(COD_edescripen)+"')"
+							v_sentenciaIns4 = ALLTRIM(COD_eentidad)+","+ALLTRIM(COD_eservicio)+","+ALLTRIM(COD_ecuenta)+",'"+ALLTRIM(COD_edescrip)+"','"+ALLTRIM(COD_edescripen)+"',"+ALLTRIM(STR(NUM_ecobromax,13,2))+")"
 							
 
 							v_sentenciaIns = v_sentenciaIns1+v_sentenciaIns2+v_sentenciaIns3+v_sentenciaIns4
@@ -1713,6 +1720,37 @@ FUNCTION ExportarComprobantes
 					v_linea = v_linea+ALLTRIM(v_edescripenstr)
 					
 				ENDIF
+				
+				
+				***********************************
+				** Limite máximo de cobro diario **
+				***********************************
+				
+				v_ecobromax 		= ALLTRIM(cbcobrador_sql.ecobromax)
+				ALINES(ARR_ecobromax,v_ecobromax,'-')
+				v_tamrcm = VAL(ARR_ecobromax(2))
+				
+				v_cobroMaximo = cbcobrador_sql.cobromax
+				
+				v_cobromaximostr = STR((v_cobromaximo *100))
+				v_lencobromax =  LEN(ALLTRIM(v_cobromaximostr))
+				
+				IF v_lencobromax <= v_tamrcm
+					
+					v_cobromaximostr= REPLICATE('0',v_tamrcm-v_lencobromax)+ALLTRIM(v_cobromaximostr)
+
+					v_linea = v_linea+v_cobromaximostr&& Si está correcto: lo agrego a la linea
+					
+				ELSE
+					MESSAGEBOX("[ERROR LINEA:"+ALLTRIM(STR(v_nroLinea))+"] El tamaño del código 'Monto Máximo' representado en el campo 'ecobromax' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar comprobantes")
+					RETURN 0
+				ENDIF
+					
+				
+				
+				
+				
+				
 				
 				
 				****************************************
