@@ -10679,8 +10679,8 @@ IF vtmp_recalcular = .t. THEN
 			RETURN 
 		ENDIF 
 
-		sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea  from articulos a "
-		sqlmatriz(2)=" left join lineas l on l.linea = a.linea left join sublineas sl on sl.idsublinea = a.idsublinea "
+		sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea, ifnull(f.base,1) as base, ifnull(f.unidadf, a.unidad) as unidadf "
+		sqlmatriz(2)="  from articulos a left join articulosf f on a.articulo = f.articulo left join lineas l on l.linea = a.linea left join sublineas sl on sl.idsublinea = a.idsublinea "
 		sqlmatriz(3)=" left join r_articulostock s on s.articulo = a.articulo  left join ultimoartcosto u on a.articulo = u.articulo " 
 		verror=sqlrun(vconeccionF,fvarticulos_sql)
 		IF verror=.f.
@@ -10730,7 +10730,7 @@ IF vtmp_recalcular = .t. THEN
 		SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta,  p.idlistap, p.actualiza, l.idlistah, ;  
 			a.articulo, SUBSTR(a.detalle+SPACE(200),1,200) as detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea,a.idsublinea,a.sublinea, a.ctrlstock, a.ocultar, ;
 			a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.reca1, a.moneda, ;
-			a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact, p.habilita ;
+			a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact, p.habilita, a.base, a.unidadf ;
 		 	FROM &fvlistaprecioh_sql l ;
 			LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
 			LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
@@ -10741,7 +10741,7 @@ IF vtmp_recalcular = .t. THEN
 		SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
 			a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.detalinea, a.idsublinea, a.sublinea, a.ctrlstock, a.ocultar, ;
 			a.stockmin, a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.reca1, a.moneda, ;
-			a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,a.fechaact   ;
+			a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,a.fechaact, a.base, a.unidadf   ;
 			FROM &fvarticulos_sql a ;
 			LEFT JOIN &fvarticulosimp_sql i  ON ALLTRIM(a.articulo) == ALLTRIM(i.articulo) ;
 			INTO TABLE &fvarticulos
@@ -17258,7 +17258,7 @@ PARAMETERS p_ListaP
 
 		SELECT idlista, detallep, vigedesde, vigehasta, margenp, condvta,  idlistap, actualiza,idlistah, articulo, ;
 			detalle, unidad, abrevia, codbarra, costoa, linea, detalinea, idsublinea, sublinea, ctrlstock, ocultar, stockmin, IIF(ISNULL(stocktot),0,stocktot) as stocktot, ;
-			desc1, desc2, desc3,  desc4, desc5, reca1, moneda, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact, habilita ;
+			desc1, desc2, desc3,  desc4, desc5, reca1, moneda, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact, habilita, base, unidadf ;
 		from &p_ListaPA INTO TABLE p_listaPACSV
 		
 		SELECT p_listaPACSV
@@ -17304,7 +17304,7 @@ PARAMETERS p_ListaP
 			lamatrizLi(6,2)=ALLTRIM(STR(&p_ListaPB..idfinancia))
 			lamatrizLi(7,1)='habilitado'
 			lamatrizLi(7,2)="'"+ALLTRIM(&p_ListaPB..habilitado)+"'"
-						
+			
 
 			p_tabla     = 'r_listapreb'
 			p_matriz    = 'lamatrizLi'
@@ -22419,6 +22419,17 @@ PARAMETERS plr_fun, plr_cone, plr_tablaa, plr_campoa, plr_ida, plr_tablab, plr_c
 **		plr_idb:    Valor del Campo B de la tabla a Vincular
 ** 		RETORNO: 'CS o CN','VS o VN', 'ES o EN', o '' si no pudo hacer nada
 *#/----------------------------------------
+	
+	
+*!*		MESSAGEBOX(plr_fun)
+*!*		MESSAGEBOX(plr_cone)
+*!*		MESSAGEBOX(plr_tablaa)datafactu
+*!*		MESSAGEBOX(plr_campoa)idfacturah	
+*!*		MESSAGEBOX(plr_ida)53
+*!*		MESSAGEBOX(plr_tablab)''
+*!*		MESSAGEBOX(plr_campob)''
+*!*		MESSAGEBOX(plr_idb)0
+*!*		
 	
 	v_retornoFL = ""
 
