@@ -10864,7 +10864,6 @@ ENDIF
 ENDFUNC 
 
 
-
 FUNCTION getLogo
 archi = _SYSESTACION+'\'+_SYSLOGOEMPRE
 IF FILE(archi) THEN 
@@ -17356,7 +17355,6 @@ PARAMETERS p_ListaP
 
 RETURN 
 
-
 FUNCTION ActuDatosAnexos
 PARAMETERS pda_tablatmp, pda_id
 *#/----------------------------------------
@@ -22420,17 +22418,6 @@ PARAMETERS plr_fun, plr_cone, plr_tablaa, plr_campoa, plr_ida, plr_tablab, plr_c
 ** 		RETORNO: 'CS o CN','VS o VN', 'ES o EN', o '' si no pudo hacer nada
 *#/----------------------------------------
 	
-	
-*!*		MESSAGEBOX(plr_fun)
-*!*		MESSAGEBOX(plr_cone)
-*!*		MESSAGEBOX(plr_tablaa)datafactu
-*!*		MESSAGEBOX(plr_campoa)idfacturah	
-*!*		MESSAGEBOX(plr_ida)53
-*!*		MESSAGEBOX(plr_tablab)''
-*!*		MESSAGEBOX(plr_campob)''
-*!*		MESSAGEBOX(plr_idb)0
-*!*		
-	
 	v_retornoFL = ""
 
 	IF plr_cone > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
@@ -25911,7 +25898,7 @@ FOR ij = 1 TO 2
 
 
 	IF RESTO = 0 OR RESTO = 1 THEN
-		IF DV_NRO = 0 THEN
+		IF DV = 0 THEN
 			VCUIT_RET = VCUIT_RET+VNRO_CUIT+ALLTRIM(STR(DV))+";"
 	*		RETURN .T.
 		ELSE
@@ -28279,178 +28266,3 @@ ENDFUNC
 
 
 
-FUNCTION copiarFactura
-PARAMETERS p_esquemaD, p_idfactura, p_puntov,p_tab_excluidos
-*#/---------------------------
-*** Función para copiar un comprobante de la tabla facturas de un esquema a otro, respetando todos los datos, excepto los articulos excluidos y el punto de venta (porque puede cambiar).
-*** p_esquema: Esquema destino, donde se va a copiar la factura
-*** p_idfactura: ID del comprobante de la tabla factura que se va a copiar
-*** p_puntov: Punto de venta que se va a utilizar para generar el nuevo comprobante
-*** p_tab_exluidos: Tabla con los archivo excluidos a copiar, si la tabla no se pasa o no se encuentra -> se van a copiar todos los articulos
-*** Retorno: .T.: si es correcto; .F.: en caso de que haya algún error
-*#/---------------------------
-
-	*** VALIDACIÓN DE DATOS ***
-	IF TYPE('p_esquema') <> 'C'
-		MESSAGEBOX("El esquema de destino es inválido",0+16+0,"CopiarFactura")
-		
-		RETURN 0
-	ENDIF 
-	
-	IF TYPE('p_idfactura') <> 'N'
-		MESSAGEBOX("El ID de la factura es inválido",0+16+0,"CopiarFactura")
-		
-		RETURN 0
-	ENDIF 
-	
-		IF TYPE('p_puntov') <> 'C'
-		MESSAGEBOX("El punto de venta es inválido. Debe ser una cadena de caracteres",0+16+0,"CopiarFactura")
-		
-		RETURN 0
-	ENDIF 
-	
-		IF TYPE('p_esquema') <> 'C' AND TYPE('p_esquema') <> 'L' 
-		MESSAGEBOX("La tabla de articulos excluidos es inválido",0+16+0,"CopiarFactura")
-		
-		RETURN 0
-	ENDIF 
-	
-
-	
-	vconeccionp=abreycierracon(0,_SYSSCHEMA)
-						
-*!*		
-*!*		sqlmatriz(1)=" CREATE TEMPORARY TABLE tmplotefac (idfactura INT);"
-*!*		
-*!*		verror=sqlrun(vconeccionp,'tmplotefac')
-
-*!*		IF !verror THEN 
-*!*			MESSAGEBOX('Ha ocurrido un error al generar la tabla temporal',0+64,'Error')
-*!*		ENDIF 
-
-*!*		sqlmatriz(1)=" LOAD DATA LOCAL INFILE '"+p_archivolotecsv+"'"
-*!*		sqlmatriz(2)=" INTO TABLE tmplotefac fields terminated by ',' "
-*!*		sqlmatriz(3)=" ENCLOSED BY ';' "
-*!*		sqlmatriz(4)=" LINES TERMINATED BY '\r\n' "
-
-*!*		verror=sqlrun(vconeccionp,"loadlf")
-*!*		IF verror=.f.  
-*!*		    MESSAGEBOX("Ha Ocurrido un Error en la Carga de lote de facturas (LOAD DATA ",0+48+0,"Error")
-*!*		    RETURN 
-*!*		ENDIF
-*!*		
-*!*		sqlmatriz(1)="SELECT f.idfactura,p.electronica as electro, ifnull(h.email,'') as emailh, e.email, p.puntov, f.numero, f.tipo, f.entidad, f.servicio, f.cuenta, f.apellido, f.nombre  "
-*!*		sqlmatriz(2)=" FROM facturas f left join puntosventa p on f.pventa = p.pventa left join entidadesh h on f.identidadh = h.identidadh left join entidades e on f.entidad = e.entidad "
-*!*		sqlmatriz(3)=" where f.idfactura in (select idfactura from tmplotefac)"
-
-*!*		verror=sqlrun(vconeccionp,"lotefact_sql")
-*!*		IF verror=.f.  
-*!*		    MESSAGEBOX("Ha Ocurrido un Error en la Carga de lote de facturas (Consulta facturas) ",0+48+0,"Error")
-*!*		    RETURN 
-*!*		ENDIF
-*!*		
-*!*		
-*!*		abreycierracon(vconeccionp,"")
-*!*		
-*!*		
-
-	*** OBTENGO LAS TABLAS QUE TIENE CAMPO 'IDFACTURA'  ***
-	
-		sqlmatriz(1)="SELECT *, CONVERT(COLUMN_TYPE,CHAR(30)) AS TYPO FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '"+ALLTRIM(_SYSSCHEMA)+" column_name = 'idfactura'  "
-		verror=sqlrun(vconeccionp,"tablasaso_sql")
-		IF verror=.f.
-			MESSAGEBOX("No se puede obtener las tablas de facturas",0+16,"Advertencia")
-			RETURN 
-		ENDIF 
-		
-		
-		
-	* INICIAR TRANSACCION
-		SQLFlagErrorTrans=0
-		IF SqlIniciartrans(vconeccionF)=.f.
-			MESSAGEBOX("NO se pudo iniciar la Transaccion ",0+48+0,"Error")
-			SQLFlagErrorTrans=1
-		ELSE 
-	
-	
-			
-		*** Obtengo el max id de factura **
-		
-		***********************************
-			
-			sqlmatriz(1)="select maxvalori as maxnro FROM tablasidx "
-			sqlmatriz(3)="WHERE campo = 'idfactura' and tabla = 'facturas' and tipocampo = 'I'" 
-
-			verror=sqlrun(vconeccionF,"maximo")
-			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA ddel maximo Numero de indice",0+48+0,"Error")
-			    SQLFlagErrorTrans=1
-			ENDIF 
-
-			v_idfacturaNueva = IIF(ISNULL(maximo.maxnro),0,maximo.maxnro)
-
-			SELECT maximo
-			USE IN maximo
-
-					
-			
-			SELECT tablasaso_sql
-			GO TOP 
-			
-			DO WHILE NOT EOF()
-				
-					v_tablacopiar = ALLTRIM(tablasaso_sql.table_name)
-					
-					*** Creo una tabla temporal para la tabla v_tablacopiar ***
-					v_sentenciaCrear = " CREATE TEMPORARY TABLE tmp"+v_tablacopiar+" (select * from "+ALLTRIM(v_tablacopiar)+") "		
-					***********************************
-						
-					*** Hago el select de la tabla insertando en la tabla temporal **
-					
-					***********************************
-					
-					*** reemplazo por el ID correspondiente ***
-					
-					*** Hago el select de la tabla temporal insertando en la tabla del otro esquema **
-					
-					***********************************
-				SELECT tablasaso_sql
-				SKIP 1
-
-			ENDDO
-			
-	
-	
-			* FINALIZAR TRANSACCION
-			IF sqlCerrarTrans(vconeccionF,SQLFlagErrorTrans)=.f.
-				MESSAGEBOX("Ha Ocurrido un error al cerrar la Transacción ",0+48+0,"ERROR en Transacción")
-				SQLFlagErrorTrans=1
-			ENDIF 
-		
-		ENDIF 
-		
-
-		* Guardo el valor de SQLFlagErrorTrans
-		I_SQLFlagErrorTrans  = SQLFlagErrorTrans		
-					
-		IF I_SQLFlagErrorTrans=1 
-			MESSAGEBOX("Han Ocurrido Errores. La copia de la factura  NO FUE Realizada",0+16+0,"ERROR en Transacción")
-			RETURN .F.
-		ELSE
-			RETURN .T.
-		ENDIF 
-
-
-
-
-*!*			
-*!*			SELECT column_name as field, typo as type, is_nullable as null, column_key as key, extra, column_default as default from columnas0cmb_sql INTO CURSOR columnascmb_sql 
-*!*			USE IN columnas0cmb_sql
-*!*			
-*!*			SELECT columnascmb_sql	*** abro transacción ***
-	
-	
-	
-	
-
-ENDFUNC 
