@@ -1340,7 +1340,7 @@ FUNCTION CargaMServicios
 		replace ALL manterior WITH mserviant.mactual, canterior WITH mserviant.consumo, mactual WITH mserviant.mactual 
 		
 
-		DIMENSION lamatriz(9,2)
+		DIMENSION lamatriz(10,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
@@ -1367,6 +1367,8 @@ FUNCTION CargaMServicios
 			lamatriz(8,2) = alltrim(str(mservicios.idbocaser))
 			lamatriz(9,1) = 'canterior'
 			lamatriz(9,2) = alltrim(str(mservicios.canterior,12,4))
+			lamatriz(10,1) = 'factorm'
+			lamatriz(10,2) = alltrim(str(mservicios.factorm,12,4))
 
 			p_tabla     = 'mservicios'
 			p_matriz    = 'lamatriz'

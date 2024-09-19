@@ -588,10 +588,11 @@ PARAMETERS pper_periodo, pper_idbocaser, pper_conexion
 	    RETURN 0 
 	ENDIF 
 
-	vmanterior = 0.00
-	vmactual = 0.00
-	vconsextra= 0.00
-	vconsumo  = 0.00
+	vmanterior 	= 0.00
+	vmactual 	= 0.00
+	vconsextra	= 0.00
+	vconsumo  	= 0.00
+	vfactorm  	= 0.00
 	SELECT medicionescs
 	GO TOP 
 	IF !EOF() THEN 
@@ -599,10 +600,11 @@ PARAMETERS pper_periodo, pper_idbocaser, pper_conexion
 		vmactual 	= medicionescs.mactual
 		vconsumo  	= medicionescs.consumo
 		vconsextra	= medicionescs.consextra
+		vfactorm	= medicionescs.factorm
 	ENDIF 
 	USE 	
 	
-	vreto = ALLTRIM(STR(vmanterior,12,2))+';'+ALLTRIM(STR(vmactual,12,2))+';'+ALLTRIM(STR(vconsextra,12,2))+';'+ALLTRIM(STR(vconsumo,12,2))
+	vreto = ALLTRIM(STR(vmanterior,12,2))+';'+ALLTRIM(STR(vmactual,12,2))+';'+ALLTRIM(STR(vconsextra,12,2))+';'+ALLTRIM(STR(vconsumo,12,2))+';'+ALLTRIM(STR(vfactorm,12,2))
 	
 	RETURN vreto
 	

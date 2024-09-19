@@ -7,15 +7,17 @@ ENDFUNC
 
 
 FUNCTION LEECONFIG()
+
+	
 	v_llave = 'Processar'
-	IF FILE('config.dbf') THEN 
+	IF FILE(_VCONFIGFILE) THEN 
 		PUNTERO = 1
 	ELSE 
 		PUNTERO = 0
 	ENDIF 
 
 	IF PUNTERO > 0 THEN
-		USE CONFIG.DBF IN 0
+		USE &_VCONFIGFILE IN 0 ALIAS config 
 		SELECT config 
 		DO WHILE !EOF() 
 			EJE = ALLTRIM(config.valorc)
@@ -36,7 +38,7 @@ FUNCTION LEECONFIG()
 		_screen.Visible = .t. 
 		DO FORM seteoaccesodb TO vseteo
 		IF !(vseteo = "0") THEN
-			USE CONFIG.DBF IN 0
+			USE &_VCONFIGFILE IN 0 ALIAS config 
 			SELECT config 
 			DO WHILE !EOF() 
 				EJE = ALLTRIM(config.valorc)
@@ -66,51 +68,52 @@ ENDFUNC
 
 FUNCTION CREACONFIG()
 		PARAMETERS pc_server, pc_usuario, pc_passw, pc_puerto, pc_esquema, pc_driver, pc_encripta, pc_llave, pc_vpnexe, pc_vpncon, pc_vpnusr, pc_vpnpass
+
 		v_llave = pc_llave
-		IF FILE('config.dbf') THEN 
-			DELETE FILE 'config.dbf' 
+		IF FILE(_VCONFIGFILE) THEN 
+			DELETE FILE &_VCONFIGFILE
 		ENDIF 
-		CREATE TABLE config.dbf (valorc c(254))
+		CREATE TABLE &_VCONFIGFILE (valorc c(254))
 		v_charC="PUBLIC _SYSMYSQL_SERVER, _SYSMYSQL_USER "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="PUBLIC _SYSMYSQL_PASS, _SYSMYSQL_PORT, _SYSSCHEMA, _SYSDRVMYSQL "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSMYSQL_SERVER = '"+ALLTRIM(pc_server)+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSMYSQL_USER   = '"+ALLTRIM(pc_usuario)+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSMYSQL_PASS   = '"+(ALLTRIM(pc_passw))+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSMYSQL_PORT   = '"+ALLTRIM(pc_puerto)+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSSCHEMA    	  = '"+ALLTRIM(pc_esquema)+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSDRVMYSQL     = '"+ALLTRIM(pc_driver)+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 
 		v_charC="PUBLIC _SYSVPN_EXE, _SYSVPN_CON, _SYSVPN_USR, _SYSVPN_PASS "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSVPN_EXE     = '"+(ALLTRIM(pc_vpnexe))+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSVPN_CON     = '"+ALLTRIM(pc_vpncon)+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSVPN_USR     = '"+ALLTRIM(pc_vpnusr)+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 		v_charC="_SYSVPN_PASS    = '"+ALLTRIM(pc_vpnpass)+"' "
 		v_charC=IIF(pc_encripta=0 ,v_charC,encripta(v_charC,v_llave,.f.))
-		INSERT INTO config VALUES (v_charC)
+		INSERT INTO &_VCONFIGFILE VALUES (v_charC)
 
 
 		USE 
@@ -2215,7 +2218,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 					
 					ALTER table hissaldo alter COLUMN fecha C(8)
 					ALTER table hissaldo alter COLUMN entidad I
-					ALTER table hissaldo alter COLUMN puntov C(4)
+					ALTER table hissaldo alter COLUMN puntov C(5)
 					ALTER table hissaldo alter COLUMN numero I
 					ALTER table hissaldo alter COLUMN abrevia C(10)
 					ALTER table hissaldo alter COLUMN tipo C(10)
@@ -2637,7 +2640,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora
 					
 					ALTER table hissaldo alter COLUMN fecha C(8)
 					ALTER table hissaldo alter COLUMN entidad I
-					ALTER table hissaldo alter COLUMN puntov C(4)
+					ALTER table hissaldo alter COLUMN puntov C(5)
 					ALTER table hissaldo alter COLUMN numero I
 					ALTER table hissaldo alter COLUMN abrevia C(10)
 					ALTER table hissaldo alter COLUMN tipo C(10)
@@ -4004,7 +4007,7 @@ PARAMETERS p_idacopio
 
 
 		CREATE TABLE comprobantesimp FREE (fecha C(8), idregistro I, idnp I, numComp C(30), tipoComp C(60), neto Y, op I, acopio C(1), imprimir I, observa c(254), idajuste I, numacop I, cliacop I, ;
-		nomCliAcop C(200), carAcop I, nomCarAcop C(200), ordAcop I, fechaAcop C(8), descAcop C(200), masAcop N(13,2), menosAcop N(13,2), saldoAcop N(13,2), tipoC C(1), nombrecomp C(50), puntov C(4), acopmast N(13,2), acopmenost N(13,2))
+		nomCliAcop C(200), carAcop I, nomCarAcop C(200), ordAcop I, fechaAcop C(8), descAcop C(200), masAcop N(13,2), menosAcop N(13,2), saldoAcop N(13,2), tipoC C(1), nombrecomp C(50), puntov C(5), acopmast N(13,2), acopmenost N(13,2))
 		
 		SELECT comprobantesimp
 		INDEX on ALLTRIM(fecha) TO fechaimp
@@ -4038,7 +4041,7 @@ PARAMETERS p_idacopio
 		v_descAcop = ""
 		v_tipoC	= ""
 		v_nombrecomp = ""
-		v_puntov = "0000"
+		v_puntov = "00000"
 		
 		v_masAcopt = 0.00
 		v_menosAcopt = 0.00
@@ -4393,7 +4396,7 @@ PARAMETERS p_idacopiop
 
 
 		CREATE TABLE comprobantespimp FREE (fecha C(8), idregistro I, idnp I, numComp C(30), tipoComp C(60), total Y, op I, acopio C(1), imprimir I, observa c(254), idajuste I, numacop I, cliacop I, ;
-		nomCliAcop C(200), carAcop I, nomCarAcop C(200), ordAcop I, fechaAcop C(8), descAcop C(200), masAcop N(13,2), menosAcop N(13,2), saldoAcop N(13,2), tipoC C(1), nombrecomp C(50), puntov C(4), acopmast N(13,2), acopmenost N(13,2))
+		nomCliAcop C(200), carAcop I, nomCarAcop C(200), ordAcop I, fechaAcop C(8), descAcop C(200), masAcop N(13,2), menosAcop N(13,2), saldoAcop N(13,2), tipoC C(1), nombrecomp C(50), puntov C(5), acopmast N(13,2), acopmenost N(13,2))
 		
 		SELECT comprobantespimp
 		INDEX on ALLTRIM(fecha) TO fechaimp
@@ -4427,7 +4430,7 @@ PARAMETERS p_idacopiop
 		v_descAcop = ""
 		v_tipoC	= ""
 		v_nombrecomp = ""
-		v_puntov = "0000"
+		v_puntov = "00000"
 		
 		v_masAcopt = 0.00
 		v_menosAcopt = 0.00
@@ -26560,7 +26563,7 @@ SELECT * FROM servicios_deudaA INTO TABLE servicios_deuda
 		*** Cierro conexión ***
 		=abreycierracon(vconeccionDV ,"")
 	
-	v_sent = "CREATE TABLE "+ALLTRIM(p_nombreTabRet)+" (entidad I,servicio I,cuenta I,nombre C(250),cuit C(13),fecha C(8),total N(13,4), imputado N(13,4), saldo N(13,4),puntov C(4), abrevia C(20), comproba C(100), tipo C(1), numero I, opera I, idregistro I, idcomproba I)"
+	v_sent = "CREATE TABLE "+ALLTRIM(p_nombreTabRet)+" (entidad I,servicio I,cuenta I,nombre C(250),cuit C(13),fecha C(8),total N(13,4), imputado N(13,4), saldo N(13,4),puntov C(5), abrevia C(20), comproba C(100), tipo C(1), numero I, opera I, idregistro I, idcomproba I)"
 	
 	&v_sent
 	

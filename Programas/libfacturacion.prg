@@ -593,17 +593,21 @@ PARAMETERS par_idperiodo, par_ordenfa
 	ALTER table &vbocaserviciosftmp ADD consumo n(10,2)
 	ALTER table &vbocaserviciosftmp ALTER COLUMN idcateser i
 
+
 	DO WHILE !EOF()
 		vmedidas = FPXMSERVICIO(PAR_idperiodo, &vbocaserviciosftmp..idbocaser, vconeFacturar)
 		vmedidas1 = VAL(SUBSTR(vmedidas,1,ATC(';',vmedidas,1)-1)) && manterior
 		vmedidas2 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,1)+1,ATC(';',vmedidas,2)-1)) && mactual
 		vmedidas3 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,2)+1,ATC(';',vmedidas,3)-1)) && consextra
-		vmedidas4 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,3)+1)) &&consumo
+		vmedidas4 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,3)+1,ATC(';',vmedidas,4)-1)) &&consumo
+		vmedidas5 = VAL(SUBSTR(vmedidas,ATC(';',vmedidas,4)+1)) &&factorm
 		SELECT &vbocaserviciosftmp
 		replace &vbocaserviciosftmp..manterior WITH vmedidas1, &vbocaserviciosftmp..mactual WITH vmedidas2, ;
-				&vbocaserviciosftmp..consextra WITH vmedidas3, &vbocaserviciosftmp..consumo WITH vmedidas4
+				&vbocaserviciosftmp..consextra WITH vmedidas3, &vbocaserviciosftmp..consumo WITH vmedidas4, &vbocaserviciosftmp..factorm WITH vmedidas5
 		SKIP 
 	ENDDO 
+
+BROWSE 
 
 
  
@@ -937,7 +941,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 
 	SELECT &pbocaservi
 	GO TOP 
-	DIMENSION lamatriz4(18,2)
+	DIMENSION lamatriz4(19,2)
 	DO WHILE !EOF() 
 	
 		lamatriz4(1,1)='idfacbser'
@@ -976,6 +980,8 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		lamatriz4(17,2)= ALLTRIM(STR(&pbocaservi..idcateser))
 		lamatriz4(18,1)= 'dataextra'
 		lamatriz4(18,2)= "'"+ALLTRIM(&pbocaservi..dataextra)+"'"
+		lamatriz4(19,1)= 'factorm'
+		lamatriz4(19,2)= ALLTRIM(STR(&pbocaservi..factorm,12,2))
 
 						
 		p_tabla     = 'facturasbsertmp'
@@ -1331,8 +1337,8 @@ PARAMETERS pcon_idperiodo
 	ENDIF 
 
 
-	sqlmatriz(1)=" insert into facturasbser ( idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser,dataextra ) "
-	sqlmatriz(2)=" select 0 as idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser, dataextra from bsertmpt  "
+	sqlmatriz(1)=" insert into facturasbser ( idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser,dataextra,factorm ) "
+	sqlmatriz(2)=" select 0 as idfacbser, idfactura, bocanumero, ruta1, folio1, ruta2, folio2, ubicacion, direccion, idtiposer, valorref, unidadref, manterior, mactual, consextra, consumo, idcateser, dataextra, factorm from bsertmpt  "
 	verror=sqlrun(vcone,"selfcpt_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")

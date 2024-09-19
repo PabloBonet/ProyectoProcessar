@@ -28,8 +28,24 @@ ON KEY LABEL CTRL+F4 DO SALIRMENU
 ON KEY LABEL ESC DO SETEO_ESC 
 ON KEY LABEL CTRL+F11 MESSAGEBOX(_screen.ActiveForm.name)
 
-PUBLIC _SYSLIBRERIAS, _VPARAMETROS
+PUBLIC _SYSLIBRERIAS, _VPARAMETROS, _VCONFIGFILE
 _VPARAMETROS = _PPARAMETROS
+
+IF TYPE('_VPARAMETROS') = 'C' THEN 
+	IF ATC('#',_PPARAMETROS) > 0 then
+		vpconfig = SUBSTR(_PPARAMETROS,ATC('#',_PPARAMETROS),ATC('#',_PPARAMETROS,2)-ATC('#',_PPARAMETROS)+1)
+		IF LEN(ALLTRIM(vpconfig))>= 2 THEN 
+			_VCONFIGFILE = STRTRAN(LOWER(STRTRAN(vpconfig,'#','')),'.dbf','')+'.dbf'
+			_VPARAMETROS = STRTRAN(_VPARAMETROS,vpconfig,'')
+		ENDIF 
+	ELSE 
+		_VCONFIGFILE = 'config.dbf'
+	ENDIF 
+ELSE
+	_VCONFIGFILE = 'config.dbf'
+ENDIF 
+
+
 
 _SYSLIBRERIAS = " UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg , ftp_class.prg, libconceptos.prg, foxbarcodeqr.prg, modulocb.prg, modulopnt.prg, libweb.prg, impuestosn.prg, validaciones.prg "
 SET PROCEDURE TO &_SYSLIBRERIAS &&UTILITY.PRG, SALIDA.PRG, SONIDO.PRG, GENERAL.PRG, SQL.PRG, crystalreports.prg, libimportar.prg, libfacturacion.prg , ftp_class.prg, libconceptos.prg, foxbarcodeqr.prg, modulocb.prg, libweb.prg
@@ -81,7 +97,8 @@ DO WHILE vconeccion < 0 AND salir = 0
 		DO FORM seteoaccesodb TO vseteo
 		IF !(vseteo = "0") THEN
 			v_llave = vseteo
-			USE CONFIG.DBF IN 0
+*!*				USE CONFIG.DBF IN 0
+			USE &_VCONFIGFILE IN 0 ALIAS config
 			SELECT config 
 			DO WHILE !EOF() 
 				EJE = ALLTRIM(config.valorc)
