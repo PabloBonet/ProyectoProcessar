@@ -1332,6 +1332,56 @@ ENDIF
 
 ENDFUNC 
 
+
+FUNCTION probarServicioAFIP
+PARAMETERS p_puntoVta, p_idTipoComp
+*#/----------------------------------------
+* FUNCIÓN PARA PROBAR LA CONFIGURACIÓN DEL AFIP
+* Para probar el servicio intenta obtener el último comprobante autorizado
+* PARAMETROS: p_puntoVta: Punto de venta para probar el servicio, p_idTipoComp: Tipo de comprobante, (Parámetro opcional)
+* RETORNO: Retorna True si el servicio funciona correctamente, False en otro caso
+*#/----------------------------------------
+
+	v_prueba = .F.
+	IF TYPE('p_puntoVta') <> 'N' 
+
+		MESSAGEBOX("Parametro inválido: p_puntoVta no es un Número",0+16+0,"Error al probar el servicio de AFUIP")
+		RETURN .F.
+	
+	ENDIF 
+	
+	IF TYPE('p_idTipoComp') = 'L' 
+
+		p_idTipoComp = 1
+		
+	ELSE
+		IF TYPE('p_idTipoComp') <> 'N' 
+		
+			MESSAGEBOX("Parametro inválido: p_idTipoComp no es un Número",0+16+0,"Error al probar el servicio de AFUIP")
+			RETURN .F.
+		
+		ENDIF 
+	ENDIF 
+	
+	
+	v_objconfigurado = objModuloAFIP.Configurado 
+		
+	IF v_objConfigurado = .T.
+	
+		v_prueba = objModuloAFIP.ProbarServicio(p_puntoVta, p_idTipoComp)
+		
+
+	ELSE
+		MESSAGEBOX("Configuración del modulo AFIP INCORRECTA",0+16+0,"Error al probar el servicio de AFIP")
+		RETURN .F.
+	ENDIF 
+
+	RETURN v_prueba
+
+ENDFUNC 
+
+
+
 FUNCTION autorizarCompFE
 PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 *#/----------------------------------------
