@@ -2358,7 +2358,7 @@ PARAMETERS p_idimportap, p_archivo, p_func
 
 		CREATE TABLE .\articuloscar FREE (articulo C(50), detalle C(254), unidad C(200), abrevia C(50), codbarra C(100), costo n(13,4), linea C(20), ;
 		ctrlstock C(1), observa C(254), ocultar C(1), stockmin N(13,4), desc1 N(13,4), desc2 N(13,4), desc3 N(13,4), desc4 N(13,4), desc5 N(13,4), moneda I, ;
-		impuesto I, margen N(13,4),proveedor I,codigop C(50),idsublinea I)			
+		impuesto I, margen N(13,4),proveedor I,codigop C(50),idsublinea I, base N(13,2), unidadf C(50) )			
 					
 		SELECT articuloscar 
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
@@ -2444,7 +2444,17 @@ PARAMETERS p_idimportap, p_archivo, p_func
 *!*					ENDIF 
 			ENDIF 
 					
-							
+				*** Calulo el Maximo de articulosf ***
+			sqlmatriz(1)="select MAX(idartf) as maxi from articulosf "
+			verror=sqlrun(vconeccion,"maxarticulosf")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en busqueda del maximo valor de articulosf",0+48+0,"Eliminación de Registros")
+			    RETURN -9
+			ELSE
+				v_maximoArtf = IIF(ISNULL(maxarticulosf.maxi)=.T.,0,maxarticulosf.maxi)
+				v_idartf = v_maximoArtf 
+				
+			ENDIF 			
 		ENDIF 
 	
 	
@@ -2456,6 +2466,7 @@ PARAMETERS p_idimportap, p_archivo, p_func
 		DIMENSION lamatriz2(4,2)
 		DIMENSION lamatriz3(6,2)
 		DIMENSION lamatriz4(4,2)
+		DIMENSION lamatriz5(4,2)
 		
 		
 		
@@ -2608,6 +2619,38 @@ PARAMETERS p_idimportap, p_archivo, p_func
 					ENDIF 
 					
 				ENDIF 				
+	
+				*** Cargo la unidad de facturación en caso de que tenga ***
+				
+				v_base = articuloscarF.base
+				v_cantidadf = articuloscarF.cantidadf
+				
+				IF v_base > 0 AND EMPTY(ALLTRIM(v_cantidadf)) = .F.
+				
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					
+					v_idartf  = v_idartf  + 1
+					lamatriz5(1,1)='idartf'
+					lamatriz5(1,2)= ALLTRIM(STR(v_idartf ))
+					lamatriz5(2,1)='articulo'
+					lamatriz5(2,2)="'"+ALLTRIM(articuloscarF.articulo)+"'"
+					lamatriz5(3,1)='base'
+					lamatriz5(3,2)=ALLTRIM(STR(v_base,13,2))
+					lamatriz5(4,1)='unidadf'
+					lamatriz5(4,2)="'"+ALLTRIM(v_unidadf)+"'"	
+		
+					p_tabla     = 'articulosf'
+					p_matriz    = 'lamatriz5'
+					p_conexion  = vconeccionF
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Articulos ",0+48+0,"Error")
+					
+					ENDIF 
+				
+				
+				ENDIF 
 	
 			ENDIF 
 			
