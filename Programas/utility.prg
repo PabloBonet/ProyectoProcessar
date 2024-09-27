@@ -1333,6 +1333,81 @@ ENDIF
 ENDFUNC 
 
 
+FUNCTION obtenerUltNroComp
+PARAMETERS p_puntoVta, p_idTipoComp
+*#/----------------------------------------
+* FUNCIÓN PARA OBTENER EL UTLIMO NUMERO DE AFIP
+* Para probar el servicio intenta obtener el último comprobante autorizado
+* PARAMETROS: p_puntoVta: Punto de venta para probar el servicio, p_idTipoComp: Tipo de comprobante, (Parámetro opcional)
+* RETORNO: Retorna True si el servicio funciona correctamente, False en otro caso
+*#/----------------------------------------
+
+	v_ultimoNro = -1
+	IF TYPE('p_puntoVta') <> 'N' 
+
+		MESSAGEBOX("Parametro inválido: p_puntoVta no es un Número",0+16+0,"Error al probar el servicio de AFUIP")
+		RETURN .F.
+	
+	ENDIF 
+	
+	IF TYPE('p_idTipoComp') = 'L' 
+
+		p_idTipoComp = 1
+		
+	ELSE
+		IF TYPE('p_idTipoComp') <> 'N' 
+		
+			MESSAGEBOX("Parametro inválido: p_idTipoComp no es un Número",0+16+0,"Error al probar el servicio de AFUIP")
+			RETURN .F.
+		
+		ENDIF 
+	ENDIF 
+	
+	
+		v_tipoObj = TYPE("objModuloAFIP")
+		
+		IF v_tipoObj <> "O" && No se creo el objeto
+		
+			public objModuloAFIP
+			objModuloAFIP = CREATEOBJECT("ModuloAFIP.ModuloAFIP")
+			
+		ENDIF 
+		
+
+		v_objconfigurado = objModuloAFIP.Configurado 
+			
+		IF v_objConfigurado = .T.
+			v_ultimoNro = objModuloAFIP.ObtenerUltNroComp(p_puntoVta, p_idTipoComp)
+		else	
+
+			v_ubicacionCertificado = STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+ALLTRIM(_SYSNOMBRECERT)),"\","\\")
+			v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(_SYSCUIT,'-',''))
+			v_ticketAcceso			= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"TA"+v_cuitSinGuiones),"\","\\")
+			v_log					= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"LOG"+v_cuitSinGuiones+".txt"),"\","\\")
+									
+
+			v_objconfigurado	= objModuloAFIP.CargaConfiguracion(ALLTRIM(_SYSSERVICIOFE), ALLTRIM(_SYSURLWSAA), ALLTRIM(_SYSSERVICIOAFIP), ALLTRIM(_SYSPROXY), ALLTRIM(_SYSPROXYUSU), ALLTRIM(_SYSPROXYPASS), ALLTRIM(v_ubicacionCertificado), ALLTRIM(v_ticketAcceso), _SYSINTAUT, _SYSINTTA, ALLTRIM(_SYSNOMFISCAL), ALLTRIM(_SYSCUIT), ALLTRIM(v_log),ALLTRIM(_SYSSERVCONTRIB),ALLTRIM(_SYSSERVICIOPER))
+
+			
+		
+			IF v_objConfigurado = .F.
+		
+		
+				MESSAGEBOX("Configuración del modulo AFIP INCORRECTA",0+16+0,"Error al probar el servicio de AFIP")
+				RETURN .F.
+			ELSE
+				v_ultimoNro = objModuloAFIP.ObtenerUltNroComp(p_puntoVta, p_idTipoComp)
+			ENDIF 
+		ENDIF 
+				
+	
+		
+
+	RETURN v_ultimoNro 
+
+ENDFUNC 
+
+
 FUNCTION probarServicioAFIP
 PARAMETERS p_puntoVta, p_idTipoComp
 *#/----------------------------------------
@@ -1363,7 +1438,19 @@ PARAMETERS p_puntoVta, p_idTipoComp
 		ENDIF 
 	ENDIF 
 	
-	
+	v_tipoObj = TYPE("objModuloAFIP")
+		
+		IF v_tipoObj <> "O" && No se creo el objeto
+		
+			public objModuloAFIP
+			objModuloAFIP = CREATEOBJECT("ModuloAFIP.ModuloAFIP")
+		
+		
+		
+		ENDIF 
+		
+		
+		
 	v_objconfigurado = objModuloAFIP.Configurado 
 		
 	IF v_objConfigurado = .T.
@@ -1372,8 +1459,26 @@ PARAMETERS p_puntoVta, p_idTipoComp
 		
 
 	ELSE
-		MESSAGEBOX("Configuración del modulo AFIP INCORRECTA",0+16+0,"Error al probar el servicio de AFIP")
-		RETURN .F.
+	
+		v_ubicacionCertificado = STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+ALLTRIM(_SYSNOMBRECERT)),"\","\\")
+		v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(_SYSCUIT,'-',''))
+		v_ticketAcceso			= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"TA"+v_cuitSinGuiones),"\","\\")
+		v_log					= STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+"LOG"+v_cuitSinGuiones+".txt"),"\","\\")
+								
+
+		v_objconfigurado	= objModuloAFIP.CargaConfiguracion(ALLTRIM(_SYSSERVICIOFE), ALLTRIM(_SYSURLWSAA), ALLTRIM(_SYSSERVICIOAFIP), ALLTRIM(_SYSPROXY), ALLTRIM(_SYSPROXYUSU), ALLTRIM(_SYSPROXYPASS), ALLTRIM(v_ubicacionCertificado), ALLTRIM(v_ticketAcceso), _SYSINTAUT, _SYSINTTA, ALLTRIM(_SYSNOMFISCAL), ALLTRIM(_SYSCUIT), ALLTRIM(v_log),ALLTRIM(_SYSSERVCONTRIB),ALLTRIM(_SYSSERVICIOPER))
+
+			
+	
+		IF v_objConfigurado = .F.
+	
+	
+			MESSAGEBOX("Configuración del modulo AFIP INCORRECTA",0+16+0,"Error al probar el servicio de AFIP")
+			RETURN .F.
+			
+		ELSE
+				v_prueba = objModuloAFIP.ProbarServicio(p_puntoVta, p_idTipoComp)
+		ENDIF 
 	ENDIF 
 
 	RETURN v_prueba

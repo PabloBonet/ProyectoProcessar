@@ -2623,9 +2623,9 @@ PARAMETERS p_idimportap, p_archivo, p_func
 				*** Cargo la unidad de facturación en caso de que tenga ***
 				
 				v_base = articuloscarF.base
-				v_cantidadf = articuloscarF.cantidadf
+				v_unidadf  = articuloscarF.unidadf 
 				
-				IF v_base > 0 AND EMPTY(ALLTRIM(v_cantidadf)) = .F.
+				IF v_base > 0 AND EMPTY(ALLTRIM(v_unidadf)) = .F.
 				
 					p_tipoope     = 'I'
 					p_condicion   = ''
