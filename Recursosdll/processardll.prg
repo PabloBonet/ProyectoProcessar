@@ -177,8 +177,140 @@ CuitEmpresa = ""
 	RETURN a
 
 
+ENDDEFINE 
 
 
+
+
+DEFINE CLASS SMSWhatsapp AS Custom olepublic
+
+cPhone 		= ""
+ccMessage 	= ""
+ccArchivo 	= ""
+
+	PROCEDURE SendWhatsapp 
+	PARAMETERS p_cphone, p_ccMensage, p_ccArchivo
+	
+		IF EMPTY(p_cphone) THEN 
+			MESSAGEBOX("Debe Especificar un Telefono para el Envío de WhatsApp... Verifique ",48,"Envio de WhatsApp")
+			RETURN 
+		ENDIF 
+		this.cPhone = (STRTRAN(p_cphone,'-',''))
+		this.ccMessage = ALLTRIM(p_ccMensage)
+		this.ccArchivo = ALLTRIM(p_ccArchivo)
+
+		Declare Sleep In kernel32 Integer
+		Declare  Integer FindWindow In WIN32API String , String
+		Declare  Integer SetForegroundWindow In WIN32API Integer
+		Declare  Integer  ShowWindow  In WIN32API Integer , Integer
+		Declare Integer ShellExecute In shell32.Dll ;
+			INTEGER hndWin, ;
+			STRING cAction, ;
+			STRING cFileName, ;
+			STRING cParams, ;
+			STRING cDir, ;
+			INTEGER nShowWin
+
+		Local lt, lhwnd
+		
+			cTelPhone=this.cPhone
+			cmd='whatsapp://send?phone=&cTelPhone&text='+this.ccMessage 
+			=ShellExecute(0, 'open', cmd,'', '', 1)
+	*!*			Wait "" Timeout 3
+			lt = "Whatsapp"
+			lhwnd = FindWindow (0, lt)
+	*!*			Wait "" Timeout 3
+			If lhwnd!= 0
+				SetForegroundWindow (lhwnd)
+				ShowWindow (lhwnd, 1)
+				ox = Createobject ( "Wscript.Shell" )
+
+				sleep(1000)
+				ox.sendKeys ( '{ENTER}' )
+				** Copy list of files into Clipboard
+			
+				IF !EMPTY(this.ccArchivo) THEN 
+					this.CopyFiles2Clipboard(this.ccArchivo)
+							
+					sleep(1000)
+					ox.sendKeys ("^{v}")
+					sleep(1000)
+					ox.sendKeys ( '{ENTER}' )
+				ENDIF 
+			
+					
+			Else
+				Messagebox ( "Whatsapp is not activated!" )
+			ENDIF
+			
+	RETURN 
+
+
+
+
+
+
+	PROCEDURE  CopyFiles2Clipboard(taFileList)
+		*#/---------------------------
+		*** Función para copiar un archivo al ClipBoard
+		*** Parametro: taFileList = el path completo del archivo que se pretende copiar al Clipboard
+		*#/---------------------------
+			LOCAL lnDataLen, lcDropFiles, llOk, i, lhMem, lnPtr
+			#DEFINE CF_HDROP 15
+
+			*  Global Memory Variables with Compile Time Constants
+			#DEFINE GMEM_MOVABLE 	0x0002
+			#DEFINE GMEM_ZEROINIT	0x0040
+			#DEFINE GMEM_SHARE	0x2000
+
+			* Load required Windows API functions
+			this.LoadApiDlls()
+
+			llOk = .T.
+			* Build DROPFILES structure
+			lcDropFiles = ;
+					CHR(20) + REPLICATE(CHR(0),3) + ; 	&& pFiles
+					REPLICATE(CHR(0),8) + ; 		&& pt
+					REPLICATE(CHR(0),8)  			&& fNC + fWide
+			* Add zero delimited file list
+				lcDropFiles = lcDropFiles + taFileList + CHR(0)
+			* Final CHR(0)
+			lcDropFiles = lcDropFiles + CHR(0)
+			lnDataLen = LEN(lcDropFiles)
+			* Copy DROPFILES structure into the allocated memory
+			lhMem = GlobalAlloc(GMEM_MOVABLE+GMEM_ZEROINIT+GMEM_SHARE, lnDataLen)
+			lnPtr = GlobalLock(lhMem)
+			=CopyFromStr(lnPtr, @lcDropFiles, lnDataLen)
+			=GlobalUnlock(lhMem)
+			* Open clipboard and store DROPFILES into it
+			llOk = (OpenClipboard(0) <> 0)
+			IF llOk
+				=EmptyClipboard()
+				llOk = (SetClipboardData(CF_HDROP, lhMem) <> 0)
+				* If call to SetClipboardData() is successful, the system will take ownership of the memory
+				*   otherwise we have to free it
+				IF NOT llOk
+					=GlobalFree(lhMem)
+				ENDIF
+				* Close clipboard 
+				=CloseClipboard()
+			ENDIF
+		RETURN llOk
+
+		PROCEDURE  LoadApiDlls
+			*  Clipboard Functions
+			DECLARE LONG OpenClipboard IN WIN32API LONG HWND
+			DECLARE LONG CloseClipboard IN WIN32API
+			DECLARE LONG EmptyClipboard IN WIN32API
+			DECLARE LONG SetClipboardData IN WIN32API LONG uFormat, LONG hMem
+			*  Memory Management Functions
+			DECLARE LONG GlobalAlloc IN WIN32API LONG wFlags, LONG dwBytes
+			DECLARE LONG GlobalFree IN WIN32API LONG HMEM
+			DECLARE LONG GlobalLock IN WIN32API LONG HMEM
+			DECLARE LONG GlobalUnlock IN WIN32API LONG HMEM
+			DECLARE LONG RtlMoveMemory IN WIN32API As CopyFromStr LONG lpDest, String @lpSrc, LONG iLen
+
+		RETURN
 
 ENDDEFINE 
 

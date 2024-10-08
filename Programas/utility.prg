@@ -10577,20 +10577,61 @@ FUNCTION obtenerCorreos
 	v_email1	= entidades_sql_uti.email
 	v_retorno	= v_email1
 			
-*!*			IF EMPTY(v_email2)
-*!*				v_retorno	= v_email1
-*!*			ELSE
-*!*				IF EMPTY(v_email1)
-*!*					v_retorno	= v_email2
-*!*				ELSE
-*!*					v_retorno	= v_email1+";"+v_email2
-*!*				ENDIF 
-*!*			ENDIF  
+
 	USE IN entidades_sql_uti			
 	return v_retorno
 		
 		
 ENDFUNC 
+
+
+FUNCTION obtenerWhatsApp
+	PARAMETERS pIdEntidad
+*#/----------------------------------------
+* Retorna una Lista de Celulares para enviar WhatsApp
+* pIdEntidadd: ID de la entidad
+* Retorno: Lista de Emails separados por ';'
+*#/----------------------------------------
+
+	IF TYPE("pIdEntidad")='C' THEN 
+		pIdEntidad = INT(VAL(pIdEntidad))
+	ENDIF 
+	
+	v_retorno	= ""
+	
+	IF pIdEntidad == 0 OR EMPTY(pIdEntidad) == .T.
+	
+		RETURN  v_retorno
+	ENDIF 
+
+	v_identidad	= pIdEntidad
+	
+	vconeccionM	= abreycierracon(0,_SYSSCHEMA)
+	
+	sqlmatriz(1)=" select apellido,nombre, whatsapp from entidades where entidad = "+ALLTRIM(STR(v_identidad))
+
+	verror=sqlrun(vconeccionM,"entidades_sql_uti")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los correos de las entidades",0+48+0,"Error")
+	    RETURN v_retorno
+	ENDIF 
+
+	* me desconecto	
+	=abreycierracon(vconeccionM,"")
+		
+	
+	SELECT entidades_sql_uti
+	GO TOP 
+	v_whatsapp	= entidades_sql_uti.whatsapp
+	v_retorno	= v_whatsapp
+			
+
+	USE IN entidades_sql_uti			
+	return v_retorno
+		
+ENDFUNC 
+
+
 
 
 FUNCTION cargaCfgCorreo(pusuarioEnv)
@@ -28594,8 +28635,38 @@ PARAMETERS p_esquemaD, p_idfactura, p_puntov,p_tab_excluidos
 *!*			SELECT columnascmb_sql	*** abro transacción ***
 	
 	
-	
-	
-
 ENDFUNC 
+
+
+
+*!*	FUNCTION ViewTextBox
+*!*	PARAMETERS ptb_titulo, ptb_texto, ptb_width
+*!*	*#/---------------------------
+*!*	*** Función de creación y Activacion de Objeto para Mostrar Progreso
+*!*	*** pv_cantidad = Numero de registro de avance
+*!*	*** pv_total	= Total de Registros a procesar
+*!*	*#/---------------------------
+*!*	RELEASE tooltexto 
+*!*	IF !(ALLTRIM(UPPER(ptb_titulo)) == "-1") 
+*!*			
+*!*			IF !(TYPE("ptb_width") = "N") THEN 
+*!*				ptb_width =  150
+*!*			ENDIF 
+*!*			IF ptb_width < 150 THEN 
+*!*				ptb_width = 150
+*!*			ENDIF 
+*!*			
+*!*			PUBLIC  tooltexto
+*!*			tooltexto = CREATEOBJECT('tooltexto')
+*!*		*!*	ENDIF 
+*!*		*!*	toolbarprogress.top = ( (_screen.Height / 4 ) * 3 ) - 23
+*!*		*!*	toolbarprogress.left = (_screen.Width /2 ) - ( toolbarprogress.width / 2)
+*!*		*!*	toolbarprogress.progreso( pv_cantidad, pv_total, pv_titulo )
+*!*		tooltexto.caption = ptb_titulo
+*!*		tooltexto.tb_texto.value = ptb_texto
+*!*		tooltexto.tb_texto.width = ptb_width 
+*!*		tooltexto.show 
+*!*	*!*		tooltexto.tb_texto.setfocus
+*!*	ENDIF 
+*!*	ENDFUNC 
 
