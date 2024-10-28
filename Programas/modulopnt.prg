@@ -4,6 +4,8 @@ FUNCTION PuntosAutoTablas
 * 		Automatiza la puntuacion
 * Parametros: sin  parametros
 *#/----------------------------------------
+
+
 	IF TYPE('_SYSPUNTOS') <> 'C' THEN 
 		RETURN .f.
 	ELSE 
@@ -18,7 +20,7 @@ FUNCTION PuntosAutoTablas
 		vconeccionPN=abreycierracon(0,_SYSSCHEMA)
 
 		sqlmatriz(1)= " select tabla, fechaini "
-		sqlmatriz(2)= " from pntopera where fechaini >= '"+ALLTRIM(asyspuntos(4))+"' and automat = 'S' "
+		sqlmatriz(2)= " from pntopera where fechaini >= '"+ALLTRIM(asyspuntos(4))+"' and automat = 'S' order by tabla desc "
 		verror=sqlrun(vconeccionPN ,"tablaspnt_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la registracion de puntos ",0+48+0,"Error")
@@ -27,7 +29,7 @@ FUNCTION PuntosAutoTablas
 		SELECT tablaspnt_sql 
 		GO TOP 
 		IF !EOF()  THEN  && hay que puntuar 
-			SELECT tabla, MIN(fechaini) as fechaini FROM tablaspnt_sql INTO TABLE tablaspnt GROUP BY tabla 
+			SELECT tabla, MIN(fechaini) as fechaini FROM tablaspnt_sql INTO TABLE tablaspnt GROUP BY tabla ORDER BY tabla desc
 			USE IN tablaspnt_sql
 			SELECT tablaspnt
 			GO TOP 
@@ -40,15 +42,18 @@ FUNCTION PuntosAutoTablas
 					pnt_nomindice 	= obtenerCampoIndice(ALLTRIM(pnt_tabla))
 
 					sqlmatriz(1)= " select "+pnt_nomindice+" as indice "
-					sqlmatriz(2)= " from "+pnt_tabla+" where fecha >= '"+ALLTRIM(pnt_fechaini)+"' "
-					sqlmatriz(3)= " and "+pnt_nomindice+" not in ( select id from pntpuntos where tabla = '"+pnt_tabla+"' )"
+					sqlmatriz(2)= " from "+pnt_tabla+" t "
+					sqlmatriz(3)= " left join pntentidades p on p.entidad = t.entidad "
+					sqlmatriz(4)= " where t.fecha >= '"+ALLTRIM(pnt_fechaini)+"' "
+					sqlmatriz(5)= " and ifnull(p.entidad,0) > 0 and t."+pnt_nomindice+" not in ( select id from pntpuntos where tabla = '"+pnt_tabla+"' )"
 					verror=sqlrun(vconeccionPN ,"registros_sql")
 					IF verror=.f.  
 					    MESSAGEBOX("Ha Ocurrido un Error en la busqueda registros de puntos ",0+48+0,"Error")
 					    RETURN ""  
 					ENDIF	
 					SELECT registros_sql
-					GO TOP 
+ 					GO TOP 
+					
 					DO WHILE !EOF()
 						vidcomid 	= registros_sql.indice
 						IF vidcomid > 0 THEN 
@@ -93,7 +98,7 @@ PARAMETERS punt_tabla, punt_id, punt_au, pcont_conex
 *		   : -1 SI NO LO GENERÓ Y EL OPERADOR DEBIERA INGRESARLO, esto se controla con una variable publica : _SYSPUNTOS de seteo 
 **         : -2 NO Generó el Asiento porque no está habilitado el Módulo Contable
 *#/----------------------------------------
-	
+
 	ret_idpuntos = 0
 	
 	IF TYPE('_SYSPUNTOS') <> 'C' THEN 
@@ -113,7 +118,6 @@ PARAMETERS punt_tabla, punt_id, punt_au, pcont_conex
 
 
 	* Verifico si el registro pasado ya no está puntuado , si es que tiene que puntuarlo *
-
 		sqlmatriz(1)= " select idpuntos, entidad, tabla, id, fecha  "
 		sqlmatriz(2)= " from pntpuntos where tabla = '"+ALLTRIM(punt_tabla)+"' and id="+alltrim(STR(punt_id))
 		verror=sqlrun(vcone_conta ,"punt_sql")
@@ -122,6 +126,7 @@ PARAMETERS punt_tabla, punt_id, punt_au, pcont_conex
 		    RETURN ""  
 		ENDIF	
 		SELECT punt_sql
+
 		GO TOP 
 
 		IF !EOF()  THEN 
@@ -159,7 +164,6 @@ FUNCTION GenPuntos
 
 PARAMETERS ppun_tabla, pp_vconeccion
 
-
 	pp_cierraconex = .f.
 	IF pp_vconeccion = 0 THEN 
 		pp_vconeccion=abreycierracon(0,_SYSSCHEMA)	
@@ -173,6 +177,8 @@ PARAMETERS ppun_tabla, pp_vconeccion
 	ENDIF 
 	SELECT &ppun_tabla
 	GO TOP 
+
+
 	DIMENSION lamatriz1(9,2)
 
 	DO WHILE !EOF()
@@ -238,7 +244,7 @@ FUNCTION FiltroPuntos
 *		
 *#//////////////////////////////////////
 PARAMETERS pf_tabla, pf_idregi, pf_au, pf_vconeccion
-	
+
 	pf_campoid = getIdTabla(pf_tabla) && Obtengo el nombre del campo indice de la tabla
 	
 	pf_cierraconex = .f.
@@ -255,6 +261,7 @@ PARAMETERS pf_tabla, pf_idregi, pf_au, pf_vconeccion
 	sqlmatriz(2)= ALLTRIM(pf_tabla)+" t left join pntentidades e on e.entidad = t.entidad " 
 	sqlmatriz(3)=" where t."+pf_campoid+" = "+var_pf_idregi+" and ifnull(e.entidad,0) > 0 "
 	sqlmatriz(4)=" and length(trim(ifnull(e.fechaini,''))) > 0 and t.fecha >= trim(ifnull(e.fechaini,'')) and ( t.fecha <= trim(ifnull(e.fechafin,'')) or trim(ifnull(e.fechafin,'')) = '') "
+
 	verror=sqlrun(pf_vconeccion,"registrof_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Registro en la Tabla: "+var_pf_idregi+";"+pf_tabla+";"+pf_campoid,0+48+0,"Error")
@@ -292,6 +299,8 @@ PARAMETERS pf_tabla, pf_idregi, pf_au, pf_vconeccion
 		    RETURN ret_puntos 
 		ENDIF
 		SELECT *, 0 as cumple FROM filtros_sql INTO TABLE filtros
+		
+		
 		SELECT filtros_sql
 		USE IN filtros_sql
 		SELECT registrof_sql
@@ -357,6 +366,8 @@ PARAMETERS pf_tabla, pf_idregi, pf_au, pf_vconeccion
 			SKIP 
 
 		ENDDO 
+
+		
 	ENDIF 
 	
 
@@ -367,7 +378,7 @@ PARAMETERS pf_tabla, pf_idregi, pf_au, pf_vconeccion
 	GO TOP 
 	
 	ret_puntos = 'ret_puntos'+frandom()
-	SELECT idpntopera, tabla, campoid, idreg, cmpfactor, funcionpnt , 1000000.00 as factor, puntos, 1000000.00 as fpntpuntos, 1000000 as entidad, '        ' as fecha ;
+	SELECT idpntopera, tabla, campoid, idreg, cmpfactor, funcionpnt , 1000000.00 as factor, puntos, 1000000.00 as fpntpuntos, 1000000000 as entidad, '        ' as fecha ;
 		FROM filtrosele INTO TABLE &ret_puntos  WHERE cantidadf = cumplidos AND cumplidos > 0 
 		
 	SELECT &ret_puntos
@@ -392,9 +403,11 @@ PARAMETERS pf_tabla, pf_idregi, pf_au, pf_vconeccion
 			IF !EMPTY(funcionpnt) THEN 
 				Fun = ALLTRIM(funcionpnt)
 				
-				Fun = STRTRAN((STRTRAN((STRTRAN(Fun,'(','('+"'"+alltrim(tabla)+"','"+alltrim(campoid)+"',"+ALLTRIM(STR(idreg))+",")),',,',','))  ,',)',')') 
+				Fun = STRTRAN((STRTRAN((STRTRAN(Fun,'(','('+"'"+alltrim(tabla)+"','"+alltrim(campoid)+"',"+ALLTRIM(STR(idreg))+","+ALLTRIM(STR(entidad))+","+ALLTRIM(STR(pf_vconeccion))+",")),',,',','))  ,',)',')') 
 				v_valorfn = &Fun
 			ENDIF
+	
+			SELECT &ret_puntos
 			replace fpntpuntos WITH v_valorfn 
 			
 			SKIP 
@@ -402,6 +415,7 @@ PARAMETERS pf_tabla, pf_idregi, pf_au, pf_vconeccion
 
 		USE IN &ret_puntos	
 	ENDIF 
+
 	
 	SELECT registrof_sql
 	USE IN registrof_sql
@@ -410,9 +424,11 @@ PARAMETERS pf_tabla, pf_idregi, pf_au, pf_vconeccion
 	SELECT filtrosele
 	USE IN filtrosele
 
+
 	IF pf_cierraconex THEN 
 		=abreycierracon(pf_vconeccion,"")	
 	ENDIF 
+
 	
 RETURN ret_puntos 
 ENDFUNC 
@@ -425,6 +441,236 @@ ENDFUNC
 ************************************************
 
 FUNCTION FPNTMultiplo
-PARAMETERS pft_tabla, pft_campoid, pft_id, pft_Multiplo
+PARAMETERS pft_tabla, pft_campoid, pft_id, pft_entidad, pft_coneccion, pft_Multiplo
 	RETURN pft_Multiplo
 ENDFUNC 
+
+
+
+FUNCTION FPNTEntidadGR
+*#//////////////////////////////////////
+*/ Verifica si una entidad pertenece a un grupo dado 
+*/ Devuelve verdadero o falso segun pertenezca o no
+*#//////////////////////////////////////
+PARAMETERS pft_tabla, pft_campoid, pft_id, pft_entidad, pft_coneccion, pft_Grupo
+
+	v_pertenece=GrupoCuentaContable(ALLTRIM(STR(pft_entidad)),"entidades","entidad","int(10)",ALLTRIM(STR(pft_Grupo)),pft_coneccion)
+
+	IF v_pertenece = .t. THEN 
+		pft_Multiplo = 1
+	ELSE
+		pft_Multiplo = 0
+	ENDIF 
+	RETURN pft_Multiplo
+ENDFUNC 
+
+
+FUNCTION FPNTRecibosGR
+*#//////////////////////////////////////
+*/ Calcula la Puntuación de un Recibo de acuerdo a 
+*/ Condiciones del recibos y datos de cuotas a abonar
+*/ Retorna los puntos a aplicar para el recibo ingresado como parámetro
+*#//////////////////////////////////////
+PARAMETERS pft_tabla, pft_campoid, pft_id, pft_entidad, pft_coneccion, pft_Grupo, pft_porc1, pft_porc2, pft_porc3
+
+	v_pertenece=GrupoCuentaContable(ALLTRIM(STR(pft_entidad)),"entidades","entidad","int(10)",ALLTRIM(STR(pft_Grupo)),pft_coneccion)
+
+	IF v_pertenece = .t. THEN 
+		v_factor_entidad = 1
+	ELSE
+		v_factor_entidad = 0
+		RETURN 0 
+	ENDIF 
+
+	pft_porc1 = STRTRAN(pft_porc1,'%','')
+	pft_porc2 = STRTRAN(pft_porc2,'%','')
+	pft_porc3 = STRTRAN(pft_porc3,'%','')
+	
+	*Separacion de Bloques de porcentajes
+	*cuotas y porcentajes primer fraccion
+	vp1_cuotad = INT(VAL(SUBSTR(pft_porc1,1,AT('-',pft_porc1,1)-1)))
+	vp1_cuotah = int(val(SUBSTR(pft_porc1,AT('-',pft_porc1,1)+1,AT('-',pft_porc1,2)-(AT('-',pft_porc1,1)+1))))
+	vp1_porc = val(SUBSTR(pft_porc1,AT('-',pft_porc1,2)+1))
+
+	*cuotas y porcentajes segunda fraccion
+	vp2_cuotad = INT(VAL(SUBSTR(pft_porc2,1,AT('-',pft_porc2,1)-1)))
+	vp2_cuotah = int(val(SUBSTR(pft_porc2,AT('-',pft_porc2,1)+1,AT('-',pft_porc2,2)-(AT('-',pft_porc2,1)+1))))
+	vp2_porc = val(SUBSTR(pft_porc2,AT('-',pft_porc2,2)+1))
+
+	*cuotas y porcentajes segunda Factura Completa
+	vp3_cuotad = INT(VAL(SUBSTR(pft_porc3,1,AT('-',pft_porc3,1)-1)))
+	vp3_porc = val(SUBSTR(pft_porc3,AT('-',pft_porc3,1)+1))
+
+
+	* busqueda del recibo 
+	sqlmatriz(1)=" Select * from "+pft_tabla+" where "+pft_campoid+" = "+STR(pft_id)
+	verror=sqlrun(pft_coneccion,"regreci_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Recibo",0+48+0,"Error")
+	ENDIF
+	SELECT regreci_sql
+	
+	v_idcomprobar 		= regreci_sql.idcomproba 
+	v_importerecibo 	= regreci_sql.importe
+	v_fechaRecibo		= regreci_sql.fecha
+	v_ImporteCuotaVP1 	= 0.00
+	v_ImporteCuotaVP2   = 0.00
+	v_NetoFacturas  	= 0.00
+	
+	sqlmatriz(1) = " SELECT c.*, ifnull(f.cuota,0) as cuota, "
+	sqlmatriz(2) = " ifnull(f.cancuotas,0) as cancuotas, ifnull(f.importe,0.00) as importe , ifnull(f.fechavenc,'        ') as fechavenc, "
+	sqlmatriz(3) = " ifnull(s.cobrado,0.00) as cobrado, ifnull(s.saldof,0.00) as saldof, fc.neto  "
+	sqlmatriz(4) = " FROM cobros c left join facturascta f on f.idcuotafc = c.idcuotafc "
+	sqlmatriz(5) = " left join facturasctasaldo s on s.idcuotafc = c.idcuotafc "
+	sqlmatriz(6) = " left join facturas fc on fc.idfactura = f.idfactura "
+	sqlmatriz(7) = " where c.idcomproba = "+ALLTRIM(STR(v_idcomprobar))+" and c.idregipago = "+STR(pft_id)
+	verror=sqlrun(pft_coneccion,"regcobros_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Recibo",0+48+0,"Error")
+	ENDIF
+
+	SELECT regcobros_sql
+	GO TOP 
+	
+
+	DO WHILE !EOF() 
+		
+		IF regcobros_sql.idcuotafc > 0 THEN 
+			v_importerecibo = v_importerecibo - regcobros_sql.imputado
+			IF ALLTRIM(regcobros_sql.fechavenc) >= ALLTRIM(v_fechaRecibo) THEN
+				** Secciona el pago por Numeros de Cuotas 
+				v_cuotafc = regcobros_sql.cuota
+				IF TYPE("v_cuotafc")="C" THEN 
+					v_cuotafc = VAL(v_cuotafc)
+				ENDIF 
+				v_cancuotafc = regcobros_sql.cancuotas
+				IF TYPE("v_cancuotafc")="C" THEN 
+					v_cancuotafc = VAL(v_cancuotafc)
+				ENDIF 
+				IF v_cuotafc  >= vp1_cuotad AND v_cuotafc  <= vp1_cuotah   THEN 
+					v_ImporteCuotaVP1 = v_ImporteCuotaVP1 + regcobros_sql.imputado
+				ENDIF 
+				IF v_cuotafc  >= vp2_cuotad AND v_cuotafc  <= vp2_cuotah THEN 
+					v_ImporteCuotaVP2 = v_ImporteCuotaVP2 + regcobros_sql.imputado
+				ENDIF 
+				
+				** Para aquellos comprobantes mayores a 10 Cuotas pagados totalmente y en termino 
+				IF v_cuotafc  >= vp3_cuotad  AND  v_cuotafc  = v_cancuotafc  THEN && verifico que se hayan pagado todas las cuotas a termino 
+
+					sqlmatriz(1)=	" SELECT SUM(1) as cantpago "
+					sqlmatriz(2)=	" FROM cobros c left join facturascta f on f.idcuotafc = c.idcuotafc"
+					sqlmatriz(3)=	" left join recibos r on r.idcomproba = c.idcomproba and r.idrecibo = c.idregipago"
+					sqlmatriz(4)=	" where f.idfactura = "+ALLTRIM(STR(regcobros_sql.idfactura))+" and  f.fechavenc >= r.fecha" 
+					verror=sqlrun(pft_coneccion,"cuotaspagas_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Cuotas Pagadas",0+48+0,"Error")
+					ENDIF
+					SELECT cuotaspagas_sql
+					GO TOP 
+ 
+					IF !EOF() THEN 
+						IF cuotaspagas_sql.cantpago = regcobros_sql.cancuotas THEN 
+							v_NetoFacturas  = regcobros_sql.neto				
+						ENDIF 
+					ENDIF 		
+					USE IN cuotaspagas_sql 	
+				ENDIF 
+				
+			ENDIF 
+		ENDIF 
+		SELECT regcobros_sql
+		SKIP 
+	ENDDO 
+	
+	USE IN regcobros_sql
+	
+
+	v_importerecibo   	= v_importerecibo       * (vp1_porc / 100)
+	v_ImporteCuotaVP1 	= v_importecuotaVP1 	* (vp1_porc / 100)
+	v_ImporteCuotaVP2   = v_importecuotaVP2 	* (vp2_porc / 100)
+	v_NetoFacturas  	= v_NetoFacturas  		* (vp3_porc / 100)
+
+	v_total_puntos = ROUND(v_factor_entidad * (v_importerecibo + v_ImporteCuotaVP1 + v_ImporteCuotaVP2 + v_NetoFacturas ),0)
+	
+	RETURN v_total_puntos
+ENDFUNC 
+
+
+
+FUNCTION FPNTAnulaRe
+*#//////////////////////////////////////
+*/ Calcula la Puntuación de una Anulación de Recibos de Acuerdo 
+*/ a los puntos sumados por el recibo anulado
+*/ Retorna los puntos a descontar por la anulación
+*#//////////////////////////////////////
+PARAMETERS pft_tabla, pft_campoid, pft_id, pft_entidad, pft_coneccion
+
+	* busqueda del recibo 
+	sqlmatriz(1)=" Select * from "+pft_tabla+" where "+pft_campoid+" = "+STR(pft_id)
+	verror=sqlrun(pft_coneccion,"reganula_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la Anulación de Recibo",0+48+0,"Error")
+	ENDIF
+	SELECT reganula_sql
+	
+	v_idreciboanu 	= reganula_sql.idrecibo
+	USE IN reganula_sql 
+	
+	IF v_idreciboanu <= 0 THEN 
+		RETURN 0
+	ENDIF 
+
+	v_total_puntos	 = 0
+	
+	sqlmatriz(1) = " SELECT SUM(puntos) as puntos from pntpuntos where tabla = 'recibos' and campo='idrecibo' and id = "+ALLTRIM(STR(v_idreciboanu))
+	verror=sqlrun(pft_coneccion,"regipuntos_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Puntos del Recibo",0+48+0,"Error")
+	ENDIF
+	SELECT regipuntos_sql
+	GO TOP 
+	IF !EOF() THEN 
+		v_total_puntos = (-1)*IIF(ISNULL(regipuntos_sql.puntos),0,regipuntos_sql.puntos)
+	ENDIF 
+	USE IN regipuntos_sql 
+
+	RETURN v_total_puntos
+ENDFUNC 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

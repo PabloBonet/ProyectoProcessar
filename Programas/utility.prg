@@ -12397,12 +12397,16 @@ ENDFUNC
 ******************************************************
 
 FUNCTION AnularRP
-PARAMETERS pan_idcomproba, pan_idregistro
+PARAMETERS pan_idcomproba, pan_idregistro, par_entidadrp
 *#/----------------------------------------
 ******************************************************
 ** Funcion para Anulación de Recibos y Ordenes de Pago
 ******************************************************
 *#/----------------------------------------
+
+	IF !(TYPE("par_entidadrp")="N") THEN 
+		par_entidadrp = 0
+	ENDIF 
 
 	v_chAnular= CHAnularCMP (pan_idcomproba, pan_idregistro,0)
 	IF v_chAnular = .f. THEN 
@@ -12529,7 +12533,7 @@ PARAMETERS pan_idcomproba, pan_idregistro
 					ENDIF 
 				ENDIF 
 				
-				DIMENSION lamatrizA(9,2)
+				DIMENSION lamatrizA(10,2)
 				
 				p_tipoope     = 'I'
 				p_condicion   = ''
@@ -12556,6 +12560,8 @@ PARAMETERS pan_idcomproba, pan_idregistro
 				lamatrizA(8,2)=ALLTRIM(STR(v_anularp_idpago ))
 				lamatrizA(9,1)='detallecp'
 				lamatrizA(9,2)="'"+v_detallecp+"'"
+				lamatrizA(10,1)='entidad'
+				lamatrizA(10,2)=ALLTRIM(STR(par_entidadrp))
 
 				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
@@ -17768,7 +17774,7 @@ FUNCTION FUpdatesys
 	 IF !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'   ',1,3)=='S/A') AND !(SUBSTR(ALLTRIM(UPPER(_SYSFTPUPDATE))+'    ',1,3)=='N/A') AND !EMPTY(ALLTRIM(_SYSFTPUPDATE))  THEN 
  
 	  	  =ALINES(ARRFTP,_SYSFTPUPDATE,1,';',' ')
-		IF ping(ALLTRIM(ARRFTP(1))) = .f. THEN 
+		IF ping(ALLTRIM(ARRFTP(1)),ALLTRIM(ARRFTP(2))) = .f. THEN 
 			RELEASE ARRFTP 
 			RETURN 0
 		ENDIF 
@@ -17822,9 +17828,31 @@ FUNCTION FUpdatesys
 ENDFUNC 
 
 
+*!*	function ping (tchost, tnpuerto)
+*!*		
+*!*		IF !(TYPE("tnpuerto")="C") THEN 
+*!*			tnpuerto = "3306"
+*!*		ENDIF 
+
+*!*		LOCAL loWS, llret, lnini
+*!*		loWS = CREATEOBJECT("MSWinSock.Winsock")
+*!*	*!*		loWS = CREATEOBJECT("mspingsock")
+*!*		loWS.Connect(tchost, tnpuerto)	
+*!*		lnini = SECONDS()
+*!*		DO WHILE (SECONDS()-lnini) < 2
+*!*		ENDDO
+*!*		IF loWS.state = 7
+*!*			llret = .T.
+*!*		ENDIF
+*!*		loWS.Close()
+*!*		RELEASE loWS
+*!*		RETURN llret
+*!*		
+*!*	ENDfunc 
+
 
 FUNCTION ping
-PARAMETERS tcIpNumber 
+PARAMETERS tcIpNumber , tcpPuerto
 **********************************
 DECLARE INTEGER ShellExecute IN shell32.dll ; 
 INTEGER hndWin, ; 
@@ -17837,20 +17865,21 @@ INTEGER nShowWin
 local lcCMD, lcParas, lcping, lctmp
 DECLARE Sleep IN Win32API INTEGER
 
-lctmp = ALLTRIM(STRTRAN(SUBSTR(STR((RAND(-1)*1000)),2),'','0'))
+*!*	lctmp = ALLTRIM(STRTRAN(SUBSTR(STR((RAND(-1)*1000)),2),'','0'))
 
 lcCmd = 'ping -n 1 -w 2 '+tcIpNumber+' > '   && command to Execute 
-lcParas = FULLPATH(CURDIR())+'ping'+lctmp+'.tcp '   && Extra parameter to pass your command 
+lcParas = FULLPATH(CURDIR())+'ping_p.tcp'   && Extra parameter to pass your command 
+DELETE FILE &lcParas
  * --- Execute the command.
 ****   shellExecute last parameter 0  will hide DOS window
 ***  If you want to show DOS window change it to value  1 
-
 ShellExecute(0,'open','cmd', '/C'+lcCmd+' '+lcParas, '',0)
 sleep(2000)  && delay time to come  back
 lcping=FILETOSTR(lcParas)
  *** sleep value  can be reduced according to your need
+
 CLEAR DLLS ShellExecute
-DELETE FILE &lcParas 
+*!*	DELETE FILE &lcParas 
 * --- Return to caller.
 IF ATC('recibidos = 1,',lcping) = 0 then 
 	RETURN .f.
@@ -23081,10 +23110,11 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 			
 				
 				
+*!*					sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, pa.entidad, pa.nombre, pa.numero as npago,  "
 			
 				
 				sqlmatriz(2)=" c.*,  '             ' AS cuit, cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia,   "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, pa.entidad, pa.nombre, pa.numero as npago,  "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, pa.nombre, pa.numero as npago,  "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
 				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
@@ -23166,8 +23196,9 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 				
 				
 				*sqlmatriz(1)=" create table "+ALLTRIM(v_tablaAnularre)+" as (Select dcp.iddetapago , dcp.idregistro, dcp.idtipopago, dcp.importe as importedet, dcp.idcuenta,  "
+*!*					sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, re.entidad, re.nombre, re.numero as nrecibo,  "
 				sqlmatriz(2)=" c.*, '             ' AS cuit ,  cc.tipo as tipocomp, cc.comprobante as nomComp,cc.ctacte,cc.idtipocompro as idtipocomp,cc.abrevia,   "
-				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, re.entidad, re.nombre, re.numero as nrecibo,  "
+				sqlmatriz(3)=" tc.opera, pv.puntov, pv.electronica, tp.detalle as detapagos, re.nombre, re.numero as nrecibo,  "
 				sqlmatriz(4)=" ifnull(clk.tabla,' ') as tablaclk, ifnull(clk.campo,' ') as campoclk, ifnull(clk.idregistro,0) as idregiclk, "
 				sqlmatriz(5)=" ifnull(ch.idcheque,0) as idcheque, ifnull(ch.serie,' ') as chserie, ifnull(ch.numero,' ') as chnumero, ifnull(ch.importe,0) as chimporte, ifnull(ch.fechaemisi,' ') as fechaemisi, "
 				sqlmatriz(6)=" ifnull(ch.fechavence,' ') as fechavence, ifnull(ch.alaorden,' ') as alaorden, ifnull(ch.librador,' ') as librador, ifnull(ch.loentrega,' ') as loentrega, ifnull(ch.cuit,' ') as cuitch, ifnull(ch.cuenta,' ') as cuentach,"
@@ -27490,7 +27521,8 @@ FUNCTION VPNConexion
  IF !(TYPE("_SYSMYSQL_SERVER")= 'C') THEN 
  	RETURN .f.
  ENDIF 
- IF ping(ALLTRIM(_SYSMYSQL_SERVER)) = .T. THEN 
+*!*	 IF ping(ALLTRIM(_SYSMYSQL_SERVER)) = .T. THEN 
+ IF ping(ALLTRIM(_SYSMYSQL_SERVER),ALLTRIM(_SYSMYSQL_PORT)) = .T. THEN 
 	 RETURN .T.
  ENDIF 
  IF TYPE("_SYSVPN_CON") = 'C' THEN 
