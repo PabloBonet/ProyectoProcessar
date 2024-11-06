@@ -642,15 +642,82 @@ ENDFUNC
 
 
 
+FUNCTION FPNTQuitarP
+*#//////////////////////////////////////
+*/ Descuenta Todos los Puntos de los Clientes que
+*/ no han tenido movimientos en un Periodo Estipulado
+*#//////////////////////////////////////
+	IF TYPE('_SYSPUNTOS') <> 'C' THEN 
+		RETURN .f.
+	ELSE 
+		IF SUBSTR(_SYSPUNTOS,1,1) = '0'   THEN 
+			RETURN .f.
+		ENDIF 
+	ENDIF 
+	v_canlineas = ALINES(asyspuntos,_SYSPUNTOS,1,';')
+
+	v_diasatraso = asyspuntos(8)
+	v_reglapuntos= INT(VAL(asyspuntos(9)))
+	v_fechaactu  = asyspuntos(10)
+	v_diahoy 	= DTOS(DATE())
+	
+	IF  ALLTRIM(DTOS(DATE())) > ALLTRIM(asyspuntos(10)) then
+	
+		** es la pc que va a hacer el calculo de sistema
+		_SYSPUNTOS = SUBSTR(_SYSPUNTOS,1,LEN(_SYSPUNTOS)-8)+DTOS(DATE())
+		
+		* Actualizo el registro de la variable puntos para el chequeo de actualización de puntos
+		vconeccionPN=abreycierracon(0,_SYSSCHEMA)
+		
+		sqlmatriz(1)= " update varpublicas set valor =  '"+_SYSPUNTOS+"' "
+		sqlmatriz(2)= " where  variable = '_SYSPUNTOS'"
+		verror=sqlrun(vconeccionPN ,"varpubl_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la registracion de puntos ",0+48+0,"Error")
+		    RETURN ""  
+		ENDIF	
+
+		
+		* busco los registros de clientes sobre los que aplicar la cancelacion de puntos
+		
+		sqlmatriz(1) = " SELECT ifnull(entidad,0) as entidad ,  max(fecha) as fecha, datediff('"+v_diahoy+"' , max(fecha)) as dias, SUM(puntos) as puntos " 
+		sqlmatriz(2) = " FROM pntpuntos p "
+		sqlmatriz(3) = " group by entidad having dias > "+v_diasatraso 		
+		verror=sqlrun(vconeccionPN ,"pntmovi_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la registracion de puntos ",0+48+0,"Error")
+		    RETURN ""  
+		ENDIF	
+		=abreycierracon(vconeccionPN,"")
+		
+
+		SELECT pntmovi_sql
+		GO TOP 
+		DO WHILE !EOF()
+			
+			v_entidadpn = pntmovi_sql.entidad
+			v_puntospn  = pntmovi_sql.puntos
+			v_entidadpn = IIF(TYPE("v_entidadpn")="C",VAL(v_entidadpn),v_entidadpn)
+			v_puntospn  = IIF(TYPE("v_puntospn")="C" ,VAL(v_puntospn) ,v_puntospn)
+
+			IF v_puntospn > 0 THEN 
+				CREATE TABLE cancelapnt (  idpntopera i, tabla c(50), campoid c(50), idreg i, cmpfactor c(50), funcionpnt c(50),;
+				factor n(10,2), puntos n(10,2) ,fpntpuntos n(10,2), entidad i, fecha c(8) )
+				
+				INSERT INTO cancelapnt VALUES (v_reglapuntos,'', '', 0, '','',-1,v_puntospn ,1,v_entidadpn,DTOS(DATE()))
+				USE IN cancelapnt 
+				v_canreglas=GenPuntos("cancelapnt",0)
+				DELETE FILE cancelapnt.dbf 
+			ENDIF 
+			SELECT pntmovi_sql
+			SKIP 
+		ENDDO 		
+		USE IN pntmovi_sql
+		
+	ENDIF 	
 
 
-
-
-
-
-
-
-
+RETURN 
 
 
 

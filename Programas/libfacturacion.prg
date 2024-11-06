@@ -607,7 +607,6 @@ PARAMETERS par_idperiodo, par_ordenfa
 		SKIP 
 	ENDDO 
 
-BROWSE 
 
 
  
