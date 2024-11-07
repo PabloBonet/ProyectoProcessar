@@ -595,6 +595,329 @@ ENDFUNC
 ************************************************************************************************************************
 ************************************************************************************************************************
 ************************************************************************************************************************
+
+
+
+
+FUNCTION RET_IIBB_STAFE_IFN
+PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
+*#/****************************
+*** FUNCIÓN PARA EL CALCULO DEL MONTO A RETENER DE IIBB ARBA***
+****************************************************************
+** PARÁMETROS: 	P_idimpuret: id impuesto de retención
+*				P_importe: Importe Total, del cuál se va a calcular la retención. 
+*				P_entidad: Entidad a la cual se le va a calcular la retención
+*				p_nomTabRes: Nombre de la tabla donde se va a entregar el resultado, la cual inclura: idimpuret,netoTotal,importeARetener,totpagosmes,totRetenmes )
+* La función recibe los parametros indicados y en función de eso y las tablas de retenciones calcula cuanto debe retenerse para la entidad y el importe dado
+****************************************************************
+** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
+*#/****************************
+
+
+****** El calculo será sobre el importe neto
+
+
+	* Abro una conexion con la base de datos 
+	varconexionF = abreycierracon(0,_SYSSCHEMA)
+	
+	
+	v_sentenciaCrea1 = "CREATE TABLE "+ALLTRIM(p_nombreTabRes)+" FREE (entidad I,idimpuret I,impTotal Y,impARet Y,baseimpo Y,razon Y, idtipopago I, descrip C(250),totpagomes Y, totretmes Y, sujarete Y, idafipesc I)"
+	&v_sentenciaCrea1 
+
+****
+*** Obtengo información de la retención ***
+****
+	
+	
+	sqlmatriz(1) = " SELECT * FROM entidadret  "
+	sqlmatriz(2) = "  where entidad   = "+ALLTRIM(STR(p_entidad)) + " and idimpuret   = "+ALLTRIM(STR(p_idimpuret))
+
+	verror=sqlrun(varconexionF,"entidadret")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias(1)",0+16+0,"")
+	    RETURN .F.
+	ENDIF 
+		
+	v_enconvenio = 'N'
+	
+	SELECT entidadret
+	GO TOP 
+	
+	IF NOT EOF()
+		SELECT entidadret
+		v_enconvenio = entidadret.enconvenio	
+	ELSE
+		v_enconvenio = 'N'
+	ENDIF 
+	
+	
+	
+	IF v_enconvenio = 'S' && Si está en convenio busco en las escalas según el campo razonin de la tabla impuretencion
+
+		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
+		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonin = a.codigo "
+		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
+
+		****  SI está en convenio se calcula sobre el total bruto ****
+		
+		v_pago_total_retener = P_importe /1.21
+
+	ELSE && Si no está en convenio busco en las escalas según el campo razonnin de la tabla impuretencion
+
+		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimponn as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
+		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonnin = a.codigo "
+		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
+
+		
+		****  Si NO está en convenio se calcula sobre el neto ****
+		v_pago_total_retener = P_importe /1.21
+
+		
+	ENDIF 
+
+	verror=sqlrun(varconexionF,"impureten")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias(2)",0+16+0,"")
+	    RETURN .F.
+	ENDIF 	
+	
+					
+	*******************
+	**** 1- Calculo las retenciones para el monto sujeto a retener
+	*******************
+			
+			SELECT impureten
+			v_baseImponible = impureten.baseimpon
+			
+			
+			v_aretener = v_pago_total_retener - v_baseImponible
+			
+			IF v_aretener  > 0 && Tengo que retener
+				
+				SELECT * FROM impureten where v_aretener >= valmin and (v_aretener < valmax or valmax = -1) INTO TABLE retenciongan
+				
+				SELECT retenciongan
+				
+				v_valmin = retenciongan.valmin
+
+				v_retener = v_aretener - v_valmin
+
+				v_razon = retenciongan.razon
+
+				v_valfijo = retenciongan.valfijo
+
+				v_totalRetencionesRealizadas =0.00
+				
+				v_retencion = v_retener*(v_razon/100) + v_valfijo
+			
+						
+****
+*** Controlo que el monto a retener sea mayor al mínimo de retenciones por impuesto
+****			
+			
+				SELECT impureten
+				v_minRet = impureten.minret
+				
+				IF v_retencion < v_minRet
+					&& La retención a aplicar es menor que el minimo a retener para el concepto. No se aplican retenciones
+				ELSE
+
+****
+*** Guardo en la tabla los datos para la retención
+****			
+										
+					v_entidad = p_entidad
+					v_idimpuret = P_idimpuret
+					v_impTotal = P_importe
+					v_impARet = v_retencion
+					
+					SELECT impureten 
+					
+					v_idtipopago = impureten.idtipopago
+					v_descrip = ALLTRIM(impureten.detalle)+ " - " + ALLTRIM(impureten.descescala)
+					v_idafipesc = impureten.idafipesc
+					
+			
+					INSERT INTO &p_nombretabRes (entidad, idimpuret,impTotal,impARet,baseimpo,razon,idtipopago,descrip,sujarete, idafipesc) VALUES (v_entidad, v_idimpuret,v_impTotal,v_impARet,v_baseImponible,v_razon,v_idtipopago,v_descrip,v_aretener, v_idafipesc)
+
+				ENDIF 
+
+						
+			ELSE && No tengo que retener			
+			
+			ENDIF 
+			
+			
+		RETURN .T.
+
+ENDFUNC 
+
+
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
+
+
+
+FUNCTION RET_IIBB_ARBA_IFN
+PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
+*#/****************************
+*** FUNCIÓN PARA EL CALCULO DEL MONTO A RETENER DE IIBB ARBA***
+****************************************************************
+** PARÁMETROS: 	P_idimpuret: id impuesto de retención
+*				P_importe: Importe Total, del cuál se va a calcular la retención. 
+*				P_entidad: Entidad a la cual se le va a calcular la retención
+*				p_nomTabRes: Nombre de la tabla donde se va a entregar el resultado, la cual inclura: idimpuret,netoTotal,importeARetener,totpagosmes,totRetenmes )
+* La función recibe los parametros indicados y en función de eso y las tablas de retenciones calcula cuanto debe retenerse para la entidad y el importe dado
+****************************************************************
+** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
+*#/****************************
+
+
+****** El calculo será sobre el importe neto
+
+
+	* Abro una conexion con la base de datos 
+	varconexionF = abreycierracon(0,_SYSSCHEMA)
+	
+	
+	v_sentenciaCrea1 = "CREATE TABLE "+ALLTRIM(p_nombreTabRes)+" FREE (entidad I,idimpuret I,impTotal Y,impARet Y,baseimpo Y,razon Y, idtipopago I, descrip C(250),totpagomes Y, totretmes Y, sujarete Y, idafipesc I)"
+	&v_sentenciaCrea1 
+
+****
+*** Obtengo información de la retención ***
+****
+	
+	
+	sqlmatriz(1) = " SELECT * FROM entidadret  "
+	sqlmatriz(2) = "  where entidad   = "+ALLTRIM(STR(p_entidad)) + " and idimpuret   = "+ALLTRIM(STR(p_idimpuret))
+
+	verror=sqlrun(varconexionF,"entidadret")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias(1)",0+16+0,"")
+	    RETURN .F.
+	ENDIF 
+		
+	v_enconvenio = 'N'
+	
+	SELECT entidadret
+	GO TOP 
+	
+	IF NOT EOF()
+		SELECT entidadret
+		v_enconvenio = entidadret.enconvenio	
+	ELSE
+		v_enconvenio = 'N'
+	ENDIF 
+	
+	
+	
+	IF v_enconvenio = 'S' && Si está en convenio busco en las escalas según el campo razonin de la tabla impuretencion
+
+		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
+		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonin = a.codigo "
+		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
+
+		****  SI está en convenio se calcula sobre el total bruto ****
+		
+		v_pago_total_retener = P_importe /1.21
+
+	ELSE && Si no está en convenio busco en las escalas según el campo razonnin de la tabla impuretencion
+
+		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimponn as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
+		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonnin = a.codigo "
+		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
+
+		
+		****  Si NO está en convenio se calcula sobre el neto ****
+		v_pago_total_retener = P_importe /1.21
+
+		
+	ENDIF 
+
+	verror=sqlrun(varconexionF,"impureten")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias(2)",0+16+0,"")
+	    RETURN .F.
+	ENDIF 	
+	
+					
+	*******************
+	**** 1- Calculo las retenciones para el monto sujeto a retener
+	*******************
+			
+			SELECT impureten
+			v_baseImponible = impureten.baseimpon
+			
+			
+			v_aretener = v_pago_total_retener - v_baseImponible
+			
+			IF v_aretener  > 0 && Tengo que retener
+				
+				SELECT * FROM impureten where v_aretener >= valmin and (v_aretener < valmax or valmax = -1) INTO TABLE retenciongan
+				
+				SELECT retenciongan
+				
+				v_valmin = retenciongan.valmin
+
+				v_retener = v_aretener - v_valmin
+
+				v_razon = retenciongan.razon
+
+				v_valfijo = retenciongan.valfijo
+
+				v_totalRetencionesRealizadas =0.00
+				
+				v_retencion = v_retener*(v_razon/100) + v_valfijo
+			
+						
+****
+*** Controlo que el monto a retener sea mayor al mínimo de retenciones por impuesto
+****			
+			
+				SELECT impureten
+				v_minRet = impureten.minret
+				
+				IF v_retencion < v_minRet
+					&& La retención a aplicar es menor que el minimo a retener para el concepto. No se aplican retenciones
+				ELSE
+
+****
+*** Guardo en la tabla los datos para la retención
+****			
+										
+					v_entidad = p_entidad
+					v_idimpuret = P_idimpuret
+					v_impTotal = P_importe
+					v_impARet = v_retencion
+					
+					SELECT impureten 
+					
+					v_idtipopago = impureten.idtipopago
+					v_descrip = ALLTRIM(impureten.detalle)+ " - " + ALLTRIM(impureten.descescala)
+					v_idafipesc = impureten.idafipesc
+					
+			
+					INSERT INTO &p_nombretabRes (entidad, idimpuret,impTotal,impARet,baseimpo,razon,idtipopago,descrip,sujarete, idafipesc) VALUES (v_entidad, v_idimpuret,v_impTotal,v_impARet,v_baseImponible,v_razon,v_idtipopago,v_descrip,v_aretener, v_idafipesc)
+
+				ENDIF 
+
+						
+			ELSE && No tengo que retener			
+			
+			ENDIF 
+			
+			
+		RETURN .T.
+
+ENDFUNC 
+
+
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
+
+
 FUNCTION PercepIB
 PARAMETERS P_sucursal,P_Cliente, P_fecha, p_impuesto, P_subtotal, P_iva, P_tipo, P_compro
 	r_percep = 0
@@ -859,4 +1182,41 @@ PARAMETERS P_sucursal,P_Cliente, P_fecha, p_impuesto, P_subtotal, P_iva, P_tipo,
                g_convenio,g_nroinscrip,g_porcen,g_totaldia,g_percepdia,g_sujaperc,g_impperc)
 	
 	RETURN  r_percep
+ENDFUNC 
+
+
+
+FUNCTION atualizarRetenciones
+PARAMETERS p_archivo, p_funcion
+*#/****************************
+*** FUNCIÓN PARA ACTUALIZAR LAS ALICUOTAS DE RETENCIONES***
+****************************************************************
+** PARÁMETROS: 	p_archivo: ubicación del archivo CSV de donde se va a leer
+*				p_funcion: Función de filtrado de impuesto
+****************************************************************
+** RETORNO: Retorna la cantidad de registros procesados, retorna un valor <0 si hubo un error
+*#/****************************
+
+
+****
+** Para el manejo de varios archivos se me ocurren dos alternativas:
+** Usar un CASE con las funciones existentes e ir agregando casos en el CASE.
+** o usar una tabla en la base de datos con tipos de archivos, donde tenga definido el formato y a que tipo de impuesto está asociado
+**
+DO CASE
+CASE ALLTRIM(p_funcion) == 'RET_IIBB_ARBA_IFN'
+	p_archivo = alltrim(p_archivo)
+	
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			RETURN -1
+		ENDIF
+OTHERWISE
+
+ENDCASE
+
+**EJ: SELECT * FROM processar_arenera.entidadret e left join processar_arenera.impuretencion i on e.idimpuret = i.idimpuret where funcion = 'RET_IIBB_ARBA_IFN'
+
+
+
 ENDFUNC 
