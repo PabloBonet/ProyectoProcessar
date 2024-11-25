@@ -471,7 +471,7 @@ FUNCTION FPNTRecibosGR
 */ Condiciones del recibos y datos de cuotas a abonar
 */ Retorna los puntos a aplicar para el recibo ingresado como parámetro
 *#//////////////////////////////////////
-PARAMETERS pft_tabla, pft_campoid, pft_id, pft_entidad, pft_coneccion, pft_Grupo, pft_porc1, pft_porc2, pft_porc3
+PARAMETERS pft_tabla, pft_campoid, pft_id, pft_entidad, pft_coneccion, pft_Grupo, pft_porc1, pft_porc2, pft_porc3, pft_diastole
 
 	v_pertenece=GrupoCuentaContable(ALLTRIM(STR(pft_entidad)),"entidades","entidad","int(10)",ALLTRIM(STR(pft_Grupo)),pft_coneccion)
 
@@ -537,7 +537,8 @@ PARAMETERS pft_tabla, pft_campoid, pft_id, pft_entidad, pft_coneccion, pft_Grupo
 		
 		IF regcobros_sql.idcuotafc > 0 THEN 
 			v_importerecibo = v_importerecibo - regcobros_sql.imputado
-			IF ALLTRIM(regcobros_sql.fechavenc) >= ALLTRIM(v_fechaRecibo) THEN
+*!*				IF ALLTRIM(regcobros_sql.fechavenc) >= ALLTRIM(v_fechaRecibo) THEN
+			IF ( VAL(ALLTRIM(regcobros_sql.fechavenc)) + pft_diastole - VAL(ALLTRIM(v_fechaRecibo))) >= 0 THEN
 				** Secciona el pago por Numeros de Cuotas 
 				v_cuotafc = regcobros_sql.cuota
 				IF TYPE("v_cuotafc")="C" THEN 

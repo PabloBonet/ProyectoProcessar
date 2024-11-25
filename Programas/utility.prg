@@ -8843,6 +8843,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 				vr_debe  = ABS(vdif_debehaber)
 			ENDIF 
 			SELECT AstoFinalA0
+			GO TOP 
 			vr_idastomode = AstoFinalA0.idastomode
 			vr_tabla	  = AstoFinalA0.tabla
 			vr_idfiltro	  = AstoFinalA0.idfiltro
@@ -8850,6 +8851,7 @@ PARAMETERS par_modelo, par_tabla, par_registro, par_idfiltro, par_idtipoasi, par
 			vr_fecha  	  = AstoFinalA0.fecha
 			vr_registro	  = AstoFinalA0.registro
 			vr_idastoe	  = AstoFinalA0.idastoe
+
 			
 			* inserto el registro con los datos de ajustes de tolerancia 
  			INSERT INTO AstoFinalA0 VALUES (vr_idastomode, vr_codigocta_redo, vr_debe , vr_haber ,0.00 , vr_tabla, vr_registro, vr_fecha , vr_idfiltro, vr_idtipoasi, vr_idastoe, vr_idpland_redo, vr_codigo_redo, vr_nombrecta_redo )
@@ -13339,7 +13341,8 @@ PARAMETERS pl_articulo, pl_linea, pl_opera, pl_conexion
 		v_idmiembro= ALLTRIM(pl_articulo)
 
 
-		v_idmax = maxnumeroidx('idgrupobj', 'I', 'grupoobjeto',1)
+*!*			v_idmax = maxnumeroidx('idgrupobj', 'I', 'grupoobjeto',1)
+			  v_idmax = 0
 		lamatriz(1,1) = 'idgrupobj'
 		lamatriz(1,2) = ALLTRIM(STR(v_idmax))
 		lamatriz(2,1) = 'idgrupo'
@@ -13375,7 +13378,6 @@ PARAMETERS pl_articulo, pl_linea, pl_opera, pl_conexion
 		ENDIF 
 	ENDIF 
 	USE IN artigrupo_sql 
-
 
 RETURN 
 
@@ -13475,7 +13477,8 @@ PARAMETERS pl_material, pl_linea, pl_opera, pl_conexion
 		v_idmiembro= ALLTRIM(pl_material)
 
 
-		v_idmax = maxnumeroidx('idgrupobj', 'I', 'grupoobjeto',1)
+*!*			v_idmax = maxnumeroidx('idgrupobj', 'I', 'grupoobjeto',1)
+			  v_idmax = 0
 		lamatriz(1,1) = 'idgrupobj'
 		lamatriz(1,2) = ALLTRIM(STR(v_idmax))
 		lamatriz(2,1) = 'idgrupo'
@@ -15754,7 +15757,7 @@ ENDFUNC
 ******************************************************
 
 FUNCTION VinculoComp
-PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe 
+PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe, pv_fecha 
 *#/----------------------------------------
 ** Funcion Genera Comprobante de Vinculos entre Facturas y Recibos o Pagos
 ** Registra Vinculos y Libreraciones de Comprobantes
@@ -15763,9 +15766,13 @@ PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe
 **				pv_idregistrov	= ID registro del comprobante que cancela la factura 
 **				pv_idfactuv		= ID de la factura de cliente o de la factura de proveedores cancelada
 **				pv_importe		= importe de la operación aplicada o desvinculada
+**				pv_fecha		= Fecha para el comprobante de Viculo
 **
 *#/----------------------------------------
-	
+
+	IF TYPE("pv_fecha") <> 'C' THEN 
+		pv_fecha = DTOS(DATE())
+	ENDIF 	
 
 	v_tablav 		= ""
 	v_tipovin		= pv_tipovin
@@ -15778,7 +15785,7 @@ PARAMETERS pv_tipovin, pv_idcomprobav, pv_idregistrov, pv_idfactuv, pv_importe
 	v_cuenta 		= 0
 	v_nombre		= ""
 	v_apellido 		= ""
-	v_fecha			= DTOS(DATE())
+	v_fecha			= pv_fecha
 	v_idvinculo  	= 0
 	v_vinculocomp_idcomproba = 0
 	v_vinculocomp_pventa 	 = 0
@@ -21764,7 +21771,7 @@ PARAMETERS pga_tablacobros, p_cone
 		*  Modifico la Variable de Impresión de Vinculos para obviar la Impresion
 		vsysimpvinc_est = _SYSIMPVINC		
 		_SYSIMPVINC = 'N'
-		reto=VinculoComp('V',&pga_tablacobros..idcomproba,&pga_tablacobros..idregipago, &pga_tablacobros..idfactura,&pga_tablacobros..imputado)
+		reto=VinculoComp('V',&pga_tablacobros..idcomproba,&pga_tablacobros..idregipago, &pga_tablacobros..idfactura,&pga_tablacobros..imputado,DTOS(DATE()))
 		_SYSIMPVINC = vsysimpvinc_est 
 		
 		SELECT &pga_tablacobros
@@ -28701,4 +28708,297 @@ ENDFUNC
 *!*	*!*		tooltexto.tb_texto.setfocus
 *!*	ENDIF 
 *!*	ENDFUNC 
+
+
+
+
+FUNCTION GrupoObjetoAB
+PARAMETERS pl_idobjeto, pl_idgrupo, pl_opera, pl_conexion
+*#/----------------------------------------
+* Incerta y Elimina Objetos en un Grupos determinado. 
+* Parametro : ID del Objeto a agregar o quitar
+*           : ID del Grupo en el cual Agregarlo o'+' o '-'
+*           : Tipo de Operacion + = Agregar  - = Quitar
+*#/----------------------------------------
+
+	IF TYPE("pl_conexion") = 'N' THEN 
+		IF pl_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionGR = pl_conexion
+		ELSE 
+			vconeccionGR = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionGR = abreycierracon(0,_SYSSCHEMA)	
+		pl_conexion = 0
+	ENDIF 
+
+
+	IF pl_opera ="+" THEN 	
+		* Veifica que exista el grupo para la Linea del articulo, si no existe lo crea ***	
+		** busca el Grupo de la Linea pasada como Parámetro
+		sqlmatriz(1)=" select idgrupo from grupoobjeto where  idmiembro = '"+ALLTRIM(pl_idobjeto)+"'  and " 
+		sqlmatriz(2)=" idgrupo = "+ALLTRIM(STR(pl_idgrupo))
+		verror=sqlrun(vconeccionGR ,"grupoobjetoe_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Grupo de la Linea... ",0+48+0,"Error")
+		    RETURN 0  
+		ENDIF
+		SELECT grupoobjetoe_sql
+		GO TOP 
+
+
+		IF EOF() THEN && Agregar articulo a un grupo de Línea
+
+			DIMENSION lamatriz(4,2)
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+			p_tabla     = 'grupoobjeto'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionGR 
+				
+			v_idgrupo = pl_idgrupo 
+			v_idmiembro= ALLTRIM(pl_idobjeto)
+
+*!*				v_idmax = maxnumeroidx('idgrupobj', 'I', 'grupoobjeto',1)
+				  v_idmax = 0
+			lamatriz(1,1) = 'idgrupobj'
+			lamatriz(1,2) = ALLTRIM(STR(v_idmax))
+			lamatriz(2,1) = 'idgrupo'
+			lamatriz(2,2) = ALLTRIM(STR(pl_idgrupo))
+			lamatriz(3,1) = 'idmiembro'
+			lamatriz(3,2) = "'"+ALLTRIM(pl_idobjeto)+"'"
+			lamatriz(4,1) = 'fecha'
+			lamatriz(4,2) = "'"+ALLTRIM(DTOS(DATE()))+"'"
+			
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(pl_idobjeto)+" - "+;
+			                ALLTRIM(pl_idgrupo),0+48+0,"Error")
+			     RETURN 
+			ENDIF 
+
+		ENDIF 
+	ENDIF 
+	
+	IF pl_opera = '-' THEN && Quitar el Objeto del Grupo
+
+		sqlmatriz(1)=" delete from grupoobjeto where idgrupo = "+ALLTRIM(STR(pl_idgrupo))+" and idmiembro = '"+ALLTRIM(pl_idobjeto)+"'"
+		verror=sqlrun(vconeccionGR ,"delgrupo_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Eliminacion de articulo del grupo ... ",0+48+0,"Error")
+		    RETURN   
+		ENDIF
+	ENDIF 
+
+	IF pl_conexion= 0 THEN && cierro la conexion si no la abrio al ingresar
+		=abreycierracon(vconeccionGR,"")
+	ENDIF 
+
+RETURN 
+
+
+
+FUNCTION GrupoDeudores
+PARAMETERS pgd_conexion
+*!*	PARAMETERS pgd_cuotas, pgd_dias, pgd_idgrupoA, pgd_idgrupoB, pgd_conexion
+*#/----------------------------------------
+* Calcula los deudores segun parametros de cuotas y Días de Vencimiento. 
+* para el manejo automático de insersión en grupos de deudores o clientes regulares
+* Parametros : pgd_cuotas = Cantidad de Cuotas Adeudas para considerarlo Moroso
+*			 : pgd_dias	  = Cantidad de Días de una cuota adeudada para considerarlo Moroso
+*			 : pgd_grupoA = Grupo Clientes REGULARES
+*			 : pgd_grupoB = Grupo Clientes MOROSOS
+* Retorna .T. si se realizó una actualización
+*#/----------------------------------------
+
+	IF TYPE("_SYSDEUDORES") <> 'C' THEN
+		RETURN .F.
+	ELSE  
+		IF VAL(SUBSTR(_SYSDEUDORES,1,AT(';',_SYSDEUDORES)-1)) = 0 OR RIGHT(_SYSDEUDORES,8) >= DTOS(DATE()) THEN 
+			RETURN .F.
+		ENDIF 
+	ENDIF 
+
+
+	IF TYPE("pgd_conexion") = 'N' THEN 
+		IF pgd_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionGR = pgd_conexion
+		ELSE 
+			vconeccionGR = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionGR = abreycierracon(0,_SYSSCHEMA)	
+		pgd_conexion= 0
+	ENDIF 
+
+
+	v_canlineas = ALINES(asysdeudores,_SYSDEUDORES,1,';')
+
+ 
+	pgd_cuotas 		= INT(VAL(asysdeudores(1)))
+	pgd_dias   		= INT(VAL(asysdeudores(2)))
+	pgd_idgrupoA	= INT(VAL(asysdeudores(3))) && Grupo Clientes Regulares
+	pgd_idgrupoB	= INT(VAL(asysdeudores(4))) && Grupo Clientes Morosos
+	pgd_idgrupoC	= INT(VAL(asysdeudores(5)))	&& Grupo Clientes Excluidos
+	
+	** es la pc que va a hacer el calculo de sistema
+	_SYSDEUDORES = SUBSTR(_SYSDEUDORES,1,LEN(_SYSDEUDORES)-8)+DTOS(DATE())
+		
+*!*		* Actualizo el registro de la variable puntos para el chequeo de actualización de puntos
+*!*		vconeccionPN=abreycierracon(0,_SYSSCHEMA)
+		
+	sqlmatriz(1)= " update varpublicas set valor =  '"+_SYSDEUDORES+"' "
+	sqlmatriz(2)= " where  variable = '_SYSDEUDORES'"
+	verror=sqlrun(vconeccionGR ,"varpubl_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la registracion de puntos ",0+48+0,"Error")
+	    RETURN .f. 
+	ENDIF	
+
+	*Obtener Todas las Entidades grupoE
+	sqlmatriz(1) = " SELECT entidad FROM entidades "
+	verror=sqlrun(vconeccionGR ,"grupoE_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Entidades Grupo E ",0+48+0,"Error")
+	    RETURN .f.
+	ENDIF
+	SELECT * FROM grupoE_sql INTO TABLE grupoE
+	USE IN grupoE_sql
+	SELECT grupoE
+	ALTER table grupoE alter COLUMN entidad I
+
+
+	*Obtener las Entidades que están en GrupoA
+	sqlmatriz(1) = " SELECT idmiembro as entidad FROM grupoobjeto "
+	sqlmatriz(2) = " where idgrupo  = "+ALLTRIM(STR(pgd_idgrupoA))
+	verror=sqlrun(vconeccionGR ,"grupoA_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda miembros del Grupo A ",0+48+0,"Error")
+	    RETURN .f.
+	ENDIF
+	SELECT * FROM grupoA_sql INTO TABLE grupoA
+	USE IN grupoA_sql
+	SELECT grupoA
+	ALTER table grupoA alter COLUMN entidad I
+
+	*Obtener las Entidades que están en GrupoB
+	sqlmatriz(1) = " SELECT idmiembro as entidad FROM grupoobjeto "
+	sqlmatriz(2) = " where idgrupo  = "+ALLTRIM(STR(pgd_idgrupoB))
+	verror=sqlrun(vconeccionGR ,"grupoB_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda miembros del Grupo B ",0+48+0,"Error")
+	    RETURN .f.
+	ENDIF
+	SELECT * FROM grupoB_sql INTO TABLE grupoB
+	USE IN grupoB_sql
+	SELECT grupoB
+	ALTER table grupoB alter COLUMN entidad I
+	
+	*Obtener las Entidades que están en Grupo C Clientes Excluidos
+	sqlmatriz(1) = " SELECT idmiembro as entidad FROM grupoobjeto "
+	sqlmatriz(2) = " where idgrupo  = "+ALLTRIM(STR(pgd_idgrupoC))
+	verror=sqlrun(vconeccionGR ,"grupoC_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda miembros del Grupo B ",0+48+0,"Error")
+	    RETURN .f.
+	ENDIF
+	SELECT * FROM grupoC_sql INTO TABLE grupoC
+	USE IN grupoC_sql
+	SELECT grupoC
+	ALTER table grupoC alter COLUMN entidad I
+	
+	
+	* Obtener Todos los Clientes que deben mas de pgd_cuotas o pgd_dias (Morosos)
+	sqlmatriz(1) = " SELECT f.entidad, sum(1) as cantidad "
+	sqlmatriz(2) = " FROM facturascta c "
+	sqlmatriz(3) = " left join facturas f on f.idfactura = c.idfactura " 
+	sqlmatriz(4) = " left join comprobantes cm on f.idcomproba = cm.idcomproba left join tipocompro tc on tc.idtipocompro = cm.idtipocompro " 
+	sqlmatriz(5) = " left join r_facturasctasaldo s on s.idcuotafc = c.idcuotafc "
+	sqlmatriz(6) = " where c.fechavenc < '"+DTOS(DATE())+"' and s.saldof > 1 and tc.opera > 0 group by f.entidad having cantidad >= "+ALLTRIM(STR(pgd_cuotas))
+	sqlmatriz(7) = " union " && Tiempo Vencido
+	sqlmatriz(8) = " ( SELECT f.entidad, datediff ('"+DTOS(DATE())+"',c.fechavenc) as cantidad "
+	sqlmatriz(9) = " FROM facturascta c "
+	sqlmatriz(10) = " left join facturas f on f.idfactura = c.idfactura " 
+	sqlmatriz(11) = " left join comprobantes cm on f.idcomproba = cm.idcomproba left join tipocompro tc on tc.idtipocompro = cm.idtipocompro " 
+	sqlmatriz(12) = " left join r_facturasctasaldo s on s.idcuotafc = c.idcuotafc "
+	sqlmatriz(13) = " where s.saldof > 1  and tc.opera > 0 group by f.entidad having cantidad >= "+ALLTRIM(STR(pgd_dias))+" )"
+	sqlmatriz(14)= " union " && Facturas Sin Cuotas por cantidad de Días
+	sqlmatriz(15)= " ( SELECT f.entidad, datediff ('"+DTOS(DATE())+"',mid(concat(fechavenc3,fechavenc2,fechavenc1,fecha),1,8)) as cantidad "
+	sqlmatriz(16)= " FROM facturas f "
+	sqlmatriz(17) = " left join comprobantes cm on f.idcomproba = cm.idcomproba left join tipocompro tc on tc.idtipocompro = cm.idtipocompro " 
+	sqlmatriz(18)= " left join r_facturasaldo s on s.idfactura = f.idfactura "
+	sqlmatriz(19)= " where tc.opera > 0 and f.idfactura not in (select idfactura from facturascta ) and s.saldof > 1 group by f.entidad having cantidad >= "+ALLTRIM(STR(pgd_dias))+" )"
+	verror=sqlrun(vconeccionGR ,"deudasent_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda por cantidad de dias... ",0+48+0,"Error")
+	    RETURN .f. 
+	ENDIF
+
+	SET ENGINEBEHAVIOR 70
+	SELECT * FROM deudasent_sql INTO TABLE morososent GROUP BY entidad 
+	SET ENGINEBEHAVIOR 90
+	USE IN deudasent_sql 
+	SELECT morososent
+	
+	*Entidades a agregar a Morosos y que no estában antes en morosos y quitarlos de Regulares
+	SELECT entidad FROM morososent INTO TABLE MorososADD WHERE entidad 	NOT	in ( select entidad FROM grupoB ) AND entidad NOT in ( select entidad FROM grupoC ) 
+	SELECT entidad FROM grupoB     INTO TABLE MorososDEL WHERE entidad 	NOT in ( select entidad FROM morososent ) OR entidad in ( select entidad FROM grupoC )
+	
+	*Entidades a agregar a Regulares y que no estában antes en Regulares y quitarlos de Morosos
+	SELECT entidad FROM morososent INTO TABLE RegularesDEL WHERE entidad 	in ( select entidad FROM grupoA ) UNION ( select entidad FROM grupoC ) 
+*!*		SELECT entidad FROM grupoB 	   INTO TABLE RegularesADD WHERE entidad 	NOT in ( select entidad FROM morososent ) AND entidad NOT in ( select entidad FROM grupoC )
+	SELECT entidad FROM grupoE 	   INTO TABLE RegularesADD WHERE entidad 	NOT in ( select entidad FROM morososent ) AND entidad NOT in ( select entidad FROM grupoC )
+
+*!*		*Resto de Entidades que no estan en Grupo y que hay que agregarlo como Regulares
+*!*		SELECT entidad FROM grupoE INTO TABLE RegularesADD_E WHERE entidad 	NOT in ( select entidad FROM morososent ) AND entidad NOT in ( select entidad FROM grupoC ) 
+	
+
+	SELECT morososADD
+	GO TOP 
+	DO WHILE !EOF()
+		=GrupoObjetoAB(ALLTRIM(STR(morososADD.entidad)), pgd_idgrupoB, '+', vconeccionGR )
+		SELECT morososADD
+		SKIP 
+	ENDDO 
+ 
+	SELECT morososDEL
+	GO TOP 
+	DO WHILE !EOF()
+		=GrupoObjetoAB(ALLTRIM(STR(morososDEL.entidad)), pgd_idgrupoB, '-', vconeccionGR )
+		SELECT morososDEL
+		SKIP 
+	ENDDO 
+	
+	SELECT regularesDEL
+	GO TOP 
+	DO WHILE !EOF()
+		=GrupoObjetoAB(ALLTRIM(STR(regularesDEL.entidad)), pgd_idgrupoA, '-', vconeccionGR )
+		SELECT regularesDEL
+		SKIP 
+	ENDDO 
+	
+	SELECT regularesADD
+	GO TOP 
+	DO WHILE !EOF()
+		=GrupoObjetoAB(ALLTRIM(STR(regularesADD.entidad)), pgd_idgrupoA, '+', vconeccionGR )
+		SELECT regularesADD
+		SKIP 
+	ENDDO 
+
+	USE IN GrupoA
+	USE IN GrupoB
+	USE IN GrupoC
+	USE IN GrupoE
+
+	USE IN MorososADD 
+	USE IN MorososDEL
+	USE IN RegularesDEL 
+	USE IN RegularesADD
+	
+	IF pgd_conexion = 0 THEN && cierro la conexion si no la abrio al ingresar
+		=abreycierracon(vconeccionGR,"")
+	ENDIF 
+
+RETURN .t.
+
 

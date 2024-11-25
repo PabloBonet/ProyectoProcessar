@@ -2846,7 +2846,7 @@ FUNCTION CargaCtaCteClientes
 	PARAMETERS p_idimportap, p_archivo, p_func
 *#/----------------------------------------
 */ Carga de Cuentas corrientes de clientes
-* Formato archivo csv serparado por ; ( entidad I, servicio I, cuenta I, fecha C(8),numerocomp C(200), monto Y, cuota I, vtocta C(8), fechavenc1 c(8), fechavenc2 c(8), fechavenc3 c(8) )			
+* Formato archivo csv serparado por ; ( entidad I, servicio I, cuenta I, fecha C(8),numerocomp C(200), monto Y, cuota I, vtocta C(8), fechavenc1 c(8), fechavenc2 c(8), fechavenc3 c(8), idregistro c(200) )			
 *#/----------------------------------------
 	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
 		RETURN p_func
@@ -2879,7 +2879,7 @@ FUNCTION CargaCtaCteClientes
 			RETURN 0
 		ENDIF
 
-		CREATE TABLE .\ctasctesentcar FREE ( entidad I, servicio I, cuenta I, fecha C(8),numerocomp C(200), monto Y, cuota I, vtocta C(8), fechavenc1 c(8), fechavenc2 c(8), fechavenc3 c(8) )			
+		CREATE TABLE .\ctasctesentcar FREE ( entidad I, servicio I, cuenta I, fecha C(8),numerocomp C(200), monto Y, cuota I, vtocta C(8), fechavenc1 c(8), fechavenc2 c(8), fechavenc3 c(8), idregistro c(200) )			
 					
 		SELECT ctasctesentcar
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
@@ -3020,7 +3020,7 @@ FUNCTION CargaCtaCteClientes
 	ENDIF 
 
 	SET ENGINEBEHAVIOR 70
-	SELECT entidad,servicio,cuenta,fecha,numerocomp,SUM(monto) as monto,cuota,vtocta,fechavenc1,fechavenc2,fechavenc3 FROM ctasctesentcar ;
+	SELECT entidad,servicio,cuenta,fecha,numerocomp,SUM(monto) as monto,cuota,vtocta,fechavenc1,fechavenc2,fechavenc3, idregistro FROM ctasctesentcar ;
 		 GROUP BY entidad,numerocomp INTO TABLE ctasctesentcarA WHERE cargarcomp = .t. 
 	SET ENGINEBEHAVIOR 90
 	v_pventaIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,1,2)))
@@ -3114,7 +3114,7 @@ FUNCTION CargaCtaCteClientes
 			a_fechavenc1=ctasctesentcarA.fechavenc1
 			a_fechavenc2=ctasctesentcarA.fechavenc2
 			a_fechavenc3=ctasctesentcarA.fechavenc3
-			
+			a_idregistro=ctasctesentcarA.idregistro
 			
 			
 			*** GUARDA DATOS DE CABECERA DEL COMPROBANTE
@@ -3258,7 +3258,7 @@ FUNCTION CargaCtaCteClientes
 		
 			
 			v_observa1 = "Comprobante de ajuste asociado a: "+ALLTRIM(a_numComp)
-			v_observa2 = ""
+			v_observa2 = ALLTRIM(a_idregistro)
 			v_observa3 = ""
 			v_observa4 = ""
 
@@ -3938,12 +3938,15 @@ PARAMETERS p_idimportap, p_archivo, p_func
 			RETURN 0
 		ENDIF
 
-		CREATE TABLE .\ctasctesentcarp FREE ( entidad I,servicio I, cuenta I, fecha C(8),numerocomp C(200), monto Y, cuota I, vtocta C(8))			
+		CREATE TABLE .\ctasctesentcarp FREE ( entidad I,servicio I, cuenta I, fecha C(8),numerocomp C(200), monto Y, cuota I, vtocta C(8), idregistro c(200) )			
 					
 		SELECT ctasctesentcarp
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
  		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
 		&eje
+
+		ALTER table ctasctesentcarp ADD COLUMN cargarcomp l 
+		replace ALL cargarcomp WITH .t. 
 
 *** AQUI AGREGAR LOGICA PARA CONSULTAR Y ELIMINAR FACTURAS SI ASI LO DESEA QUIEN IMPORTA ***
 		rta =MESSAGEBOX("Desea Eliminar los Comprobantes Existentes en las Cuentas Corrientes de Proveedores ",3+32+256,"Eliminar Comprobantes ")
@@ -5683,12 +5686,18 @@ FUNCTION CargaEtiquetas
 		IF v_registros > 0 THEN 
 			*Elimino las Etiquetas que tenga el sistema
 			*La carga debe hacerce con la tabla vacia
-			sqlmatriz(1)=" delete from etiquetas "
-			verror=sqlrun(vconeccionF,"etiq")
-			IF verror=.f.  
-			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Etiquetas Existentes... ",0+48+0,"Error")
-			    RETURN 0
-			ENDIF
+			
+			IF MESSAGEBOX("Desea Eliminar las Etiquetas Existentes en el Sistema?"+CHR(13)+"ESTA OPERACION NO PODRÁ REVERTIRSE...",4+32+256,"Carga de Etiquetas")= 6 THEN 
+			
+				sqlmatriz(1)=" delete from etiquetas "
+				verror=sqlrun(vconeccionF,"etiq")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Etiquetas Existentes... ",0+48+0,"Error")
+				    RETURN 0
+				ENDIF
+			
+			ENDIF 
+			
 		ENDIF 		
 	
 	
@@ -5704,7 +5713,7 @@ FUNCTION CargaEtiquetas
 				a_fechaalta		= etiquetascar.fechaalta
 				a_codigo		= etiquetascar.codigo
 				a_articulo		= etiquetascar.articulo
-				a_timestamp		= TTOC(DATETIME())
+				a_timestamp		= SUBSTR(DTOS(DATE()),1,4)+"-"+SUBSTR(DTOS(DATE()),5,2)+"-"+SUBSTR(DTOS(DATE()),7,2)+" "+TIME()
 				a_tabla 		= etiquetascar.tabla
 				a_campo 		= etiquetascar.campo
 				a_idregistro	= etiquetascar.idregistro
