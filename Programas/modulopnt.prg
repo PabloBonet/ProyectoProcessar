@@ -659,10 +659,11 @@ FUNCTION FPNTQuitarP
 
 	v_diasatraso = asyspuntos(8)
 	v_reglapuntos= INT(VAL(asyspuntos(9)))
-	v_fechaactu  = asyspuntos(10)
+	v_gruposdescu= asyspuntos(10) && Grupos de los cuales se quitaran los puntos de los clientes
+	v_fechaactu  = asyspuntos(11)
 	v_diahoy 	= DTOS(DATE())
 	
-	IF  ALLTRIM(DTOS(DATE())) > ALLTRIM(asyspuntos(10)) then
+	IF  ALLTRIM(DTOS(DATE())) > ALLTRIM(asyspuntos(11)) then
 	
 		** es la pc que va a hacer el calculo de sistema
 		_SYSPUNTOS = SUBSTR(_SYSPUNTOS,1,LEN(_SYSPUNTOS)-8)+DTOS(DATE())
@@ -688,16 +689,66 @@ FUNCTION FPNTQuitarP
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la registracion de puntos ",0+48+0,"Error")
 		    RETURN ""  
-		ENDIF	
+		ENDIF
+		
+		************************************************************************************
+
+		* busco los registros de clientes que están en grupos de cancelacion de puntos 
+		
+		
+		sqlmatriz(1) = " SELECT ifnull(entidad,0) as entidad , SUM(puntos) as puntos " 
+		sqlmatriz(2) = " FROM pntpuntos p "
+		sqlmatriz(3) = " where entidad in (select idmiembro as entidad from grupoobjeto where idgrupo in ("+ALLTRIM(v_gruposdescu)+") )"
+		sqlmatriz(4) = " group by entidad having puntos > 0 " 		
+		verror=sqlrun(vconeccionPN ,"pntmovi2_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la registracion de puntos ",0+48+0,"Error")
+		    RETURN ""  
+		ENDIF
+		
+		************************************************************************************
+			
 		=abreycierracon(vconeccionPN,"")
 		
 
 		SELECT pntmovi_sql
 		GO TOP 
+		v0_pntmovi_sql = .f.
 		DO WHILE !EOF()
 			
+			v0_pntmovi_sql = .f.
+
 			v_entidadpn = pntmovi_sql.entidad
 			v_puntospn  = pntmovi_sql.puntos
+			v_entidadpn = IIF(TYPE("v_entidadpn")="C",VAL(v_entidadpn),v_entidadpn)
+			v_puntospn  = IIF(TYPE("v_puntospn")="C" ,VAL(v_puntospn) ,v_puntospn)
+
+			IF v_puntospn > 0 THEN 
+				CREATE TABLE cancelapnt ( idpntopera i, tabla c(50), campoid c(50), idreg i, cmpfactor c(50), funcionpnt c(50),;
+				factor n(10,2), puntos n(10,2) ,fpntpuntos n(10,2), entidad i, fecha c(8) )
+				
+				INSERT INTO cancelapnt VALUES (v_reglapuntos,'', '', 0, '','',-1,v_puntospn ,1,v_entidadpn,DTOS(DATE()))
+				USE IN cancelapnt 
+				v_canreglas=GenPuntos("cancelapnt",0)
+				DELETE FILE cancelapnt.dbf 
+			ENDIF 
+			SELECT pntmovi_sql
+			SKIP 
+		ENDDO 		
+		
+		
+		IF 	v0_pntmovi_sql  THEN 
+			SELECT * FROM pntmovi2_sql INTO CURSOR pntmovi3_sql WHERE entidad NOT in (SELECT entidad FROM pntmovi_sql  )
+		ELSE
+			SELECT * FROM pntmovi2_sql INTO CURSOR pntmovi3_sql
+		ENDIF 
+		
+		SELECT pntmovi3_sql
+		GO TOP 
+		DO WHILE !EOF()
+			
+			v_entidadpn = pntmovi3_sql.entidad
+			v_puntospn  = pntmovi3_sql.puntos
 			v_entidadpn = IIF(TYPE("v_entidadpn")="C",VAL(v_entidadpn),v_entidadpn)
 			v_puntospn  = IIF(TYPE("v_puntospn")="C" ,VAL(v_puntospn) ,v_puntospn)
 
@@ -710,9 +761,11 @@ FUNCTION FPNTQuitarP
 				v_canreglas=GenPuntos("cancelapnt",0)
 				DELETE FILE cancelapnt.dbf 
 			ENDIF 
-			SELECT pntmovi_sql
+			SELECT pntmovi3_sql
 			SKIP 
 		ENDDO 		
+		USE IN pntmovi2_sql		
+		USE IN pntmovi3_sql		
 		USE IN pntmovi_sql
 		
 	ENDIF 	

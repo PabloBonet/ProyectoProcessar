@@ -5792,6 +5792,7 @@ PARAMETERS pr_claverepo
 
 	v_reportepath = ALLTRIM(GETFILE("rpt","Reporte","Seleccionar",0,"Reportes Sistema"))
 
+	
 	IF EMPTY(v_reportepath) THEN 
 		SET DEFAULT TO &_SYSESTACION 
 		RETURN v_idcomproreret 
@@ -28949,8 +28950,6 @@ PARAMETERS pgd_conexion
 *!*		SELECT entidad FROM grupoB 	   INTO TABLE RegularesADD WHERE entidad 	NOT in ( select entidad FROM morososent ) AND entidad NOT in ( select entidad FROM grupoC )
 	SELECT entidad FROM grupoE 	   INTO TABLE RegularesADD WHERE entidad 	NOT in ( select entidad FROM morososent ) AND entidad NOT in ( select entidad FROM grupoC )
 
-*!*		*Resto de Entidades que no estan en Grupo y que hay que agregarlo como Regulares
-*!*		SELECT entidad FROM grupoE INTO TABLE RegularesADD_E WHERE entidad 	NOT in ( select entidad FROM morososent ) AND entidad NOT in ( select entidad FROM grupoC ) 
 	
 
 	SELECT morososADD
@@ -28994,11 +28993,175 @@ PARAMETERS pgd_conexion
 	USE IN MorososDEL
 	USE IN RegularesDEL 
 	USE IN RegularesADD
+
+
+	********** Agrego al Sistema de Puntuacion los Clientes que estén en grupo Regulares si no están habilitados a puntuación
+	********** Esto es solo si el sistema de puntuacion está habilitado
+	IF TYPE("_SYSPUNTOS") = 'C' THEN
+		IF VAL(SUBSTR(_SYSPUNTOS,1,1)) = 1 THEN 
+			sqlmatriz(1)=" insert into pntentidades ( entidad, fechaini, fechafin )  "
+			sqlmatriz(2)=" SELECT idmiembro, '"+DTOS(DATE()-10)+"' as fechaini, '' as fechafin  " 
+			sqlmatriz(3)=" FROM grupoobjeto where idgrupo = "+STR(pgd_idgrupoA)+" and idmiembro not in ( select entidad from pntentidades ) "
+			verror=sqlrun(vconeccionGR ,"inserpntenti_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la insercion en puntuación de entidades ",0+48+0,"Error")
+			    RETURN .f. 
+			ENDIF
+		ENDIF 
+	ENDIF 
+	
+
+
+	**********************************************************
 	
 	IF pgd_conexion = 0 THEN && cierro la conexion si no la abrio al ingresar
 		=abreycierracon(vconeccionGR,"")
 	ENDIF 
 
-RETURN .t.
+	RETURN .t.
+	
+ENDFUNC 
 
 
+FUNCTION ListaVariables
+PARAMETERS p_skelvariables, p_archivovar
+*#/----------------------------------------
+* Lista las variables Publicas del Sistema - _SYS* Y _SQL*
+* Genera dos archivos con el listado de las variables y su contenido
+* Tambien es posible cargar las variables a un modulo definiendolas como Publicas
+* Parametros : p_skelvariables = Formato de Nombre de Variables que seran exportadas, se debe separar por ; los distintos formatos solicitados
+*			 : p_archivovar    = Archivo a Generar o Archivo a Leer, esto va a depender del primer caracter indicado, si es "+" le indica a la funcion
+*						que en este caso se quiere cargar un archivo existente con las variables, si no se indica "+" entonces asume que se quiere un vuelco de variables
+* Retorna  la cantidad de variables generadas o bien cargadas al sistema 
+* Obs. : En caso de que no se indice un valor para el archivo, entonces la aplicación solicitará se seleccione un nombre de archivo o archivo, según sea que vaya a genera o 
+* Leer las variables desde un archivo. la extension de los archivos son .txt o bien .var
+*#/----------------------------------------
+
+	vcretorno = 0
+	
+	IF !(TYPE("p_archivovar") = 'C') THEN 
+		p_archivovar = " "
+	ENDIF 
+
+	IF EMPTY(p_archivovar) OR !(SUBSTR(p_archivovar,1,1)='+') THEN  && Genera un Archivo con Variables de Memoria
+
+		v_defa = SYS(5)+CURDIR()
+		v_skelfile = LOWER(ALLTRIM(GETFILE("txt","Archivo","Seleccionar",0,"Archivo "))	)
+		eje = "SET DEFAULT TO '"+v_defa+"'"
+		&eje 
+		
+		IF EMPTY(v_skelfile) THEN 
+			RETURN 0
+		ENDIF
+		
+
+		vcan_skeleton=alines( arrayvar, p_skelvariables, ";")
+		IF vcan_skeleton > 0 THEN 
+			CREATE TABLE variablessys ( cvariable c(200), variable c(50), tipo c(50), valor M )
+			DELETE FILE filevar.csv
+			FOR _ifg = 1 TO vcan_skeleton
+				v_skel = ALLTRIM(arrayvar(_ifg))+'*'
+				
+				LIST MEMORY LIKE &v_skel TO FILE filevar.csv ADDITIVE NOCONSOLE
+			ENDFOR 
+			APPEND FROM filevar.csv TYPE SDF  
+
+		ENDIF 
+		RELEASE arrayvar
+		
+		SELECT variablessys
+		
+			replace ALL variable WITH ALLTRIM(SUBSTR(cvariable,1,ATC(' ',cvariable,1)-1))
+			SELECT variable, tipo, valor FROM variablessys INTO TABLE variablessys0 WHERE !EMPTY(variable) ORDER BY variable 
+			GO TOP 
+			DO WHILE !EOF()
+				eje = "v_sys = "+ALLTRIM(variable)
+				&eje    
+				IF TYPE("v_sys") = 'N' THEN
+					replace tipo WITH TYPE("v_sys"), valor WITH ALLTRIM(STR(v_sys,12,4))
+				ENDIF  
+				IF TYPE("v_sys") = 'C' THEN
+					replace tipo WITH TYPE("v_sys"), valor WITH ALLTRIM(v_sys)
+				ENDIF  
+				
+				SKIP 
+			ENDDO 
+			
+		SELECT variablessys0
+		
+
+		P= FCREATE(v_skelfile)
+		GO TOP 
+		DO WHILE !EOF()
+			v_txtwrite = ALLTRIM(variable)+"#;#"+ALLTRIM(tipo)+"#;#"+ALLTRIM(valor)
+			FPUTS(P,v_txtwrite)
+			SELECT variablessys0
+			SKIP 		
+		ENDDO 
+		FCLOSE(P)
+		v_skelfiletmp = v_skelfile+"tmp"
+		eje = "COPY FILE "+v_skelfile+" TO "+v_skelfiletmp
+		&eje
+		USE IN variablessys
+		USE IN variablessys0
+
+
+		* Genera otro archivo con la asignacion de las variables 
+		
+		v_skelfile2 = alltrim(STRTRAN(LOWER(v_skelfile),'.txt','.var'))
+		Q=FCREATE(v_skelfile2)
+		lnLines = alines( laLines, filetostr(v_skelfiletmp),1+4 , chr(10),chr(13) )
+
+	
+		FOR ij = 1 TO lnLines 
+			v_txtread = SUBSTR(laLines(ij) ,1,ATC('#;#',laLines(ij),1)-1)+"="+IIF(SUBSTR(laLines(ij),ATC('#;#',laLines(ij),1)+3,1)='C',"'","")+ ;
+				SUBSTR(laLines(ij),ATC('#;#',laLines(ij),2)+3)+IIF(SUBSTR(laLines(ij),ATC('#;#',laLines(ij),1)+3,1)='C',"'","") 				
+			FPUTS(Q,v_txtread)			
+		ENDFOR 
+		RELEASE laLines
+		FCLOSE(Q)
+
+		vcretorno = ij
+
+	ELSE  && Lee Un archivo con variables de memoria
+		IF (SUBSTR(p_archivovar,1,1)='+')
+			
+			v_skelfile = SUBSTR(p_archivovar,2)
+			IF EMPTY(v_skelfile) THEN 
+				v_defa = SYS(5)+CURDIR()
+				v_skelfile = ALLTRIM(GETFILE("var","Archivo","Seleccionar",0,"Archivo "))	
+				eje = "SET DEFAULT TO '"+v_defa+"'"
+				&eje 
+			ENDIF 
+			
+			IF EMPTY(v_skelfile) THEN 
+				RETURN 0
+			ENDIF 		
+			
+			lnLines = alines( laLines, filetostr(v_skelfile),1+4 , chr(10),chr(13) )
+
+			ON ERROR v_error = .T. 
+			v_cargavariables = 0
+			FOR ij = 1 TO lnLines 
+
+					v_var = ALLTRIM(SUBSTR(laLines(ij),1,ATC('=',laLines(ij),1)-1))
+					eje = " PUBLIC "+ALLTRIM(SUBSTR(laLines(ij),1,ATC('=',laLines(ij),1)-1))
+					v_cargavariables = v_cargavariables + 1
+					&eje 
+					v_error = .F.
+					eje = laLines(ij)
+					&eje
+					IF v_error THEN 
+						eje = " RELEASE "+ALLTRIM(SUBSTR(laLines(ij),1,ATC('=',laLines(ij),1)-1))
+						&eje
+						v_cargavariables = v_cargavariables - 1
+					ENDIF 
+			ENDFOR 
+			ON ERROR
+			RELEASE laLines
+			vcretorno = v_cargavariables
+					
+		ENDIF 
+	ENDIF 
+	RETURN vcretorno 
+ENDFUNC 
