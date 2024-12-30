@@ -17,6 +17,8 @@ IF !(ALLTRIM(conex) == "") then
 		vc_mysl = LOWER(ALLTRIM(ccDataBaseSQL))
 		VARCONMYSQL = ALLTRIM(vc_mysl)+'_cmysql'
 		******************************************************************
+
+
 		IF TYPE(VARCONMYSQL) = "U" THEN 
 			PUBLIC &VARCONMYSQL
 			conectar = conMySQL(ccDataBaseSQL) && realiza la conexion con la base de datos por unica vez
@@ -568,5 +570,65 @@ PARAMETERS pv_conexion
 		SKIP 
 	ENDDO 	
 	USE IN SetVariables 
+
+ENDFUNC 
+
+
+
+
+
+
+FUNCTION ConectaDBWEB
+PARAMETERS p_co 
+
+	IF p_co = 0 THEN && debe conectarse a la base de datos web 
+
+		IF TYPE("_SYSDBWEB") = "C" THEN  && Si existe la variable trata de conectarse
+			v_canlineas = ALINES(adbweb,_SYSDBWEB,1,';')
+			
+			IF v_canlineas >= 5 THEN && si tiene todos los parametros entonces intenta la conexion con la db web
+
+				v_dbweb_host	 = adbweb(1) && host
+				v_dbweb_port	 = adbweb(2) && puerto
+				v_dbweb_usuario	 = adbweb(3) && usuario
+				v_dbweb_password = adbweb(4) && password
+				v_dbweb_schemma	 = adbweb(5) && schemma 
+
+
+				lnHandleWEB = 0
+				SQLDISCONNECT(lnHandleWEB)
+				lcServerWEB		=ALLTRIM(v_dbweb_host)
+				lcDatabaseWEB	=ALLTRIM(v_dbweb_schemma)
+				lcUserWEB		=ALLTRIM(v_dbweb_usuario)
+				lcPasswordWEB	=ALLTRIM(v_dbweb_password)
+				lcDriverWEB	    =ALLTRIM(_SYSDRVMYSQL)
+				lcPortWEB		=ALLTRIM(v_dbweb_port)
+				lcStringConnWEB ="Driver="+lcDriverWEB+";Port="+lcPortWEB+;
+				";Server="+lcServerWEB+;
+				";Database="+lcDatabaseWEB+;
+				";Uid="+lcUserWEB+;
+				";Pwd="+lcPassWordWEB
+				lnHandleWEB		=SQLSTRINGCONNECT(lcStringConnWEB)
+				
+				RELEASE adbweb 
+				
+				IF lnHandleWEB > 0
+					RETURN lnHandleWEB
+				ELSE
+					MESSAGEBOX("Error de Conexión con DB WEB... Verifique")
+					RETURN -1
+				ENDIF
+			ELSE
+				RETURN 0 && retorna 0 porque no existe variable o no está bien configurada no se debe conectar
+			ENDIF 
+		
+		ELSE
+			RETURN 0 && retorna 0 porque no existe variable o no está bien configurada no se debe conectar
+		ENDIF 
+
+	ELSE
+		SQLDISCONNECT(p_co)
+		RETURN 0
+	ENDIF 
 
 ENDFUNC 
