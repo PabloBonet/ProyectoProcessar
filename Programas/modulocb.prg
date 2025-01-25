@@ -767,7 +767,7 @@ ENDFUNC
 
 
 FUNCTION ExportarCobro
-	PARAMETERS p_idcbasociada, p_archivo,p_tablaCobros
+	PARAMETERS p_idcbasociada, p_archivo,p_tablaCobros, p_cbptoreca
 *#/----------------------------------------
 */ 	Exportación de cobros al archivo de intercambio (Archivo de retorno .RET)
 ** 	Funcion: ExportarCobro
@@ -775,6 +775,7 @@ FUNCTION ExportarCobro
 *		P_idcbasociada: ID de la entidad asociada (Receptor del archivo .RET)
 *		p_archivo: Path completo con el nombre del archivo .RET
 *		p_tablaCobros: tabla con los datos de los cobros a exportar
+*		p_cbptoreca: parametro opcional con el id del punto de recadudación, si no se pasa se toma de la variable: _SYSCBPTORECA
 *	Retorno: Retorna 1 si se exportó correctamente, 0 en otro caso
 *#/----------------------------------------
 
@@ -901,7 +902,19 @@ FUNCTION ExportarCobro
 			
 			
 			 ** Código Punto recaudación **
-			v_idptoRecauda = ALLTRIM(_SYSCBPTORECA)
+			 v_idptoRecauda = ALLTRIM(_SYSCBPTORECA)
+			
+			 IF TYPE('p_cbptoreca') = 'L'
+			 	v_idptoRecauda = ALLTRIM(_SYSCBPTORECA)
+			 ELSE
+			 	IF TYPE('p_cbptoreca') = 'C'
+			 		v_idptoRecauda = ALLTRIM(p_cbptoreca)
+			 	ELSE
+			 		v_idptoRecauda = ALLTRIM(_SYSCBPTORECA)
+			 	ENDIF 
+			 ENDIF 
+			  
+			
 	
 			v_rpuntorec		= ALLTRIM(cbasociada_sql.r0puntorec)
 	
@@ -1068,7 +1081,7 @@ FUNCTION ExportarCobro
 				v_linea1 = v_linea1+ALLTRIM(v_cbCob) && Si está correcto: lo agrego a la linea
 				
 			ELSE
-				MESSAGEBOX("El tamaño del código 'Código de Barras' representado en el campo 'r1bc' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar cobros")
+				MESSAGEBOX("r0del código 'Código de Barras' representado en el campo 'r1bc' es distinto al indicado en la configuración.",0+48+0,"Error al Exportar cobros")
 				RETURN 0
 			ENDIF
 			
@@ -1727,14 +1740,15 @@ FUNCTION ExportarComprobantes
 				***********************************
 				
 				v_ecobromax 		= ALLTRIM(cbcobrador_sql.ecobromax)
+			
 				ALINES(ARR_ecobromax,v_ecobromax,'-')
 				v_tamrcm = VAL(ARR_ecobromax(2))
-				
+			
 				v_cobroMaximo = cbcobrador_sql.cobromax
 				
 				v_cobromaximostr = STR((v_cobromaximo *100))
 				v_lencobromax =  LEN(ALLTRIM(v_cobromaximostr))
-				
+			
 				IF v_lencobromax <= v_tamrcm
 					
 					v_cobromaximostr= REPLICATE('0',v_tamrcm-v_lencobromax)+ALLTRIM(v_cobromaximostr)
@@ -1973,8 +1987,8 @@ FUNCTION ImportarCobros
 			** Código secuencia del archivo **
 			ALINES(ARR_r0secuencia,v_r0secuencia,'-')
 			COD_r0secuencia = SUBSTR(v_linea,VAL(ARR_r0secuencia(1)),VAL(ARR_r0secuencia(2)))
-		
-		
+	
+			
 			IF ALLTRIM(v_narchivor) <> alltrim(COD_r0empresaid) OR ALLTRIM(v_empresaid) <> ALLTRIM(COD_r0puntorec) 
 				MESSAGEBOX("El archivo no se corresponde al cobrador seleccionado",0+16+256,"Error al cargar el archivo de importación")
 				RETURN 0
@@ -2704,5 +2718,418 @@ PARAMETERS pcb_EmpresaID, pcb_EmpresaSID, pcb_IdFactura
 	ENDIF 
 	
 	USE IN asociadactrl_sql
+	RETURN pcb_Retorno
+ENDFUNC 
+
+
+
+FUNCTION CBconvertirArchivo
+PARAMETERS pcb_EmpresaID, pcb_archivo, pcb_operacion
+*#/----------------------------------------
+*** Función para convertir un archivo al formato correspondiente
+*** Parameter:
+***		pcb_EmpresaID: Id de la empresa
+***		pcb_archivo: path completo del archivo a convertir (el parametro puede ser vacio, en ese caso se pedirá seleccionar)
+***		pcb_operacion: Operación, puede ser R o E (R: formato archivo retorno, E: Formato archivo Envio)
+***	Retorno
+*** 	pcb_retorno: Devuelve el path del archivo convertido. Si no puede convertir o hay algún error retorna vacio
+**  Se debe llamar a la funcion sin ninguna conexion abierta, ya que cierra y abre una conexion a otra base de datos
+*#/----------------------------------------
+
+	pcb_Retorno = ""
+
+
+	vconeccionCBA=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+
+	IF vconeccionCBA > 0 THEN 
+
+		sqlmatriz(1)=" Select funcionfiltro from cbcobrador where empresaid = '"+ALLTRIM(pcb_EmpresaID)+"'"
+		verror=sqlrun(vconeccionCBA,"funcionfiltro_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la función de conversión",0+48+0,"Error")
+		    =abreycierracon(vconeccionCBA,"")
+		    pcb_Retorno = ""
+		
+		    RETURN pcb_Retorno 
+		ENDIF
+		
+		
+		SELECT funcionfiltro_sql
+		GO TOP 
+		IF EOF() THEN 
+			pcb_Retorno = ""
+	
+			=abreycierracon(vconeccionCBA,"")    
+	
+		    RETURN pcb_Retorno 
+		ELSE
+		
+			*** Trato de ejecutar la función de conversión ***
+			
+			v_funcionConv = funcionfiltro_sql.funcionfiltro
+		
+			IF EMPTY(ALLTRIM(v_funcionconv)) = .F.
+			
+			
+				v_fnconv = ALLTRIM(v_funcionConv)+"('', '', '')"
+				
+				v_existe = chkfunction(v_fnconv) 
+				
+				IF v_existe = .T.
+					v_fnconv = ALLTRIM(v_funcionConv)+"(pcb_EmpresaID, pcb_archivo, pcb_operacion)"
+					eje = "pcb_Retorno = "+ALLTRIM(v_fnconv)
+					&eje 
+				ELSE
+					MESSAGEBOX("La función: '"+ALLTRIM(v_fnconv)+"' No está definida. Contacte al administrador del sistema",0+16+256,"Convertir archivo")
+					
+					pcb_Retorno = ""
+			
+					=abreycierracon(vconeccionCBA,"")    
+			
+				    RETURN pcb_Retorno 
+				ENDIF 
+				
+			ELSE
+				pcb_Retorno = ""
+	
+				=abreycierracon(vconeccionCBA,"")    
+		
+			    RETURN pcb_Retorno 
+			ENDIF 
+		
+				
+		ENDIF 
+		USE IN funcionfiltro_sql
+	ELSE 
+		pcb_Retorno = ""
+	ENDIF 
+	
+			
+
+	RETURN pcb_Retorno
+
+ENDFUNC 
+
+
+
+*#/----------------------------------------
+***
+*** FUNCIONES PARA CONVERSIÓN DE ARCHIVOS DE EXPORTACIÓN E IMPORTACIÓN
+***
+*** TODAS LAS FUNCIONES DEBEN RECIBIR LOS SIGUIENTES PARAMETROS: 
+***		pcb_EmpresaID: Id de la empresa
+***		pcb_archivo: path completo del archivo a convertir (el parametro puede ser vacio, en ese caso se pedirá seleccionar)
+***		pcb_operacion: Operación, puede ser R o E (R: formato archivo retorno, E: Formato archivo Envio)
+***	Retorno
+*** 	pcb_retorno: Devuelve el path del archivo convertido. Si no puede convertir o hay algún error retorna vacio
+***
+*#/----------------------------------------
+
+
+FUNCTION CBFNRLCREDICOOP
+*#/----------------------------------------
+*** Función para convertir un archivo al formato de RedLink Credicoop
+*** Parameter:
+***		pcb_EmpresaID: Id de la empresa
+***		pcb_archivo: path completo del archivo a convertir (el parametro puede ser vacio, en ese caso se pedirá seleccionar)
+***		pcb_operacion: Operación, puede ser I o E (I: formato archivo para Importación, E: Formato archivo para exportarción)
+***	Retorno
+*** 	pcb_retorno: Devuelve el path del archivo convertido. Si no puede convertir o hay algún error retorna vacio
+**  Se debe llamar a la funcion sin ninguna conexion abierta, ya que cierra y abre una conexion a otra base de datos
+*#/----------------------------------------
+PARAMETERS pcb_EmpresaID, pcb_archivo, pcb_operacion
+
+	pcb_Retorno = ""
+
+*** Obtengo las configuraciones de los archivos y datos de empresa asociada y cobrador ***
+
+	vconeccionCBA=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+
+	IF vconeccionCBA > 0 THEN 
+		
+		sqlmatriz(1)= " select * from cbasociadas "
+		
+		verror=sqlrun(vconeccionCBA,"cbasociada_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al obtener los datos de la entidad asociada ",0+48+0,"Error al Importar comprobantes")
+		    RETURN 0
+		ENDIF	
+			
+		SELECT cbasociada_sql
+		GO TOP 
+		
+		IF EOF()
+			
+		 	MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los datos del archivo de la empresa ",0+48+0,"Error")
+		    =abreycierracon(vconeccionCBA,"")
+		    pcb_Retorno = ""
+	
+		    RETURN pcb_Retorno 
+		ENDIF 
+		
+		sqlmatriz(1)=" Select * from cbcobrador where empresaid = '"+ALLTRIM(pcb_EmpresaID)+"'"
+	
+		verror=sqlrun(vconeccionCBA,"cbcobrador_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los datos del cobrador",0+48+0,"Error")
+		    =abreycierracon(vconeccionCBA,"")
+		    pcb_Retorno = ""
+	
+		    RETURN pcb_Retorno 
+		ENDIF
+		
+		SELECT cbcobrador_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			SELECT cbcobrador_sql
+				
+		ELSE
+		
+			pcb_Retorno = ""
+		
+			RETURN pcb_Retorno 
+		ENDIF  
+
+	***********************************
+	
+	*** Creo la tabla con los datos de los cobros ****	
+		v_s1 = "CREATE TABLE cobrostmp  FREE (idcbasoci I, empresaid I, idsubent I,idcomp I, comproba C(100),total1 Y, "
+		v_s2 = " vence1 C(8),idcbcobro I,fechacob C(8),importeCob Y,recargoCob Y, cb C(254), sel L) "
+		v_s = v_s1+v_s2
+		
+		&v_s
+
+		
+	***************
+	
+	*** Cargo la tabla con los datos de los cobros desde el archivo de REDLINK ****
+	
+		sqlmatriz(1)=" select * from servicios "
+		verror=sqlrun(vconeccionCBA,"servicios")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los datos de los servicios ",0+48+0,"Error")
+		    =abreycierracon(vconeccionCBA,"")
+		    pcb_Retorno = ""
+	
+		    RETURN pcb_Retorno 
+		ENDIF
+					
+		IF EMPTY(pcb_archivo)
+			
+	*!*			pcb_archivo = GETFILE('ret','Docs.','Ok',0,'Adjuntar Archivo')
+			pcb_archivo = GETFILE()
+		ENDIF 
+
+
+		IF !EMPTY(pcb_archivo) then
+			IF used("lectura") then
+				SELECT lectura
+				use
+			ENDIF
+
+			CREATE TABLE lectura FREE (REGISTRO C(98) ,FECHA D, IDREGISTRO N(10), COBRADO N(12,2))
+			
+								
+			SELECT lectura
+			APPEND FROM &pcb_archivo SDF
+			
+			SELECT lectura 
+			GO TOP 
+			IF  (LEN(ALLTRIM(lectura.registro))= 98) AND ( ;
+				SUBSTR(ALLTRIM(lectura.registro),2,3)='FVA' OR ;
+				SUBSTR(ALLTRIM(lectura.registro),2,3)='FVB' OR ;
+				SUBSTR(ALLTRIM(lectura.registro),2,3)='FVC' OR ;
+				SUBSTR(ALLTRIM(lectura.registro),2,3)='FVD' OR ;
+				SUBSTR(ALLTRIM(lectura.registro),2,3)='FVE' OR ;
+				SUBSTR(ALLTRIM(lectura.registro),2,3)='FVF' OR ;
+				SUBSTR(ALLTRIM(lectura.registro),2,3)='FVG' ) THEN
+				 
+				DELETE
+				GO bott
+				DELETE
+				PACK
+				GO TOP 
+					REPLACE ALL idregistro 	WITH VAL(SUBSTR(ALLTRIM(lectura.registro),49,10)), ;
+								cobrado WITH VAL(SUBSTR(ALLTRIM(lectura.registro),29,12))/100 ;
+								fecha   WITH DATE((INT(VAL(SUBSTR(ALLTRIM(lectura.registro),41,4)))),INT(VAL(SUBSTR(ALLTRIM(lectura.registro),45,2))),INT(VAL(SUBSTR(ALLTRIM(lectura.registro),47,2))))
+
+				***** Completo los datos restantes de la factura *****
+		
+				tipoComproObjtmp 	= CREATEOBJECT('comprobantesclass')
+				
+				v_idCompNDA = tipoComproObjtmp.getidcomprobante("ND DE AJUSTE CTA CTE")
+				
+				RELEASE tipoComproObjtmp   
+				
+				SELECT lectura 
+				GO TOP 
+				
+				DO WHILE NOT EOF()
+			
+					v_idregistro = lectura.idregistro
+					v_cobrado	= lectura.cobrado
+					v_fecha	= lectura.fecha
+					
+					
+					sqlmatriz(1)=" select * from facturas f left join comprobantes c on f.idcomproba = c.idcomproba left join puntosventa p on f.pventa = p.pventa "
+					sqlmatriz(2)=" where (f.observa2 = '"+ALLTRIM(STR(v_idregistro))+"' and f.idcomproba = "+ALLTRIM(STR(v_idCompNDA))+") or (f.idfactura = "+ALLTRIM(STR(v_idregistro))+" and f.idcomproba <> "+ALLTRIM(STR(v_idCompNDA))+" ) " 
+					
+					verror=sqlrun(vconeccionCBA,"factura_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los datos de la factura ",0+48+0,"Error")
+					    =abreycierracon(vconeccionCBA,"")
+					ELSE
+					
+						SELECT factura_sql
+						GO TOP 
+						
+						IF NOT EOF()
+							v_idcbasoci =  cbasociada_sql.idcbasoci
+							v_empresaid = VAL(cbasociada_sql.empresaid)
+							v_idsubent	= VAL(cbasociada_sql.subcodid)
+							v_idcomp 	= IIF(TYPE('v_idregistro')='C',VAL(v_idregistro),v_idregistro)
+
+							v_comproba = factura_sql.comprobante
+							v_total1 = factura_sql.total
+							v_vence1 = factura_sql.fechavenc1
+							v_idcbcobro = 0
+							v_fechacob = DTOS(lectura.fecha)
+							v_importeCob = lectura.cobrado
+							v_recargoCob = lectura.cobrado - v_total1 
+							
+							ALINES(ARR_codebccomp,cbcobrador_sql.ebc,'-')
+							v_tbc  = VAL(ARR_codebccomp(2))
+									
+							ALINES(ARR_codebccomp,cbcobrador_sql.ebceid,'-')
+							v_tbceid  = VAL(ARR_codebccomp(2))
+													
+							ALINES(ARR_codebccomp,cbcobrador_sql.ebcsid,'-')
+							v_tbcsid  = VAL(ARR_codebccomp(2))
+							
+							ALINES(ARR_codebccomp,cbcobrador_sql.ebcidcomp,'-')
+							v_tcbcodcomp= VAL(ARR_codebccomp(2))
+							v_idfactura = 	factura_sql.idfactura	
+												
+							v_strempresaid = STRTRAN(STR(v_empresaid,v_tbceid,0)," ","0")
+							v_stridsubent = STRTRAN(STR(v_idsubent,v_tbcsid,0)," ","0")
+							v_stridcomp = STRTRAN(STR(v_idfactura ,(v_tcbcodcomp-2),0)," ","0")
+							
+							v_codibc = v_strempresaid+v_stridsubent+v_stridcomp+"00"
+							
+							v_difbc = v_tbc - LEN(v_codibc)
+							
+							IF v_difbc >= 0
+								v_cb = v_codibc + REPLICATE('0',v_difbc )
+							ELSE
+								v_cb = "00010001000000000000000"
+							ENDIF 
+	
+							v_sel = .T.
+							
+							INSERT INTO cobrostmp VALUES (v_idcbasoci , v_empresaid, v_idsubent,v_idfactura , v_comproba,v_total1, v_vence1,v_idcbcobro,v_fechacob,v_importeCob,v_recargoCob, v_cb, v_sel)
+						
+						ENDIF 
+											
+					ENDIF
+									
+					SELECT lectura
+					SKIP 1
+
+				ENDDO
+
+
+		***********************
+	SELECT cobrostmp 
+	GO TOP 
+		SELECT cobrostmp 
+	GO TOP 
+	IF EOF()
+		MESSAGEBOX("No se pudieron cargar los cobros del archivo... Verifique...",0+16+256,"Convertir archivo")
+			
+			pcb_Retorno = ""
+			RETURN pcb_Retorno
+	ENDIF 
+
+		**** Exporto el archivo .ret ****
+		DO CASE
+		CASE pcb_operacion = 'R' && Formato de archivo Retorno [.RET]
+			v_r = 0
+			*v_maxSecuencia = calculaSecuenciaMax(v_idcbasoci)
+			
+			SELECT cbcobrador_sql
+			GO  TOP 
+			v_idcbcobrador = cbcobrador_sql.idcbcobra
+			v_maxSecuencia = calculaSecuenciaMaxCob(v_idcbcobrador)
+			
+				IF v_maxSecuencia < 0
+					v_secuenciastr = '00000'
+					
+				ELSE
+					v_secuenciaAct = v_maxSecuencia + 1
+					
+					IF v_secuenciaAct > 0
+					
+						SELECT cbasociada_sql
+						v_narchivor	= ALLTRIM(cbasociada_sql.narchivor)
+						v_longNarchivor = LEN(v_narchivor)
+
+						IF v_longNarchivor <= 4 AND v_secuenciaAct <= 99999
+							
+							v_secuenciaStr = REPLICATE('0',5-LEN(ALLTRIM(STR(v_secuenciaAct))))+ALLTRIM(STR(v_secuenciaAct))
+							
+							v_secuenciastr = ALLTRIM(v_secuenciaStr)
+							
+							v_nombrearchivo = v_narchivor+v_secuenciaStr+".ret"	
+							
+							p_idcbasociada = cbasociada_sql.idcbasoci
+																		
+						v_archivo= _SYSESTACION+"\"+v_nombrearchivo
+					
+						v_r = ExportarCobro (p_idcbasociada, v_archivo ,"cobrostmp",pcb_EmpresaID  )
+
+						ELSE
+							v_secuenciastr  = '00000'
+						ENDIF 
+					ELSE
+						v_secuenciastr  = '00000'
+						
+					ENDIF 
+				ENDIF 
+				
+
+		*******************
+
+			IF v_r = 1
+				pcb_Retorno = v_archivo 
+			ELSE
+				pcb_Retorno = ""
+			ENDIF 
+
+		CASE pcb_operacion = 'E' && Formato de archivo Envio[.ENV])
+		
+		OTHERWISE
+
+		ENDCASE
+ 
+			ELSE
+				MESSAGEBOX("El Archivo Seleccionado no es Valido... Verifique...",0+16+256,"Convertir archivo")
+				pcb_Retorno = ""
+				RETURN pcb_Retorno
+			ENDIF 
+			
+		ELSE
+			MESSAGEBOX("No ha seleccionado ningun archivo... Verifique...",0+16+256,"Convertir archivo")
+			
+			pcb_Retorno = ""
+			RETURN pcb_Retorno
+		ENDIF
+	ELSE
+	
+		MESSAGEBOX("Error al crear la conexión con la Base de Datos",0+16+256,"Convertir archivo")
+		pcb_Retorno = ""
+			RETURN pcb_Retorno
+	ENDIF 
+
 	RETURN pcb_Retorno
 ENDFUNC 
