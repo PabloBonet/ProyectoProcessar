@@ -2954,8 +2954,9 @@ PARAMETERS p_idRecibo
 			v_idcomproba 	= recibo.idcomproba
 			*** Busco los datos de los cobros para el recibo
 		
-				sqlmatriz(1)=" Select c.*, f.numero,f.tipo,f.fecha,f.entidad, f.servicio, f.cuenta, f.nombre, f.apellido,f.cuit , pv.puntov,ifnull(fc.cuota,0) as cuota, ifnull(fc.cancuotas,0) as cancuotas "
-				sqlmatriz(2)=" from cobros c left join facturas f on c.idfactura = f.idfactura left join puntosventa pv on f.pventa = pv.pventa "
+				sqlmatriz(1)=" Select c.*, f.numero,f.tipo,f.fecha,f.entidad, f.servicio, f.cuenta, f.nombre, f.apellido,f.cuit , pv.puntov,ifnull(fc.cuota,0) as cuota, ifnull(fc.cancuotas,0) as cancuotas, ifnull(s.detalle,'          ') as detaservi "
+*!*					sqlmatriz(2)=" from cobros c left join facturas f on c.idfactura = f.idfactura left join puntosventa pv on f.pventa = pv.pventa "
+				sqlmatriz(2)=" from cobros c left join facturas f on c.idfactura = f.idfactura left join puntosventa pv on f.pventa = pv.pventa left join servicios s on s.servicio = f.servicio "
 				sqlmatriz(3)=" left join facturascta fc on c.idcuotafc = fc.idcuotafc "
 				sqlmatriz(4)=" where c.idcomproba = " +ALLTRIM(STR(v_idcomproba))+" and c.idregipago = "+ ALLTRIM(STR(v_idrecibo))
 
@@ -10477,7 +10478,7 @@ FUNCTION CopiarClip
 			ENDCASE 
 			v_nuevo_csv = ALLTRIM(PUTFILE("Archivo",v_auxi,v_ext))
 			IF !EMPTY(v_nuevo_csv) THEN 
-				eje = "COPY TO "+ v_nuevo_csv + " TYPE "+v_tipo
+				eje = "COPY TO '"+ v_nuevo_csv + "' TYPE "+v_tipo
 				&eje
 				APLIC=CREATEOBJECT("WSCript.Shell")
 				APLIC.RUN(v_nuevo_csv)
