@@ -767,7 +767,7 @@ ENDFUNC
 
 
 FUNCTION ExportarCobro
-	PARAMETERS p_idcbasociada, p_archivo,p_tablaCobros, p_cbptoreca
+	PARAMETERS p_idcbasociada, p_archivo,p_tablaCobros, p_cbptoreca, p_omitirvalidacion
 *#/----------------------------------------
 */ 	Exportación de cobros al archivo de intercambio (Archivo de retorno .RET)
 ** 	Funcion: ExportarCobro
@@ -776,6 +776,7 @@ FUNCTION ExportarCobro
 *		p_archivo: Path completo con el nombre del archivo .RET
 *		p_tablaCobros: tabla con los datos de los cobros a exportar
 *		p_cbptoreca: parametro opcional con el id del punto de recadudación, si no se pasa se toma de la variable: _SYSCBPTORECA
+*		p_omitirvalidacion: Variable para omitir la validación de la secuencia de envio
 *	Retorno: Retorna 1 si se exportó correctamente, 0 en otro caso
 *#/----------------------------------------
 
@@ -842,7 +843,7 @@ FUNCTION ExportarCobro
 			    RETURN 0	
 			ENDIF 
 						
-			IF v_ultSecRet >= VAL(v_secArc)
+			IF p_omitirvalidacion = .F. AND v_ultSecRet >= VAL(v_secArc)
 				MESSAGEBOX("El número de secuencia del archivo es menor o igual al úlimo ingresado",0+48+0,"Error al Exportar Cobros")
 			    RETURN 0	
 			ENDIF 
@@ -1886,8 +1887,8 @@ FUNCTION ImportarCobros
 		IF NOT EOF()
 			v_nombArchivoRet = ALLTRIM(cbcobrador_sql.narchivor)
 
-			 v_ultSecCob = calculaSecMaxCobrador(p_idcbcobra)
-
+			* v_ultSecCob = calculaSecMaxCobrador(p_idcbcobra)
+			v_ultSecCob = cbcobrador_sql.esecuencia
 	
 			v_longArcRet = LEN(v_nombArchivoRet)
 			
@@ -3059,8 +3060,10 @@ PARAMETERS pcb_EmpresaID, pcb_archivo, pcb_operacion
 			
 			SELECT cbcobrador_sql
 			GO  TOP 
-			v_idcbcobrador = cbcobrador_sql.idcbcobra
-			v_maxSecuencia = calculaSecuenciaMaxCob(v_idcbcobrador)
+			v_maxSecuencia = cbcobrador_sql.idcbcobra
+			*v_maxSecuencia = calculaSecuenciaMaxCob(v_idcbcobrador)
+			
+			v_maxSecuencia = cbcobrador_sql.esecuencia
 			
 				IF v_maxSecuencia < 0
 					v_secuenciastr = '00000'
@@ -3086,7 +3089,7 @@ PARAMETERS pcb_EmpresaID, pcb_archivo, pcb_operacion
 																		
 						v_archivo= _SYSESTACION+"\"+v_nombrearchivo
 					
-						v_r = ExportarCobro (p_idcbasociada, v_archivo ,"cobrostmp",pcb_EmpresaID  )
+						v_r = ExportarCobro (p_idcbasociada, v_archivo ,"cobrostmp",pcb_EmpresaID,.T.  )
 
 						ELSE
 							v_secuenciastr  = '00000'
