@@ -413,6 +413,89 @@ ENDFUNC
 
 
 
+FUNCTION buscarCompESCN
+PARAMETERS p_Ent,p_Serv,p_cta, p_pvta,p_numcomp,P_nombreTabla
+*#/----------------------------------------
+*/ 	Busca un comprobante por los codigos de Entidad, servicio, cuenta, pto vta y numero de comprobante
+** 	Funcion: buscarCompESCN
+* 	Parametros: 
+*		p_Ent: Código de la entidad
+*		p_Serv: Código del servicio
+*		p_cta: Código de la cuenta
+*		p_pvta: Punto de venta del comprobante
+*		p_numcomp: Número del comprobante
+*		p_NombreTabla: Nombre de la tabla donde se van a devolver los datos del comprobante buscado
+*	Retorno: Retorna True si se encontró el comprobante, False en otro caso
+*#/----------------------------------------
+
+	v_encontrado = .F.
+
+	IF p_Ent <= 0 AND p_Serv < 0 AND p_cta< 0 AND p_pvta <= 0 AND p_numcomp <= 0 AND EMPTY(ALLTRIM(p_nombreTabla)) = .T.
+	
+		MESSAGEBOX("Uno de los parámetros es incorrecto", 0+16,"Error al buscar comprobante por Entidad-Comprobante")
+		
+		RETURN .F.
+	
+	ENDIF 
+
+	** Genero el código para buscar en la vista de ultComprobante **
+	
+	v_nrocompstr = ALLTRIM(STR(p_numcomp))
+	
+	v_lenstr = LEN(v_nrocompstr)
+	
+	
+	v_codigoBusComp = ALLTRIM("%"+ALLTRIM(STR(p_pvta))+"-"+REPLICATE('0',(8-v_lenstr)))+ALLTRIM(v_nrocompstr)
+	
+
+	* Me conecto a la base de datos
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+	sqlmatriz(1)="select idcbcompro, idcbasoci, narchivo, lote, eperiodo, esecuencia,descrip as compro, entidad, servicio, cuenta, descripen, "
+	sqlmatriz(2)=" total1, vence1, total2, vence2, total3, vence3,bc, timestamp,codigo " && Busco en la vista donde voy a tener los ultimos comprobantes ordenados por lote
+	sqlmatriz(3)=" from ultcbcomplote " 
+	sqlmatriz(4)=" where entidad = "+ALLTRIM(STR(p_ent))+" and servicio = "+ALLTRIM(STR(p_serv))+" and cuenta = "+ALLTRIM(STR(p_cta))+" and descrip like '"+ALLTRIM(v_codigoBusComp)+"'"
+
+	
+	verror=sqlrun(vconeccionD,"comprobante_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante ",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		return	.F.
+	ELSE
+		* me desconecto	
+		=abreycierracon(vconeccionD,"")
+
+		SELECT comprobante_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			SELECT comprobante_sql
+			v_cantBusq = RECCOUNT()
+			
+			IF v_cantBusq > 0
+				SELECT * FROM comprobante_sql INTO TABLE &p_nombreTabla	
+				
+				v_encontrado = .T.
+				
+			ENDIF 
+		
+		ENDIF 
+
+				
+		ENDIF 
+
+
+
+	RETURN v_encontrado
+
+ENDFUNC 
+
+
+
+
 FUNCTION listaCompESE
 PARAMETERS p_codEmp,p_subCodEmp,p_entidad,P_nombreTabla
 *#/----------------------------------------
