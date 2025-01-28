@@ -2603,7 +2603,7 @@ FUNCTION ImputarCobros
 				IF (v_recargo > 0 OR  v_interesFin> 0) AND ( v_impcobro > 0 ) AND !(SUBSTR(_SYSNDRECARGOS,1,1)='N') THEN 
 						v_nd_idrecibo = v_idrecibo
 						v_nd_entidad  = v_entidadRecibo
-						ndreto =GenNDRecargo( v_nd_entidad , v_recargo,v_interesFin, 0, 0, v_nd_idrecibo , 0 )
+						ndreto =GenNDRecargo( v_nd_entidad , v_recargo,v_interesFin, 0, 0, v_nd_idrecibo , 0, 'N' )
 				ENDIF 
 			ENDIF 
 
