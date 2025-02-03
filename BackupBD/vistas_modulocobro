@@ -1,0 +1,86 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar_cosemarm
+--
+
+CREATE DATABASE IF NOT EXISTS processar_cosemarm;
+USE processar_cosemarm;
+
+--
+-- Temporary table structure for view `maxcbcomplote`
+--
+DROP TABLE IF EXISTS `maxcbcomplote`;
+DROP VIEW IF EXISTS `maxcbcomplote`;
+CREATE TABLE `maxcbcomplote` (
+  `lote` int(10) unsigned,
+  `codigo` char(254)
+);
+
+--
+-- Temporary table structure for view `ultcbcomplote`
+--
+DROP TABLE IF EXISTS `ultcbcomplote`;
+DROP VIEW IF EXISTS `ultcbcomplote`;
+CREATE TABLE `ultcbcomplote` (
+  `idcbcompro` int(10) unsigned,
+  `idcbasoci` int(10) unsigned,
+  `narchivo` char(100),
+  `lote` int(10) unsigned,
+  `eperiodo` char(20),
+  `esecuencia` char(10),
+  `total1` double(13,2),
+  `vence1` char(8),
+  `total2` double(13,2),
+  `vence2` char(8),
+  `total3` double(13,2),
+  `vence3` char(8),
+  `bc` char(254),
+  `timestamp` timestamp,
+  `codigo` char(254),
+  `entidad` int(10) unsigned,
+  `servicio` int(10) unsigned,
+  `cuenta` int(10) unsigned,
+  `descrip` char(250),
+  `descripen` char(250)
+);
+
+--
+-- Definition of view `maxcbcomplote`
+--
+
+DROP TABLE IF EXISTS `maxcbcomplote`;
+DROP VIEW IF EXISTS `maxcbcomplote`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `maxcbcomplote` AS select max(`c`.`lote`) AS `lote`,`c`.`bc` AS `codigo` from `cbcomprobantes` `c` group by `c`.`idcbasoci`,`c`.`bc`;
+
+--
+-- Definition of view `ultcbcomplote`
+--
+
+DROP TABLE IF EXISTS `ultcbcomplote`;
+DROP VIEW IF EXISTS `ultcbcomplote`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `ultcbcomplote` AS select `c`.`idcbcompro` AS `idcbcompro`,`c`.`idcbasoci` AS `idcbasoci`,`c`.`narchivo` AS `narchivo`,`c`.`lote` AS `lote`,`c`.`eperiodo` AS `eperiodo`,`c`.`esecuencia` AS `esecuencia`,`c`.`total1` AS `total1`,`c`.`vence1` AS `vence1`,`c`.`total2` AS `total2`,`c`.`vence2` AS `vence2`,`c`.`total3` AS `total3`,`c`.`vence3` AS `vence3`,`c`.`bc` AS `bc`,`c`.`timestamp` AS `timestamp`,`m`.`codigo` AS `codigo`,`c`.`entidad` AS `entidad`,`c`.`servicio` AS `servicio`,`c`.`cuenta` AS `cuenta`,`c`.`descrip` AS `descrip`,`c`.`descripen` AS `descripen` from (`maxcbcomplote` `m` left join `cbcomprobantes` `c` on(((`m`.`codigo` = `c`.`bc`) and (`m`.`lote` = `c`.`lote`))));
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
