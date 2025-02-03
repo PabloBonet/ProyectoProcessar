@@ -48,3 +48,19 @@ ALTER TABLE `grupoobjeto` MODIFY COLUMN `idgrupobj` INTEGER UNSIGNED NOT NULL DE
 --20250121--
 -- Agregado de campo para guardar el nombre de la función a aplicar para convertir archivos de exportación o importación
 ALTER TABLE `cbcobrador` ADD COLUMN `funcionfiltro` CHAR(100) NOT NULL DEFAULT ' ' AFTER `cobromax`;
+
+
+--20250203--
+ALTER TABLE `cbcomprobantes` ADD INDEX `Index_3`(`entidad`),
+ ADD INDEX `Index_4`(`servicio`),
+ ADD INDEX `Index_5`(`cuenta`),
+ ADD INDEX `Index_6`(`bc`),
+ ADD INDEX `Index_7`(`descrip`),
+ ADD INDEX `Index_8`(`lote`),
+ ADD INDEX `Index_9`(`idcbasoci`),
+ ADD INDEX `Index_10`(`lote`);
+
+ALTER TABLE `cbasociadas` DROP PRIMARY KEY,
+ ADD PRIMARY KEY  USING BTREE(`idcbasoci`),
+ ADD INDEX `Index_4`(`cuit`);
+ 
