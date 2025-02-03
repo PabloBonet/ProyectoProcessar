@@ -1814,7 +1814,7 @@ FUNCTION ExportarComprobantes
 					v_edescripenstr = SUBSTR(ALLTRIM(v_edescripenstr),1,v_tamedescripen)
 					
 					
-					v_linea = v_linea+ALLTRIM(v_edescripenstr)
+					v_linea = v_linea+v_edescripenstr
 					
 				ENDIF
 				
