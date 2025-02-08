@@ -64,3 +64,23 @@ ALTER TABLE `cbasociadas` DROP PRIMARY KEY,
  ADD PRIMARY KEY  USING BTREE(`idcbasoci`),
  ADD INDEX `Index_4`(`cuit`);
  
+ --202502008--
+ CREATE TABLE  `impupercepcion` (
+  `idimpuper` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `detalle` char(200) NOT NULL,
+  `razon` int(10) unsigned NOT NULL,
+  `baseimpon` double(13,2) NOT NULL,
+  `idtipopago` int(10) unsigned NOT NULL,
+  `funcion` char(100) NOT NULL,
+  ADD COLUMN `idconcepto` INTEGER UNSIGNED NOT NULL,
+  PRIMARY KEY (`idimpuper`),
+  ADD INDEX `idconcepto`(`idconcepto`)
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=latin1;
+
+ALTER TABLE `facturasimp` ADD INDEX `idfactura`(`idfactura`),
+ ADD INDEX `impuesto`(`impuesto`),
+ ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idconcepto`(`idconcepto`);
+ 
+
+ 
