@@ -4259,6 +4259,13 @@ ENDIF
 			v_fechaCarga = DTOS(DATE())
 			
 			v_observa = "Comprobante de ajuste asociado a: "+ALLTRIM(a_numComp)
+			** modificacion para cargar los numero de comprobantes originales si vienen con numero 
+			IF !EMPTY(ALLTRIM(a_numComp)) THEN 
+				v_tipo 	= SUBSTR(ALLTRIM(a_numComp),1,1)
+				v_pventa= INT(VAL(SUBSTR(ALLTRIM(a_numComp),3,4)))
+				v_numero= INT(VAL(SUBSTR(ALLTRIM(a_numComp),8)))
+			ENDIF 
+			
 			v_liva = 'N'
 			*** GUARDA DATOS DE CABECERA DE LA FACTURA de PROVEEDOR
 
