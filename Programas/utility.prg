@@ -21637,11 +21637,11 @@ PARAMETERS pga_tablacobros, p_cone
 	USE &pga_tablacobros IN 0
 
 
-	TipoCompGAObj 	= CREATEOBJECT('tiposcomproclass')	
-	v_idNCA			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO A")
-	v_idNCB			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO B")
-	v_idNCC			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO C")
-	RELEASE TipoCompGAObj 
+*!*		TipoCompGAObj 	= CREATEOBJECT('tiposcomproclass')	
+*!*		v_idNCA			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO A")
+*!*		v_idNCB			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO B")
+*!*		v_idNCC			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO C")
+*!*		RELEASE TipoCompGAObj 
 	
 	
 	SELECT &pga_tablacobros
@@ -21649,7 +21649,7 @@ PARAMETERS pga_tablacobros, p_cone
 	DO WHILE !EOF()
 	
 
-		sqlmatriz(1)= " SELECT c.idcomproba, t.idtipocompro FROM comprobantes c "
+		sqlmatriz(1)= " SELECT c.idcomproba, t.idtipocompro, t.comprotipo FROM comprobantes c "
 		sqlmatriz(2)=" left join tipocompro t on t.idtipocompro = c.idtipocompro "
 		sqlmatriz(3)=" where c.idcomproba = "+STR(&pga_tablacobros..idcomproba)
 
@@ -21659,6 +21659,7 @@ PARAMETERS pga_tablacobros, p_cone
 		    RETURN 0
 		ENDIF 
 		v_idtipocompro= tipocomprobante_sql.idtipocompro
+		v_comprotipo  = tipocomprobante_sql.comprotipo
 		USE IN tipocomprobante_sql
 		SELECT  &pga_tablacobros
 
@@ -21707,14 +21708,14 @@ PARAMETERS pga_tablacobros, p_cone
 		    RETURN 
 		ENDIF 
 
-		TipoCompGAObj 	= CREATEOBJECT('tiposcomproclass')	
-		v_idNCA			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO A")
-		v_idNCB			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO B")
-		v_idNCC			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO C")
-		RELEASE TipoCompGAObj 
+*!*			TipoCompGAObj 	= CREATEOBJECT('tiposcomproclass')	
+*!*			v_idNCA			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO A")
+*!*			v_idNCB			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO B")
+*!*			v_idNCC			= TipoCompGAObj.getidtipocompro("NOTA DE CREDITO C")
+*!*			RELEASE TipoCompGAObj 
 			
-		IF (v_idtipocompro = v_idNCA OR v_idtipocompro = v_idNCB OR v_idtipocompro = v_idNCC) THEN 
-			
+*!*			IF (v_idtipocompro = v_idNCA OR v_idtipocompro = v_idNCB OR v_idtipocompro = v_idNCC) THEN 
+		IF ( v_comprotipo == 'NC' ) THEN 
 			 
 			*** Registro el cobro para cancelar la NC si corresponde 
 				
@@ -26073,9 +26074,7 @@ PARAMETERS p_idcompro, p_idregi, p_cone,p_idcomproAso
 						
 						
 						ENDIF     
-						
-						
-						
+											
 						IF EMPTY(ALLTRIM(v_retornoAsociados))=.T.
 							v_retornoAsociados = ALLTRIM(v_comprobante)
 						ELSE

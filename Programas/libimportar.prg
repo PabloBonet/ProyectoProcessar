@@ -1287,8 +1287,8 @@ FUNCTION CargaMServicios
 			=abreycierracon(vconeccionF,"")	
 		ENDIF
 		SELECT bocaserv_sql
-		SELECT *, 100000000.000 as manterior, 100000000.000 as mactual,100000000.000 as consextra, 100000000.000 as consumo, 100000000 as idimportap, 100000000.000 as canterior  FROM bocaserv_sql INTO TABLE mservicios
-		replace ALL manterior WITH 0, canterior WITH 0, mactual WITH 0, consumo WITH 0, idimportap WITH p_idimportap, consextra WITH 0
+		SELECT *, 100000000.000 as manterior, 100000000.000 as mactual,100000000.000 as consextra, 100000000.000 as consumo, 100000000 as idimportap, 100000000.000 as canterior, SPACE(45) as lastupdate  FROM bocaserv_sql INTO TABLE mservicios
+		replace ALL manterior WITH 0, canterior WITH 0, mactual WITH 0, consumo WITH 0, idimportap WITH p_idimportap, consextra WITH 0, lastupdate WITH ''
 		
 		*/------------------------------------------------------------------------------------
 
@@ -1340,7 +1340,7 @@ FUNCTION CargaMServicios
 		replace ALL manterior WITH mserviant.mactual, canterior WITH mserviant.consumo, mactual WITH mserviant.mactual 
 		
 
-		DIMENSION lamatriz(10,2)
+		DIMENSION lamatriz(11,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
@@ -1369,6 +1369,8 @@ FUNCTION CargaMServicios
 			lamatriz(9,2) = alltrim(str(mservicios.canterior,12,4))
 			lamatriz(10,1) = 'factorm'
 			lamatriz(10,2) = alltrim(str(mservicios.factorm,12,4))
+			lamatriz(11,1) = 'lastupdate'
+			lamatriz(11,2) = "'"+alltrim(mservicios.lastupdate)+"'"
 
 			p_tabla     = 'mservicios'
 			p_matriz    = 'lamatriz'
