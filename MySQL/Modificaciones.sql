@@ -82,5 +82,8 @@ ALTER TABLE `facturasimp` ADD INDEX `idfactura`(`idfactura`),
  ADD INDEX `articulo`(`articulo`),
  ADD INDEX `idconcepto`(`idconcepto`);
  
+ --20250213--
+ ALTER TABLE `funcionesimp` ADD COLUMN `grupo` CHAR(100) NOT NULL AFTER `detalle`;
+
 
  
