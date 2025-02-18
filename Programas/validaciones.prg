@@ -53,3 +53,45 @@ PARAMETERS pa_fecha, pa_conexion
 	ENDIF 
 
 ENDFUNC 
+
+
+
+FUNCTION FCierreContable
+PARAMETERS pl_conexion
+*#/----------------------------------------
+* Devuelve la Fecha del Ultimo Cierre de Ejercicio Contable o Vacío si no hay cierre. 
+* Parametro : Conexion a la Base de Datos
+*#/----------------------------------------
+
+	IF TYPE("pl_conexion") = 'N' THEN 
+		IF pl_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionCR = pl_conexion
+		ELSE 
+			vconeccionCR = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionCR = abreycierracon(0,_SYSSCHEMA)	
+		pl_conexion = 0
+	ENDIF 
+
+	* Busca la Fecha del Ultimo Cierre de Ejercicio Económico ***	
+	sqlmatriz(1)=" SELECT max(fecha) as fecha  FROM asientos where idtipoasi = 3 "
+	verror=sqlrun(vconeccionCR ,"fecha_cierre")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la Fecha de Cierre de Ejercicio... ",0+48+0,"Error")
+	    RETURN '-'  
+	ENDIF
+	SELECT fecha_cierre
+	GO TOP 
+
+	IF EOF() THEN && Agregar articulo a un grupo de Línea
+		v_maxifecha = ""		
+	ELSE
+		v_maxifecha = IIF((ISNULL(fecha_cierre.fecha) or EMPTY(fecha_cierre.fecha)),"",fecha_cierre.fecha)
+	ENDIF 
+	USE IN fecha_cierre
+	IF pl_conexion= 0 THEN && cierro la conexion si no la abrio al ingresar
+		=abreycierracon(vconeccionCR,"")
+	ENDIF 
+
+RETURN v_maxifecha

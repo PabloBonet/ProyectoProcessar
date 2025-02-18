@@ -11999,6 +11999,9 @@ PARAMETERS pcont_tabla, pcont_id, pcont_conex
 		vcone_conta = pcont_conex
 	ENDIF 
 
+	* Obtengo la Fecha del ultimo Cierre de Ejercicio
+	v_FechaCierreEj = FCierreContable(vcone_conta)
+
 	* Verifico Si el comprobante pasado para contabilizar tiene habilitada la contabilización
 	sqlmatriz(1)= " select * from comprobantes where TRIM(tabla) = '"+ALLTRIM(pcont_tabla)+"'"
 	verror=sqlrun(vcone_conta ,"escompro_sql")
@@ -12022,7 +12025,8 @@ PARAMETERS pcont_tabla, pcont_id, pcont_conex
 		ENDIF	
 		SELECT asentar_sql
 		
-		IF asentar_sql.astoconta = 'N' OR asentar_sql.fecha < _SYSFEINICONTA THEN 
+		IF asentar_sql.astoconta = 'N' OR asentar_sql.fecha < _SYSFEINICONTA OR ;
+				( (!EMPTY(v_FechaCierreEj) AND !(ALLTRIM(v_FechaCierreEj)=='-')) AND (asentar_sql.fecha <= v_FechaCierreEj) ) THEN 
 			ret_idasiento = -2
 		ENDIF 
 		USE IN asentar_sql
@@ -29175,3 +29179,6 @@ PARAMETERS p_skelvariables, p_archivovar
 	ENDIF 
 	RETURN vcretorno 
 ENDFUNC 
+
+
+

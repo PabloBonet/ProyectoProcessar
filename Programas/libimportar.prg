@@ -4674,7 +4674,7 @@ FUNCTION CargaAsiContables
 			RETURN 0
 		ENDIF
 
-		CREATE TABLE .\asientoscar FREE ( numero I,fecha C(8),codigocta C(20), debe Y, haber y, detalle  C(100))			
+		CREATE TABLE .\asientoscar FREE ( numero I,fecha C(8),codigocta C(20), debe Y, haber y, detalle  C(100), idtipoasi I )			
 					
 		SELECT asientoscar
  		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
@@ -4777,7 +4777,7 @@ FUNCTION CargaAsiContables
 				a_idpland		= asientoscar.idpland
 				a_detaasiento	= asientoscar.detaasto
 				a_idasiento 	= asientoscar.idasiento
-				a_idtipoasi		= 1
+				a_idtipoasi		= IIF(asientoscar.idtipoasi<=0,1,asientoscar.idtipoasi)
 				a_idastomode 	= 0
 				a_idfiltro	 	= 0
 				a_idastoe		= 1
