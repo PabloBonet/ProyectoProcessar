@@ -22270,21 +22270,21 @@ ENDFUNC
 
 
 FUNCTION percepciones
-PARAMETERS p_entidad, P_fecha, p_nomTabRes,P_importe
+PARAMETERS p_entidad, P_fecha, p_nomTabResu,P_importeNeto,p_importeIva, p_tipo
 
 *#/**************************************************************
 *** FUNCIÓN PARA EL CALCULO DE PERCEPCIONES A APLICAR ***
 ****************************************************************
 ** PARÁMETROS: 	P_entidad: id de la entidad a percibir
 *				P_fecha: Fecha para el cálculo de la percepcion
-*				p_nomTabRes: Nombre de la tabla donde se va a entregar el resultado, la cual incluye: idimpuper,netoTotal,importeARetener,totpagosmes,totRetenmes )
-*				P_importe: Importe Total, del cuál se va a calcular las percepciones. en caso de no pasar parámetro se pedirá en la pantalla
+*				p_nomTabResu: Nombre de la tabla donde se va a entregar el resultado, la cual incluye: idimpuper,netoTotal,importeARetener,totpagosmes,totRetenmes )
+*               P_importeNeto: Importe Neto, del cuál se va a calcular las percepciones. en caso de no pasar parámetro se pedirá en la pantalla
+*				p_importeIva: Importe IVA
 *La función recibe los parámetros indicados y va a determinar si se va a aplicar percepcion a la entidad, y cuanto percibir
 ****************************************************************
 ** RETORNO: Retorna el importe a percibir, el total de percepciones al mes y total de pagos. True si terminó correctamente, False en otro caso
 *#/**************************************************************
 
-v_retorno = .F.
 v_importeTot = 0.00
 
 ****************************************************************
@@ -22292,12 +22292,21 @@ v_importeTot = 0.00
 ****************************************************************
 
  IF ALLTRIM(_SYSAGENTEPER) = 'S'
- 
- 	IF TYPE('p_importe') = 'N'
- 		v_importeTot = p_importe
+ 	
+ 	IF TYPE('P_importeNeto') = 'N' OR TYPE('P_importeNeto') = 'Y'
+ 		v_importeNeto = P_importeNeto
  	ELSE
- 		v_importeTot = 0.00
+ 		v_importeNeto = 0.00
  	ENDIF 
+ 	
+ 	IF TYPE('p_importeIva') = 'N' OR TYPE('p_importeIva') = 'Y'
+ 		v_importeIva = p_importeIva
+ 	ELSE
+ 		v_importeIva = 0.00
+ 	ENDIF 
+ 	
+ 	
+ 	
  	
  	****************************************************************
 	** 2- Verificar si a la entidad le corresponde percepción. Ver en las percepciones asociadas a la entidad en la tabla: entidadper
@@ -22305,8 +22314,10 @@ v_importeTot = 0.00
 		* Me conecto a la base de datos *
 		vconeccion=abreycierracon(0,_SYSSCHEMA)	
 
-		 
-		sqlmatriz(1)=" select e.identper,e.entidad,e.idimpuret,e.enconvenio, i.detalle,i.razonin,i.baseimpon, i.idtipopago, i.funcion, i.razonnin "
+
+*!*			sqlmatriz(1)=" select e.identper,e.entidad,e.idimpuret,e.enconvenio, i.detalle,i.razonin,i.baseimpon, i.idtipopago, i.funcion, i.razonnin "
+*!*			sqlmatriz(2)=" from entidadper e left join impupercepcion i on e.idimpuper = i.idimpuper "
+		sqlmatriz(1)=" select e.identper,e.entidad,e.idimpuper,e.enconvenio, i.detalle,i.razon,i.baseimpon, i.idtipopago, i.funcion "
 		sqlmatriz(2)=" from entidadper e left join impupercepcion i on e.idimpuper = i.idimpuper "
 		sqlmatriz(3)=" where e.entidad = "+ALLTRIM(STR(p_entidad))
 		verror=sqlrun(vconeccion,"entidadper_sql")
@@ -22319,31 +22330,39 @@ v_importeTot = 0.00
 			RETURN .F.
 		ENDIF
 		
-		 		
-		SELECT * FROM entidadper_sql INTO TABLE &p_nomTabRes
+		SELECT * FROM entidadper_sql INTO TABLE &p_nomTabResu
 		
-		SELECT &p_nomTabRes
+		SELECT &p_nomTabResu
 		GO TOP 
 		
 		IF NOT EOF()	
-			SELECT &p_nomTabRes
-			ALTER table &p_nomTabRes ADD COLUMN impTot Y
-			ALTER table &p_nomTabRes ADD COLUMN impAPer Y
-			ALTER table &p_nomTabRes ADD COLUMN totapagmes Y
-			ALTER table &p_nomTabRes ADD COLUMN totretmes Y
-			ALTER table &p_nomTabRes ADD COLUMN sel I
-			ALTER table &p_nomTabRes ADD sujaper Y
+			SELECT &p_nomTabResu
+			ALTER table &p_nomTabResu ADD COLUMN impNeto Y
+			ALTER table &p_nomTabResu ADD COLUMN impIva Y
+			ALTER table &p_nomTabResu ADD COLUMN impAPer Y
+			**ALTER table &p_nomTabResu ADD COLUMN totapagmes Y
+			**ALTER table &p_nomTabResu ADD COLUMN totpermes Y
+			ALTER table &p_nomTabResu ADD COLUMN totapagdia Y
+			ALTER table &p_nomTabResu ADD COLUMN totperdia Y
+			ALTER table &p_nomTabResu ADD COLUMN sel I
+			ALTER table &p_nomTabResu ADD COLUMN sujaper Y
+			ALTER table &p_nomTabResu ADD COLUMN tabart C(100)
+			ALTER table &p_nomTabResu ADD COLUMN campoart C(100)
+			ALTER table &p_nomTabResu ADD COLUMN codiArt C(50) 
+			ALTER table &p_nomTabResu ADD COLUMN tipo C(1)
 			
-			SELECT &p_nomTabPer
+			SELECT &p_nomTabResu 
 			GO TOP 
 			
-			replace ALL impTot WITH v_importeTot, impAper WITH 0.00, totAPagMes WITH 0.00, totRetMes WITH 0.00, sel WITH 0, sujarete WITH 0.00
+			replace ALL impNeto WITH v_importeNeto, impIva WITH v_importeIva , impAper WITH 0.00, totAPagDia WITH 0.00, totPerDia WITH 0.00, sel WITH 0, sujaper WITH 0.00, ;
+						tabart WITH "", campoart WITH "", codiart WITH "", tipo WITH p_tipo
+			
 			
 		ELSE
 			RETURN .T.
 		endif
 
-		USE IN entidadret_sql
+		USE IN entidadper_sql
 
 		* me desconecto	
 		=abreycierracon(vconeccion,"")
@@ -22352,25 +22371,23 @@ v_importeTot = 0.00
 	** 3- En caso de que le corresponda percepciones, abrir una ventana con las percepciones asociadas, pidiendo ingresar el monto total y una lista para poder elegir las percepciones que quiera aplicar
 	****************************************************************
 
- 	v_retorno = 0.00 
-	** DO FORM selectpercepciones WITH v_importeTot ,p_nomTabRes TO v_retorno   && NO TENGO EL FORMULARIO
- 	
- 	IF v_retorno > 0.00
+ 	v_retSelPer = 0.00 
+	 DO FORM selectpercepciones WITH P_fecha,v_importeNeto, v_importeIva ,p_nomTabResu TO v_retSelPer
 
- 		SELECT &p_nomtabres
+ 	IF v_retSelPer > 0.00
+
+ 		SELECT &p_nomTabResu
  		GO TOP  		
+ 		
+ 		RETURN .T.
  	ELSE
  		MESSAGEBOX("Hubo un problema al intentar aplicar percepciones",0+48+0,"Aplicar percepciones")
- 		RETURN 0.00
+ 		RETURN .F.
  	ENDIF 
 
-	
- ELSE
- 	RETURN -1
  ENDIF 
 
-RETURN v_retorno
-
+	RETURN .F.
 ENDFUNC 
 
 

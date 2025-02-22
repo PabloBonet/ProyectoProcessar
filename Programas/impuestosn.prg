@@ -962,18 +962,17 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 	
 	
 	
-	v_sentenciaCrea1 = "CREATE TABLE "+ALLTRIM(p_nombreTabRes)+" FREE (entidad I,idimpuper I,impAPer Y,baseimpo Y,razon Y, idtipopago I, descrip C(250),totpagodia Y, totperdia Y, sujaper Y)"
+	v_sentenciaCrea1 = "CREATE TABLE "+ALLTRIM(p_nomTabRes)+" FREE (entidad I,idimpuper I,impAPer Y,baseimpo Y,razon Y, idtipopago I, descrip C(250),totpagodia Y, totperdia Y, sujaper Y,tabart C(100),campoart C(100),codiArt C(50))"
+
 	&v_sentenciaCrea1 
 
 
+	CREATE TABLE totfact FREE (entidad i, factdiario y)
+	CREATE TABLE totperc FREE (entidad i, percdiario y)
 
-	
-	CREATE TABLE .\temp\totfact FREE (entidad i, factdiario y)
-	CREATE TABLE .\temp\totperc FREE (entidad i, percdiario y)
-		
 	* Abro una conexion con la base de datos Facturación
-	varconexionF = abreycierracon(0,miservidor+"\Facturacion\Datos.dbc")
-
+	varconexionF = abreycierracon(0,_SYSSCHEMA)
+	
 *******************
 **** 1- Obtengo los montos de facturación del día y le sumo el monto de la factura que estoy haciendo
 *******************
@@ -982,6 +981,7 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 	sqlmatriz(2) = "    FROM facturas f LEFT JOIN comprobantes c ON c.idcomproba=f.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro  "
 	sqlmatriz(3) = "    left join facturasimp d on f.idfactura = d.idfactura left join impuestos i on d.impuesto = i.impuesto "
 	sqlmatriz(4) = "    WHERE f.fecha = '"+ALLTRIM(p_fecha)+"' and f.entidad = "+ALLTRIM(STR(p_entidad))+" and i.abrevia = 'IVA' and t.opera > 0"
+
 	sqlmatriz(5) = "    group by c.tipo ORDER BY f.entidad"	
 
 	verror=sqlrun(varconexionF,"totfact1")
@@ -1005,15 +1005,13 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 
 
 	IF p_tipo = "A" THEN 
-		v_factdiario = v_factdiario + P_subtotal
+		v_factdiario = v_factdiario + p_neto
 	ELSE
-		v_factdiario = v_factdiario + totfact1.iva + P_subtotal + P_iva
+		v_factdiario = v_factdiario + totfact1.iva + p_neto + P_importeiva
 	ENDIF 
 	USE IN totfact1
-	
 
 	INSERT INTO totfact(entidad,factdiario) VALUES(p_entidad,v_factdiario)
-	
 
 
 *******************
@@ -1026,8 +1024,7 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 		v_codigoREC	    = SUBSTR(v_codTabIB,1,v_nPosR-1) && Retorna el código
 		v_tablaIB		= SUBSTR(v_codTabIB,v_nPosR+1)	&& Retorna el resto de la cadena, que corresponde a la tabla
 		RELEASE oeObjIIBB
-		
-		
+
 		
 *!*		sqlmatriz(1) = " SELECT sum(impperc) as impperc, sum(sujaperc) as sujaperc FROM impufactu "
 *!*		sqlmatriz(2) = "    WHERE fecha = '"+ALLTRIM(p_fecha)+"' and cliente = "+ALLTRIM(STR(p_cliente))
@@ -1037,12 +1034,12 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 		sqlmatriz(2) = " FROM facturas f left join detafactu d on f.idfactura = d.idfactura "
 		sqlmatriz(3) = " where f.fecha = '"+ALLTRIM(p_fecha)+"' and d.articulo = '"+ALLTRIM(v_codigoREC)+"' and f.entidad = "+ALLTRIM(STR(p_entidad))
 
-	
 	verror=sqlrun(varconexionF,"totperc0")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Percepciones de IB",0+16+0,"")
 	    RETURN .F.
 	ENDIF 
+	
 	s_sujaperc   = 0
 	ZAP IN totperc 
 	SELECT totperc0
@@ -1069,7 +1066,7 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 *******************
 
 	sqlmatriz(1) = " SELECT * FROM entidadper e left join impupercepcion p on e.idimpuper = p.idimpuper "
-	sqlmatriz(2) = "  where entidad   = "+ALLTRIM(STR(p_entidad)) + " and idimpuper   = "+ALLTRIM(STR(p_idimpuper))
+	sqlmatriz(2) = "  where e.entidad   = "+ALLTRIM(STR(p_entidad)) + " and e.idimpuper   = "+ALLTRIM(STR(p_idimpuper))
 
 	verror=sqlrun(varconexionF,"datperc")
 	IF verror=.f.  
@@ -1080,10 +1077,11 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 		
 	SELECT datperc
 	GO TOP 
+	
 	v_razon      = datperc.razon
 	v_pnombre    = datperc.detalle
 	v_baseimpon  = datperc.baseimpon
-
+	v_idtipopago = datperc.idtipopago
 
 	* cierro la conexion
 	= abreycierracon(varconexionF,"")
@@ -1106,10 +1104,20 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
     g_percepdia  = v_percdiario + r_percep
 	g_sujaperc   = v_factdiario - s_sujaperc
     g_impperc    = r_percep
-
+	v_campoArt   = ""
+	
+	DO CASE
+		CASE ALLTRIM(v_tablaIB) = "articulos"
+			v_campoart = "articulo"
+		CASE ALLTRIM(v_tablaIB) = "conceptoser"
+			v_campoart = "idconcepto"
+		OTHERWISE
+			v_campoart = "articulo"
+	ENDCASE
+	
 		
-	INSERT INTO &p_nombreTabRes (entidad I,idimpuper I,impAPer Y,baseimpo Y,razon Y, idtipopago I, descrip C(250),totpagodia Y, totperdia Y, sujaper Y) ;
-						 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpo,v_razon, v_idtipopago, v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc   ) ;
+	INSERT INTO &p_nomTabRes (entidad,idimpuper,impAPer,baseimpo,razon, idtipopago, descrip,totpagodia, totperdia, sujaper,tabart,campoart,codiArt) ;
+						 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpon,v_razon, v_idtipopago, v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc,v_tablaIB,v_campoart, v_codigoREC  ) ;
 	
 
 	RETURN .T.
