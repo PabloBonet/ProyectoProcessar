@@ -22350,12 +22350,13 @@ v_importeTot = 0.00
 			ALTER table &p_nomTabResu ADD COLUMN campoart C(100)
 			ALTER table &p_nomTabResu ADD COLUMN codiArt C(50) 
 			ALTER table &p_nomTabResu ADD COLUMN tipo C(1)
+			ALTER table  &p_nomTabResu ADD COLUMN operacion C(100)
 			
 			SELECT &p_nomTabResu 
 			GO TOP 
 			
 			replace ALL impNeto WITH v_importeNeto, impIva WITH v_importeIva , impAper WITH 0.00, totAPagDia WITH 0.00, totPerDia WITH 0.00, sel WITH 0, sujaper WITH 0.00, ;
-						tabart WITH "", campoart WITH "", codiart WITH "", tipo WITH p_tipo
+						tabart WITH "", campoart WITH "", codiart WITH "", tipo WITH p_tipo, operacion WITH ""
 			
 			
 		ELSE
