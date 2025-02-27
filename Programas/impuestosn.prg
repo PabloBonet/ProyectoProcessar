@@ -1089,9 +1089,9 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 *******************
 **** 4 - Calculo el impuesto y guardo los datos en una tabla temporal para retornar
 *******************
-
-	IF (v_factdiario - v_baseimpon) => 0 THEN 
-		r_percep = ( v_factdiario * (v_razon /100) ) - v_percdiario
+	
+	IF ((v_factdiario-v_percdiario) - v_baseimpon) => 0 THEN 
+		r_percep = ( (v_factdiario-v_percdiario) * (v_razon /100) ) - v_percdiario
 		IF r_percep < 0 THEN 
 			r_percep = 0
 		ENDIF 
@@ -1099,303 +1099,304 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 		r_percep = 0
 	ENDIF 
 	
+	IF r_percep > 0
+	    g_totaldia   = v_factdiario
+	    g_percepdia  = v_percdiario + r_percep
+		g_sujaperc   = (v_factdiario-v_percdiario) - s_sujaperc
+	    g_impperc    = r_percep
+		v_campoArt   = ""
+		
+		DO CASE
+			CASE ALLTRIM(v_tablaIB) = "articulos"
+				v_campoart = "articulo"
+			CASE ALLTRIM(v_tablaIB) = "conceptoser"
+				v_campoart = "idconcepto"
+			OTHERWISE
+				v_campoart = "articulo"
+		ENDCASE
+		
+		v_operacion = 'PERCEPCION IIBB ARBA'
+		INSERT INTO &p_nomTabRes (entidad,idimpuper,impAPer,baseimpo,razon, idtipopago, descrip,totpagodia, totperdia, sujaper,tabart,campoart,codiArt, operacion) ;
+							 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpon,v_razon, v_idtipopago, v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc,v_tablaIB,v_campoart, v_codigoREC,v_operacion  ) ;
+		
 
-    g_totaldia   = v_factdiario
-    g_percepdia  = v_percdiario + r_percep
-	g_sujaperc   = v_factdiario - s_sujaperc
-    g_impperc    = r_percep
-	v_campoArt   = ""
-	
-	DO CASE
-		CASE ALLTRIM(v_tablaIB) = "articulos"
-			v_campoart = "articulo"
-		CASE ALLTRIM(v_tablaIB) = "conceptoser"
-			v_campoart = "idconcepto"
-		OTHERWISE
-			v_campoart = "articulo"
-	ENDCASE
-	
-	v_operacion = 'PERCEPCION IIBB ARBA'
-	INSERT INTO &p_nomTabRes (entidad,idimpuper,impAPer,baseimpo,razon, idtipopago, descrip,totpagodia, totperdia, sujaper,tabart,campoart,codiArt, operacion) ;
-						 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpon,v_razon, v_idtipopago, v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc,v_tablaIB,v_campoart, v_codigoREC,v_operacion  ) ;
-	
-
+		endif 
 	RETURN .T.
 ENDFUNC 
 
 
 
 
-************************************************************************************************************************
-************************************************************************************************************************
-************************************************************************************************************************
+*!*	************************************************************************************************************************
+*!*	************************************************************************************************************************
+*!*	************************************************************************************************************************
 
 
-FUNCTION PercepIB
-PARAMETERS P_sucursal,P_Cliente, P_fecha, p_impuesto, P_subtotal, P_iva, P_tipo, P_compro
-	r_percep = 0
-	IF p_compro='F' OR p_compro='D' then
-		pp_compro = 1
-	ELSE 
-		pp_compro = -1
-	ENDIF 
- 
-*!*		P_subtotal = P_subtotal * pp_compro
-*!*		P_iva      = P_iva * pp_compro
-	
-	*MESSAGEBOX("Subtotal: "+ALLTRIM(STR(P_subtotal,18,2))+"   IVA: "+ALLTRIM(STR(P_iva,18,2)) )
-	
-	CREATE TABLE .\temp\totfact FREE (sucursal c(4), cod_socio i, factdiario y)
-	CREATE TABLE .\temp\totperc FREE (sucursal c(4), cod_socio i, percdiario y)
-		
-	* Abro una conexion con la base de datos Facturación
-	varconexionF = abreycierracon(0,miservidor+"\Facturacion\Datos.dbc")
+*!*	FUNCTION PercepIB
+*!*	PARAMETERS P_sucursal,P_Cliente, P_fecha, p_impuesto, P_subtotal, P_iva, P_tipo, P_compro
+*!*		r_percep = 0
+*!*		IF p_compro='F' OR p_compro='D' then
+*!*			pp_compro = 1
+*!*		ELSE 
+*!*			pp_compro = -1
+*!*		ENDIF 
+*!*	 
+*!*	*!*		P_subtotal = P_subtotal * pp_compro
+*!*	*!*		P_iva      = P_iva * pp_compro
+*!*		
+*!*		*MESSAGEBOX("Subtotal: "+ALLTRIM(STR(P_subtotal,18,2))+"   IVA: "+ALLTRIM(STR(P_iva,18,2)) )
+*!*		
+*!*		CREATE TABLE .\temp\totfact FREE (sucursal c(4), cod_socio i, factdiario y)
+*!*		CREATE TABLE .\temp\totperc FREE (sucursal c(4), cod_socio i, percdiario y)
+*!*			
+*!*		* Abro una conexion con la base de datos Facturación
+*!*		varconexionF = abreycierracon(0,miservidor+"\Facturacion\Datos.dbc")
 
-	* Busco lo Facturado en el Día.
-	sqlmatriz(1) = " SELECT F.subtotal, F.i_iva_g, C.operacion as opera, C.tipo "
-	sqlmatriz(2) = "    FROM facturas F "
-	sqlmatriz(3) = "    LEFT JOIN Comprobantes C ON C.idcomp=F.idcomp "
-	sqlmatriz(4) = "    WHERE F.fecha = '"+p_fecha+"' and F.succliente ='"+p_sucursal+"' and F.cod_socio = "+ALLTRIM(STR(p_cliente))
-	sqlmatriz(5) = "    ORDER BY F.cod_socio"	
-	verror=sqlrun(varconexionF,"totfact0")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Facturas",0+16+0,"")
-	ENDIF 
-	ZAP IN totfact
-	SELECT tipo, sum(subtotal*opera) as subtotal, sum(i_iva_g*opera) as iva from totfact0 ;
-	    where opera > 0 GROUP BY tipo ORDER BY tipo INTO CURSOR totfact1
-	USE IN totfact0
-	
-	SELECT totfact1
-	GO TOP 
-	IF EOF() AND RECNO()=1 THEN 
-		v_factdiario = 0
-	ELSE 
-		v_factdiario = totfact1.subtotal
-	ENDIF 
-	
-	IF p_tipo = "A" THEN 
-		v_factdiario = v_factdiario + P_subtotal
-	ELSE
-		v_factdiario = v_factdiario + totfact1.iva + P_subtotal + P_iva
-	ENDIF 
-	USE IN totfact1
-	
-	*MESSAGEBOX("TOTAL Facturado Diario: "+ALLTRIM(STR(v_factdiario,18,2)) )
-	
-	INSERT INTO totfact(sucursal,cod_socio,factdiario) VALUES(p_sucursal,p_cliente,v_factdiario)
-	
-	* Busco las Percepciones de ingresos brutos y a realizadas 
-	sqlmatriz(1) = " SELECT sum(impperc) as impperc, sum(sujaperc) as sujaperc FROM impufactu "
-	sqlmatriz(2) = "    WHERE fecha = '"+p_fecha+"' and sucursal ='"+p_sucursal+"' and cliente = "+ALLTRIM(STR(p_cliente))
-	sqlmatriz(3) = "          and impperc > 0 "
-	verror=sqlrun(varconexionF,"totperc0")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Percepciones de IB",0+16+0,"")
-	ENDIF 
-	s_sujaperc   = 0
-	ZAP IN totperc 
-	SELECT totperc0
-	GO TOP 
-	IF EOF() AND RECNO()=1 THEN 
-		v_percdiario = 0
-		s_sujaperc   = 0
-	ELSE
-		IF ISNULL(totperc0.impperc)
-			v_percdiario = 0
-			s_sujaperc   = 0
-		ELSE
-			v_percdiario = totperc0.impperc
-			s_sujaperc   = totperc0.sujaperc
-		ENDIF 
-	ENDIF 
-	
-	*MESSAGEBOX("TOTAL Percepciones Diaria: "+ALLTRIM(STR(v_percdiario,18,2))+" Sujeto a Percep.: "+ALLTRIM(STR(s_sujaperc,18,2)) )
-	
-	INSERT INTO totperc (sucursal,cod_socio,percdiario) VALUES (p_sucursal,p_cliente,v_percdiario)
-	USE IN totperc0
-	
-	* Buscar datos del impuesto
-	sqlmatriz(1) = " SELECT * FROM percepciones "
-	sqlmatriz(2) = "    WHERE pcodigo = "+ALLTRIM(STR(p_impuesto))
-	verror=sqlrun(varconexionF,"datperc")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BUSQUEDA de Percepciones de IB",0+16+0,"")
-	ENDIF 
-	SELECT datperc
-	GO TOP 
-	v_razon      = datperc.razon
-	v_pnombre    = datperc.pnombre
-	v_orden      = datperc.orden
-	
-	* Calculo el importe del impuesto
-	IF (v_factdiario - datperc.minimpon) => 0 THEN 
-		r_percep = ( v_factdiario * (v_razon /100) ) - v_percdiario
-		IF r_percep < 0 THEN 
-			r_percep = 0
-		ENDIF 
-	ELSE
-		r_percep = 0
-	ENDIF 
-	
-	*MESSAGEBOX("Impuesto Calculado: "+ALLTRIM(STR(r_percep*pp_compro,18,2)) )
-	
-	* Cierro Archivos
-	*USE IN clie
-	
-	* cierro la conexion
-	= abreycierracon(varconexionF,"")
-*!*		= abreycierracon(varconexionM,"")
-	
-	g_idregistro = 0 
-	g_fecha      = p_fecha
-	g_sucursal   = p_sucursal
-	g_cliente    = p_cliente
-	g_pcodigo    = p_impuesto
-	g_pnombre    = v_pnombre
-	g_orden      = v_orden
-    g_convenio   = cliepercep.convenio
-    g_nroinscrip = cliepercep.nroinscrip
-    g_porcen     = v_razon
-    g_totaldia   = v_factdiario
-    g_percepdia  = v_percdiario + r_percep
-	g_sujaperc   = v_factdiario - s_sujaperc
-    g_impperc    = r_percep
+*!*		* Busco lo Facturado en el Día.
+*!*		sqlmatriz(1) = " SELECT F.subtotal, F.i_iva_g, C.operacion as opera, C.tipo "
+*!*		sqlmatriz(2) = "    FROM facturas F "
+*!*		sqlmatriz(3) = "    LEFT JOIN Comprobantes C ON C.idcomp=F.idcomp "
+*!*		sqlmatriz(4) = "    WHERE F.fecha = '"+p_fecha+"' and F.succliente ='"+p_sucursal+"' and F.cod_socio = "+ALLTRIM(STR(p_cliente))
+*!*		sqlmatriz(5) = "    ORDER BY F.cod_socio"	
+*!*		verror=sqlrun(varconexionF,"totfact0")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Facturas",0+16+0,"")
+*!*		ENDIF 
+*!*		ZAP IN totfact
+*!*		SELECT tipo, sum(subtotal*opera) as subtotal, sum(i_iva_g*opera) as iva from totfact0 ;
+*!*		    where opera > 0 GROUP BY tipo ORDER BY tipo INTO CURSOR totfact1
+*!*		USE IN totfact0
+*!*		
+*!*		SELECT totfact1
+*!*		GO TOP 
+*!*		IF EOF() AND RECNO()=1 THEN 
+*!*			v_factdiario = 0
+*!*		ELSE 
+*!*			v_factdiario = totfact1.subtotal
+*!*		ENDIF 
+*!*		
+*!*		IF p_tipo = "A" THEN 
+*!*			v_factdiario = v_factdiario + P_subtotal
+*!*		ELSE
+*!*			v_factdiario = v_factdiario + totfact1.iva + P_subtotal + P_iva
+*!*		ENDIF 
+*!*		USE IN totfact1
+*!*		
+*!*		*MESSAGEBOX("TOTAL Facturado Diario: "+ALLTRIM(STR(v_factdiario,18,2)) )
+*!*		
+*!*		INSERT INTO totfact(sucursal,cod_socio,factdiario) VALUES(p_sucursal,p_cliente,v_factdiario)
+*!*		
+*!*		* Busco las Percepciones de ingresos brutos y a realizadas 
+*!*		sqlmatriz(1) = " SELECT sum(impperc) as impperc, sum(sujaperc) as sujaperc FROM impufactu "
+*!*		sqlmatriz(2) = "    WHERE fecha = '"+p_fecha+"' and sucursal ='"+p_sucursal+"' and cliente = "+ALLTRIM(STR(p_cliente))
+*!*		sqlmatriz(3) = "          and impperc > 0 "
+*!*		verror=sqlrun(varconexionF,"totperc0")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Percepciones de IB",0+16+0,"")
+*!*		ENDIF 
+*!*		s_sujaperc   = 0
+*!*		ZAP IN totperc 
+*!*		SELECT totperc0
+*!*		GO TOP 
+*!*		IF EOF() AND RECNO()=1 THEN 
+*!*			v_percdiario = 0
+*!*			s_sujaperc   = 0
+*!*		ELSE
+*!*			IF ISNULL(totperc0.impperc)
+*!*				v_percdiario = 0
+*!*				s_sujaperc   = 0
+*!*			ELSE
+*!*				v_percdiario = totperc0.impperc
+*!*				s_sujaperc   = totperc0.sujaperc
+*!*			ENDIF 
+*!*		ENDIF 
+*!*		
+*!*		*MESSAGEBOX("TOTAL Percepciones Diaria: "+ALLTRIM(STR(v_percdiario,18,2))+" Sujeto a Percep.: "+ALLTRIM(STR(s_sujaperc,18,2)) )
+*!*		
+*!*		INSERT INTO totperc (sucursal,cod_socio,percdiario) VALUES (p_sucursal,p_cliente,v_percdiario)
+*!*		USE IN totperc0
+*!*		
+*!*		* Buscar datos del impuesto
+*!*		sqlmatriz(1) = " SELECT * FROM percepciones "
+*!*		sqlmatriz(2) = "    WHERE pcodigo = "+ALLTRIM(STR(p_impuesto))
+*!*		verror=sqlrun(varconexionF,"datperc")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la BUSQUEDA de Percepciones de IB",0+16+0,"")
+*!*		ENDIF 
+*!*		SELECT datperc
+*!*		GO TOP 
+*!*		v_razon      = datperc.razon
+*!*		v_pnombre    = datperc.pnombre
+*!*		v_orden      = datperc.orden
+*!*		
+*!*		* Calculo el importe del impuesto
+*!*		IF (v_factdiario - datperc.minimpon) => 0 THEN 
+*!*			r_percep = ( v_factdiario * (v_razon /100) ) - v_percdiario
+*!*			IF r_percep < 0 THEN 
+*!*				r_percep = 0
+*!*			ENDIF 
+*!*		ELSE
+*!*			r_percep = 0
+*!*		ENDIF 
+*!*		
+*!*		*MESSAGEBOX("Impuesto Calculado: "+ALLTRIM(STR(r_percep*pp_compro,18,2)) )
+*!*		
+*!*		* Cierro Archivos
+*!*		*USE IN clie
+*!*		
+*!*		* cierro la conexion
+*!*		= abreycierracon(varconexionF,"")
+*!*	*!*		= abreycierracon(varconexionM,"")
+*!*		
+*!*		g_idregistro = 0 
+*!*		g_fecha      = p_fecha
+*!*		g_sucursal   = p_sucursal
+*!*		g_cliente    = p_cliente
+*!*		g_pcodigo    = p_impuesto
+*!*		g_pnombre    = v_pnombre
+*!*		g_orden      = v_orden
+*!*	    g_convenio   = cliepercep.convenio
+*!*	    g_nroinscrip = cliepercep.nroinscrip
+*!*	    g_porcen     = v_razon
+*!*	    g_totaldia   = v_factdiario
+*!*	    g_percepdia  = v_percdiario + r_percep
+*!*		g_sujaperc   = v_factdiario - s_sujaperc
+*!*	    g_impperc    = r_percep
 
-	SELECT impufactu 
-	DELETE for pcodigo = g_pcodigo
-	
-	INSERT INTO impufactu (idregistro,fecha,sucursal,cliente,pcodigo,pnombre,orden,;
-	                       convenio,nroinscrip,porcen,totaldia,percepdia,sujaperc,impperc) ;
-       VALUES (g_idregistro,g_fecha,g_sucursal,g_cliente,g_pcodigo,g_pnombre,g_orden,;
-               g_convenio,g_nroinscrip,g_porcen,g_totaldia,g_percepdia,g_sujaperc,g_impperc)
-	
-	RETURN  r_percep
-ENDFUNC 
+*!*		SELECT impufactu 
+*!*		DELETE for pcodigo = g_pcodigo
+*!*		
+*!*		INSERT INTO impufactu (idregistro,fecha,sucursal,cliente,pcodigo,pnombre,orden,;
+*!*		                       convenio,nroinscrip,porcen,totaldia,percepdia,sujaperc,impperc) ;
+*!*	       VALUES (g_idregistro,g_fecha,g_sucursal,g_cliente,g_pcodigo,g_pnombre,g_orden,;
+*!*	               g_convenio,g_nroinscrip,g_porcen,g_totaldia,g_percepdia,g_sujaperc,g_impperc)
+*!*		
+*!*		RETURN  r_percep
+*!*	ENDFUNC 
 
 
-************************************************************************************************************************
-************************************************************************************************************************
-************************************************************************************************************************
-FUNCTION PercepIBnc
-PARAMETERS P_sucursal,P_Cliente, P_fecha, p_impuesto, P_subtotal, P_iva, P_tipo, p_percep
-	r_percep = 0
-	
-	CREATE TABLE .\temp\totfact FREE (sucursal c(4), cod_socio i, factdiario y)
-	CREATE TABLE .\temp\totperc FREE (sucursal c(4), cod_socio i, percdiario y)
-		
-	* Abro una conexion con la base de datos Facturación
-	varconexionF = abreycierracon(0,miservidor+"\Facturacion\Datos.dbc")
+*!*	************************************************************************************************************************
+*!*	************************************************************************************************************************
+*!*	************************************************************************************************************************
+*!*	FUNCTION PercepIBnc
+*!*	PARAMETERS P_sucursal,P_Cliente, P_fecha, p_impuesto, P_subtotal, P_iva, P_tipo, p_percep
+*!*		r_percep = 0
+*!*		
+*!*		CREATE TABLE .\temp\totfact FREE (sucursal c(4), cod_socio i, factdiario y)
+*!*		CREATE TABLE .\temp\totperc FREE (sucursal c(4), cod_socio i, percdiario y)
+*!*			
+*!*		* Abro una conexion con la base de datos Facturación
+*!*		varconexionF = abreycierracon(0,miservidor+"\Facturacion\Datos.dbc")
 
-	* Busco lo Facturado en el Día.
-	sqlmatriz(1) = " SELECT F.subtotal, F.i_iva_g, C.operacion as opera, C.tipo "
-	sqlmatriz(2) = "    FROM facturas F "
-	sqlmatriz(3) = "    LEFT JOIN Comprobantes C ON C.idcomp=F.idcomp "
-	sqlmatriz(4) = "    WHERE F.fecha = '"+p_fecha+"' and F.succliente ='"+p_sucursal+"' and F.cod_socio = "+ALLTRIM(STR(p_cliente))
-	sqlmatriz(5) = "    ORDER BY F.cod_socio"	
-	verror=sqlrun(varconexionF,"totfact0")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Facturas",0+16+0,"")
-	ENDIF 
-	ZAP IN totfact
-	SELECT tipo, sum(subtotal*opera) as subtotal, sum(i_iva_g*opera) as iva from totfact0 ;
-	    WHERE opera > 0 GROUP BY tipo ORDER BY tipo INTO CURSOR totfact1
-	USE IN totfact0
-	
-	SELECT totfact1
-	GO TOP 
-	IF EOF() AND RECNO()=1 THEN 
-		v_factdiario = 0
-	ELSE 
-		v_factdiario = totfact1.subtotal
-	ENDIF 
-	
-	IF p_tipo = "A" THEN 
-		v_factdiario = v_factdiario + (P_subtotal * (-1)) && Por se NC
-	ELSE
-		v_factdiario = v_factdiario + totfact1.iva + (P_subtotal * (-1)) + (P_iva * (-1)) && por se NC
-	ENDIF 
-	USE IN totfact1
-	
-	INSERT INTO totfact(sucursal,cod_socio,factdiario) VALUES(p_sucursal,p_cliente,v_factdiario)
-	
-	* Busco las Percepciones de ingresos brutos y a realizadas 
-	sqlmatriz(1) = " SELECT sum(impperc) as impperc, sum(sujaperc) as sujaperc FROM impufactu "
-	sqlmatriz(2) = "    WHERE fecha = '"+p_fecha+"' and sucursal ='"+p_sucursal+"' and cliente = "+ALLTRIM(STR(p_cliente))
-	sqlmatriz(3) = "          and sujaperc > 0 "
-	verror=sqlrun(varconexionF,"totperc0")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Percepciones de IB",0+16+0,"")
-	ENDIF 
-	s_sujaperc   = 0
-	ZAP IN totperc 
-	SELECT totperc0
-	GO TOP 
-	IF EOF() AND RECNO()=1 THEN 
-		v_percdiario = 0
-		s_sujaperc   = 0
-	ELSE
-		IF ISNULL(totperc0.impperc)
-			v_percdiario = 0
-			s_sujaperc   = 0
-		ELSE
-			v_percdiario = totperc0.impperc
-			s_sujaperc   = totperc0.sujaperc
-		ENDIF 
-	ENDIF 
-	INSERT INTO totperc (sucursal,cod_socio,percdiario) VALUES (p_sucursal,p_cliente,v_percdiario)
-	USE IN totperc0
-	
-	* Buscar datos del impuesto
-	sqlmatriz(1) = " SELECT * FROM percepciones "
-	sqlmatriz(2) = "    WHERE pcodigo = "+ALLTRIM(STR(p_impuesto))
-	verror=sqlrun(varconexionF,"datperc")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BUSQUEDA de Percepciones de IB",0+16+0,"")
-	ENDIF 
-	SELECT datperc
-	GO TOP 
-	v_razon      = datperc.razon
-	v_pnombre    = datperc.pnombre
-	v_orden      = datperc.orden
-	
-	r_percep     = p_percep * (-1) && Por Ser NC
+*!*		* Busco lo Facturado en el Día.
+*!*		sqlmatriz(1) = " SELECT F.subtotal, F.i_iva_g, C.operacion as opera, C.tipo "
+*!*		sqlmatriz(2) = "    FROM facturas F "
+*!*		sqlmatriz(3) = "    LEFT JOIN Comprobantes C ON C.idcomp=F.idcomp "
+*!*		sqlmatriz(4) = "    WHERE F.fecha = '"+p_fecha+"' and F.succliente ='"+p_sucursal+"' and F.cod_socio = "+ALLTRIM(STR(p_cliente))
+*!*		sqlmatriz(5) = "    ORDER BY F.cod_socio"	
+*!*		verror=sqlrun(varconexionF,"totfact0")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Facturas",0+16+0,"")
+*!*		ENDIF 
+*!*		ZAP IN totfact
+*!*		SELECT tipo, sum(subtotal*opera) as subtotal, sum(i_iva_g*opera) as iva from totfact0 ;
+*!*		    WHERE opera > 0 GROUP BY tipo ORDER BY tipo INTO CURSOR totfact1
+*!*		USE IN totfact0
+*!*		
+*!*		SELECT totfact1
+*!*		GO TOP 
+*!*		IF EOF() AND RECNO()=1 THEN 
+*!*			v_factdiario = 0
+*!*		ELSE 
+*!*			v_factdiario = totfact1.subtotal
+*!*		ENDIF 
+*!*		
+*!*		IF p_tipo = "A" THEN 
+*!*			v_factdiario = v_factdiario + (P_subtotal * (-1)) && Por se NC
+*!*		ELSE
+*!*			v_factdiario = v_factdiario + totfact1.iva + (P_subtotal * (-1)) + (P_iva * (-1)) && por se NC
+*!*		ENDIF 
+*!*		USE IN totfact1
+*!*		
+*!*		INSERT INTO totfact(sucursal,cod_socio,factdiario) VALUES(p_sucursal,p_cliente,v_factdiario)
+*!*		
+*!*		* Busco las Percepciones de ingresos brutos y a realizadas 
+*!*		sqlmatriz(1) = " SELECT sum(impperc) as impperc, sum(sujaperc) as sujaperc FROM impufactu "
+*!*		sqlmatriz(2) = "    WHERE fecha = '"+p_fecha+"' and sucursal ='"+p_sucursal+"' and cliente = "+ALLTRIM(STR(p_cliente))
+*!*		sqlmatriz(3) = "          and sujaperc > 0 "
+*!*		verror=sqlrun(varconexionF,"totperc0")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Percepciones de IB",0+16+0,"")
+*!*		ENDIF 
+*!*		s_sujaperc   = 0
+*!*		ZAP IN totperc 
+*!*		SELECT totperc0
+*!*		GO TOP 
+*!*		IF EOF() AND RECNO()=1 THEN 
+*!*			v_percdiario = 0
+*!*			s_sujaperc   = 0
+*!*		ELSE
+*!*			IF ISNULL(totperc0.impperc)
+*!*				v_percdiario = 0
+*!*				s_sujaperc   = 0
+*!*			ELSE
+*!*				v_percdiario = totperc0.impperc
+*!*				s_sujaperc   = totperc0.sujaperc
+*!*			ENDIF 
+*!*		ENDIF 
+*!*		INSERT INTO totperc (sucursal,cod_socio,percdiario) VALUES (p_sucursal,p_cliente,v_percdiario)
+*!*		USE IN totperc0
+*!*		
+*!*		* Buscar datos del impuesto
+*!*		sqlmatriz(1) = " SELECT * FROM percepciones "
+*!*		sqlmatriz(2) = "    WHERE pcodigo = "+ALLTRIM(STR(p_impuesto))
+*!*		verror=sqlrun(varconexionF,"datperc")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la BUSQUEDA de Percepciones de IB",0+16+0,"")
+*!*		ENDIF 
+*!*		SELECT datperc
+*!*		GO TOP 
+*!*		v_razon      = datperc.razon
+*!*		v_pnombre    = datperc.pnombre
+*!*		v_orden      = datperc.orden
+*!*		
+*!*		r_percep     = p_percep * (-1) && Por Ser NC
 
-	IF p_tipo = "A" THEN 
-		g_sujaperc = (P_subtotal * (-1)) && Por se NC
-	ELSE
-		g_sujaperc = (P_subtotal * (-1)) + (P_iva * (-1)) && por se NC
-	ENDIF 
+*!*		IF p_tipo = "A" THEN 
+*!*			g_sujaperc = (P_subtotal * (-1)) && Por se NC
+*!*		ELSE
+*!*			g_sujaperc = (P_subtotal * (-1)) + (P_iva * (-1)) && por se NC
+*!*		ENDIF 
 
-	* cierro la conexion
-	= abreycierracon(varconexionF,"")
-*!*		= abreycierracon(varconexionM,"")
-	
-	g_idregistro = 0 
-	g_fecha      = p_fecha
-	g_sucursal   = p_sucursal
-	g_cliente    = p_cliente
-	g_pcodigo    = p_impuesto
-	g_pnombre    = v_pnombre
-	g_orden      = v_orden
-    g_convenio   = cliepercep.convenio
-    g_nroinscrip = cliepercep.nroinscrip
-    g_porcen     = v_razon
-    g_totaldia   = g_sujaperc
-    g_percepdia  = r_percep && v_percdiario + r_percep
-	*g_sujaperc   = v_factdiario - s_sujaperc
-    g_impperc    = r_percep
+*!*		* cierro la conexion
+*!*		= abreycierracon(varconexionF,"")
+*!*	*!*		= abreycierracon(varconexionM,"")
+*!*		
+*!*		g_idregistro = 0 
+*!*		g_fecha      = p_fecha
+*!*		g_sucursal   = p_sucursal
+*!*		g_cliente    = p_cliente
+*!*		g_pcodigo    = p_impuesto
+*!*		g_pnombre    = v_pnombre
+*!*		g_orden      = v_orden
+*!*	    g_convenio   = cliepercep.convenio
+*!*	    g_nroinscrip = cliepercep.nroinscrip
+*!*	    g_porcen     = v_razon
+*!*	    g_totaldia   = g_sujaperc
+*!*	    g_percepdia  = r_percep && v_percdiario + r_percep
+*!*		*g_sujaperc   = v_factdiario - s_sujaperc
+*!*	    g_impperc    = r_percep
 
-	SELECT impufactu 
-	DELETE for pcodigo = g_pcodigo
-	
-	INSERT INTO impufactu (idregistro,fecha,sucursal,cliente,pcodigo,pnombre,orden,;
-	                       convenio,nroinscrip,porcen,totaldia,percepdia,sujaperc,impperc) ;
-       VALUES (g_idregistro,g_fecha,g_sucursal,g_cliente,g_pcodigo,g_pnombre,g_orden,;
-               g_convenio,g_nroinscrip,g_porcen,g_totaldia,g_percepdia,g_sujaperc,g_impperc)
-	
-	RETURN  r_percep
-ENDFUNC 
+*!*		SELECT impufactu 
+*!*		DELETE for pcodigo = g_pcodigo
+*!*		
+*!*		INSERT INTO impufactu (idregistro,fecha,sucursal,cliente,pcodigo,pnombre,orden,;
+*!*		                       convenio,nroinscrip,porcen,totaldia,percepdia,sujaperc,impperc) ;
+*!*	       VALUES (g_idregistro,g_fecha,g_sucursal,g_cliente,g_pcodigo,g_pnombre,g_orden,;
+*!*	               g_convenio,g_nroinscrip,g_porcen,g_totaldia,g_percepdia,g_sujaperc,g_impperc)
+*!*		
+*!*		RETURN  r_percep
+*!*	ENDFUNC 
 
 
 

@@ -22375,7 +22375,7 @@ v_importeTot = 0.00
  	v_retSelPer = 0.00 
 	 DO FORM selectpercepciones WITH P_fecha,v_importeNeto, v_importeIva ,p_nomTabResu TO v_retSelPer
 
- 	IF v_retSelPer > 0.00
+ 	IF v_retSelPer >= 0.00
 
  		SELECT &p_nomTabResu
  		GO TOP  		
@@ -22621,8 +22621,7 @@ PARAMETERS p_tabladatos
 
 		IF v_IdL > 0 THEN 	&& Agrego vinculo con Registro de Otra Tabla
 			RTA=FLinkRegistro ( "I", vconeccionC,  'costop', 'idcostop', v_idcostop, v_TablaL, v_CampoL, v_IdL )
-			MESSAGEBOX(RTA)
-
+		
 		ENDIF 
 
 		SELECT &v_tablaDatos
