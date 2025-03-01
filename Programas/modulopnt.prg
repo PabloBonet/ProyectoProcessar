@@ -27,6 +27,7 @@ FUNCTION PuntosAutoTablas
 		    RETURN ""  
 		ENDIF	
 		SELECT tablaspnt_sql 
+
 		GO TOP 
 		IF !EOF()  THEN  && hay que puntuar 
 			SELECT tabla, MIN(fechaini) as fechaini FROM tablaspnt_sql INTO TABLE tablaspnt GROUP BY tabla ORDER BY tabla desc
@@ -115,6 +116,7 @@ PARAMETERS punt_tabla, punt_id, punt_au, pcont_conex
 	ELSE
 		vcone_conta = pcont_conex
 	ENDIF 
+
 
 
 	* Verifico si el registro pasado ya no está puntuado , si es que tiene que puntuarlo *
@@ -777,6 +779,96 @@ RETURN
 
 
 
+
+FUNCTION FPNTVoucherR
+*#//////////////////////////////////////
+*/ Graba la entidad que realiza la Rendicion del Voucher por pago
+*/ Retorna el idpntvou si pudo actualizar
+*#//////////////////////////////////////
+PARAMETERS pft_idvoucher,pft_fechare, pft_entidadre,pft_fechaven,pft_observa, pft_coneccion
+
+	IF pft_idvoucher <= 0 THEN 
+		RETURN 0
+	ENDIF 
+
+	pp_cierraconex = .f.
+	IF pft_coneccion = 0 THEN 
+		pft_coneccion=abreycierracon(0,_SYSSCHEMA)	
+		pp_cierraconex = .t.
+	ENDIF 
+
+	sqlmatriz(1) = " update pntvoucher set entidadre = "+ALLTRIM(STR(pft_entidadre))+", fechare= '"+ALLTRIM(pft_fechare)+"', "
+	sqlmatriz(2) = "fechaven = '"+ALLTRIM(pft_fechaven)+"', observa= '"+ALLTRIM(pft_observa)+"' where idpntvou="+ALLTRIM(STR(pft_idvoucher))
+	verror=sqlrun(pft_coneccion,"upvoucher_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la actualizacion de Vouchers",0+48+0,"Error")
+	    RETURN 0
+	ENDIF
+
+	IF pp_cierraconex THEN 
+		=abreycierracon(pft_coneccion,"")	
+	ENDIF 
+	RETURN pft_idvoucher
+	
+ENDFUNC 
+
+
+
+FUNCTION imprimirVoucher
+PARAMETERS pid_idpntvou
+*#/----------------------------------------
+* FUNCIÓN PARA IMPRIMIR Voucher de Puntos
+* PARAMETROS: pid_idpntvou
+*#/----------------------------------------
+
+	vp_idpntvou = pid_idpntvou
+	
+	IF vp_idpntvou > 0
+		
+		vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+		
+		*** Busco los datos del recibo
+		sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip,com.comprobante as nomcomp "
+        sqlmatriz(2)=" FROM pntvoucher r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro t on com.idtipocompro = t.idtipocompro"
+		sqlmatriz(3)=" left join afipcompro a on t.idafipcom = a.idafipcom  "
+		sqlmatriz(4)=" where r.idpntvou = "+ALLTRIM(STR(vp_idpntvou))
+
+			verror=sqlrun(vconeccionF,"pntvoucherim_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de Vouchers ",0+48+0,"Error")
+			    RETURN 
+			ENDIF
+			
+		** Cerrar Conexion							
+		vconeccionF=abreycierracon(_SYSSCHEMA,"") && ME CONECTO
+	
+		SELECT pntvoucherim_sql
+		GO TOP 
+					
+		SELECT * FROM pntvoucherim_sql INTO TABLE pntvoucher
+
+		USE IN pntvoucherim_sql 				
+		SELECT pntvoucher
+		GO TOP 
+	
+		IF NOT EOF()
+			v_idcomproba = pntvoucher.idcomproba
+			
+			DO FORM reporteform WITH "pntvoucher","pntvouchercr",v_idcomproba
+			
+		ELSE
+			MESSAGEBOX("Error al cargar El Voucher para imprimir",0+48+0,"Error al cargar la Transferencia")
+			RETURN 	
+		ENDIF 
+				
+
+	ELSE
+		MESSAGEBOX("NO se pudo recuperar el Voucher el ID <= 0",0+16,"Error al imprimir")
+		RETURN 
+
+	ENDIF 
+
+ENDFUNC 
 
 
 
