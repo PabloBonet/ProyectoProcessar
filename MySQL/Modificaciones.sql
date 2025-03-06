@@ -86,4 +86,26 @@ ALTER TABLE `facturasimp` ADD INDEX `idfactura`(`idfactura`),
  ALTER TABLE `funcionesimp` ADD COLUMN `grupo` CHAR(100) NOT NULL AFTER `detalle`;
 
 
- 
+ --20250301--
+CREATE TABLE `pntvoucher` (
+  `idpntvou` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idcomproba` int(10) unsigned NOT NULL,
+  `pventa` int(10) unsigned NOT NULL,
+  `numero` int(10) unsigned NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `entidad` int(10) unsigned NOT NULL,
+  `nombre` char(150) NOT NULL,
+  `puntos` float(13,2) NOT NULL,
+  `importe` float(13,2) NOT NULL,
+  `idpntvalor` int(10) unsigned NOT NULL,
+  `entidadre` int(10) unsigned NOT NULL,
+  `fechare` char(8) NOT NULL,
+  `usuario` char(30) NOT NULL,
+  `fechaven` char(8) NOT NULL,
+  `observa` char(200) NOT NULL,
+  PRIMARY KEY (`idpntvou`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+
+
+ALTER TABLE `otmovistockh` ADD COLUMN `lote` CHAR(50) NOT NULL DEFAULT ' ' AFTER `unidad`,
+ ADD COLUMN `lotevto` CHAR(8) NOT NULL DEFAULT ' ' AFTER `lote`;
