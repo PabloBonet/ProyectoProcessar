@@ -1,0 +1,160 @@
+-- MySQL Administrator dump 1.4
+--
+-- ------------------------------------------------------
+-- Server version	5.5.55-0+deb8u1
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+
+
+--
+-- Create schema processar_arenera
+--
+
+CREATE DATABASE IF NOT EXISTS processar_arenera;
+USE processar_arenera;
+
+--
+-- Definition of table `impupercepcion`
+--
+
+DROP TABLE IF EXISTS `impupercepcion`;
+CREATE TABLE `impupercepcion` (
+  `idimpuper` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `detalle` char(200) NOT NULL,
+  `razon` double(10,2) NOT NULL,
+  `baseimpon` double(13,2) NOT NULL,
+  `funcion` char(100) NOT NULL,
+  PRIMARY KEY (`idimpuper`)
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `impupercepcion`
+--
+
+/*!40000 ALTER TABLE `impupercepcion` DISABLE KEYS */;
+INSERT INTO `impupercepcion` (`idimpuper`,`detalle`,`razon`,`baseimpon`,`funcion`) VALUES 
+ (1,'Percepción IIBB ARBA 0,05%',0.05,3500.00,'PER_IIBB_ARBA_IFN'),
+ (2,'Percepción IIBB ARBA 0,1%',0.10,3500.00,'PER_IIBB_ARBA_IFN'),
+ (3,'Percepción IIBB ARBA 0,2%',0.20,3500.00,'PER_IIBB_ARBA_IFN'),
+ (4,'Percepción IIBB ARBA 0,3%',0.30,3500.00,'PER_IIBB_ARBA_IFN'),
+ (5,'Percepción IIBB ARBA 0,4%',0.00,3500.00,'PER_IIBB_ARBA_IFN'),
+ (6,'Percepción IIBB ARBA 0,5%',0.50,3500.00,'PER_IIBB_ARBA_IFN'),
+ (7,'Percepción IIBB ARBA 0,6%',0.60,3500.00,'PER_IIBB_ARBA_IFN'),
+ (8,'Percepción IIBB ARBA 0,7%',0.60,3500.00,'PER_IIBB_ARBA_IFN'),
+ (9,'Percepción IIBB ARBA 0,7%',0.70,3500.00,'PER_IIBB_ARBA_IFN'),
+ (10,'Percepción IIBB ARBA 0,8%',0.80,3500.00,'PER_IIBB_ARBA_IFN'),
+ (11,'Percepción IIBB ARBA 0,9%',0.90,3500.00,'PER_IIBB_ARBA_IFN'),
+ (12,'Percepción IIBB ARBA 1,0%',1.00,3500.00,'PER_IIBB_ARBA_IFN'),
+ (13,'Percepción IIBB ARBA 1,1%',1.10,3500.00,'PER_IIBB_ARBA_IFN'),
+ (14,'Percepción IIBB ARBA 1,2%',1.20,3500.00,'PER_IIBB_ARBA_IFN'),
+ (15,'Percepción IIBB ARBA 1,3%',1.30,3500.00,'PER_IIBB_ARBA_IFN'),
+ (16,'Percepción IIBB ARBA 1,4%',1.40,3500.00,'PER_IIBB_ARBA_IFN'),
+ (17,'Percepción IIBB ARBA 1,5%',1.50,3500.00,'PER_IIBB_ARBA_IFN'),
+ (18,'Percepción IIBB ARBA 1,6%',1.60,3500.00,'PER_IIBB_ARBA_IFN'),
+ (19,'Percepción IIBB ARBA 1,7%',1.70,3500.00,'PER_IIBB_ARBA_IFN'),
+ (20,'Percepción IIBB ARBA 1,75%',1.75,3500.00,'PER_IIBB_ARBA_IFN'),
+ (21,'Percepción IIBB ARBA 1,8%',1.80,3500.00,'PER_IIBB_ARBA_IFN'),
+ (22,'Percepción IIBB ARBA 1,9%',1.90,3500.00,'PER_IIBB_ARBA_IFN'),
+ (23,'Percepción IIBB ARBA 2,0%',2.00,3500.00,'PER_IIBB_ARBA_IFN'),
+ (24,'Percepción IIBB ARBA 2,5%',2.50,3500.00,'PER_IIBB_ARBA_IFN'),
+ (25,'Percepción IIBB ARBA 3%',3.00,3500.00,'PER_IIBB_ARBA_IFN'),
+ (26,'Percepción IIBB ARBA 4%',4.00,3500.00,'PER_IIBB_ARBA_IFN'),
+ (27,'Percepción IIBB ARBA 5%',5.00,3500.00,'PER_IIBB_ARBA_IFN'),
+ (28,'Percepción IIBB ARBA 6%',6.00,3500.00,'PER_IIBB_ARBA_IFN'),
+ (29,'Percepción IIBB ARBA 7%',7.00,3500.00,'PER_IIBB_ARBA_IFN'),
+ (30,'Percepción IIBB ARBA 8%',8.00,3500.00,'PER_IIBB_ARBA_IFN'),
+ (31,'Percepción IIBB ARBA 9%',9.00,3500.00,'PER_IIBB_ARBA_IFN');
+/*!40000 ALTER TABLE `impupercepcion` ENABLE KEYS */;
+
+
+--
+-- Definition of table `impuretencion`
+--
+
+DROP TABLE IF EXISTS `impuretencion`;
+CREATE TABLE `impuretencion` (
+  `idimpuret` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `detalle` char(200) NOT NULL,
+  `razonin` int(10) unsigned NOT NULL,
+  `baseimpon` double(13,2) NOT NULL,
+  `idtipopago` int(10) unsigned NOT NULL,
+  `funcion` char(100) NOT NULL,
+  `razonnin` int(10) unsigned NOT NULL,
+  `baseimponn` double(13,2) NOT NULL,
+  `regimen` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idimpuret`)
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `impuretencion`
+--
+
+/*!40000 ALTER TABLE `impuretencion` DISABLE KEYS */;
+INSERT INTO `impuretencion` (`idimpuret`,`detalle`,`razonin`,`baseimpon`,`idtipopago`,`funcion`,`razonnin`,`baseimponn`,`regimen`) VALUES 
+ (1,'Reg. 19 - Intereses por op. realizadas en entidades financieras. Ley 21526 o agentes de bolsa o mercado',1,0.00,5,'RET_GANANCIAS_IFN',2,0.00,19),
+ (2,'Reg. 21 - Intereses originados en op. no comprendidas en Reg. 19',3,7870.00,5,'RET_GANANCIAS_IFN',4,0.00,21),
+ (3,'Reg. 30 - Alquileres o arrendamientos de bienes muebles',5,11200.00,5,'RET_GANANCIAS_IFN',6,0.00,30),
+ (4,'Reg. 31 - Bienes inmuebles urbanos, incluidos los efectuados bajo la modalidad de leasing - incluye suburbanos',7,11200.00,5,'RET_GANANCIAS_IFN',8,0.00,31),
+ (5,'Reg. 32 - Bienes inmuebles rurales, incluidos los efectuados bajo la modalidad de leasing - incluye subrurales',9,11200.00,5,'RET_GANANCIAS_IFN',10,0.00,32),
+ (6,'Reg. 35 - Regalias',11,7870.00,5,'RET_GANANCIAS_IFN',12,0.00,35),
+ (7,'Reg. 43 - Interés accionario, excedentes y retornos distribuidos entre asociados, cooperativas - excepto consumo',13,7870.00,5,'RET_GANANCIAS_IFN',14,0.00,43),
+ (8,'Reg. 51 - Obligaciones de no hacer, o por abandono o no ejercicio de una actividad',15,7870.00,5,'RET_GANANCIAS_IFN',16,0.00,51),
+ (9,'Reg. 78 - Enajenación de bienes muebles y bienes de cambio',17,224000.00,5,'RET_GANANCIAS_IFN',18,0.00,78),
+ (10,'Reg. 86 - Transf. temporaria o definitiva de derechos de llave, marcas, patentes de inv., regalías, concesiones y similares',19,224000.00,5,'RET_GANANCIAS_IFN',20,0.00,86),
+ (11,'Reg. 110 - Explotación de derechos de autor',21,10000.00,5,'RET_GANANCIAS_IFN',22,0.00,110),
+ (12,'Reg. 94 - Locaciones de obra y/o servicios no ejecutados en rel. de dep. no mencionados en otros incisos',23,67170.00,5,'RET_GANANCIAS_IFN',24,0.00,94),
+ (13,'Reg. 25 - Comisiones u otras retribuciones derivadas de act. comisionista, rematador, consignatario y aux de comercio que se refiere en el articulo c del articulo 49',25,16830.00,5,'RET_GANANCIAS_IFN',26,0.00,25),
+ (14,'Reg. 116 - Honorarios de director de SA., sidico, fiduciario, consejero de soc. coop., integrante de consejos de vigilancia y soc. admin. de SRL...',27,67170.00,5,'RET_GANANCIAS_IFN',28,0.00,116),
+ (15,'Reg. 116 - Profesionales liberales, oficios, albacea, mandatarios, gestor de negocio',29,16830.00,5,'RET_GANANCIAS_IFN',30,0.00,116),
+ (16,'Reg. 124 - Corredor viajante de comercio y despachante de aduana',31,16830.00,5,'RET_GANANCIAS_IFN',32,0.00,124),
+ (17,'Reg. 95 - Operaciones de transporte de carga nacional e internacional',33,67170.00,5,'RET_GANANCIAS_IFN',34,0.00,95),
+ (18,'Reg. 53 - Operaciones realizadas por intermedio de mercados de cereales a término',35,0.00,5,'RET_GANANCIAS_IFN',36,0.00,53),
+ (19,'Reg. 55 - Distribución de películas. Transmisión de programación. Televisión via satelital',37,0.00,5,'RET_GANANCIAS_IFN',38,0.00,55),
+ (20,'Reg. 111 - Cualquier otra cesión o locación de derechos, excepto las que correspondan a operaciones realizadas por intermedio de mercados de cereales',39,0.00,5,'RET_GANANCIAS_IFN',40,0.00,111),
+ (21,'Reg. 112 - Benef. provenientes de los req. de los planes de seguro de retiro privados admin. lo establecido en el inciso d del art. 45 y el inciso d del art 79 excepto lo alcanzado por RG 2437',41,16830.00,5,'RET_GANANCIAS_IFN',42,16830.00,112),
+ (22,'Reg. 113 - Rescates por desistimiento de planes de seguro de retiro referido en el inciso o, excepto que sea de aplicación lo normalizado en el art 101 de la ley de imp. a las ganancias',43,16830.00,5,'RET_GANANCIAS_IFN',44,16830.00,113),
+ (23,'Reg. 779 - Subsidios abonados por los Est. Nacional, provinciales, municipales, en concepto de enajenación de bs muebles y bs de cambio',45,76140.00,5,'RET_GANANCIAS_IFN',46,0.00,779),
+ (24,'Reg. 780 - Subsidios abonados por los Est. Nacional, provinciales, municipales en concepto de locaciones de obras y/o serv. no en rel de dependencia',47,31460.00,5,'RET_GANANCIAS_IFN',48,0.00,780),
+ (26,'Ret. IIBB ARBA Alicuota 0,10',50,19000.00,5,'RET_IIBB_ARBA_IFN',50,0.00,0),
+ (27,'Ret. IIBB ARBA Alicuota 0,20',51,19000.00,5,'RET_IIBB_ARBA_IFN',51,0.00,0),
+ (28,'Ret. IIBB ARBA Alicuota 0,30',52,19000.00,5,'RET_IIBB_ARBA_IFN',52,0.00,0),
+ (29,'Ret. IIBB ARBA Alicuota 0,40',53,19000.00,5,'RET_IIBB_ARBA_IFN',53,0.00,0),
+ (30,'Ret. IIBB ARBA Alicuota 0,50',54,19000.00,5,'RET_IIBB_ARBA_IFN',54,0.00,0),
+ (31,'Ret. IIBB ARBA Alicuota 0,60',55,19000.00,5,'RET_IIBB_ARBA_IFN',55,0.00,0),
+ (32,'Ret. IIBB ARBA Alicuota 0,70',56,19000.00,5,'RET_IIBB_ARBA_IFN',56,0.00,0),
+ (33,'Ret. IIBB ARBA Alicuota 0,80',57,19000.00,5,'RET_IIBB_ARBA_IFN',57,0.00,0),
+ (34,'Ret. IIBB ARBA Alicuota 0,90',58,19000.00,5,'RET_IIBB_ARBA_IFN',58,0.00,0),
+ (35,'Ret. IIBB ARBA Alicuota 1,00',59,19000.00,5,'RET_IIBB_ARBA_IFN',59,0.00,0),
+ (36,'Ret. IIBB ARBA Alicuota 1,10',60,19000.00,5,'RET_IIBB_ARBA_IFN',60,0.00,0),
+ (37,'Ret. IIBB ARBA Alicuota 1,20',61,19000.00,5,'RET_IIBB_ARBA_IFN',61,0.00,0),
+ (38,'Ret. IIBB ARBA Alicuota 1,30',62,19000.00,5,'RET_IIBB_ARBA_IFN',62,0.00,0),
+ (39,'Ret. IIBB ARBA Alicuota 1,50',63,19000.00,5,'RET_IIBB_ARBA_IFN',63,0.00,0),
+ (40,'Ret. IIBB ARBA Alicuota 1,60',64,19000.00,5,'RET_IIBB_ARBA_IFN',64,0.00,0),
+ (41,'Ret. IIBB ARBA Alicuota 1,75',65,19000.00,5,'RET_IIBB_ARBA_IFN',65,0.00,0),
+ (42,'Ret. IIBB ARBA Alicuota 2,00',66,19000.00,5,'RET_IIBB_ARBA_IFN',66,0.00,0),
+ (43,'Ret. IIBB ARBA Alicuota 2,50',67,19000.00,5,'RET_IIBB_ARBA_IFN',67,0.00,0),
+ (44,'Ret. IIBB ARBA Alicuota 3,00',68,19000.00,5,'RET_IIBB_ARBA_IFN',68,0.00,0),
+ (45,'Ret. IIBB ARBA Alicuota 3,50',69,19000.00,5,'RET_IIBB_ARBA_IFN',69,0.00,0),
+ (46,'Ret. IIBB ARBA Alicuota 4,00',70,19000.00,5,'RET_IIBB_ARBA_IFN',70,0.00,0),
+ (47,'Ret. IIBB ARBA Alicuota 5,00',71,19000.00,5,'RET_IIBB_ARBA_IFN',71,0.00,0),
+ (48,'Ret. IIBB ARBA Alicuota 6,00',72,19000.00,5,'RET_IIBB_ARBA_IFN',72,0.00,0);
+/*!40000 ALTER TABLE `impuretencion` ENABLE KEYS */;
+
+
+
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
