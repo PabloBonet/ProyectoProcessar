@@ -25,6 +25,7 @@
 		</MostRecentlyUsed>
 		<WorkingDirectories>
 			<Item>Database@..\KeePass-2.57.1</Item>
+			<Item>Import@..\..\..\..\Users\pablo\Downloads</Item>
 		</WorkingDirectories>
 		<Start>
 			<CheckForUpdate>false</CheckForUpdate>
@@ -39,8 +40,8 @@
 	</Application>
 	<Logging />
 	<MainWindow>
-		<X>500</X>
-		<Y>116</Y>
+		<X>535</X>
+		<Y>133</Y>
 		<Width>670</Width>
 		<Height>525</Height>
 		<SplitterHorizontalFrac>0.8333</SplitterHorizontalFrac>
