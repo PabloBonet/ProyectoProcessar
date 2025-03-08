@@ -109,3 +109,19 @@ CREATE TABLE `pntvoucher` (
 
 ALTER TABLE `otmovistockh` ADD COLUMN `lote` CHAR(50) NOT NULL DEFAULT ' ' AFTER `unidad`,
  ADD COLUMN `lotevto` CHAR(8) NOT NULL DEFAULT ' ' AFTER `lote`;
+ 
+ 
+ --20250308--
+
+CREATE TABLE  `processar_arenera`.`impuretencion` (
+  `idimpuret` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `detalle` char(200) NOT NULL,
+  `razonin` int(10) unsigned NOT NULL,
+  `baseimpon` double(13,2) NOT NULL,
+  `idtipopago` int(10) unsigned NOT NULL,
+  `funcion` char(100) NOT NULL,
+  `razonnin` int(10) unsigned NOT NULL,
+  `baseimponn` double(13,2) NOT NULL,
+  `regimen` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idimpuret`)
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=latin1;
