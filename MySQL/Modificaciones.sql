@@ -113,7 +113,7 @@ ALTER TABLE `otmovistockh` ADD COLUMN `lote` CHAR(50) NOT NULL DEFAULT ' ' AFTER
  
  --20250308--
 
-CREATE TABLE  `processar_arenera`.`impuretencion` (
+CREATE TABLE  `impuretencion` (
   `idimpuret` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `detalle` char(200) NOT NULL,
   `razonin` int(10) unsigned NOT NULL,
@@ -125,3 +125,21 @@ CREATE TABLE  `processar_arenera`.`impuretencion` (
   `regimen` int(10) unsigned NOT NULL,
   PRIMARY KEY (`idimpuret`)
 ) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `entidadper` (
+  `identper` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `entidad` int(10) unsigned NOT NULL,
+  `idimpuper` int(10) unsigned NOT NULL,
+  `enconvenio` char(1) NOT NULL DEFAULT 'N',
+  PRIMARY KEY (`identper`)
+) ENGINE=InnoDB AUTO_INCREMENT=597 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `entidadret` (
+  `identret` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `entidad` int(10) unsigned NOT NULL,
+  `idimpuret` int(10) unsigned NOT NULL,
+  `enconvenio` char(1) NOT NULL DEFAULT 'N',
+  PRIMARY KEY (`identret`)
+) ENGINE=InnoDB AUTO_INCREMENT=613 DEFAULT CHARSET=latin1;
