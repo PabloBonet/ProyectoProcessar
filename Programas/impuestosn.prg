@@ -962,7 +962,8 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 	
 	
 	
-	v_sentenciaCrea1 = "CREATE TABLE "+ALLTRIM(p_nomTabRes)+" FREE (entidad I,idimpuper I,impAPer Y,baseimpo Y,razon Y, idtipopago I, descrip C(250),totpagodia Y, totperdia Y, sujaper Y,tabart C(100),campoart C(100),codiArt C(50), operacion C(100))"
+	*v_sentenciaCrea1 = "CREATE TABLE "+ALLTRIM(p_nomTabRes)+" FREE (entidad I,idimpuper I,impAPer Y,baseimpo Y,razon Y, idtipopago I, descrip C(250),totpagodia Y, totperdia Y, sujaper Y,tabart C(100),campoart C(100),codiArt C(50), operacion C(100))"
+	v_sentenciaCrea1 = "CREATE TABLE "+ALLTRIM(p_nomTabRes)+" FREE (entidad I,idimpuper I,impAPer Y,baseimpo Y,razon Y,  descrip C(250),totpagodia Y, totperdia Y, sujaper Y,tabart C(100),campoart C(100),codiArt C(50), operacion C(100))"
 
 	&v_sentenciaCrea1 
 
@@ -1081,7 +1082,7 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 	v_razon      = datperc.razon
 	v_pnombre    = datperc.detalle
 	v_baseimpon  = datperc.baseimpon
-	v_idtipopago = datperc.idtipopago
+*	v_idtipopago = datperc.idtipopago
 
 	* cierro la conexion
 	= abreycierracon(varconexionF,"")
@@ -1116,9 +1117,12 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 		ENDCASE
 		
 		v_operacion = 'PERCEPCION IIBB ARBA'
-		INSERT INTO &p_nomTabRes (entidad,idimpuper,impAPer,baseimpo,razon, idtipopago, descrip,totpagodia, totperdia, sujaper,tabart,campoart,codiArt, operacion) ;
-							 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpon,v_razon, v_idtipopago, v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc,v_tablaIB,v_campoart, v_codigoREC,v_operacion  ) ;
-		
+*!*			INSERT INTO &p_nomTabRes (entidad,idimpuper,impAPer,baseimpo,razon, idtipopago, descrip,totpagodia, totperdia, sujaper,tabart,campoart,codiArt, operacion) ;
+*!*								 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpon,v_razon, v_idtipopago, v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc,v_tablaIB,v_campoart, v_codigoREC,v_operacion  ) ;
+
+			INSERT INTO &p_nomTabRes (entidad,idimpuper,impAPer,baseimpo,razon,  descrip,totpagodia, totperdia, sujaper,tabart,campoart,codiArt, operacion) ;
+							 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpon,v_razon,  v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc,v_tablaIB,v_campoart, v_codigoREC,v_operacion  ) ;
+
 
 		endif 
 	RETURN .T.
