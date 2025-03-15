@@ -11137,6 +11137,51 @@ PARAMETERS p_idFactura
 			ALTER table tablafactura ADD COLUMN errores C(254)
 			ALTER table tablafactura ADD COLUMN opcionales C(254)
 			ALTER table tablafactura ADD COLUMN fchvtopago C(8)
+			
+			
+			
+			IF TYPE('_SYSECHAARCA') == 'C' AND DTOS(DATE()) >= _SYSECHAARCA && Valido que la variable exista y que la fecha sea mayor o igual a la de la variable
+				ALTER table tablafactura ADD COLUMN mismonext C(1)			
+				ALTER table tablafactura ADD COLUMN condivarid I
+				
+				
+				v_mismonext  = "N"
+				SELECT tablafactura 
+				GO TOP 
+				
+				DO WHILE NOT EOF()
+				
+				
+					v_iva = tablafactura.iva
+					
+					DO CASE
+					CASE v_iva = 1 && IVA RESPONSABLE INSCRIPTO
+						SELECT tablafactura 
+						replace condivarid WITH  1, mismonext WITH  v_mismonext
+					CASE v_iva = 2 &&IVA RESPONSABLE MONOTRIBUTISTA
+						SELECT tablafactura 
+						replace condivarid WITH  6, mismonext WITH  v_mismonext
+					CASE v_iva = 3 &&EXENTO
+						SELECT tablafactura 
+						replace condivarid WITH  4, mismonext WITH  v_mismonext
+					CASE v_iva = 4 &&CONSUMIDOR FINAL
+						SELECT tablafactura 
+						replace condivarid WITH  5, mismonext WITH  v_mismonext
+					
+					OTHERWISE && SIN DEFINIR -> Le asigno 0
+						SELECT tablafactura 
+						replace condivarid WITH  0, mismonext WITH ""
+					ENDCASE
+				
+				
+				
+					SELECT tablafactura 
+					SKIP 1
+
+				ENDDO
+	
+			ENDIF 
+
 
 			tipoCompObj 	= CREATEOBJECT('tiposcomproclass')
 			v_tipoFA_MiPyme = tipoCompObj.getIdTipoCompro("FACTURA A MiPyMEs")
@@ -22317,7 +22362,7 @@ v_importeTot = 0.00
 
 *!*			sqlmatriz(1)=" select e.identper,e.entidad,e.idimpuret,e.enconvenio, i.detalle,i.razonin,i.baseimpon, i.idtipopago, i.funcion, i.razonnin "
 *!*			sqlmatriz(2)=" from entidadper e left join impupercepcion i on e.idimpuper = i.idimpuper "
-		sqlmatriz(1)=" select e.identper,e.entidad,e.idimpuper,e.enconvenio, i.detalle,i.razon,i.baseimpon, i.idtipopago, i.funcion "
+		sqlmatriz(1)=" select e.identper,e.entidad,e.idimpuper,e.enconvenio, i.detalle,i.razon,i.baseimpon,  i.funcion "
 		sqlmatriz(2)=" from entidadper e left join impupercepcion i on e.idimpuper = i.idimpuper "
 		sqlmatriz(3)=" where e.entidad = "+ALLTRIM(STR(p_entidad))
 		verror=sqlrun(vconeccion,"entidadper_sql")
@@ -22355,7 +22400,7 @@ v_importeTot = 0.00
 			SELECT &p_nomTabResu 
 			GO TOP 
 			
-			replace ALL impNeto WITH v_importeNeto, impIva WITH v_importeIva , impAper WITH 0.00, totAPagDia WITH 0.00, totPerDia WITH 0.00, sel WITH 0, sujaper WITH 0.00, ;
+			replace ALL impNeto WITH v_importeNeto, impIva WITH v_importeIva , impAper WITH 0.00, totAPagDia WITH 0.00, totPerDia WITH 0.00, sel WITH 1, sujaper WITH 0.00, ;
 						tabart WITH "", campoart WITH "", codiart WITH "", tipo WITH p_tipo, operacion WITH ""
 			
 			
@@ -22382,7 +22427,7 @@ v_importeTot = 0.00
  		
  		RETURN .T.
  	ELSE
- 		MESSAGEBOX("Hubo un problema al intentar aplicar percepciones",0+48+0,"Aplicar percepciones")
+ 		*MESSAGEBOX("Hubo un problema al intentar aplicar percepciones",0+48+0,"Aplicar percepciones")
  		RETURN .F.
  	ENDIF 
 
