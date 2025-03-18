@@ -143,3 +143,51 @@ CREATE TABLE  `entidadret` (
   `enconvenio` char(1) NOT NULL DEFAULT 'N',
   PRIMARY KEY (`identret`)
 ) ENGINE=InnoDB AUTO_INCREMENT=613 DEFAULT CHARSET=latin1;
+
+
+--20250318--
+
+-- TABLAS
+
+CREATE TABLE  `ajustesacopio` (
+  `idajustea` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `fecha` char(8) NOT NULL,
+  `monto` float(13,4) NOT NULL,
+  `observa` char(254) NOT NULL,
+  `opera` int(11) NOT NULL,
+  PRIMARY KEY (`idajustea`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 COLLATE=utf8mb4_general_ci;
+
+
+CREATE TABLE  `otsector` (
+  `idotsector` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idot` int(10) unsigned NOT NULL,
+  `idsector` int(10) unsigned NOT NULL,
+  `cantidad` double(13,2) NOT NULL,
+  `cantidaduf` double(13,2) NOT NULL,
+  PRIMARY KEY (`idotsector`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+CREATE TABLE  `sector` (
+  `idsector` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `sector` char(100) NOT NULL,
+  `descrip` char(250) NOT NULL,
+  PRIMARY KEY (`idsector`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+CREATE TABLE  `sectorcomp` (
+  `idseccomp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idsector` int(10) unsigned NOT NULL,
+  `idcomproba` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idseccomp`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--VISTAS
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW  `cumplidootsec` AS select `h`.`articulo` AS `articulo`,`h`.`detalle` AS `detalle`,`h`.`idot` AS `idot`,`s`.`idsector` AS `idsector`,sum(`h`.`cantidad`) AS `cantcump`,sum(`h`.`cantidaduf`) AS `cantufcump` from ((`cumplimentap` `p` left join `sectorcomp` `s` on(`p`.`idcomproba` = `s`.`idcomproba`)) left join `cumplimentah` `h` on(`p`.`idcump` = `h`.`idcump`)) group by `h`.`idot`,`s`.`idsector`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW  `otsectorpendiente` AS select `s`.`idsector` AS `idsector`,`s`.`idot` AS `idot`,`o`.`articulo` AS `articulo`,`o`.`idmate` AS `idmate`,`s`.`cantidad` AS `cantped`,`s`.`cantidaduf` AS `cantufped`,ifnull(`c`.`cantcump`,0.00) AS `cantcump`,ifnull(`c`.`cantufcump`,0.00) AS `cantufcump`,`s`.`cantidad` - ifnull(`c`.`cantcump`,0.00) AS `cantpend`,`s`.`cantidaduf` - ifnull(`c`.`cantufcump`,0.00) AS `cantufpend` from ((`otsector` `s` left join `ot` `o` on(`s`.`idot` = `o`.`idot`)) left join `cumplidootsec` `c` on(`s`.`idsector` = `c`.`idsector` and `s`.`idot` = `c`.`idot`));
