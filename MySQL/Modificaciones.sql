@@ -65,17 +65,16 @@ ALTER TABLE `cbasociadas` DROP PRIMARY KEY,
  ADD INDEX `Index_4`(`cuit`);
  
  --202502008--
- CREATE TABLE  `impupercepcion` (
+
+CREATE TABLE  `impupercepcion` (
   `idimpuper` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `detalle` char(200) NOT NULL,
-  `razon` int(10) unsigned NOT NULL,
+  `razon` double(10,2) NOT NULL,
   `baseimpon` double(13,2) NOT NULL,
-  `idtipopago` int(10) unsigned NOT NULL,
   `funcion` char(100) NOT NULL,
-  ADD COLUMN `idconcepto` INTEGER UNSIGNED NOT NULL,
-  PRIMARY KEY (`idimpuper`),
-  ADD INDEX `idconcepto`(`idconcepto`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=latin1;
+  `idconcepto` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idimpuper`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 ALTER TABLE `facturasimp` ADD INDEX `idfactura`(`idfactura`),
  ADD INDEX `impuesto`(`impuesto`),
@@ -104,7 +103,7 @@ CREATE TABLE `pntvoucher` (
   `fechaven` char(8) NOT NULL,
   `observa` char(200) NOT NULL,
   PRIMARY KEY (`idpntvou`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
 ALTER TABLE `otmovistockh` ADD COLUMN `lote` CHAR(50) NOT NULL DEFAULT ' ' AFTER `unidad`,
@@ -124,7 +123,7 @@ CREATE TABLE  `impuretencion` (
   `baseimponn` double(13,2) NOT NULL,
   `regimen` int(10) unsigned NOT NULL,
   PRIMARY KEY (`idimpuret`)
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
 CREATE TABLE  `entidadper` (
@@ -133,7 +132,7 @@ CREATE TABLE  `entidadper` (
   `idimpuper` int(10) unsigned NOT NULL,
   `enconvenio` char(1) NOT NULL DEFAULT 'N',
   PRIMARY KEY (`identper`)
-) ENGINE=InnoDB AUTO_INCREMENT=597 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
 CREATE TABLE  `entidadret` (
@@ -142,7 +141,7 @@ CREATE TABLE  `entidadret` (
   `idimpuret` int(10) unsigned NOT NULL,
   `enconvenio` char(1) NOT NULL DEFAULT 'N',
   PRIMARY KEY (`identret`)
-) ENGINE=InnoDB AUTO_INCREMENT=613 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
 --20250318--
@@ -185,6 +184,22 @@ CREATE TABLE  `sectorcomp` (
   `idcomproba` int(10) unsigned NOT NULL,
   PRIMARY KEY (`idseccomp`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+CREATE TABLE  `entidadesa` (
+  `identa` int(11) NOT NULL,
+  `entidad` int(11) DEFAULT NULL,
+  `articulo` char(50) DEFAULT NULL,
+  `idconcepto` int(11) DEFAULT NULL,
+  PRIMARY KEY (`identa`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE  `unidades` (
+  `unidad` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nombre` char(50) NOT NULL,
+  PRIMARY KEY (`unidad`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
 
 --VISTAS
 
