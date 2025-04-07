@@ -11140,7 +11140,7 @@ PARAMETERS p_idFactura
 			
 			
 			
-			IF TYPE('_SYSFECHAARCA') == 'C' AND DTOS(DATE()) >= _SYSFECHAARCA&& Valido que la variable exista y que la fecha sea mayor o igual a la de la variable
+
 				ALTER table tablafactura ADD COLUMN mismonext C(1)			
 				ALTER table tablafactura ADD COLUMN condivarid I
 				
@@ -11180,7 +11180,7 @@ PARAMETERS p_idFactura
 
 				ENDDO
 	
-			ENDIF 
+ 
 
 
 			tipoCompObj 	= CREATEOBJECT('tiposcomproclass')
