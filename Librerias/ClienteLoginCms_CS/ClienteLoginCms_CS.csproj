@@ -153,6 +153,9 @@
     <None Include="Web References\ar.gov.afip.servicios1\DummyResponse.datasource">
       <DependentUpon>Reference.map</DependentUpon>
     </None>
+    <None Include="Web References\ar.gov.afip.servicios1\FEActividadesResponse.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
     <None Include="Web References\ar.gov.afip.servicios1\FECAEAGetResponse.datasource">
       <DependentUpon>Reference.map</DependentUpon>
     </None>
@@ -232,10 +235,16 @@
     <None Include="Web References\ar.gov.afip.wswhomo\ConceptoTipoResponse.datasource">
       <DependentUpon>Reference.map</DependentUpon>
     </None>
+    <None Include="Web References\ar.gov.afip.wswhomo\CondicionIvaReceptorResponse.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
     <None Include="Web References\ar.gov.afip.wswhomo\DocTipoResponse.datasource">
       <DependentUpon>Reference.map</DependentUpon>
     </None>
     <None Include="Web References\ar.gov.afip.wswhomo\DummyResponse.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\ar.gov.afip.wswhomo\FEActividadesResponse.datasource">
       <DependentUpon>Reference.map</DependentUpon>
     </None>
     <None Include="Web References\ar.gov.afip.wswhomo\FECAEAGetResponse.datasource">

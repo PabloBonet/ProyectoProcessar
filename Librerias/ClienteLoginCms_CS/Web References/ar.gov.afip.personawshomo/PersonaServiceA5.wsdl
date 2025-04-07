@@ -42,6 +42,7 @@
           <xs:element minOccurs="0" maxOccurs="unbounded" name="caracterizacion" nillable="true" type="tns:caracterizacion" />
           <xs:element minOccurs="0" name="dependencia" type="tns:dependencia" />
           <xs:element minOccurs="0" name="domicilioFiscal" type="tns:domicilio" />
+          <xs:element minOccurs="0" name="esSucesion" type="xs:string" />
           <xs:element minOccurs="0" name="estadoClave" type="xs:string" />
           <xs:element minOccurs="0" name="fechaContratoSocial" type="xs:dateTime" />
           <xs:element minOccurs="0" name="fechaFallecimiento" type="xs:dateTime" />
@@ -123,7 +124,9 @@
       <xs:complexType name="impuesto">
         <xs:sequence>
           <xs:element minOccurs="0" name="descripcionImpuesto" type="xs:string" />
+          <xs:element minOccurs="0" name="estadoImpuesto" type="xs:string" />
           <xs:element minOccurs="0" name="idImpuesto" type="xs:int" />
+          <xs:element minOccurs="0" name="motivo" type="xs:string" />
           <xs:element minOccurs="0" name="periodo" type="xs:int" />
         </xs:sequence>
       </xs:complexType>

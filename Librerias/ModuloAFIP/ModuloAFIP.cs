@@ -470,15 +470,43 @@ namespace ModuloAFIP
                             case "IVA":
                                 AlicuotaIvaClass alicuota = new AlicuotaIvaClass();
 
-                                alicuota.ID = id;
-                                alicuota.Importe = importe;
-                                alicuota.BaseImp = baseImp;
+                               
+                                UtilClass.EscribirArchivoLog("ID: "+id, _strLog, true);
 
-                                comprobante.agruparAlicuotaIva(alicuota);
+                                if (id > 2)
+                                {
+                                    alicuota.ID = id;
+                                    alicuota.Importe = importe;
+                                    alicuota.BaseImp = baseImp;
+
+                                    comprobante.agruparAlicuotaIva(alicuota);
+                                }
+                                else
+                                {
+                                    if (id == 1) //IVA - NO GRAVADO
+                                    {
+                                        UtilClass.EscribirArchivoLog("ID(1)", _strLog, true);
+                                        totalNoGrav += baseImp;
+                                        comprobante.ImporteNeto -= totalNoGrav;
+
+                                        UtilClass.EscribirArchivoLog("totalNoGrav: " + totalNoGrav, _strLog, true);
+
+                                        UtilClass.EscribirArchivoLog(" comprobante.ImporteNeto: " + comprobante.ImporteNeto, _strLog, true);
+
+                                    }
+
+
+                                    if (id == 2) //IVA - EXENTO
+                                    {
+                                        UtilClass.EscribirArchivoLog("ID(2)" + id, _strLog, true);
+                                        totalImpEx += baseImp;
+                                    }
+
+                                }
 
                                 totalIVA += importe;
-                                
-                                     
+                                UtilClass.EscribirArchivoLog("totalIVA" + totalIVA, _strLog, true);
+
                                 break;
                             case "TRIBUTO":
 
@@ -520,7 +548,8 @@ namespace ModuloAFIP
                     comprobante.ImporteTotConc = totalNoGrav;
                     comprobante.ImporteTotal = Double.Parse((compXML.SelectSingleNode("//total").InnerText).Replace('.', ','));
                     comprobante.IDMoneda = compXML.SelectSingleNode("//idmoneda").InnerText;
-              
+                    comprobante.CanMisMonExt = compXML.SelectSingleNode("//mismonext").InnerText;
+                    comprobante.CondicionIVAReceptorId = Int32.Parse(compXML.SelectSingleNode("//condivarid").InnerText); 
                     comprobante.CotizacionMoneda = Double.Parse((compXML.SelectSingleNode("//cotmoneda").InnerText).Replace('.', ','));
                     comprobante.Concepto = Int32.Parse(compXML.SelectSingleNode("//concepto").InnerText);
                     comprobante.Resultado = compXML.SelectSingleNode("//resultado").InnerText;
@@ -907,6 +936,38 @@ namespace ModuloAFIP
             return r;
         }
 
+
+        /// <summary>
+        /// Obtiene el último numero autorizado para ese tipo de comprobante
+        /// </summary>
+        /// <param name="ptoVta">Número de Tipo de punto de venta a usar</param>
+        /// <returns>Retorno: El número de comprobante</returns>
+        public int ObtenerUltNroComp(int ptoVta, int tipoComp = 1)
+        {
+
+            int utl_nro = 0;
+
+            try
+            {
+                utl_nro = _gestionFE.UltimoNroComp(_ticketAcceso, ptoVta, tipoComp);
+                _error = false;
+                _errores = new List<string>();
+
+            }
+            catch (Exception e)
+            {
+                utl_nro = -1;
+                _error = true;
+                _errores.Add(e.Message);
+                UtilClass.EscribirArchivoLog(e.Message, _strLog);
+
+            }
+
+            return utl_nro;
+        }
+
+
+
         /// <summary>
         /// Autoriza el comprobante cuyos datos están en un xml ubicado en 'ubicadoComp' con el ID pasado como parámetro
         /// </summary>
@@ -1031,7 +1092,7 @@ namespace ModuloAFIP
                         else
                         {
 
-                            UtilClass.EscribirArchivoLog("COMPROBANTE NULL\n", _strLog);
+                            UtilClass.EscribirArchivoLog("COMPROBANTE RESPUESTA NULL\n", _strLog);
 
                             retorno = false;
                         }
@@ -1039,7 +1100,7 @@ namespace ModuloAFIP
                     }
                     else
                     {
-                       
+                        UtilClass.EscribirArchivoLog("COMPROBANTE NULL\n", _strLog);
                         retorno = false;
                     }
 

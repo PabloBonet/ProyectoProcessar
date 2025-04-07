@@ -10,6 +10,8 @@ using System.Reflection;
 using System.Runtime.Remoting;
 using EntidadesClass;
 using System.Net;
+using Microsoft.CSharp;
+using System.CodeDom.Compiler;
 
 namespace ModuloAFIP
 {
@@ -768,11 +770,11 @@ namespace ModuloAFIP
 
                 double compImpIvaTot = comprobante.ImporteIva; // importe total del iva
                 detReq.ImpIVA = Math.Round(compImpIvaTot, 2);
-
+                
                 inf = "ImpTotal: " + detReq.ImpTotal + "\n";
                 UtilClass.EscribirArchivoLog(inf, _strLog, true);
 
-                inf = "compImpTotConc: " + detReq.ImpNeto + "\n";
+                inf = "compImpTotConc: " + detReq.ImpTotConc + "\n";
                 UtilClass.EscribirArchivoLog(inf, _strLog, true);
 
                 inf = "ImpNeto: " + detReq.ImpNeto + "\n";
@@ -820,6 +822,57 @@ namespace ModuloAFIP
                 detReq.MonId = comprobante.IDMoneda;
                
                 detReq.MonCotiz = comprobante.CotizacionMoneda;
+                detReq.CondicionIVAReceptorId = comprobante.CondicionIVAReceptorId;
+                detReq.MonCotizSpecified = true;
+                if (comprobante.CanMisMonExt != "")
+                {
+                    detReq.CanMisMonExt = comprobante.CanMisMonExt;
+                }
+
+                /*
+                 * 
+                DateTime fechaAct = DateTime.Now;
+                DateTime fechaLimite = new DateTime(2025, 4, 15);
+                
+                
+                if(fechaAct >= fechaLimite)
+                {
+                    string codigo = @"
+                                   detReq.CondicionIVAReceptorId = comprobante.CondicionIVAReceptorId;
+
+                                if (comprobante.CanMisMonExt != """")
+                                {
+                                    detReq.CanMisMonExt = comprobante.CanMisMonExt;
+                                }
+                                ";
+
+                    CSharpCodeProvider provider = new CSharpCodeProvider();
+                    CompilerParameters parametros = new CompilerParameters
+                    {
+                        GenerateExecutable = true,
+                        GenerateInMemory = true
+                    };
+                    parametros.ReferencedAssemblies.Add("System.dll");
+
+                    CompilerResults resultados = provider.CompileAssemblyFromSource(parametros, codigo);
+
+                    if (resultados.Errors.Count == 0)
+                    {
+                        Assembly ensamblado = resultados.CompiledAssembly;
+                        MethodInfo metodo = ensamblado.EntryPoint;
+                        metodo.Invoke(null, null);
+                    }
+                    else
+                    {
+                        foreach (CompilerError error in resultados.Errors)
+                        {
+                            Console.WriteLine($"Error: {error.ErrorText}");
+                        }
+                    }
+                }
+                
+                */
+
 
                 detReq.ImpTrib = comprobante.ImporteTributo;
                 
@@ -1107,7 +1160,7 @@ namespace ModuloAFIP
                 /*** Detalle de la solicitud del comprobante ***/
                 ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAEDetRequest detReq = new ClienteLoginCms_CS.ar.gov.afip.servicios1.FECAEDetRequest();
 
-
+                
                 detReq.Concepto = 1; //1: Productos
                 long v_docNro = 0;
 /*
@@ -1202,6 +1255,29 @@ namespace ModuloAFIP
                 detReq.MonId = comprobante.IDMoneda;
               
                 detReq.MonCotiz = comprobante.CotizacionMoneda;
+                               
+
+                /*
+                 MODIFICAR este gragmento de código despues que se actualice el servicio web de afip
+                 */
+                DateTime fechaAct = DateTime.Now;
+                DateTime fechaLimite = new DateTime(2025, 4, 15);
+                
+                
+                if(fechaAct >= fechaLimite)
+                {
+                    detReq.CondicionIVAReceptorId = comprobante.CondicionIVAReceptorId;
+                    detReq.MonCotizSpecified = true;
+                    if (comprobante.CanMisMonExt != "")
+                    {
+                        detReq.CanMisMonExt = comprobante.CanMisMonExt;
+                    }
+                }
+                
+            
+
+               
+                
 
                 detReq.ImpTrib = comprobante.ImporteTributo;
 
@@ -1362,8 +1438,8 @@ namespace ModuloAFIP
 
                 reqAut = CorregirImpuestos(reqAut);
 
-
-
+                
+                
             }
             catch (Exception e)
             {
@@ -1740,6 +1816,116 @@ namespace ModuloAFIP
         }
 
 
+
+        /// <summary>
+        /// Prueba el servicio de AFIP
+        /// </summary>
+        /// <param name="ticketAcceso">Ticket de Acceso</param>
+        /// <param name="ptoVta">Pto de Vta que se utiliza</param>
+        /// <param name="tipoComp">Tipo de comprobante a probar ( por defecto es 1 {Factura A}) </param>
+        /// <returns>Retorna el último numero de comproabnte</returns>
+        public int UltimoNroComp(LoginTicket ticketAcceso, int ptoVta, int tipoComp = 1)
+        {
+           int ult_comp = -1;
+            if (ticketAcceso != null) // Existe un ticket de acceso
+            {
+                try
+                {
+                    if (_produccion) // Modo Producción
+                    {
+
+
+                        ClienteLoginCms_CS.ar.gov.afip.servicios1.FERecuperaLastCbteResponse ultimoComprobante = null;
+                        //Asigno los valores de autorización: CUIT, SIGN y Token
+                        ClienteLoginCms_CS.ar.gov.afip.servicios1.FEAuthRequest autorizacionPro = new ClienteLoginCms_CS.ar.gov.afip.servicios1.FEAuthRequest();
+
+                        string cuit = UtilClass.CambiarFormatoCuitSinGuiones(_cuitEmisor);
+                        long cuitLong = 0;
+                        if (long.TryParse(cuit, out cuitLong))
+                        {
+                            autorizacionPro.Cuit = cuitLong;
+                            autorizacionPro.Sign = ticketAcceso.Sign;
+                            autorizacionPro.Token = ticketAcceso.Token;
+                        }
+                        else
+                        {
+                            Exception errorExc = new Exception("No se pudo convertir el cuit a Long");
+                            throw errorExc;
+                        }
+
+
+                        ultimoComprobante = ObtenerUltimoComprobanteRegistrado(autorizacionPro, ptoVta, tipoComp);
+
+
+                        ult_comp = ultimoComprobante.CbteNro;
+
+                        
+
+                    }
+                    else // Modo Prueba
+                    {
+
+                        ClienteLoginCms_CS.ar.gov.afip.wswhomo.FERecuperaLastCbteResponse ultimoComprobante = null;
+                        //Asigno los valores de autorización: CUIT, SIGN y Token
+                        ClienteLoginCms_CS.ar.gov.afip.wswhomo.FEAuthRequest autorizacionPru = new ClienteLoginCms_CS.ar.gov.afip.wswhomo.FEAuthRequest();
+
+                        string cuit = UtilClass.CambiarFormatoCuitSinGuiones(_cuitEmisor);
+                        long cuitLong = 0;
+                        if (long.TryParse(cuit, out cuitLong))
+                        {
+                            autorizacionPru.Cuit = cuitLong;
+                            autorizacionPru.Sign = ticketAcceso.Sign;
+                            autorizacionPru.Token = ticketAcceso.Token;
+                        }
+                        else
+                        {
+                            Exception errorExc = new Exception("No se pudo convertir el cuit a Long");
+                            throw errorExc;
+                        }
+
+
+                        ultimoComprobante = ObtenerUltimoComprobanteRegistrado(autorizacionPru,  ptoVta, tipoComp);
+
+
+                        ult_comp = ultimoComprobante.CbteNro;
+                    }
+
+                }
+                catch (Exception e)
+                {
+
+                    string mensaje;
+
+                    mensaje = "Error al obtner el último numero de el servicio de AFIP. " + e.Message + "\n";
+
+                    //Escribo en el archivo
+
+                    // UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog);
+                    UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
+                    //agregarObservaciones(mensaje, true);
+                    Exception ex = new Exception(mensaje);
+                    throw ex;
+                }
+
+            }
+            else
+            {
+                string mensaje;
+
+                mensaje = "Error al obtener el útltimo numero autorizado. \n El ticket de acceso es NULO: Compruebe la configuración del Ticket.\n";
+
+                //Escribo en el archivo
+
+                // UtilClass.EscribirArchivoLog(mensaje, _archivoLog, _flujoEscritura, _strLog);
+                UtilClass.EscribirArchivoLog(mensaje, _strLog, true);
+                //agregarObservaciones(mensaje, true);
+                Exception e = new Exception(mensaje);
+                throw e;
+            }
+            return ult_comp;
+        }
+
+
         /// <summary>
         /// Autoriza el comprobante que coincida con el ID del comprobante usando el ticket de acceso pasado como parámetro
         /// </summary>
@@ -1798,8 +1984,8 @@ namespace ModuloAFIP
             UtilClass.EscribirArchivoLog("ImpTotConc: " + reqAut.FeDetReq.First().ImpTotConc, _strLog, true);
             UtilClass.EscribirArchivoLog("ImpTrib: " + reqAut.FeDetReq.First().ImpTrib, _strLog, true);
             UtilClass.EscribirArchivoLog("ImpTotal: " + reqAut.FeDetReq.First().ImpTotal, _strLog, true);
-           
 
+     
 
             ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva[] listaIva = reqAut.FeDetReq.First().Iva;
             UtilClass.EscribirArchivoLog("Despues de obtener lista Iva\n", _strLog, true);
@@ -1815,7 +2001,7 @@ namespace ModuloAFIP
                 UtilClass.EscribirArchivoLog("ANtes de IF cant lista\n", _strLog, true);
                 if (cantLista > 0)
                 {
-
+                    
                     UtilClass.EscribirArchivoLog("CantLista > 0\n", _strLog, true);
                     // Corrijo los valores de impuestos
                     foreach (ClienteLoginCms_CS.ar.gov.afip.wswhomo.AlicIva i in listaIva)
@@ -1825,32 +2011,36 @@ namespace ModuloAFIP
                         int id = i.Id;
                         double importe = i.Importe;
 
-                        double razon = ObtenerRazonImpuesto(id);
-
-                        razon = razon / 100.00;
-
-                        UtilClass.EscribirArchivoLog("BaseImp Ant: " + baseImp, _strLog, true);
-                        UtilClass.EscribirArchivoLog("importe Ant: " + importe, _strLog, true);
-
-                        if (razon >= 0)
+                        if (id != 1 && id != 2) // SI ES DISTINTO DE IVA-NO GRAVADO e IVA-EXENTO calculo
                         {
+                            double razon = ObtenerRazonImpuesto(id);
+
+                            razon = razon / 100.00;
+
+                            UtilClass.EscribirArchivoLog("BaseImp Ant: " + baseImp, _strLog, true);
+                            UtilClass.EscribirArchivoLog("importe Ant: " + importe, _strLog, true);
+
+                            if (razon >= 0)
+                            {
 
 
-                            double totalImpuesto = baseImp + importe;
+                                double totalImpuesto = baseImp + importe;
 
-                            double nuevoNeto = Math.Round((totalImpuesto / (1 + razon)), 2);
-                            double nuevoImpuesto = Math.Round((totalImpuesto - nuevoNeto), 2);
+                                double nuevoNeto = Math.Round((totalImpuesto / (1 + razon)), 2);
+                                double nuevoImpuesto = Math.Round((totalImpuesto - nuevoNeto), 2);
 
-                            i.BaseImp = nuevoNeto;
-                            i.Importe = nuevoImpuesto;
+                                i.BaseImp = nuevoNeto;
+                                i.Importe = nuevoImpuesto;
 
-                            UtilClass.EscribirArchivoLog("BaseImp Nue: " + nuevoNeto, _strLog, true);
-                            UtilClass.EscribirArchivoLog("importe Nue: " + nuevoImpuesto, _strLog, true);
+                                UtilClass.EscribirArchivoLog("BaseImp Nue: " + nuevoNeto, _strLog, true);
+                                UtilClass.EscribirArchivoLog("importe Nue: " + nuevoImpuesto, _strLog, true);
 
-                            nuevoTotalIVA += nuevoImpuesto;
-                            nuevoNetoIVA += nuevoNeto;
+                                nuevoTotalIVA += nuevoImpuesto;
+                                nuevoNetoIVA += nuevoNeto;
 
+                            }
                         }
+                        
 
 
 

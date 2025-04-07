@@ -45,6 +45,9 @@ namespace EntidadesClass
         private List<string> _eventosAFIP;
         private List<string> _observacionesAFIP;
         private List<OpcionalComprobanteClass> _listaOpciones;
+        private int _condicionIVAReceptorId;
+        private string _canMisMonExt;
+
 
 
 
@@ -383,14 +386,34 @@ namespace EntidadesClass
 
         }
 
+        
+       
+        /// <summary>
+        /// Retorna y asigna la condicion de iva del receptor
+        /// </summary>
+        public int CondicionIVAReceptorId
+        {
+            get { return _condicionIVAReceptorId; }
+            set { _condicionIVAReceptorId = value; }
+        }
 
-    #endregion
+        /// <summary>
+        /// Retorna y asigna si el comprobante se cancela en la misma moneda del comprobante (moneda extranjera)
+        /// </summary>
+        public string CanMisMonExt
+        {
+            get { return _canMisMonExt; }
+            set { _canMisMonExt = value; }
+        }
 
-    #region Constructor
-    /// <summary>
-    /// Constructor por defecto de la clase ComprobanteClass
-    /// </summary>
-    public ComprobanteClass()
+
+        #endregion
+
+        #region Constructor
+        /// <summary>
+        /// Constructor por defecto de la clase ComprobanteClass
+        /// </summary>
+        public ComprobanteClass()
         {
 
             _ptoVta = 0;
@@ -423,6 +446,8 @@ namespace EntidadesClass
             _eventosAFIP = new List<string>();
             _observacionesAFIP = new List<string>();
             _listaOpciones = new List<OpcionalComprobanteClass>();
+            _condicionIVAReceptorId = 0;
+            _canMisMonExt = "";
         }
 
         #endregion

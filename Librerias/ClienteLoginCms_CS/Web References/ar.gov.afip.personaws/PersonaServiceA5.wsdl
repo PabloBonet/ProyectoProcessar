@@ -42,6 +42,7 @@
           <xs:element minOccurs="0" maxOccurs="unbounded" name="caracterizacion" nillable="true" type="tns:caracterizacion" />
           <xs:element minOccurs="0" name="dependencia" type="tns:dependencia" />
           <xs:element minOccurs="0" name="domicilioFiscal" type="tns:domicilio" />
+          <xs:element minOccurs="0" name="esSucesion" type="xs:string" />
           <xs:element minOccurs="0" name="estadoClave" type="xs:string" />
           <xs:element minOccurs="0" name="fechaContratoSocial" type="xs:dateTime" />
           <xs:element minOccurs="0" name="fechaFallecimiento" type="xs:dateTime" />
