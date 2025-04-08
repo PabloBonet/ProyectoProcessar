@@ -2263,8 +2263,11 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 				v_version = 1					
 				v_moneda = "PES"
 				v_cotizacion = 1
-				v_tipoDoc	= 80
-	
+				**v_tipoDoc	= 80
+				v_tipoDoc = factu.tipodoc
+				
+				
+				
 				v_cuitEmpSG	 	= ALLTRIM(STRTRAN(v_CuitEmpresa,'-',''))
 				** Armo la cadena JSON  **
 				versionFCompro = ALLTRIM(STR(v_version))
@@ -2281,15 +2284,27 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 	            monedastr = ALLTRIM(v_moneda)
                 cotizacionstr = ALLTRIM(STR(v_cotizacion,13,2))
 	
-                tipoDocstr = ALLTRIM(STR(v_tipoDoc))
-                cuitC = ALLTRIM(STRTRAN(factu.cuit,'-',''))
+                tipoDocstr = ALLTRIM(v_tipoDoc)
+                docRec = ""
+                DO CASE
+	                CASE ALLTRIM(v_tipoDoc) == "80" && CUIT
+						docRec = ALLTRIM(STRTRAN(factu.cuit,'-',''))
+	                CASE ALLTRIM(v_tipoDoc) == "86" && CUIL
+						docRec = ALLTRIM(STRTRAN(factu.cuit,'-',''))
+	                CASE ALLTRIM(v_tipoDoc) == "96" && DNI
+						docRec = ALLTRIM(STR(factu.dni))
+	                OTHERWISE
+						docRec = ALLTRIM(STRTRAN(factu.cuit,'-',''))
+
+                ENDCASE
+                
 	
 				cae_fe = ALLTRIM(v_cespcae)
 										
 					v_json1 = ' { "ver":' + versionFCompro+ ',"fecha":"' + fechaCompro +'","cuit":' + cuitE+ ',"ptoVta":' + ptovta_fe + ',"tipoCmp":' + idtipocbte_fe
 					v_json2 = ',"nroCmp":' + numerostr  + ',"importe":' + imp_totstr + ',"moneda":"' + monedastr + '","ctz":' + cotizacionstr + ',"tipoDocRec":' + tipoDocstr 
-					v_json3 = ',"nroDocRec":' + cuitC + ',"tipoCodAut":"E"' + ',"codAut":' + cae_fe + ' }'
-														
+					v_json3 = ',"nroDocRec":' + docRec + ',"tipoCodAut":"E"' + ',"codAut":' + cae_fe + ' }'
+
 				v_json	= ALLTRIM(ALLTRIM(v_json1)+ ALLTRIM(v_json2)+ ALLTRIM(v_json3))
 	
 			
