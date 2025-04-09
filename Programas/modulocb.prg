@@ -1970,8 +1970,8 @@ FUNCTION ImportarCobros
 		IF NOT EOF()
 			v_nombArchivoRet = ALLTRIM(cbcobrador_sql.narchivor)
 
-			* v_ultSecCob = calculaSecMaxCobrador(p_idcbcobra)
-			v_ultSecCob = cbcobrador_sql.esecuencia
+			 v_ultSecCob = calculaSecMaxCobrador(p_idcbcobra)
+			*v_ultSecCob = cbcobrador_sql.esecuencia
 	
 			v_longArcRet = LEN(v_nombArchivoRet)
 			
