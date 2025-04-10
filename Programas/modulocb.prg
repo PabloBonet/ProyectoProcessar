@@ -147,6 +147,7 @@ FUNCTION ImportarComprobantes
 						** Código de secuencia de envío **
 						ALINES(ARR_eesecuencia,v_eesecuencia,'-')
 						COD_eesecuencia = SUBSTR(v_linea,VAL(ARR_eesecuencia(1)),VAL(ARR_eesecuencia(2)))
+					
 						
 						IF ALLTRIM(v_empresaid) == ALLTRIM(COD_eempresaid) AND ALLTRIM(v_secArc) == ALLTRIM(COD_eesecuencia) 
 							
@@ -1418,7 +1419,8 @@ FUNCTION ExportarComprobantes
 				*** Código Del Empresa ***
 				*************************************					
 				
-				v_empresaid 	= ALLTRIM(cbcobrador_sql.narchivoe)
+				*v_empresaid 	= ALLTRIM(cbcobrador_sql.narchivoe)
+				v_empresaid 	= ALLTRIM(cbcobrador_sql.narchivor)
 				v_eempresaid	= cbcobrador_sql.eempresaid
 				
 				ALINES(ARR_eempresaid,v_eempresaid,'-')
@@ -2639,7 +2641,7 @@ FUNCTION ImputarCobros
 				lamatriz6(2,1)='idfactura'
 				lamatriz6(2,2)= ALLTRIM(STR(v_idfactura ))
 				lamatriz6(3,1)='idcbcobra'
-				lamatriz6(3,2)= ALLTRIM(STR(v_idcobro))
+				lamatriz6(3,2)= ALLTRIM(STR(v_idcbcobra))
 				lamatriz6(4,1)=	'idcobro'
 				lamatriz6(4,2)=	ALLTRIM(STR(v_idtipoPago))		
 				lamatriz6(5,1)='secuencia'
