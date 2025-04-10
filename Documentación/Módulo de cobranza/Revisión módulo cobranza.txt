@@ -1,0 +1,24 @@
+Modificaciones
+
+*processar_cosemarm
+
+Realizar la consulta:
+	SELECT max(secuencia) FROM processar_cosemarm.cbcobrados where idcbcobra = 1
+
+	El numero que indica es la ultima secuencia que se recibio en el archivo .ret.
+Ej. A mi me genero el archivo: 000100004.ret
+Al hacer la consulta me daba 6 porque seguro habia cobros que quedaron mal de las pruebas o de los errores que dio.
+Le puse cero para quitarlos.
+update processar_cosemarm.cbcobrados set secuencia = 0 where idcbcobra = 1 and secuencia >= 4;
+
+Y me lo cargó sin problemas, me dio unos errores pero parece ser del backup (que me dio error al cargar y algunos no me cargo)
+
+*processar_mutualm
+Modifiqué el siguiente campo:
+
+	cbasociadas.empresaid = '0004' (Mismo numero que processar_cosemarm.cbcobrador.narchivor)
+
+*processar_mutualr
+Modifiqué el siguiente campo:
+
+	cbasociadas.empresaid = '0003'
