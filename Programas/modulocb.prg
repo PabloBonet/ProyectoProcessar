@@ -2643,7 +2643,7 @@ FUNCTION ImputarCobros
 				lamatriz6(3,1)='idcbcobra'
 				lamatriz6(3,2)= ALLTRIM(STR(v_idcbcobra))
 				lamatriz6(4,1)=	'idcobro'
-				lamatriz6(4,2)=	ALLTRIM(STR(v_idtipoPago))		
+				lamatriz6(4,2)=	ALLTRIM(STR(v_idcobro))		
 				lamatriz6(5,1)='secuencia'
 				lamatriz6(5,2)= ALLTRIM(STR(v_secuencia))
 				lamatriz6(6,1)= 'fechacobro'
