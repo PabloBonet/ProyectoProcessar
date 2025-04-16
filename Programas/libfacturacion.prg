@@ -178,7 +178,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	*/*************
 	* Obtengo las Los grupos de Sepelios para agregar al detalle de la factura 
 	*/
-	sqlmatriz(1)=" SELECT  identidadh ,group_concat(concat('  ',parentesco,':',apellido,' ',nombre)) as observa1  FROM gruposepelio group by identidadh "
+	sqlmatriz(1)=" SELECT  identidadh ,group_concat(concat('  ',parentesco,':',apellido,' ',nombre)) as observa1  FROM gruposepelio where fechabaja = '' group by identidadh "
 	verror=sqlrun(vconeFacturar,"gruposepelio_sql"+vartmp)
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Grupos de Sepelios para facturar ",0+48+0,"Error")

@@ -2725,8 +2725,11 @@ PARAMETERS pcb_EmpresaID, pcb_EmpresaSID, pcb_IdFactura
 
 	vconeccionCB=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
 
-	v_llave = ALLTRIM(pcb_EmpresaID)+"Pr0$$3"+ALLTRIM(pcb_EmpresaSID)
-	sqlmatriz(1)=" Select host, port, schemma, aes_decrypt(usuario,'"+v_llave+"') as usuario, aes_decrypt(password,'"+v_llave+"') as password, controldb from cbasociadas where TRIM(empresaid) = '"+ALLTRIM(pcb_EmpresaID)+"' and  TRIM(subcodid) = '"+ALLTRIM(pcb_EmpresaSID)+"'"
+*!*		v_llave = ALLTRIM(pcb_EmpresaID)+"Pr0$$3"+ALLTRIM(pcb_EmpresaSID)
+		v_llave = "Pr0$$3"+ALLTRIM(pcb_EmpresaSID)
+	
+	
+	sqlmatriz(1)=" Select host, port, schemma, aes_decrypt(TRIM(usuario),'"+v_llave+"') as usuario, aes_decrypt(TRIM(password),'"+v_llave+"') as password, controldb from cbasociadas where TRIM(narchivoe) = '"+ALLTRIM(pcb_EmpresaID)+"' and  TRIM(subcodid) = '"+ALLTRIM(pcb_EmpresaSID)+"'"
 	verror=sqlrun(vconeccionCB,"asociadactrl_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la Empresa Asociada para Control de Saldos ",0+48+0,"Error")
@@ -2735,6 +2738,7 @@ PARAMETERS pcb_EmpresaID, pcb_EmpresaSID, pcb_IdFactura
 	ENDIF
 	SELECT asociadactrl_sql
 	GO TOP 
+
 	IF EOF() THEN 
 		pcb_Retorno = 'N'
 	ELSE
