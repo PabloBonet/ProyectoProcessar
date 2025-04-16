@@ -3149,11 +3149,13 @@ PARAMETERS pcb_EmpresaID, pcb_archivo, pcb_operacion
 			
 			SELECT cbcobrador_sql
 			GO  TOP 
-			v_maxSecuencia = cbcobrador_sql.idcbcobra
+			*v_maxSecuencia = cbcobrador_sql.idcbcobra
 			*v_maxSecuencia = calculaSecuenciaMaxCob(v_idcbcobrador)
+			v_idcbcobra = cbcobrador_sql.idcbcobra
 			
-			v_maxSecuencia = cbcobrador_sql.esecuencia
+			*v_maxSecuencia = cbcobrador_sql.esecuencia
 			
+			v_maxSecuencia = calculaSecMaxCobrador(v_idcbcobra)
 				IF v_maxSecuencia < 0
 					v_secuenciastr = '00000'
 					
