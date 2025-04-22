@@ -2084,7 +2084,8 @@ FUNCTION ImportarCobros
 			IF VAL(COD_r0secuencia) <> VAL(v_secArc)
 			
 			ENDIF 
-			IF VAL(COD_r0secuencia) <= v_ultSecCob 
+		*	IF VAL(COD_r0secuencia) <= v_ultSecCob 
+			IF VAL(COD_r0secuencia) < v_ultSecCob 
 				MESSAGEBOX("La secuencia del archivo de imporación es Menor o Igual a la registrada",0+48+0,"Error al Importar cobros")
 				RETURN 0
 			
@@ -2365,14 +2366,64 @@ FUNCTION ImputarCobros
 	
 	*** Creo un comprobante del tipo de recibo por cada factura ***
 	** El recibo se hace por el total del cobro. EN caso de que el monto del recibo sea mayor al saldo de la factura, el exedente queda a cuenta **
-		
-	SELECT &p_tablacom
 	
+	
+	SELECT &p_tablacom
+	GO top
+	v_cant_regrec = reccount() 
+ 	
+ 	*** Intento reservar el ID de recibo antes de grabar los datos ***
+ 	v_correcto = .F.
+ 	v_intentos = 0
+ 	
+ 	DO WHILE v_correcto = .F. AND v_intentos < 10
+
+	
+		** Reservo el ID **
+		v_idregsinuso = maxnumeroidx("idrecibo", "I", "recibos",1)	
+		v_reservarId = maxnumeroidx("idrecibo", "I", "recibos",v_cant_regrec)
+		v_idrecibo = v_idregsinuso
+		 
+		** Reservo el número **
+*!*			v_numrecsinuso = maxnumerocom(v_recibo_idcomproba ,v_recibo_pventa ,1)
+*!*			v_reservanum = maxnumerocom(v_recibo_idcomproba ,v_recibo_pventa ,v_cant_regrec)
+*!*			v_recibo_numero = v_numrecsinuso
+
+		sqlmatriz(1)=" select idrecibo "
+		sqlmatriz(2)=" from recibos " 
+		sqlmatriz(3)=" where idrecibo >= "+ALLTRIM(STR((v_idrecibo+1)))+" and idrecibo <= "+ALLTRIM(STR((v_idrecibo+1+v_cant_regrec)))
+	
+		verror=sqlrun(vconeccionF,"cbcontrolreci_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al controlar el ID del recibo ",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+		
+		SELECT cbcontrolreci_sql
+		GO top
+		
+		IF NOT EOF()
+			** Existen recibos con ese valor **
+		ELSE
+			** NO existen recibos con el id **
+			v_correcto = .t.
+		ENDIF 
+		
+		v_intentos = v_intentos + 1
+ 	ENDDO
+ 	
+ 		
+	
+	
+	
+	
+	SELECT &p_tablacom
 	GO TOP 
 	
 	DO WHILE NOT EOF()
-		
-		v_idrecibo = maxnumeroidx("idrecibo", "I", "recibos",1)
+		v_idrecibo = v_idrecibo + 1 
+		v_recibo_numero = v_recibo_numero + 1
+		*v_idrecibo = maxnumeroidx("idrecibo", "I", "recibos",1)
 
 			SELECT comprobareci
 
@@ -2410,7 +2461,9 @@ FUNCTION ImputarCobros
 	
 			v_recibo_idcomproba = v_idcomp
 			v_recibo_pventa 	= v_idpvta
+			
 			v_recibo_numero = maxnumerocom(v_recibo_idcomproba ,v_recibo_pventa ,1)
+			
 			v_fecha = DTOS(DATE())		
 			
 			v_entidadRecibo = &p_tablacom..ident
