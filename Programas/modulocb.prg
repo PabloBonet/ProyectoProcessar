@@ -74,6 +74,7 @@ FUNCTION ImportarComprobantes
 			    RETURN 0	
 			ENDIF 
 						
+			*IF v_ultSecEnv >= VAL(v_secArc)
 			IF v_ultSecEnv >= VAL(v_secArc)
 				MESSAGEBOX("El número de secuencia del archivo es menor o igual al úlimo ingresado",0+48+0,"Error al Importar comprobantes")
 			    RETURN 0	
@@ -2375,15 +2376,20 @@ FUNCTION ImputarCobros
  	*** Intento reservar el ID de recibo antes de grabar los datos ***
  	v_correcto = .F.
  	v_intentos = 0
- 	
- 	DO WHILE v_correcto = .F. AND v_intentos < 10
+ 	v_cantMaxIntentos = 10
+ 	DO WHILE v_correcto = .F. AND v_intentos < v_cantMaxIntentos 
 
 	
 		** Reservo el ID **
 		v_idregsinuso = maxnumeroidx("idrecibo", "I", "recibos",1)	
 		v_reservarId = maxnumeroidx("idrecibo", "I", "recibos",v_cant_regrec)
 		v_idrecibo = v_idregsinuso
-		 
+*!*			 MESSAGEBOX(v_cant_regrec)
+*!*			 MESSAGEBOX(v_correcto)
+*!*			 MESSAGEBOX(v_intentos)
+*!*			 MESSAGEBOX(v_idregsinuso)
+*!*			 MESSAGEBOX(v_reservarId)
+*!*			 MESSAGEBOX(v_idrecibo)
 		** Reservo el número **
 *!*			v_numrecsinuso = maxnumerocom(v_recibo_idcomproba ,v_recibo_pventa ,1)
 *!*			v_reservanum = maxnumerocom(v_recibo_idcomproba ,v_recibo_pventa ,v_cant_regrec)
@@ -2412,9 +2418,15 @@ FUNCTION ImputarCobros
 		v_intentos = v_intentos + 1
  	ENDDO
  	
+ 	
+ 	IF v_intentos >= v_cantMaxIntentos 
+ 	
+ 		MESSAGEBOX("Se alcanzo la cantidad máxima de intentos de grabar los registros",0+16+256,"Error al imputar cobros")
+		RETURN 
+ 	ENDIF
  		
 	
-	
+	=ViewBarProgress(0,v_cant_regrec,"Imputando cobros...")
 	
 	
 	SELECT &p_tablacom
@@ -2422,7 +2434,7 @@ FUNCTION ImputarCobros
 	
 	DO WHILE NOT EOF()
 		v_idrecibo = v_idrecibo + 1 
-		v_recibo_numero = v_recibo_numero + 1
+		
 		*v_idrecibo = maxnumeroidx("idrecibo", "I", "recibos",1)
 
 			SELECT comprobareci
@@ -2749,6 +2761,7 @@ FUNCTION ImputarCobros
 
 
 		SELECT &p_tablacom
+		=ViewBarProgress(RECNO(),v_cant_regrec,"Imputando cobros...")
 		SKIP 1
 
 	ENDDO
