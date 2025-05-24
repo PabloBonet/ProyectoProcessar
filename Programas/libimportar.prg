@@ -4719,7 +4719,9 @@ FUNCTION CargaAsiContables
 		*** Numero los asientos a importar 	
 	  * Obtengo el idasiento nuevo y el numero de asiento nuevo por cada vez que el numero de asiento cambia
 		v_idasientoimp = maxnumeroidx("idasiento","I","asientos",0)
+		MESSAGEBOX(v_idasientoimp)
 		v_numeroimp	= maxnumeroidx("numero","I","asientos",0)
+		MESSAGEBOX(v_numeroimp)
 	
 		SELECT asientoscar
 		INDEX on ALLTRIM(fecha)+STR(numero) TAG numero
@@ -4741,7 +4743,7 @@ FUNCTION CargaAsiContables
 		ENDDO 
 
 		SELECT asientoscar		
-
+	
 		
 
 		v_ret = .F.

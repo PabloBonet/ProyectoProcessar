@@ -163,6 +163,233 @@ IF v_sino = 6 && SI
 
 ENDIF 
 
+v_sino = MESSAGEBOX("¿Convertir el archivo para generar los Asientos contables?",4+32+256,"Convertir Archivo de asiento contable")
+
+IF v_sino = 6 && SI
+
+	** Tengo que llegar al siguiente formato: asientos (c1 c(50), c2 c(200), c3 c(200), c4 c(50), c5 c(50), c6 c(50), c7 c(50), c8 c(50), c9 c(50), c10 c(50), c11 C(50), c12 C(50))
+	
+	CREATE TABLE asientostmp (c1 c(50), c2 c(200), c3 c(200), c4 c(50), c5 c(50), c6 c(50), c7 c(250), c8 c(50), c9 c(50), c10 c(50), c11 C(50), c12 C(50))
+
+
+	V_CONTADOR = 0
+
+	IF FILE(_SYSNOMARCHIVOCONVASI) && SI el archivo existe
+		V_PUNTERO = FOPEN(_SYSNOMARCHIVOCONVASI,0)
+		
+		IF v_PUNTERO > 0
+			DO WHILE !EOF(V_PUNTERO) AND v_contador < 48000 &&& NOTA::: QUITAR EL CONTADOR DESPUES DE PROBAR
+*			DO WHILE !EOF(V_PUNTERO) AND v_contador < 10 &&& NOTA::: QUITAR EL CONTADOR DESPUES DE PROBAR
+		*	DO WHILE !EOF(V_PUNTERO) 
+				
+				v_numero = 0
+				v_fecha=""
+				v_codigocta =0
+				v_debe = 0.00
+				v_haber = 0.00
+				v_cotiz = 0.00
+				v_detalle = ""
+			*	v_nroComp = 0
+				*v_tipoComp = ""
+
+	
+				v_linea = FGETS(v_puntero)
+	
+				IF EMPTY(ALLTRIM(v_linea)) = .F.
+				
+					v_tieneFecha = AT('/',v_linea)		
+					
+					IF v_tieneFecha > 0
+					
+						v_cantele = ALINES(arreglo,v_linea,';')
+
+						IF v_cantEle > 0 
+							
+							v_i = 1
+							
+							** Recorro la la linea hasta obtener la fecha, numero de asiento y codigo de cuenta **
+							DO WHILE (v_i <= v_cantEle) and (v_codigocta <= 0)  && Recorri todos los elementos del arrego o encontre el codigo de la cuenta (Ultimo elemento antes de la descripción)  
+								
+								v_elem1 = arreglo[v_i]
+
+								IF AT('/',v_elem1) > 0 AND EMPTY(ALLTRIM(v_fecha))=.T. && CAMPO FECHA y NO se obtuvo previamente 
+									v_fecha = v_elem1
+								
+								ELSE
+									IF AT('/',v_elem1) = 0 && Si no tiene la '/' no es fecha
+										IF TYPE(v_elem1)='N'  && Si el tipo es numerico-> es el numero o la cuenta
+											IF v_numero = 0 && NO tenia asignado numero -> le asigno un número
+												v_numero = VAL(v_elem1)
+											ELSE
+												IF v_codigocta = 0 && No tenia asignado un codigo de cuenta -> le asigno el codigo de cuenta
+													v_codigocta= VAL(v_elem1) 																							
+												
+												ENDIF 
+											ENDIF 
+										ENDIF 
+									ENDIF 
+								ENDIF 
+								
+								v_i = v_i + 1
+
+							ENDDO
+						
+						
+							** Obtengo los ultimos elementos con numeros de atras para adelante -> HABER, DEBE, COTIZACION, NUMEROCOMP
+							v_asignoD = .F.
+							v_asignoH = .F.
+							v_asignoCot = .F.
+*							v_asignoNComp = .F.
+							*v_asignoTC = .F.
+							
+							v_j = v_cantEle
+							
+*							DO WHILE v_j > 0 AND (v_asignoD = .F. OR  v_asignoH = .F. OR v_asignoCot = .F. OR v_asignoNComp = .F.)
+							DO WHILE v_j > 0 AND (v_asignoD = .F. OR  v_asignoH = .F. OR v_asignoCot = .F.)
+
+									v_elemJ = arreglo[v_j]
+*								MESSAGEBOX(v_elemJ)
+						
+									v_elemj = STRTRAN(v_elemJ,'.','')
+									v_elemj = STRTRAN(v_elemJ,',','.')
+
+									IF TYPE(v_elemJ) = 'N'
+
+										IF v_asignoH = .F.
+											v_haber = VAL(v_elemJ)
+											v_asignoH = .T.
+										ELSE
+											
+											IF v_asignoD = .F.
+												v_debe = VAL(v_elemJ)
+											
+												v_asignoD = .T.
+											ELSE
+												IF v_asignoCot = .F.
+													v_cotiz = VAL(v_elemJ)
+													v_asignoCot = .T.
+												ELSE
+												
+*!*														IF v_asignoNComp = .F.
+*!*														
+*!*															v_nroComp = VAL(v_elemJ)
+*!*															v_asignoNComp  = .T.
+*!*														ENDIF 
+*!*														
+												ENDIF 
+												
+											ENDIF 
+										ENDIF 
+									
+									ELSE
+									
+*!*											MESSAGEBOX(TYPE('v_elemJ'))
+*!*											IF TYPE('v_elemJ') = 'C' 
+*!*												MESSAGEBOX(v_elemJ)
+*!*												MESSAGEBOX(EMPTY(ALLTRIM(v_elemJ)))
+*!*												IF EMPTY(ALLTRIM(v_elemJ)) = .F. AND v_asignoNComp = .T.
+*!*												MESSAGEBOX("A1")
+*!*													v_tipoComp = ALLTRIM(v_elemJ)
+*!*												
+*!*												ENDIF 
+*!*										MESSAGEBOX("A2")
+*!*											ENDIF 
+									ENDIF 
+*								MESSAGEBOX("A3")
+								v_j = v_j - 1 
+		
+							ENDDO
+	
+	
+							IF v_i <= v_j 
+							
+								v_i = v_i +1
+								
+								DO WHILE v_i <= v_j
+								
+									v_elemI = arreglo[v_i]
+									
+									
+									v_detalle = v_detalle +"@"+ ALLTRIM(v_elemI)
+								
+									v_i = v_i +1
+								
+								ENDDO 
+								
+							
+							ENDIF 
+							
+							
+						ENDIF 
+						
+						
+					ENDIF 
+					
+					
+				ENDIF 
+
+
+				v_c1 = ALLTRIM(v_fecha)&&FECHA
+				v_c2 = STR(v_numero) &&NRO. ASIENTO
+				v_c3 = STR(v_codigocta) &&COD. CTA
+				v_c4 = "" && DESCRIP. de CTA (NO se va a usar)
+				v_c5 = ""
+				v_c6 = ALLTRIM(v_detalle)&&CONCEPTO
+*				v_c7 =  ALLTRIM(v_tipoComp)&&COMPROBANTE
+				v_c7 = ""
+*				v_c8 = v_nroComp
+				v_c8 = ""
+				v_c9 = ""
+				v_c10 = ""
+				v_c11 = STR(v_debe,13,2)&&DEBE
+				v_c12 = STR(v_haber,13,2) &&HABER
+		
+										
+				IF  EMPTY(ALLTRIM(v_c1)) = .T. OR v_numero <= 0
+				ELSE
+				
+
+					INSERT INTO asientostmp VALUES (v_c1, v_c2, v_c3, v_c4, v_c5, v_c6, v_c7, v_c8, v_c9, v_c10, v_c11, v_c12)
+				ENDIF 
+				
+				
+				v_contador = v_contador + 1
+						
+			ENDDO
+
+
+
+
+		
+			=FCLOSE(V_PUNTERO)  && Close file
+
+
+		ELSE
+		
+			MESSAGEBOX("NO se pudo abrir el archivo: "+ALLTRIM(_SYSNOMARCHIVOCONVASI),0+16+256,"Error al  convertir el archivo para generar los asientos")
+				
+		ENDIF 
+
+	ELSE
+	
+		MESSAGEBOX("NO existe el archivo: "+ALLTRIM(_SYSNOMARCHIVOCONVASI),0+16+256,"Error al  convertir el archivo para generar los asientos")
+
+	ENDIF 
+
+	
+
+
+	SELECT asientostmp 
+	GO TOP 
+
+	v_ejecutar5 = "COPY TO	"+ALLTRIM(_SYSNOMARCHIVOASIENTOS)+" DELIMITED WITH  CHARACTER ';'"
+	&v_ejecutar5
+	
+
+endif 
+
+
+
 
 
 v_sino = MESSAGEBOX("¿Generar los archivos de Asientos contables?",4+32+256,"Generar Archivo de asiento contable")
@@ -182,6 +409,7 @@ IF v_sino = 6 && SI
 	SELECT asientos 
 
 	v_ejecutar1 = "APPEND FROM "+ALLTRIM(_SYSNOMARCHIVOASIENTOS)+" DELIMITED WITH CHARACTER ';'"
+	MESSAGEBOX(v_ejecutar1)
 	&v_ejecutar1
 
 	DELETE FOR EMPTY(ALLTRIM(c1)) 
@@ -190,6 +418,7 @@ IF v_sino = 6 && SI
 	SELECT codCta 
 
 	v_ejecutar2 = "APPEND FROM "+ALLTRIM(_SYSNOMARCHIVOCODCTA)+" DELIMITED WITH CHARACTER ';'"
+	MESSAGEBOX(v_ejecutar2)
 	&v_ejecutar2
 
 	v_nroAsiento = 0
