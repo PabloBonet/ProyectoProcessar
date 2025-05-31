@@ -451,3 +451,25 @@ select `h`.`idremito` AS `idremito`,`h`.`articulo` AS `articulo`,`h`.`cantidad` 
 
 CREATE VIEW `facturapendrem` AS 
 select `d`.`idfactura` AS `idfactura`,`d`.`articulo` AS `articulo`,`d`.`cantidad` AS `cantfact`,sum(ifnull(`h`.`cantidad`,0.00)) AS `cantrem`,(`d`.`cantidad` - sum(ifnull(`h`.`cantidad`,0.00))) AS `pendrem` from ((`detafactu` `d` left join `linkregistro` `l` on(((`l`.`tablab` = 'detafactu') and (`l`.`idb` = `d`.`idfacturah`)))) left join `remitosh` `h` on(((`l`.`tablaa` = 'remitosh') and (`h`.`idremitoh` = `l`.`ida`)))) group by `d`.`idfacturah`,`d`.`articulo`;
+
+
+
+-- 20250531 --
+-- Tabla para manejo de Agenda y Observaciones Varias en Registros 
+
+CREATE TABLE `agendadeta` (
+  `idagenda` INT NOT NULL AUTO_INCREMENT,
+  `tabla` CHAR(50) NULL,
+  `idregistro` CHAR(20) NULL,
+  `tipo` CHAR(1) NULL,
+  `fecha` CHAR(8) NULL,
+  `hora` CHAR(8) NULL,
+  `detalle` TEXT NULL,
+  `calendario` CHAR(1) NULL,
+  `fagendad` CHAR(8) NULL,
+  `hagendad` CHAR(8) NULL,
+  `fagendah` CHAR(8) NULL,
+  `hagendah` CHAR(8) NULL,
+  `usuario` CHAR(20) NULL,
+  `detallereg` CHAR(200) NULL,
+  PRIMARY KEY (`idagenda`));
