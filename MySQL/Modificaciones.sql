@@ -443,3 +443,11 @@ insert into funcionesimp values ('PER_IIBB_ARBA_IFN', 'Función para el cálculo
 ('RET_IIBB_STAFE_IFN', 'Función para el cálculo de Retenciones de Ingresos Brutos Santa Fe', 'RETENCIONES');
 
 
+
+--20250531--
+
+CREATE VIEW `remitopendfact` AS
+select `h`.`idremito` AS `idremito`,`h`.`articulo` AS `articulo`,`h`.`cantidad` AS `cantrem`,sum(ifnull(`d`.`cantidad`,0.00)) AS `cantfact`, (`h`.`cantidad` - sum(ifnull(`d`.`cantidad`,0.00))) AS `pendfact` from ((`remitosh` `h` left join `linkregistro` `l` on(((`l`.`tablab` = 'remitosh') and (`l`.`idb` = `h`.`idremitoh`)))) left join `detafactu` `d` on(((`l`.`tablaa` = 'detafactu') and (`d`.`idfacturah` = `l`.`ida`)))) group by `h`.`idremito`,`h`.`articulo`;
+
+CREATE VIEW `facturapendrem` AS 
+select `d`.`idfactura` AS `idfactura`,`d`.`articulo` AS `articulo`,`d`.`cantidad` AS `cantfact`,sum(ifnull(`h`.`cantidad`,0.00)) AS `cantrem`,(`d`.`cantidad` - sum(ifnull(`h`.`cantidad`,0.00))) AS `pendrem` from ((`detafactu` `d` left join `linkregistro` `l` on(((`l`.`tablab` = 'detafactu') and (`l`.`idb` = `d`.`idfacturah`)))) left join `remitosh` `h` on(((`l`.`tablaa` = 'remitosh') and (`h`.`idremitoh` = `l`.`ida`)))) group by `d`.`idfacturah`,`d`.`articulo`;
