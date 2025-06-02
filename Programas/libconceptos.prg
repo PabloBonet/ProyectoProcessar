@@ -320,6 +320,7 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 	    RETURN 0 
 	ENDIF 
 
+
 	vtotalconsumo  = 0.00
 	vexedente = 0.00
 	SELECT medicionescs
@@ -332,6 +333,8 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 	* Busco el Abono segun los limites de las Categorias 
 	sqlmatriz(1)=" select ifnull(importe,0) as importe, consudesde, consuhasta from conceptolimit "
 	sqlmatriz(2)=" where idconcepto ="+STR(pper_idconcepto)+" and consudesde <= "+ALLTRIM(STR(vtotalconsumo,12,4))+" and consudesde <= "+ALLTRIM(STR(pper_c,12,4))+" and "+ALLTRIM(STR(pper_c,12,4))+" < consuhasta  "
+
+
 	verror=sqlrun(pper_conexion,"m3consumo")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Mediciones de Agua ",0+48+0,"Error")
@@ -340,6 +343,7 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 
 	SELECT m3consumo
 	GO TOP 
+
 	
 	vtotalm3 = 0.00
 	IF !EOF() THEN 
@@ -353,7 +357,7 @@ PARAMETERS pper_periodo, pper_identidadh, pper_idconcepto, pper_conexion, pper_c
 	USE 		
 	
 	vreto = ALLTRIM(STR(vexedente,12,2))+';'+ALLTRIM(STR(vtotalm3,12,4))
-	
+
 	
 	RETURN vreto
 	

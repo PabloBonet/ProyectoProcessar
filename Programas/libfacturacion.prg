@@ -323,13 +323,11 @@ PARAMETERS par_idperiodo, par_ordenfa
 *!*						netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd FOR idconcepto = 0
 
 	* Corregido para mantener el valor si fijarvalor es = 'S'
-	replace ALL detalle WITH &vlistasprea..detalle, unidad WITH &vlistasprea..unidad ,unitario WITH IIF(ALLTRIM(fijarvalor)='S',&ventidadesdcf..unitario,&vlistasprea..pventa), ;
+*!*		replace ALL detalle WITH  &vlistasprea..detalle, unidad WITH &vlistasprea..unidad ,unitario WITH IIF(ALLTRIM(fijarvalor)='S',&ventidadesdcf..unitario,&vlistasprea..pventa), 
+		replace ALL detalle WITH IIF ( ALLTRIM(fijardeta)='S', &ventidadesdcf..detalle ,&vlistasprea..detalle) , unidad WITH &vlistasprea..unidad , unitario WITH IIF(ALLTRIM(fijarvalor)='S',&ventidadesdcf..unitario,&vlistasprea..pventa), ;
 					nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
 					netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd FOR idconcepto = 0
 
-
-
-	
 	
 	* Actualizo para Conceptos Facturados segun Fórmulas de Calculo = idconcepto > 0
 	vconceptoser = 'conceptoser'+vartmp
@@ -422,18 +420,22 @@ PARAMETERS par_idperiodo, par_ordenfa
 						imp_unitario = 0
 					ENDIF 
 
+
 					
 									
 					SELECT &ventidadesdf
-					replace articulo WITH &vconceptoser..concepto, detalle  WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
+*!*						replace articulo WITH &vconceptoser..concepto, detalle  WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, 
+					replace articulo WITH &vconceptoser..concepto, detalle  WITH IIF(ALLTRIM(fijardeta)='S',detalle,&vconceptoser..detalle) , unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
 						nrocuota  WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
 						netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd, cantidad WITH ( cantidad * imp_cantidad )
 					
 				ELSE 
-					replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
+*!*						replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
+					replace articulo WITH &vconceptoser..concepto, detalle WITH IIF(ALLTRIM(fijardeta)='S',detalle,&vconceptoser..detalle) , unidad WITH &vconceptoser..unidad , unitario WITH 0 							
 				ENDIF 
 			ELSE 
-				replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
+*!*					replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
+				replace articulo WITH &vconceptoser..concepto, detalle WITH IIF(ALLTRIM(fijardeta)='S',detalle,&vconceptoser..detalle) , unidad WITH &vconceptoser..unidad , unitario WITH 0 	
 			ENDIF 
 		
 		ENDSCAN 

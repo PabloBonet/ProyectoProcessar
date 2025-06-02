@@ -6612,6 +6612,7 @@ FOR i=1 TO aelementos
 	&eje
 ENDFOR 
 
+varretorno = 0
 DO CASE 
 	CASE pcual = 1 &&entidad
 		varretorno = vcual1
@@ -17833,6 +17834,43 @@ ENDFUNC
 
 
 
+FUNCTION ObtieneAgendaDeta
+PARAMETERS  para_aliasrnl
+*#/----------------------------------------
+* Obtiene todos los Registros de Agenda Habilitados para el Día de Hoy
+*#/----------------------------------------
+
+p_aliasretorno  = ""
+
+	vconeccionM = abreycierracon(0,_SYSSCHEMA)
+		
+	sqlmatriz(1)= " SELECT idagenda, tabla, idregistro, tipo, detallereg, fecha FROM agendadeta "
+	sqlmatriz(2)= " where calendario = 'S' and fagendad <='"+DTOS(DATE())+"' and fagendad<>'' and (fagendah >= '"+DTOS(DATE())+"' or fagendah = '')  "
+	verror=sqlrun(vconeccionM ,"fagendad_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Registros Agendados ... ",0+48+0,"Error")
+	    RETURN p_aliasretorno  
+	ENDIF
+	=abreycierracon(vconeccionM ,"")	
+
+	SELECT fagendad_sql
+	GO TOP 
+	
+	IF EOF()
+		USE IN fagendad_sql
+		RETURN p_aliasretorno  
+	ENDIF
+
+	
+	SELECT idagenda, tabla, idregistro, tipo, 'Agenda: '+SUBSTR(fecha,7,2)+'/'+SUBSTR(fecha,5,2)+'/'+SUBSTR(fecha,1,4)+' - '+ALLTRIM(detallereg) as detallereg FROM fagendad_sql	INTO TABLE &para_aliasrnl 
+		
+	SELECT fagendad_sql
+	USE IN fagendad_sql
+	p_aliasretorno  = para_aliasrnl
+	RETURN para_aliasrnl
+ENDFUNC 
+
+
 
 
 FUNCTION FUpdatesys
@@ -28116,7 +28154,7 @@ PARAMETERS pfm_idcomproba, pfm_id, pfm_Fecha, pfm_Hora, pfm_cn
 		sqlmatriz(1)="update movitpago set fecha = '"+ALLTRIM(vpfm_Fecha)+"', hora = '"+ALLTRIM(vpfm_Hora)+"' WHERE idmovitp = " +ALLTRIM(STR(movitpago_sql.idmovitp))
 		verror=sqlrun(vconeccionFM,"ActuAC")
 		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion de AsientosCompro (Fecha)",0+48+0,"Error")
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion de Tipos de Pago (Fecha)",0+48+0,"Error")
 		ENDIF 
 	
 		SELECT movitpago_sql
@@ -28219,17 +28257,20 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 *** Marcados todos los registros del archivo csv, renombra el archivo a '*comp_email.csv'
 *#/---------------------------
 
+
 	IF (TYPE('pUbicacion')<>'C') OR (TYPE('pNombreArchivo')<>'C')
 		RETURN .F.
 	ENDIF 
 	
 	v_existe = DIRECTORY(pUbicacion)
+
 		
 	IF v_existe = .F.
 		RETURN .f.
 	ENDIF 
 	
 	v_archivo = pUbicacion+pNombreArchivo
+
 	
 	v_existeArchivo = FILE(v_archivo) 
 	IF v_existeArchivo = .T.
@@ -29259,3 +29300,101 @@ ENDFUNC
 
 
 
+
+
+
+******************************************************************************
+******************************************************************************
+FUNCTION CargaDetaAsiento
+*#/----------------------------------------
+* Carga los detalles de los Comprobantes en el campo detacompro de los asientos
+* Solo completa el contenido en aquellos  asientos que no tienen detallecom 
+* Parametros : pcd_idasiento = id del asiento 
+*#/----------------------------------------
+
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)
+*	Traico los Asientos que no tienen detalle de comprobante generado
+
+	sqlmatriz(1)	=" Select * ac.tabla as tablac "
+	sqlmatriz(2)	=" from asientoscompro ac  where detacompro = '' "
+	verror=sqlrun(vconeccionF,"asientoscomprodet_sql")
+	
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de AsientosCompro ",0+48+0,"Error")
+	ENDIF 
+	=abreycierracon(vconeccionF,"")	
+	
+	SELECT asientoscomprodet_sql 
+	GO TOP 
+	BROWSE 
+	RETURN 
+
+	vcanregi = RECCOUNT()
+	=ViewBarProgress(0,vcanregi,"Cargando Detalles de Comprobantes:")	
+	DO WHILE !EOF()
+		v_nomIndice	 = obtenerCampoIndice(ALLTRIM(asientoscomprodet_sql.tabla))
+		v_detallecom = fdescribecompro(asientoscomprodet_sql.tabla,v_nomIndice,asientoscomprodet_sql.tabla.idregicomp)
+		SELECT asientoscomprodet_sql
+		SKIP 
+		=ViewBarProgress(RECNO(),vcanregi,"Cargando Detalles de Comprobantes:")
+	ENDDO 
+	SELECT asientoscomprodet_sql
+	USE 
+	RETURN 		
+ENDFUNC 
+
+
+
+*!*	LOCAL lcSource, lcDest
+*!*	lcSource = GETPICT()
+*!*	lcDest = JUSTPATH(lcSource) + "\_" + JUSTSTEM(lcSource)
+*!*	LOCAL loImage AS GpImage OF HOME() + ffc\_gdiplus.vcx
+*!*	loImage = NEWOBJECT("GpImage",HOME()+"ffc\_gdiplus.vcx")
+*!*	loImage.CreateFromFile(lcSource)
+*!*	loImage.SaveToFile(lcDest + ".png","Image/png")
+
+
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_1bppIndexed    0x00030101
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_4bppIndexed    0x00030402
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_8bppIndexed    0x00030803
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_16bppGrayScale 0x00101004
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_16bppRGB555    0x00021005
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_16bppRGB565    0x00021006
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_16bppARGB1555  0x00061007
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_24bppRGB       0x00021808
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_32bppRGB       0x00022009
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_32bppARGB      0x0026200A
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_32bppPARGB     0x000E200B
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_48bppRGB       0x0010300C
+*!*	#DEFINE GDIPLUS_PIXELFORMAT_64bppPARGB     0x001C400E
+
+*!*	lcSource = GETPICT("jpg;gif;bmp")
+*!*	lcDestination = ADDBS(JUSTPATH(lcSource))+ "Resized_" +;
+*!*	JUSTSTEM(lcSource)+".bmp"
+*!*	LOCAL loImage AS GpImage OF ffc/_gdiplus.vcx
+*!*	loImage = NEWOBJECT("GpImage", HOME() + "ffc/_gdiplus.vcx")
+*!*	loImage.CreateFromFile(lcSource)
+
+*!*	LOCAL loBitmap AS GpBitmap OF ffc/_gdiplus.vcx
+*!*	loBitmap = NEWOBJECT("GpBitmap", HOME() + "ffc/_gdiplus.vcx")
+*!*	LOCAL loGraphics as GpGraphics OF HOME() + ffc/_gdiplus.vcx
+*!*	loGraphics = NEWOBJECT("GpGraphics",HOME() + "ffc/_gdiplus.vcx")
+
+*!*	*** Ahora creamos una imagen con
+*!*	*** Create Method - Crea un objeto bitmap .
+*!*	*** ¿La sintaxis?: THIS.Create(tnWidth, tnHeight[, tnPixelFormat])
+*!*	***
+*!*	*** tnPixelFormat, es opcional, una de las constantes GDIPLUS_PIXELFORMAT_*,
+*!*	*** su valor predeterminado es GDIPLUS_PIXELFORMAT_32bppARGB.
+
+*!*	LOCAL lnNewWidth, lnNewHeight
+*!*	lnNewWidth = 640 && Coloque aquí el ancho (Width) deseado
+*!*	lnNewHeight = 480 && Coloque aquí la altura (Height) deseada
+
+*!*	loBitmap.Create(lnNewWidth, lnNewHeight, GDIPLUS_PIXELFORMAT_32bppPARGB)
+*!*	*** Las otras constantes están al inicio de este código
+
+*!*	loGraphics.CreateFromImage(loBitmap)
+*!*	loGraphics.DrawImageScaled(loImage, 0, 0, lnNewWidth, lnNewHeight)
+*!*	loBitmap.SaveToFile(lcDestination, "image/bmp")
+*!*	RETURN

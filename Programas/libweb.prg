@@ -435,3 +435,306 @@ ENDFUNC  && FIN DE LA FUNCION DE CARGA DE CUENTAS CORRIENTES PARA LA WEB
 
 *----------------------------------------------------------------------
 ***********************************************************************
+
+
+******************************************************************************
+******************************************************************************
+FUNCTION ExpoProductoWEB
+*#/----------------------------------------
+* Genera Archivos para Exportar Articulos a PlataformaWeb
+* Parametros : p_listap01
+*              p_listap02 
+*              p_deposito  
+*#/----------------------------------------
+
+IF !(TYPE('_SYSPRODUCTOSWEB')='C') THEN 
+	RETURN 
+ENDIF 
+
+
+nFilas = ALINES(ArrProductoWEB, _SYSPRODUCTOSWEB , ";")
+IF nFilas = 0 THEN 
+	RETURN "" 
+ENDIF 
+v_listaWEB01 		= ArrProductoWEB(1)
+v_listaWEB02 		= ArrProductoWEB(2)
+RELEASE ArrProductoWEB
+
+=GetListasPrecios('listaspreweb')
+
+eje=" SELECT a.*, IIF( isnull(b.pventatot) =  .f., b.pventatot,0.00)  as pventatot2 FROM listaspreweba a LEFT JOIN listaspreweba b ON ( ALLTRIM(a.articulo) == ALLTRIM(b.articulo) "
+eje = eje +" AND b.idlista = "+v_listaWEB02+") INTO TABLE productos01 WHERE a.idlista = "+v_listaWEB01 
+&eje
+
+*!*	SELECT productos01
+*!*	BROWSE 
+
+
+vconeccionF=abreycierracon(0,_SYSSCHEMA)
+	* Traigo las propiedades de los articulos 
+sqlmatriz(1) =" SELECT r.idregic ,  d.propiedad, d.valor, ifnull(c.propiedad,'') as categoriaa, ifnull(c.valor,'') as valora, ifnull(w.propiedad,'') as categoriah, ifnull(w.valor,'') as valorh "
+sqlmatriz(2) =" FROM reldatosextra r "
+sqlmatriz(3) =" left join datosextra d on d.iddatosex = r.iddatosex "
+sqlmatriz(4) =" left join ( SELECT x.idregic, z.propiedad, z.valor FROM processar.reldatosextra x left join processar.datosextra z on z.iddatosex = x.iddatosex) c on (c.idregic = r.idregic and c.propiedad = 'CATEGORIA-AMOBLARK' and c.valor <> ''  ) "
+sqlmatriz(5) =" left join ( SELECT u.idregic, v.propiedad, v.valor FROM processar.reldatosextra u left join processar.datosextra v on v.iddatosex = u.iddatosex) w on (w.idregic = r.idregic and w.propiedad = 'CATEGORIA-HOGAR' and w.valor <> ''  ) "
+sqlmatriz(6) =" where r.tabla = 'articulos' order by idregic, propiedad "
+verror=sqlrun(vconeccionF,"datosextrasweb_sql")
+IF verror=.f.  
+    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de AsientosCompro ",0+48+0,"Error")
+ENDIF 
+
+=abreycierracon(vconeccionF,"")	
+
+SELECT * FROM datosextrasweb_sql INTO TABLE datosextraweb
+
+SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor ;
+FROM datosextrasweb_sql d ;
+LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
+into table productos02 where ALLTRIM(d.categoriaa) == 'CATEGORIA-AMOBLARK' AND ISNULL(p.articulo) = .f. AND !EMPTY(ALLTRIM(d.valora))
+
+*!*	SELECT productos02
+*!*	BROWSE 
+
+SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor ;
+FROM datosextrasweb_sql d ;
+LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
+into table productos03 where ALLTRIM(d.categoriah) == 'CATEGORIA-HOGAR' AND ISNULL(p.articulo) = .f. AND !EMPTY(ALLTRIM(d.valorh))
+
+*!*	SELECT productos03
+*!*	BROWSE 
+
+IF USED("productosweb") THEN 
+	USE IN productosweb 
+ENDIF 
+CREATE TABLE productosweb (seccion C(50), sku c(100), nombre c(254), descrip c(254), cate1 c(150), cate2 c(150), cate3 c(150), peso n(8,2), altura n(8,2), longitud n(8,2), ancho n(8,2), ;
+						   titulo1 c(150), valor1 c(254),titulo2 c(150), valor2 c(254),titulo3 c(150), valor3 c(254),titulo4 c(150), valor4 c(254), titulo5 c(150), valor5 c(250), ;
+						   titulo6 c(150), valor6 c(254),titulo7 c(150), valor7 c(254),titulo8 c(150), valor8 c(254), iva n(5,2) )
+SELECT productosweb
+INDEX on ALLTRIM(sku)+ALLTRIM(seccion) TAG sku
+
+IF USED("preciosweb") THEN 
+	USE IN preciosweb 
+ENDIF 
+CREATE TABLE preciosweb (seccion c(50), sku c(100), preciovta n(10,2), preciotach n(10,2) )
+SELECT preciosweb 
+INDEX on ALLTRIM(sku)+ALLTRIM(seccion) TAG sku
+
+IF USED("stockweb") THEN 
+	USE IN stockweb 
+ENDIF 
+CREATE TABLE stockweb (seccion c(50), sku c(100), stock n(10,2) )
+SELECT stockweb 
+INDEX on ALLTRIM(sku)+ALLTRIM(seccion) TAG sku
+
+
+** PRODUCTOS AMOBLARK **
+FOR j = 2 TO 3 
+
+	v_idx = 'productos0'+ALLTRIM(STR(j))
+	v_empre = IIF(j = 2, 'AMOBLARK','HOGAR')
+	
+	SELECT &v_idx 
+	GO TOP 
+
+	=ViewBarProgress(0,RECCOUNT(),"Generando Archivo de Productos...")
+	
+	DO WHILE !EOF()
+		
+		SELECT productosweb
+		IF !SEEK(ALLTRIM(&v_idx..articulo)+v_empre) THEN 
+			APPEND BLANK 
+			replace sku WITH ALLTRIM(&v_idx..articulo), nombre WITH &v_idx..nombre, iva WITH &v_idx..razonimpu, seccion WITH v_empre 
+		ENDIF 
+		SELECT preciosweb
+		IF !SEEK(ALLTRIM(&v_idx..articulo)+v_empre ) THEN 
+			APPEND BLANK 
+			replace sku WITH ALLTRIM(&v_idx..articulo), preciovta WITH &v_idx..pventatot, preciotach WITH &v_idx..pventatot, seccion WITH v_empre 
+		ENDIF 
+		SELECT stockweb
+		IF !SEEK(ALLTRIM(&v_idx..articulo)+v_empre ) THEN 
+			APPEND BLANK 
+			replace sku WITH ALLTRIM(&v_idx..articulo), stock WITH &v_idx..stocktot, seccion WITH v_empre 
+		ENDIF 
+
+		DO CASE 
+			CASE ALLTRIM(&v_idx..propiedad)=='CATEGORIA-HOGAR' OR ALLTRIM(&v_idx..propiedad)=='CATEGORIA-AMOBLARK' 
+				
+				nvalor = ALLTRIM(&v_idx..valor)
+				nFilas = ALINES(ArrCategoWEB, nvalor  , ",")
+				IF nFilas >= 0 THEN 
+					i = 1
+					DO WHILE i <= nFilas AND i <=3
+						IF !EMPTY(ALLTRIM(ArrCategoWEB(i))) THEN 
+							eje = " UPDATE productosweb SET cate"+ALLTRIM(STR(i))+" = ALLTRIM(ArrCategoWEB(i)) WHERE ALLTRIM(sku) == ALLTRIM("+v_idx+".articulo)  AND ALLTRIM(seccion) == v_empre "
+							&eje
+						ENDIF 
+						i = i+1
+					ENDDO 
+				ENDIF 
+				RELEASE arrCategoWEB
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='PESO EN KG'
+				UPDATE productosweb SET peso = VAL(STRTRAN(&v_idx..valor,',','.')) WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				
+			CASE ALLTRIM(&v_idx..propiedad)=='ALTURA EN CM'
+				UPDATE productosweb SET altura = VAL(STRTRAN(&v_idx..valor,',','.')) WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				
+			CASE ALLTRIM(&v_idx..propiedad)=='PROFUNDIDAD EN CM'
+				UPDATE productosweb SET longitud = VAL(STRTRAN(&v_idx..valor,',','.')) WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			CASE ALLTRIM(&v_idx..propiedad)=='ANCHO EN CM'
+				UPDATE productosweb SET ancho = VAL(STRTRAN(&v_idx..valor,',','.')) WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='TITULO A1'
+				UPDATE productosweb SET titulo1 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='TITULO A2'
+				UPDATE productosweb SET titulo2 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='TITULO A3'
+				UPDATE productosweb SET titulo3 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='TITULO A4'
+				UPDATE productosweb SET titulo4 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='TITULO A5'
+				UPDATE productosweb SET titulo5 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='TITULO A6'
+				UPDATE productosweb SET titulo6 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='TITULO A7'
+				UPDATE productosweb SET titulo7 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='TITULO A8'
+				UPDATE productosweb SET titulo8 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A1'
+				UPDATE productosweb SET valor1 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A2'
+				UPDATE productosweb SET valor2 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A3'
+				UPDATE productosweb SET valor3 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A4'
+				UPDATE productosweb SET valor4 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A5'
+				UPDATE productosweb SET valor5 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A6'
+				UPDATE productosweb SET valor6 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A7'
+				UPDATE productosweb SET valor7 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A8'
+				UPDATE productosweb SET valor8 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+			
+		ENDCASE 
+		
+		SELECT &v_idx
+		SKIP 
+		=ViewBarProgress(RECNO(),RECCOUNT(),"Generando Archivo de Productos...")
+	ENDDO 
+
+ENDFOR 
+
+
+SELECT productosweb
+SELECT preciosweb
+SELECT stockweb
+
+
+v_defa = SYS(5)+'\' 
+SET DEFAULT TO &v_defa
+
+v_prgpath = ALLTRIM(GETDIR())
+
+IF EMPTY(v_prgpath) THEN 
+	SET DEFAULT TO &_SYSESTACION 
+	RETURN  
+ELSE
+	SET default TO &v_prgpath 
+ENDIF 
+
+
+** Generar los archivos productos.csv, stock.csv, precios.csv
+v_archivo_productos = 'productos.csv'
+DELETE FILE &v_archivo_productos
+p=fcreate(v_archivo_productos,0)
+SELECT productosweb
+GO TOP 
+v_linea = "tienda,sku,nombre,descripcion,categoria_1,categoria_2,categoria_3,peso,altura,longitud,ancho,titulo_atributo_1,valor_atributo_1,"+;
+          "titulo_atributo_2,valor_atributo_2,titulo_atributo_3,valor_atributo_3,titulo_atributo_4,valor_atributo_4,titulo_atributo_5,valor_atributo_5,"+ ;
+          "titulo_atributo_6,valor_atributo_6,titulo_atributo_7,valor_atributo_7,titulo_atributo_8,valor_atributo_8,iva"
+=fputs(p, v_linea )
+=ViewBarProgress(0,RECCOUNT(),"Generando Archivo de Productos...")
+DO WHILE NOT EOF() 
+	v_linea = '"'+STRTRAN(ALLTRIM(seccion),',',' ')+'","'+STRTRAN(ALLTRIM(sku),',',' ')+'","'+STRTRAN(ALLTRIM(nombre),',',' ')+'","'+STRTRAN(ALLTRIM(descrip),',',' ')+'","'+ ;
+	STRTRAN(ALLTRIM(cate1),',',' ')+'","'+STRTRAN(ALLTRIM(cate2),',',' ')+'","'+STRTRAN(ALLTRIM(cate3),',',' ')+'",'+STRTRAN(str(peso,8,2),',',' ')+','+STRTRAN(str(altura,8,2),',',' ')+','+ ;
+	STRTRAN(str(longitud,8,2),',',' ')+','+STRTRAN(str(ancho,8,2),',',' ')+',"'+STRTRAN(ALLTRIM(titulo1),',',' ')+'","'+STRTRAN(ALLTRIM(valor1),',',' ')+'","'+ ;
+	STRTRAN(ALLTRIM(titulo2),',',' ')+'","'+STRTRAN(ALLTRIM(valor2),',',' ')+'","'+STRTRAN(ALLTRIM(titulo3),',',' ')+'","'+STRTRAN(ALLTRIM(valor3),',',' ')+'","'+ ;
+	STRTRAN(ALLTRIM(titulo4),',',' ')+'","'+STRTRAN(ALLTRIM(valor4),',',' ')+'","'+STRTRAN(ALLTRIM(titulo5),',',' ')+'","'+STRTRAN(ALLTRIM(valor5),',',' ')+'","'+ ;
+	STRTRAN(ALLTRIM(titulo6),',',' ')+'","'+STRTRAN(ALLTRIM(valor6),',',' ')+'","'+STRTRAN(ALLTRIM(titulo7),',',' ')+'","'+STRTRAN(ALLTRIM(valor7),',',' ')+'","'+ ;
+	STRTRAN(ALLTRIM(titulo8),',',' ')+'","'+STRTRAN(ALLTRIM(valor8),',',' ')+'",'+STRTRAN(str(iva,5,2),',',' ')  
+	
+	=fputs(p, v_linea )
+	SELECT  productosweb
+	SKIP 
+	=ViewBarProgress(RECNO(),RECCOUNT(),"Generando Archivo de Productos...")
+ENDDO 		
+=fclose(p)
+
+v_archivo_productos = 'precios.csv'
+DELETE FILE &v_archivo_productos
+p=fcreate(v_archivo_productos,0)
+SELECT preciosweb
+GO TOP 
+v_linea ="sku,precioventa,preciotachado"
+=fputs(p, v_linea )
+=ViewBarProgress(0,RECCOUNT(),"Generando Archivo de Productos...")
+DO WHILE NOT EOF() 
+	v_linea = '"'+STRTRAN(ALLTRIM(sku),',',' ')+'",'+STRTRAN(str(preciovta,10,2),',',' ')+','+STRTRAN(str(preciotach,10,2),',',' ')
+	=fputs(p, v_linea )
+	SELECT  preciosweb
+	SKIP 
+	=ViewBarProgress(RECNO(),RECCOUNT(),"Generando Archivo de Productos...")
+ENDDO 		
+=fclose(p)
+
+v_archivo_productos = 'stock.csv'
+DELETE FILE &v_archivo_productos
+p=fcreate(v_archivo_productos,0)
+SELECT stockweb
+GO TOP 
+v_linea ="sku,stock"
+=fputs(p, v_linea )
+=ViewBarProgress(0,RECCOUNT(),"Generando Archivo de Productos...")
+DO WHILE NOT EOF() 
+	v_linea = '"'+STRTRAN(ALLTRIM(sku),',',' ')+'",'+STRTRAN(str(stock,10,2),',',' ')
+	=fputs(p, v_linea )
+	SELECT  stockweb
+	SKIP 
+	=ViewBarProgress(RECNO(),RECCOUNT(),"Generando Archivo de Productos...")
+ENDDO 		
+=fclose(p)
+
+SET DEFAULT TO &_SYSESTACION 
+
+
+**************************************************************
+
+USE IN productos01
+USE IN productos02
+USE IN productos03
+USE IN datosextrasweb_sql
+USE IN productosweb
+USE IN preciosweb
+USE IN stockweb 
+= MESSAGEBOX("Se han generado los archivos de Productos para la Web de la Empresa...",0+64,"Exportar Archivos para Web")
+vpar_eje = "RUN /N  explorer.exe "+v_prgpath
+&vpar_eje
+
+ENDFUNC 
