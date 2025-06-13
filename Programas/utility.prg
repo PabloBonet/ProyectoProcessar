@@ -1169,16 +1169,38 @@ PARAMETERS p_campoidx, p_tipo, p_tabla, v_incre , v_autoinc
 * SI V_AUTOINC ES .T. significa que el campo indice es autoincremental en la bd Y DEBE devolver "0"
 *#/----------------------------------------
 
+
+
 	v_tipoCampo = ""
 
 
 	IF p_tipo = 'I'
 
+
 		IF v_autoinc = .t. THEN 
-			RETURN 0
+			RETURN 0	
 		ENDIF 
 		
+		
 		vconeccionFm = abreycierracon(0,_SYSSCHEMA)
+		
+		sqlmatriz(1)=" show columns from "+ALLTRIM(p_tabla)
+		sqlmatriz(2)=" WHERE field = '"+ALLTRIM(p_campoidx)+"'"
+		verror=sqlrun(vconeccionFm,"cmpautoinc")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Consulta del Campo Autoincremental ",0+48+0,"Error")
+			=abreycierracon(vconeccionFm,"")
+		    RETURN -1 
+		ENDIF 
+		SELECT cmpautoinc
+		IF LOWER(ALLTRIM(cmpautoinc.extra)) == 'auto_increment' THEN 
+			USE IN cmpautoinc
+			=abreycierracon(vconeccionFm,"")	
+			RETURN 0 
+		ENDIF 
+		USE IN cmpautoinc
+
+		
 		*INTEGER
 		v_tipocampo = "I"
 		sqlmatriz(1)="UPDATE tablasidx set maxvalori = ( maxvalori + "+ALLTRIM(STR(v_incre))+" ) "
@@ -17845,7 +17867,9 @@ p_aliasretorno  = ""
 	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 		
 	sqlmatriz(1)= " SELECT idagenda, tabla, idregistro, tipo, detallereg, fecha FROM agendadeta "
-	sqlmatriz(2)= " where calendario = 'S' and fagendad <='"+DTOS(DATE())+"' and fagendad<>'' and (fagendah >= '"+DTOS(DATE())+"' or fagendah = '')  "
+	sqlmatriz(2)= " where calendario = 'S' and  ( ( ( fagendad <='"+DTOS(DATE())+"' and fagendad<>'' ) and  (fagendah >= '"+DTOS(DATE())+"' or fagendah = '') and ( TRIM(usuario) = '"+ALLTRIM(_SYSUSUARIO)+"' OR infotodos = 'S' ) ) "
+	sqlmatriz(3)= "   or  (fagendad <> '' and fagendah <> '' and repetir = 'S' and mid(fagendad,7,2)<='"+SUBSTR(DTOS(DATE()),7,2)+"' and mid(fagendah,7,2)>='"+SUBSTR(DTOS(DATE()),7,2)+"'  AND ( TRIM(usuario) = '"+ALLTRIM(_SYSUSUARIO)+"' OR infotodos = 'S' ) ) ) "
+	
 	verror=sqlrun(vconeccionM ,"fagendad_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de Registros Agendados ... ",0+48+0,"Error")
@@ -29344,57 +29368,152 @@ FUNCTION CargaDetaAsiento
 ENDFUNC 
 
 
+******************************************************************************
+FUNCTION GDIPlusConvierte
+PARAMETERS P_gdiPixelFormat, P_Dimensiones, P_tipoImagen, P_PathDestino, P_FileDestino
+*#/----------------------------------------
+* PARAMETROS
+* P_gdiPixelFormat	: Valores Validos: 1 - F
+* P_Dimensiones		: Dimension en pixeles de la imagen (Ancho x Alto): ej 1020x768 , 640x480  o en Porcentaje ej 150%: amplia la imagen un 50%
+* P_tipoImagen		: Formato de salida del archivo modificado , bmp, png, png, jpeg
+* P_PathDestino		: Path de Destino de la Imagen final de resultado. Opcional , si no está o es vacío la crea en la misma ubicación de la imagen original
+*#/----------------------------------------
 
-*!*	LOCAL lcSource, lcDest
-*!*	lcSource = GETPICT()
-*!*	lcDest = JUSTPATH(lcSource) + "\_" + JUSTSTEM(lcSource)
-*!*	LOCAL loImage AS GpImage OF HOME() + ffc\_gdiplus.vcx
-*!*	loImage = NEWOBJECT("GpImage",HOME()+"ffc\_gdiplus.vcx")
-*!*	loImage.CreateFromFile(lcSource)
-*!*	loImage.SaveToFile(lcDest + ".png","Image/png")
+	DO CASE 
+		CASE P_gdiPixelFormat == "1"
+			#DEFINE GDIPLUS_PIXELFORMAT_1bppIndexed    0x00030101 
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_1bppIndexed
+
+		CASE P_gdiPixelFormat == "2"
+			#DEFINE GDIPLUS_PIXELFORMAT_4bppIndexed    0x00030402 
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_4bppIndexed
+
+		CASE P_gdiPixelFormat == "3"
+			#DEFINE GDIPLUS_PIXELFORMAT_8bppIndexed    0x00030803
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_8bppIndexed
+
+		CASE P_gdiPixelFormat == "4"
+			#DEFINE GDIPLUS_PIXELFORMAT_16bppGrayScale 0x00101004
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_16bppGrayScale
+
+		CASE P_gdiPixelFormat == "5"
+			#DEFINE GDIPLUS_PIXELFORMAT_16bppRGB555    0x00021005
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_16bppRGB555
+
+		CASE P_gdiPixelFormat == "6"
+			#DEFINE GDIPLUS_PIXELFORMAT_16bppRGB565    0x00021006
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_16bppRGB565
+
+		CASE P_gdiPixelFormat == "7"
+			#DEFINE GDIPLUS_PIXELFORMAT_16bppARGB1555  0x00061007
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_16bppARGB1555
+
+		CASE P_gdiPixelFormat == "8"
+			#DEFINE GDIPLUS_PIXELFORMAT_24bppRGB       0x00021808
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_24bppRGB
+
+		CASE P_gdiPixelFormat == "9"
+			#DEFINE GDIPLUS_PIXELFORMAT_32bppRGB       0x00022009
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_32bppRGB
+
+		CASE P_gdiPixelFormat == "A"
+			#DEFINE GDIPLUS_PIXELFORMAT_32bppARGB      0x0026200A
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_32bppARGB
+
+		CASE P_gdiPixelFormat == "B"
+			#DEFINE GDIPLUS_PIXELFORMAT_32bppPARGB     0x000E200B
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_32bppPARGB
+
+		CASE P_gdiPixelFormat == "C"
+			#DEFINE GDIPLUS_PIXELFORMAT_48bppRGB       0x0010300C
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_48bppRGB
+
+		CASE P_gdiPixelFormat == "D"
+			#DEFINE GDIPLUS_PIXELFORMAT_64bppPARGB     0x001C400E
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_64bppPARGB
+
+		CASE P_gdiPixelFormat == "E"
+			#DEFINE GDIPLUS_PIXELFORMAT_64bppPARGB     0x001C400E
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_64bppPARGB
+
+		CASE P_gdiPixelFormat == "F"
+			#DEFINE GDIPLUS_PIXELFORMAT_64bppPARGB     0x001C400E
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_64bppPARGB
+
+		OTHERWISE
+			#DEFINE GDIPLUS_PIXELFORMAT_32bppPARGB     0x000E200B
+			GDIPLUS_PIXELFORMAT = GDIPLUS_PIXELFORMAT_32bppPARGB
+			
+	ENDCASE 
+	
+
+	v_tipoImgSalida = ".jpg,image/jpeg"
+	DO CASE 
+		CASE LOWER(STRTRAN(p_tipoImagen,'.','')) = "jpeg"
+			v_tipoImgSalida = ".jpg,image/jpeg"
+		CASE LOWER(STRTRAN(p_tipoImagen,'.','')) = "bmp"
+			v_tipoImgSalida = ".bmp,image/bmp"
+		CASE LOWER(STRTRAN(p_tipoImagen,'.','')) = "tiff"
+			v_tipoImgSalida = ".tif,image/tiff"
+		CASE LOWER(STRTRAN(p_tipoImagen,'.','')) = "gif"
+			v_tipoImgSalida = ".gif,image/gif"
+		CASE LOWER(STRTRAN(p_tipoImagen,'.','')) = "png"
+			v_tipoImgSalida = ".png,image/png"
+		OTHERWISE 
+			v_tipoImgSalida = ".jpg,image/jpeg"
+	ENDCASE 
 
 
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_1bppIndexed    0x00030101
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_4bppIndexed    0x00030402
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_8bppIndexed    0x00030803
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_16bppGrayScale 0x00101004
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_16bppRGB555    0x00021005
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_16bppRGB565    0x00021006
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_16bppARGB1555  0x00061007
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_24bppRGB       0x00021808
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_32bppRGB       0x00022009
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_32bppARGB      0x0026200A
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_32bppPARGB     0x000E200B
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_48bppRGB       0x0010300C
-*!*	#DEFINE GDIPLUS_PIXELFORMAT_64bppPARGB     0x001C400E
+	lcSource = GETPICT("jpg;gif;bmp;png")
+	IF EMPTY(ALLTRIM(lcSource)) THEN 
+		RETURN ""
+	ENDIF 
+	
+	lcDestination = ADDBS(JUSTPATH(lcSource))+ "R_" + JUSTSTEM(lcSource)+SUBSTR(v_tipoImgSalida,1,4)
+	
+	IF TYPE("P_PathDestino")='C' THEN 
+		IF !EMPTY(ALLTRIM(P_PathDestino)) THEN 
+			lcDestination = ADDBS(ALLTRIM(P_PathDestino))+"R_" + JUSTSTEM(lcSource)+SUBSTR(v_tipoImgSalida,1,4)
+		ENDIF 
+	ENDIF 
+	IF TYPE("P_FileDestino")='C' THEN 
+		IF !EMPTY(ALLTRIM(P_FileDestino)) THEN 
+			lcDestination = ADDBS(ALLTRIM(P_PathDestino))+ALLTRIM(P_FileDestino)+SUBSTR(v_tipoImgSalida,1,4)
+		ENDIF 
+	ENDIF 
+	
+	
+	LOCAL loImage AS GpImage OF _gdiplus.vcx
+*	loImage = NEWOBJECT("GpImage", "D:\PROYECTOS\processar\clases\_gdiplus.vcx")
+	loImage = NEWOBJECT("GpImage", "_gdiplus.vcx")
+	loImage.CreateFromFile(lcSource)
 
-*!*	lcSource = GETPICT("jpg;gif;bmp")
-*!*	lcDestination = ADDBS(JUSTPATH(lcSource))+ "Resized_" +;
-*!*	JUSTSTEM(lcSource)+".bmp"
-*!*	LOCAL loImage AS GpImage OF ffc/_gdiplus.vcx
-*!*	loImage = NEWOBJECT("GpImage", HOME() + "ffc/_gdiplus.vcx")
-*!*	loImage.CreateFromFile(lcSource)
+	LOCAL loBitmap AS GpBitmap OF _gdiplus.vcx
+*	loBitmap = NEWOBJECT("GpBitmap", "D:\PROYECTOS\processar\clases\_gdiplus.vcx")
+	loBitmap = NEWOBJECT("GpBitmap", "_gdiplus.vcx")
+	LOCAL loGraphics as GpGraphics OF _gdiplus.vcx
+*	loGraphics = NEWOBJECT("GpGraphics","D:\PROYECTOS\processar\clases\_gdiplus.vcx")
+	loGraphics = NEWOBJECT("GpGraphics","_gdiplus.vcx")
 
-*!*	LOCAL loBitmap AS GpBitmap OF ffc/_gdiplus.vcx
-*!*	loBitmap = NEWOBJECT("GpBitmap", HOME() + "ffc/_gdiplus.vcx")
-*!*	LOCAL loGraphics as GpGraphics OF HOME() + ffc/_gdiplus.vcx
-*!*	loGraphics = NEWOBJECT("GpGraphics",HOME() + "ffc/_gdiplus.vcx")
+	LOCAL lnNewWidth, lnNewHeight
+	
+	IF AT('%',LOWER(P_Dimensiones),1) = 0  THEN 
+		lnNewWidth  = INT(VAL(SUBSTR(P_Dimensiones,1,AT('x',LOWER(P_Dimensiones),1)-1))) && Coloque aquí el ancho (Width) deseado
+		lnNewHeight = INT(VAL(SUBSTR(P_Dimensiones,AT('x',LOWER(P_Dimensiones),1)+1))) && Coloque aquí la altura (Height) deseada
+	ELSE 
+		lnNewWidth  = INT(loImage.imagewidth  * (ABS(VAL(SUBSTR(P_Dimensiones,1,AT('%',LOWER(P_Dimensiones),1)-1)))/100 )) && Coloque aquí el ancho (Width) deseado
+		lnNewHeight = INT(loImage.imageheight * (ABS(VAL(SUBSTR(P_Dimensiones,1,AT('%',LOWER(P_Dimensiones),1)-1)))/100 )) && Coloque aquí la altura (Height) deseada
+	ENDIF 
 
-*!*	*** Ahora creamos una imagen con
-*!*	*** Create Method - Crea un objeto bitmap .
-*!*	*** ¿La sintaxis?: THIS.Create(tnWidth, tnHeight[, tnPixelFormat])
-*!*	***
-*!*	*** tnPixelFormat, es opcional, una de las constantes GDIPLUS_PIXELFORMAT_*,
-*!*	*** su valor predeterminado es GDIPLUS_PIXELFORMAT_32bppARGB.
+	loBitmap.Create(lnNewWidth, lnNewHeight, GDIPLUS_PIXELFORMAT )
 
-*!*	LOCAL lnNewWidth, lnNewHeight
-*!*	lnNewWidth = 640 && Coloque aquí el ancho (Width) deseado
-*!*	lnNewHeight = 480 && Coloque aquí la altura (Height) deseada
+	loGraphics.CreateFromImage(loBitmap)
+	loGraphics.DrawImageScaled(loImage, 0, 0, lnNewWidth, lnNewHeight)
+	loBitmap.SaveToFile(lcDestination, SUBSTR(v_tipoImgSalida,6) )
 
-*!*	loBitmap.Create(lnNewWidth, lnNewHeight, GDIPLUS_PIXELFORMAT_32bppPARGB)
-*!*	*** Las otras constantes están al inicio de este código
-
-*!*	loGraphics.CreateFromImage(loBitmap)
-*!*	loGraphics.DrawImageScaled(loImage, 0, 0, lnNewWidth, lnNewHeight)
-*!*	loBitmap.SaveToFile(lcDestination, "image/bmp")
-*!*	RETURN
+	RELEASE loBitmap
+	RELEASE loGraphics
+	RELEASE loImage 
+	
+	RETURN lcDestination
+ENDFUNC 

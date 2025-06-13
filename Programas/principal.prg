@@ -54,6 +54,7 @@ SET CLASSLIB TO crystalreports.vcx additive
 SET CLASSLIB TO util.vcx ADDITIVE 
 SET CLASSLIB TO foxcharts.vcx ADDITIVE 
 SET CLASSLIB TO gdiplusx.vcx ADDITIVE 
+SET CLASSLIB TO _gdiplus.vcx ADDITIVE 
 
 
 

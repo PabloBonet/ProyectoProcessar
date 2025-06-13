@@ -440,12 +440,18 @@ ENDFUNC  && FIN DE LA FUNCION DE CARGA DE CUENTAS CORRIENTES PARA LA WEB
 ******************************************************************************
 ******************************************************************************
 FUNCTION ExpoProductoWEB
+PARAMETERS P_pathdestinoWEB03
 *#/----------------------------------------
 * Genera Archivos para Exportar Articulos a PlataformaWeb
 * Parametros : p_listap01
 *              p_listap02 
 *              p_deposito  
 *#/----------------------------------------
+IF !(TYPE('P_pathdestinoWEB03')='C') THEN
+	V_pathdestinoWEB03 = "" 
+ELSE 
+	V_pathdestinoWEB03 = P_pathdestinoWEB03
+ENDIF 
 
 IF !(TYPE('_SYSPRODUCTOSWEB')='C') THEN 
 	RETURN 
@@ -458,6 +464,7 @@ IF nFilas = 0 THEN
 ENDIF 
 v_listaWEB01 		= ArrProductoWEB(1)
 v_listaWEB02 		= ArrProductoWEB(2)
+
 RELEASE ArrProductoWEB
 
 =GetListasPrecios('listaspreweb')
@@ -647,15 +654,20 @@ SELECT preciosweb
 SELECT stockweb
 
 
-v_defa = SYS(5)+'\' 
-SET DEFAULT TO &v_defa
+IF EMPTY(ALLTRIM(V_pathdestinoWEB03)) THEN  
+	v_defa = SYS(5)+'\' 
+	SET DEFAULT TO &v_defa
 
-v_prgpath = ALLTRIM(GETDIR())
+	v_prgpath = ALLTRIM(GETDIR())
 
-IF EMPTY(v_prgpath) THEN 
-	SET DEFAULT TO &_SYSESTACION 
-	RETURN  
+	IF EMPTY(v_prgpath) THEN 
+		SET DEFAULT TO &_SYSESTACION 
+		RETURN  
+	ELSE
+		SET default TO &v_prgpath 
+	ENDIF 
 ELSE
+	v_prgpath = V_pathdestinoWEB03 
 	SET default TO &v_prgpath 
 ENDIF 
 
@@ -733,8 +745,11 @@ USE IN datosextrasweb_sql
 USE IN productosweb
 USE IN preciosweb
 USE IN stockweb 
-= MESSAGEBOX("Se han generado los archivos de Productos para la Web de la Empresa...",0+64,"Exportar Archivos para Web")
-vpar_eje = "RUN /N  explorer.exe "+v_prgpath
-&vpar_eje
+IF EMPTY(ALLTRIM(V_pathdestinoWEB03)) THEN  
+	= MESSAGEBOX("Se han generado los archivos de Productos para la Web de la Empresa...",0+64,"Exportar Archivos para Web")
+	vpar_eje = "RUN /N  explorer.exe "+v_prgpath
+	&vpar_eje
+ENDIF 
 
+RETURN v_prgpath
 ENDFUNC 
