@@ -5487,18 +5487,18 @@ PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 
 		IF par_idgrupo > 0 THEN 		
-				sqlmatriz(1)=" Select g.idgrupo, g.idtipogrupo, g.nombre as nombreg, "
-				sqlmatriz(2)=" t.detalle as nombretipo, t.tabla, t.campo, t.tipoc, " 
-				sqlmatriz(3)=" c.campo as campoc, c.tipoc as tipocc, c.orden  "
-				sqlmatriz(4)=" from campogrupo c left join tipogrupos t on t.idtipogrupo = c.idtipogrupo "
-				sqlmatriz(5)=" left join grupos g on g.idtipogrupo = t.idtipogrupo " 
-				sqlmatriz(6)=" where g.idgrupo= "+ ALLTRIM(STR(par_idgrupo))+" order by c.orden"
+			sqlmatriz(1)=" Select g.idgrupo, g.idtipogrupo, g.nombre as nombreg, "
+			sqlmatriz(2)=" t.detalle as nombretipo, t.tabla, t.campo, t.tipoc, " 
+			sqlmatriz(3)=" c.campo as campoc, c.tipoc as tipocc, c.orden  "
+			sqlmatriz(4)=" from campogrupo c left join tipogrupos t on t.idtipogrupo = c.idtipogrupo "
+			sqlmatriz(5)=" left join grupos g on g.idtipogrupo = t.idtipogrupo " 
+			sqlmatriz(6)=" where g.idgrupo= "+ ALLTRIM(STR(par_idgrupo))+" order by c.orden"
 		ELSE
-				sqlmatriz(1)=" Select 0 as idgrupo, c.idtipogrupo, '  ' as nombreg, "
-				sqlmatriz(2)=" t.detalle as nombretipo, t.tabla, t.campo, t.tipoc, " 
-				sqlmatriz(3)=" c.campo as campoc, c.tipoc as tipocc, c.orden  "
-				sqlmatriz(4)=" from campogrupo c left join tipogrupos t on t.idtipogrupo = c.idtipogrupo "
-				sqlmatriz(6)=" where c.idtipogrupo= "+ ALLTRIM(STR(par_idtipogrupo))+" order by c.orden "
+			sqlmatriz(1)=" Select 0 as idgrupo, c.idtipogrupo, '  ' as nombreg, "
+			sqlmatriz(2)=" t.detalle as nombretipo, t.tabla, t.campo, t.tipoc, " 
+			sqlmatriz(3)=" c.campo as campoc, c.tipoc as tipocc, c.orden  "
+			sqlmatriz(4)=" from campogrupo c left join tipogrupos t on t.idtipogrupo = c.idtipogrupo "
+			sqlmatriz(6)=" where c.idtipogrupo= "+ ALLTRIM(STR(par_idtipogrupo))+" order by c.orden "
 		ENDIF 
 		verror=sqlrun(vconeccionF,"grupotipocampo_sql")
 		IF verror=.f.  
@@ -5512,7 +5512,7 @@ PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
 			MESSAGEBOX("No se puede generar una lista del Grupo Seleccionado...")
 			RETURN ""
 		ENDIF
-		sqlmatriz(1)=" select TRIM(SUBSTR( concat_ws('  '" 
+		sqlmatriz(1)= " select TRIM(SUBSTR( concat_ws('  '" 
 		sqlmatriz(3)= ", SPACE(200)),1,200 )) as miembros , "+ALLTRIM(grupotipocampo_sql.campo)+" as idmiembro, 'N' as pertenece from "+ALLTRIM(grupotipocampo_sql.tabla)+" "
 		
 		DO WHILE !EOF()
@@ -5528,10 +5528,8 @@ PARAMETERS par_idtipogrupo, par_idgrupo , par_alias
 		
 		SELECT grupotipocampo_sql
 		GO TOP  
-
 		
 		SELECT * FROM miembrosgru_sql INTO TABLE .\&par_alias
-
 		
 		ALTER table &par_alias ALTER COLUMN  miembros c(200)
 		ALTER table &par_alias add idgrupo i
@@ -6015,6 +6013,9 @@ PARAMETERS  para_aliasd
 			RETURN p_aliasreto  
 		ENDIF
 		v_nomtabla = "grupotmp0"
+
+		
+		
 		DO WHILE !EOF()
 			=obtienegrupo(gruposall_sql.idtipogrupo,gruposall_sql.idgrupo,"grupotmp")
 			SELECT miembros, SUBSTR((IIF(tipoc='C',ALLTRIM(idmiembro),alltrim(str(idmiembro)))+REPLICATE(' ',20)),1,20) as idmiembro , ;
@@ -6029,6 +6030,8 @@ PARAMETERS  para_aliasd
 			SELECT gruposall_sql
 			skip
 		ENDDO 
+		
+		
 		SELECT grupotmp0
 		ALTER table grupotmp0 ADD codarbol c(20)
 		ALTER table grupotmp0 ADD codpadre c(20)
@@ -29463,11 +29466,13 @@ PARAMETERS P_gdiPixelFormat, P_Dimensiones, P_tipoImagen, P_PathDestino, P_FileD
 			v_tipoImgSalida = ".jpg,image/jpeg"
 	ENDCASE 
 
-
+	SET DEFAULT TO &_SYSPATHBUSCA
 	lcSource = GETPICT("jpg;gif;bmp;png")
+	
 	IF EMPTY(ALLTRIM(lcSource)) THEN 
 		RETURN ""
 	ENDIF 
+	_SYSPATHBUSCA = "'"+ADDBS(JUSTPATH(lcSource))+"'"
 	
 	lcDestination = ADDBS(JUSTPATH(lcSource))+ "R_" + JUSTSTEM(lcSource)+SUBSTR(v_tipoImgSalida,1,4)
 	
