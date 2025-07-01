@@ -473,3 +473,126 @@ CREATE TABLE `agendadeta` (
   `usuario` CHAR(20) NULL,
   `detallereg` CHAR(200) NULL,
   PRIMARY KEY (`idagenda`));
+
+
+-- 20250630 --
+--Vistas
+
+--esquema: `processar_horlit`
+
+DROP VIEW IF EXISTS `processar_horlit`.`depostock`;
+CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`processaradmin`@`%` SQL SECURITY DEFINER VIEW `depostock` AS select `a`.`deposito` AS `deposito`,`a`.`articulo` AS `articulo`,`m`.`detalle` AS `nombreart`,ifnull(`u`.`stocktot`,0) AS `stocktot`,
+sum(if(`t`.`ie` = 'I',1,if(`t`.`ie` = 'E',-1,0)) * `a`.`cantidad`) AS `stock`,`m`.`stockmin` AS `stockmin`,
+ifnull(`p`.`pendiente`,0) AS `pendiente`, ifnull(`f`.`pendrem`,0) as `pendienter`, ifnull(`r`.`pendfact`,0) as `pendientef`
+from ((((`ajustestockh` `a` left join `tipomstock` `t` on(`a`.`idtipomov` = `t`.`idtipomov`))
+left join `articulos` `m` on(`a`.`articulo` = `m`.`articulo`)) left join `articulostock` `u` on(`a`.`articulo` = `u`.`articulo`))
+left join `artpendiente` `p` on(convert(`a`.`articulo` using utf8mb3) = convert(`p`.`articulo` using utf8mb3) and `p`.`idmate` = 0))
+left join (SELECT articulo,sum(pendrem) as pendrem FROM facturapendrem group by articulo) `f`  on(convert(`a`.`articulo` using utf8mb3) = convert(`f`.`articulo` using utf8mb3))
+left join (SELECT articulo,sum(pendfact) as pendfact FROM remitopendfact group by articulo) `r` on(convert(`a`.`articulo` using utf8mb3) = convert(`r`.`articulo` using utf8mb3))
+where !(`a`.`idajusteh` in (select `a`.`id` from `ultimoestado` `a` where `a`.`tabla` = 'ajustestockh' and `a`.`idestador` = 2))
+group by `a`.`deposito`,`a`.`articulo`;
+
+
+--procedimientos:
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `processar_horlit`.`p_depostock` $$
+CREATE DEFINER=`processaradmin`@`%` PROCEDURE `p_depostock`(in pdeposito int, in particulo char(50))
+BEGIN
+
+    set @vnombreart  := ' ' ;
+    set @vstocktot   := 0.00 ;
+    set @vstock      := 0.00 ;
+    set @vstockmin   := 0.00 ;
+    set @vpendiente  := 0.00 ;
+    set @vpendienter := 0.00 ;
+    set @vpendientef := 0.00 ;
+
+    select `m`.`detalle` ,ifnull(`u`.`stocktot`,0) , sum((if((`t`.`ie` = 'I'),1,if((`t`.`ie` = 'E'),-(1),0)) * `a`.`cantidad`)) ,`m`.`stockmin`, ifnull(`p`.`pendiente`,0), ifnull(`f`.`pendrem`,0) as `pendienter`, ifnull(`r`.`pendfact`,0) as `pendientef`
+    into @vnombreart, @vstocktot, @vstock, @vstockmin, @vpendiente, @vpendienter, @vpendientef
+    from ((((`ajustestockh` `a` left join `tipomstock` `t` on((`a`.`idtipomov` = `t`.`idtipomov`)))
+    left join `articulos` `m` on((`a`.`articulo` = `m`.`articulo`))) left join `r_articulostock` `u` on((`a`.`articulo` = `u`.`articulo`)))
+    left join `r_artpendiente` `p` on((`a`.`articulo` = `p`.`articulo` and `p`.`idmate` = 0)))
+    left join (SELECT articulo,sum(pendrem) as pendrem FROM facturapendrem group by articulo) `f`  on(convert(`a`.`articulo` using utf8mb3) = convert(`f`.`articulo` using utf8mb3))
+    left join (SELECT articulo,sum(pendfact) as pendfact FROM remitopendfact group by articulo) `r` on(convert(`a`.`articulo` using utf8mb3) = convert(`r`.`articulo` using utf8mb3))
+    where `a`.`deposito` = pdeposito and `a`.`articulo`= particulo and (not(`a`.`idajusteh` in (select `a`.`id` from `ultimoestado` `a`
+    where ((`a`.`tabla` = 'ajustestockh') and (`a`.`idestador` = 2))))) group by `a`.`deposito`,`a`.`articulo`;
+
+
+     delete from r_depostock where deposito = pdeposito and articulo = particulo;
+     insert into r_depostock values (pdeposito, particulo, @vnombreart, @vstocktot, @vstock, @vstockmin, @vpendiente,@vpendienter,@vpendientef ) ;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+--*********************************************
+--esquema: `processar_horlit_b`
+
+DROP VIEW IF EXISTS `processar_horlit_b`.`depostock`;
+CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`processaradmin`@`%` SQL SECURITY DEFINER VIEW `depostock` AS select `a`.`deposito` AS `deposito`,`a`.`articulo` AS `articulo`,`m`.`detalle` AS `nombreart`,ifnull(`u`.`stocktot`,0) AS `stocktot`,
+sum(if(`t`.`ie` = 'I',1,if(`t`.`ie` = 'E',-1,0)) * `a`.`cantidad`) AS `stock`,`m`.`stockmin` AS `stockmin`,
+ifnull(`p`.`pendiente`,0) AS `pendiente`, ifnull(`f`.`pendrem`,0) as `pendienter`, ifnull(`r`.`pendfact`,0) as `pendientef`
+from ((((`ajustestockh` `a` left join `tipomstock` `t` on(`a`.`idtipomov` = `t`.`idtipomov`))
+left join `articulos` `m` on(`a`.`articulo` = `m`.`articulo`)) left join `articulostock` `u` on(`a`.`articulo` = `u`.`articulo`))
+left join `artpendiente` `p` on(convert(`a`.`articulo` using utf8mb3) = convert(`p`.`articulo` using utf8mb3) and `p`.`idmate` = 0))
+left join (SELECT articulo,sum(pendrem) as pendrem FROM facturapendrem group by articulo) `f`  on(convert(`a`.`articulo` using utf8mb3) = convert(`f`.`articulo` using utf8mb3))
+left join (SELECT articulo,sum(pendfact) as pendfact FROM remitopendfact group by articulo) `r` on(convert(`a`.`articulo` using utf8mb3) = convert(`r`.`articulo` using utf8mb3))
+where !(`a`.`idajusteh` in (select `a`.`id` from `ultimoestado` `a` where `a`.`tabla` = 'ajustestockh' and `a`.`idestador` = 2))
+group by `a`.`deposito`,`a`.`articulo`;
+
+
+
+
+procedimientos:
+
+
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `processar_horlit_b`.`p_artpendiente` $$
+CREATE DEFINER=`processaradmin`@`%` PROCEDURE `p_artpendiente`(in particulo char(50))
+BEGIN
+    set @vcantidad    := 0.00 ;
+    set @vcantcump    := 0.00 ;
+    set @vpendiente   := 0.00 ;
+    set @vidmate      := 0 ;
+
+
+    select `o`.`idmate`, sum(`o`.`cantidad`), sum(`o`.`cantcump`), sum(`o`.`pendiente`) into @vidmate, @vcantidad, @vcantcump, @vpendiente
+    from `r_otpendientes` `o` where  `o`.`articulo` = particulo and `o`.`idmate` = 0;
+
+   if @vidmate = 0 or isnull(@vidmate) = true  then
+     update r_depostock set pendiente = @vpendiente where articulo = particulo ;
+   end if;
+   delete from r_artpendiente where articulo = particulo  and idmate = 0;
+   if isnull(@vcantidad) <> true then
+      delete from r_artpendiente where articulo = particulo  and idmate = 0;
+      insert into r_artpendiente values (particulo, 0 , @vcantidad, @vcantcump, @vpendiente);
+    end if ;
+
+
+
+    select `o`.`idmate`, sum(`o`.`cantidad`), sum(`o`.`cantcump`), sum(`o`.`pendiente`) into @vidmate, @vcantidad, @vcantcump, @vpendiente
+    from `r_otpendientes` `o` where  `o`.`articulo` = particulo and `o`.`idmate` > 0 ;
+
+
+    delete from r_artpendiente where articulo = particulo  and idmate > 0;
+    if isnull(@vidmate) <> true then
+      insert into r_artpendiente values (particulo, @vidmate , @vcantidad, @vcantcump, @vpendiente);
+    end if ;
+
+END $$
+
+DELIMITER ;
+
