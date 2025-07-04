@@ -21309,6 +21309,7 @@ FUNCTION Aso_StockArt
 	
 	SELECT dbasociada_sql
 	GO TOP 
+	
 	IF EOF() THEN 
 		USE IN dbasociada_sql
 		* me desconecto	
@@ -21321,7 +21322,8 @@ FUNCTION Aso_StockArt
 
 	* Arranco a recorrer los esquemas asociados y traerme los stock de cada uno
 	* Guardo el esquema en el que estoy trabajando 
-	CREATE TABLE stockreto (articulo c(20), stocktot y)
+*	CREATE TABLE stockreto (articulo c(20), stocktot y)
+	CREATE TABLE stockreto (articulo c(20), stocktot y, pendiente Y,pendientef Y,pendienter Y)
 	
 	vs_db_sysbgproce = _SYSBGPROCE 
 	_SYSBBPROCE = 0 && detiene la ejecucion de procesos de Relojes en Segundo Plano
@@ -21339,14 +21341,17 @@ FUNCTION Aso_StockArt
 		_SYSMYSQL_SERVER = ALLTRIM(dbasociada_sql.host) 
 		_SYSMYSQL_USER	 = ALLTRIM(dbasociada_sql.usuario)   	
 		_SYSMYSQL_PASS 	 = ALLTRIM(dbasociada_sql.password)
-		_SYSMYSQL_PORT 	 = ALLTRIM(dbasociada_sql.port)
-		_SYSSCHEMA    	 = ALLTRIM(dbasociada_sql.schemma)
+		_SYSMYSQL_PORT 	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.port))=.T.,vs_db_port,ALLTRIM(dbasociada_sql.port))
+		_SYSSCHEMA    	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.schemma))=.T.,vs_db_schema,ALLTRIM(dbasociada_sql.schemma))
 		_SYSDESCRIP  	 = ALLTRIM(dbasociada_sql.descrip)
 
+	
 		* Me conecto a la base de datos *
 		vconeccionA=abreycierracon(0,_SYSSCHEMA)	
 
-		sqlmatriz(1)=" select * from r_articulostock "
+*		sqlmatriz(1)=" select * from r_articulostock "
+		sqlmatriz(1)="  select articulo, SUM(stocktot) as stocktot, sum(pendiente) as pendiente, sum(pendientef) as pendientef, sum(pendienter) as pendienter "
+		sqlmatriz(2)=" from r_depostock group by articulo "
 		verror=sqlrun(vconeccionA,"r_articulostock_asql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error al Obtener el Stock en Esquemas Asociados ",0+48+0,"Error")
@@ -21367,7 +21372,7 @@ FUNCTION Aso_StockArt
 		ENDIF 		
 		SELECT * FROM r_articulostock_asql INTO TABLE r_articulostocksql
 		SELECT r_articulostocksql
-		replace stocktot WITH 0 FOR ISNULL(stocktot)
+		replace stocktot WITH 0, pendiente WITH 0,pendientef WITH 0 ,pendienter WITH 0 FOR ISNULL(stocktot)
 		
 		SELECT stockreto
 		APPEND FROM .\r_articulostocksql
@@ -21383,7 +21388,8 @@ FUNCTION Aso_StockArt
 
 	
 	SET ENGINEBEHAVIOR 70
-	SELECT articulo, SUM(IIF(ISNULL(stocktot),0,stocktot)) as stock FROM stockreto INTO TABLE &v_stockreto GROUP BY articulo 
+	SELECT articulo, SUM(IIF(ISNULL(stocktot),0,stocktot)) as stock,SUM(IIF(ISNULL(pendiente),0,pendiente)) as pendiente, ;
+	SUM(IIF(ISNULL(pendientef),0,pendientef)) as pendientef,SUM(IIF(ISNULL(pendienter),0,pendienter)) as pendienter FROM stockreto INTO TABLE &v_stockreto GROUP BY articulo 
 	SET ENGINEBEHAVIOR 90
 	
 	USE IN stockreto
@@ -29521,4 +29527,5 @@ PARAMETERS P_gdiPixelFormat, P_Dimensiones, P_tipoImagen, P_PathDestino, P_FileD
 	RELEASE loImage 
 	
 	RETURN lcDestination
+
 ENDFUNC 

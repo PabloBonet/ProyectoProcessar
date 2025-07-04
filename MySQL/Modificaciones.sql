@@ -493,6 +493,17 @@ where !(`a`.`idajusteh` in (select `a`.`id` from `ultimoestado` `a` where `a`.`t
 group by `a`.`deposito`,`a`.`articulo`;
 
 
+
+
+
+---- OTRA VISTA SIMILAR A LA ANTERIOR PERO USANDO VISTAS AUXILIRIARES EN VEZ DE SUB CONSULTAS ---
+
+CREATE VIEW `processar_horlit`.`depostock` AS
+  select `a`.`deposito` AS `deposito`,`a`.`articulo` AS `articulo`,`m`.`detalle` AS `nombreart`,ifnull(`u`.`stocktot`,0) AS `stocktot`,sum(if(`t`.`ie` = 'I',1,if(`t`.`ie` = 'E',-1,0)) * `a`.`cantidad`) AS `stock`,`m`.`stockmin` AS `stockmin`,ifnull(`p`.`pendiente`,0) AS `pendiente`,ifnull(`f`.`pendrem`,0) AS `pendienter`,ifnull(`r`.`pendfact`,0) AS `pendientef` from ((((((`ajustestockh` `a` left join `tipomstock` `t` on(`a`.`idtipomov` = `t`.`idtipomov`)) left join `articulos` `m` on(`a`.`articulo` = `m`.`articulo`)) left join `articulostock` `u` on(`a`.`articulo` = `u`.`articulo`)) left join `artpendiente` `p` on(convert(`a`.`articulo` using utf8mb3) = convert(`p`.`articulo` using utf8mb3) and `p`.`idmate` = 0)) left join `factpendremaux` `f` on(convert(`a`.`articulo` using utf8mb3) = convert(`f`.`articulo` using utf8mb3))) left join `remitopendfactaux`  `r` on(convert(`a`.`articulo` using utf8mb3) = convert(`r`.`articulo` using utf8mb3))) where !(`a`.`idajusteh` in (select `a`.`id` from `ultimoestado` `a` where `a`.`tabla` = 'ajustestockh' and `a`.`idestador` = 2)) group by `a`.`deposito`,`a`.`articulo`;
+  
+  
+  
+
 --procedimientos:
 
 DELIMITER $$
