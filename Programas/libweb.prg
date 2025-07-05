@@ -555,7 +555,7 @@ FOR j = 2 TO 3
 		SELECT preciosweb
 		IF !SEEK(ALLTRIM(&v_idx..articulo)+v_empre ) THEN 
 			APPEND BLANK 
-			replace sku WITH ALLTRIM(&v_idx..articulo), preciovta WITH &v_idx..pventatot, preciotach WITH &v_idx..pventatot, seccion WITH v_empre 
+			replace sku WITH ALLTRIM(&v_idx..articulo), preciovta WITH &v_idx..pventatot, preciotach WITH &v_idx..pventatot2, seccion WITH v_empre 
 		ENDIF 
 		SELECT stockweb
 		IF !SEEK(ALLTRIM(&v_idx..articulo)+v_empre ) THEN 
@@ -579,6 +579,9 @@ FOR j = 2 TO 3
 					ENDDO 
 				ENDIF 
 				RELEASE arrCategoWEB
+
+			CASE ALLTRIM(&v_idx..propiedad)=='DESCRIPCION'
+				UPDATE productosweb SET descrip = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='PESO EN KG'
 				UPDATE productosweb SET peso = VAL(STRTRAN(&v_idx..valor,',','.')) WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
@@ -684,13 +687,14 @@ v_linea = "tienda,sku,nombre,descripcion,categoria_1,categoria_2,categoria_3,pes
 =fputs(p, v_linea )
 =ViewBarProgress(0,RECCOUNT(),"Generando Archivo de Productos...")
 DO WHILE NOT EOF() 
-	v_linea = '"'+STRTRAN(ALLTRIM(seccion),',',' ')+'","'+STRTRAN(ALLTRIM(sku),',',' ')+'","'+STRTRAN(ALLTRIM(nombre),',',' ')+'","'+STRTRAN(ALLTRIM(descrip),',',' ')+'","'+ ;
+	v_linea = '"'+STRTRAN(ALLTRIM(seccion),',',' ')+'","'+STRTRAN(ALLTRIM(sku),',',' ')+'","'+STRTRAN(STRTRAN(ALLTRIM(nombre),',',' '),'"',' ')+'","'+STRTRAN(ALLTRIM(descrip),'"',' ')+'","'+ ;
 	STRTRAN(ALLTRIM(cate1),',',' ')+'","'+STRTRAN(ALLTRIM(cate2),',',' ')+'","'+STRTRAN(ALLTRIM(cate3),',',' ')+'",'+STRTRAN(str(peso,8,2),',',' ')+','+STRTRAN(str(altura,8,2),',',' ')+','+ ;
-	STRTRAN(str(longitud,8,2),',',' ')+','+STRTRAN(str(ancho,8,2),',',' ')+',"'+STRTRAN(ALLTRIM(titulo1),',',' ')+'","'+STRTRAN(ALLTRIM(valor1),',',' ')+'","'+ ;
-	STRTRAN(ALLTRIM(titulo2),',',' ')+'","'+STRTRAN(ALLTRIM(valor2),',',' ')+'","'+STRTRAN(ALLTRIM(titulo3),',',' ')+'","'+STRTRAN(ALLTRIM(valor3),',',' ')+'","'+ ;
-	STRTRAN(ALLTRIM(titulo4),',',' ')+'","'+STRTRAN(ALLTRIM(valor4),',',' ')+'","'+STRTRAN(ALLTRIM(titulo5),',',' ')+'","'+STRTRAN(ALLTRIM(valor5),',',' ')+'","'+ ;
-	STRTRAN(ALLTRIM(titulo6),',',' ')+'","'+STRTRAN(ALLTRIM(valor6),',',' ')+'","'+STRTRAN(ALLTRIM(titulo7),',',' ')+'","'+STRTRAN(ALLTRIM(valor7),',',' ')+'","'+ ;
-	STRTRAN(ALLTRIM(titulo8),',',' ')+'","'+STRTRAN(ALLTRIM(valor8),',',' ')+'",'+STRTRAN(str(iva,5,2),',',' ')  
+	STRTRAN(str(longitud,8,2),',',' ')+','+STRTRAN(str(ancho,8,2),',',' ')+',"'+STRTRAN(ALLTRIM(titulo1),',',' ')+'","'+STRTRAN(STRTRAN(ALLTRIM(valor1),',',' '),'"',' ')+'","'+ ;
+	STRTRAN(ALLTRIM(titulo2),',',' ')+'","'+STRTRAN(STRTRAN(ALLTRIM(valor2),',',' '),'"',' ')+'","'+STRTRAN(ALLTRIM(titulo3),',',' ')+'","'+STRTRAN(STRTRAN(ALLTRIM(valor3),',',' '),'"',' ')+'","'+ ;
+	STRTRAN(ALLTRIM(titulo4),',',' ')+'","'+STRTRAN(STRTRAN(ALLTRIM(valor4),',',' '),'"',' ')+'","'+STRTRAN(ALLTRIM(titulo5),',',' ')+'","'+STRTRAN(STRTRAN(ALLTRIM(valor5),',',' '),'"',' ')+'","'+ ;
+	STRTRAN(ALLTRIM(titulo6),',',' ')+'","'+STRTRAN(STRTRAN(ALLTRIM(valor6),',',' '),'"',' ')+'","'+STRTRAN(ALLTRIM(titulo7),',',' ')+'","'+STRTRAN(STRTRAN(ALLTRIM(valor7),',',' '),'"',' ')+'","'+ ;
+	STRTRAN(ALLTRIM(titulo8),',',' ')+'","'+STRTRAN(STRTRAN(ALLTRIM(valor8),',',' '),'"',' ')+'",'+STRTRAN(str(iva,5,2),',',' ')  
+
 	
 	=fputs(p, v_linea )
 	SELECT  productosweb

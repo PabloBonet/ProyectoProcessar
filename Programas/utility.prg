@@ -21338,12 +21338,20 @@ FUNCTION Aso_StockArt
 	GO TOP 
 	DO WHILE !EOF()
 
-		_SYSMYSQL_SERVER = ALLTRIM(dbasociada_sql.host) 
-		_SYSMYSQL_USER	 = ALLTRIM(dbasociada_sql.usuario)   	
-		_SYSMYSQL_PASS 	 = ALLTRIM(dbasociada_sql.password)
+		_SYSMYSQL_SERVER = IIF(EMPTY(ALLTRIM(dbasociada_sql.host))=.T.,vs_db_server,ALLTRIM(dbasociada_sql.host))
+		_SYSMYSQL_USER	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.usuario))=.T.,vs_db_user,ALLTRIM(dbasociada_sql.usuario))    	
+		_SYSMYSQL_PASS 	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.password))=.T.,vs_db_pass,ALLTRIM(dbasociada_sql.password))
 		_SYSMYSQL_PORT 	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.port))=.T.,vs_db_port,ALLTRIM(dbasociada_sql.port))
 		_SYSSCHEMA    	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.schemma))=.T.,vs_db_schema,ALLTRIM(dbasociada_sql.schemma))
 		_SYSDESCRIP  	 = ALLTRIM(dbasociada_sql.descrip)
+
+
+MESSAGEBOX(_SYSMYSQL_SERVER)
+MESSAGEBOX(_SYSMYSQL_USER)
+MESSAGEBOX(_SYSMYSQL_PASS )
+MESSAGEBOX(_SYSMYSQL_PORT )
+MESSAGEBOX(_SYSSCHEMA    )
+MESSAGEBOX(_SYSDESCRIP  )
 
 	
 		* Me conecto a la base de datos *
