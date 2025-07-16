@@ -21284,12 +21284,36 @@ ENDFUNC
 
 
 FUNCTION Aso_StockArt
+PARAMETERS p_fechaI, p_fechaF
 *#/- Tipo de funciones de búsquedas de Datos en Esquemas Asociados
 *----------------------------------------------------------------
 ** Obtiene el Stock de Artículos de las bases de Datos asociadas
+** PARAMETROS: 
+**	p_fechaI: Fecha de inicio del periodo para buscar movimientos
+**	p_fechaF: Fecha de fin del periodo para buscar movimientos
 * * retorna una tabla con el stock de artículos en los esquemas asociados
 *#/----------------------------------------------------------------
 
+	
+	v_fechaINI = ""
+	v_fechaFIN = ""
+	
+	IF TYPE('p_fechaI') == 'C'
+		v_fechaINI = p_fechaI
+	ELSE
+		v_fechaINI = DTOS(DATE())
+	ENDIF 
+	
+	
+	IF TYPE('p_fechaF') == 'C'
+		v_fechaFIN = p_fechaF
+	ELSE
+	
+		v_fechaFIN = DTOS(DATE())
+	ENDIF 
+	
+	
+	
 	valias = ALIAS()
 	
 	v_stockreto = 'stockreto'+frandom()
@@ -21323,7 +21347,7 @@ FUNCTION Aso_StockArt
 	* Arranco a recorrer los esquemas asociados y traerme los stock de cada uno
 	* Guardo el esquema en el que estoy trabajando 
 *	CREATE TABLE stockreto (articulo c(20), stocktot y)
-	CREATE TABLE stockreto (articulo c(20), stocktot y, pendiente Y,pendientef Y,pendienter Y)
+	CREATE TABLE stockreto (articulo c(20), stocktot y, pendiente Y,pendientef Y,pendienter Y, ingreso Y, egreso Y)
 	
 	vs_db_sysbgproce = _SYSBGPROCE 
 	_SYSBBPROCE = 0 && detiene la ejecucion de procesos de Relojes en Segundo Plano
@@ -21344,14 +21368,6 @@ FUNCTION Aso_StockArt
 		_SYSMYSQL_PORT 	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.port))=.T.,vs_db_port,ALLTRIM(dbasociada_sql.port))
 		_SYSSCHEMA    	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.schemma))=.T.,vs_db_schema,ALLTRIM(dbasociada_sql.schemma))
 		_SYSDESCRIP  	 = ALLTRIM(dbasociada_sql.descrip)
-
-
-MESSAGEBOX(_SYSMYSQL_SERVER)
-MESSAGEBOX(_SYSMYSQL_USER)
-MESSAGEBOX(_SYSMYSQL_PASS )
-MESSAGEBOX(_SYSMYSQL_PORT )
-MESSAGEBOX(_SYSSCHEMA    )
-MESSAGEBOX(_SYSDESCRIP  )
 
 	
 		* Me conecto a la base de datos *
@@ -21382,11 +21398,48 @@ MESSAGEBOX(_SYSDESCRIP  )
 		SELECT r_articulostocksql
 		replace stocktot WITH 0, pendiente WITH 0,pendientef WITH 0 ,pendienter WITH 0 FOR ISNULL(stocktot)
 		
+		
+		
+		
+*		SELECT a.articulo, a.cantidad, sum(if(t.ie = 'E',a.cantidad,0)) as egreso,sum(if(t.ie = 'I',a.cantidad,0)) as ingreso FROM ajustestockh a left join tipomstock t on a.idtipomov = t.idtipomov where fecha between '20250701' and '20250716' group by a.articulo;
+		
+		*** Calculo lo movimientos en el periodo ***
+		
+		sqlmatriz(1)=" SELECT a.articulo, sum(if(t.ie = 'E',a.cantidad,0)) as egreso,sum(if(t.ie = 'I',a.cantidad,0)) as ingreso "
+		sqlmatriz(2)=" FROM ajustestockh a left join tipomstock t on a.idtipomov = t.idtipomov "
+		sqlmatriz(3)=" where fecha between '"+ALLTRIM(v_fechaINI)+"' and '"+ALLTRIM(v_fechaFIN)+"' group by a.articulo "
+	
+		verror=sqlrun(vconeccionA,"r_movimientosstock_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al Obtener los movimientoes de stock en Esquemas Asociados ",0+48+0,"Error")
+			* me desconecto	
+
+			_SYSMYSQL_SERVER = vs_db_server 
+			_SYSMYSQL_USER	 = vs_db_user   	
+			_SYSMYSQL_PASS 	 = vs_db_pass   
+			_SYSMYSQL_PORT 	 = vs_db_port   
+			_SYSSCHEMA    	 = vs_db_schema 
+			_SYSDESCRIP  	 = vs_db_descrip
+			_SYSBGPROCE 	 = vs_db_sysbgproce
+			=abreycierracon(vconeccionA,"")
+			USE IN dbasociada_sql
+			
+			SELECT &valias
+		    RETURN ""
+		ENDIF 	
+		
+								
+		
+		SELECT s.*, IIF(ISNULL(m.ingreso)=.T.,0.00,m.ingreso) as ingreso, IIF(ISNULL(m.egreso)=.T.,0.00,m.egreso) as egreso FROM  r_articulostocksql s LEFT JOIN r_movimientosstock_sql m ON s.articulo = m.articulo INTO TABLE r_artmovStocksql
+		
+		
+		
 		SELECT stockreto
-		APPEND FROM .\r_articulostocksql
+		APPEND FROM r_artmovStocksql
 		USE IN r_articulostocksql
 		USE IN r_articulostock_asql
-
+		USE IN r_movimientosstock_sql 
+		USE IN r_artmovStocksql
 		* me desconecto	
 		=abreycierracon(vconeccionA,"")
 		
@@ -21397,7 +21450,7 @@ MESSAGEBOX(_SYSDESCRIP  )
 	
 	SET ENGINEBEHAVIOR 70
 	SELECT articulo, SUM(IIF(ISNULL(stocktot),0,stocktot)) as stock,SUM(IIF(ISNULL(pendiente),0,pendiente)) as pendiente, ;
-	SUM(IIF(ISNULL(pendientef),0,pendientef)) as pendientef,SUM(IIF(ISNULL(pendienter),0,pendienter)) as pendienter FROM stockreto INTO TABLE &v_stockreto GROUP BY articulo 
+	SUM(IIF(ISNULL(pendientef),0,pendientef)) as pendientef,SUM(IIF(ISNULL(pendienter),0,pendienter)) as pendienter, ingreso,egreso FROM stockreto INTO TABLE &v_stockreto GROUP BY articulo 
 	SET ENGINEBEHAVIOR 90
 	
 	USE IN stockreto
