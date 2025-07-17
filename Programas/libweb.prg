@@ -479,36 +479,146 @@ eje = eje +" AND b.idlista = "+v_listaWEB02+") INTO TABLE productos01 WHERE a.id
 
 vconeccionF=abreycierracon(0,_SYSSCHEMA)
 	* Traigo las propiedades de los articulos 
-sqlmatriz(1) =" SELECT r.idregic ,  d.propiedad, d.valor, ifnull(c.propiedad,'') as categoriaa, ifnull(c.valor,'') as valora, ifnull(w.propiedad,'') as categoriah, ifnull(w.valor,'') as valorh "
-sqlmatriz(2) =" FROM reldatosextra r "
-sqlmatriz(3) =" left join datosextra d on d.iddatosex = r.iddatosex "
-sqlmatriz(4) =" left join ( SELECT x.idregic, z.propiedad, z.valor FROM processar.reldatosextra x left join processar.datosextra z on z.iddatosex = x.iddatosex) c on (c.idregic = r.idregic and c.propiedad = 'CATEGORIA-AMOBLARK' and c.valor <> ''  ) "
-sqlmatriz(5) =" left join ( SELECT u.idregic, v.propiedad, v.valor FROM processar.reldatosextra u left join processar.datosextra v on v.iddatosex = u.iddatosex) w on (w.idregic = r.idregic and w.propiedad = 'CATEGORIA-HOGAR' and w.valor <> ''  ) "
-sqlmatriz(6) =" where r.tabla = 'articulos' order by idregic, propiedad "
+*!*	sqlmatriz(1) =" SELECT r.idregic ,  d.propiedad, d.valor, ifnull(c.propiedad,'') as categoriaa, ifnull(c.valor,'') as valora, ifnull(w.propiedad,'') as categoriah, ifnull(w.valor,'') as valorh "
+*!*	sqlmatriz(2) =" FROM reldatosextra r "
+*!*	sqlmatriz(3) =" left join datosextra d on d.iddatosex = r.iddatosex "
+*!*	sqlmatriz(4) =" left join ( SELECT x.idregic, z.propiedad, z.valor FROM processar.reldatosextra x left join processar.datosextra z on z.iddatosex = x.iddatosex) c on (c.idregic = r.idregic and c.propiedad = 'CATEGORIA-AMOBLARK' and c.valor <> ''  ) "
+*!*	sqlmatriz(5) =" left join ( SELECT u.idregic, v.propiedad, v.valor FROM processar.reldatosextra u left join processar.datosextra v on v.iddatosex = u.iddatosex) w on (w.idregic = r.idregic and w.propiedad = 'CATEGORIA-HOGAR' and w.valor <> ''  ) "
+*!*	sqlmatriz(6) =" where r.tabla = 'articulos' order by idregic, propiedad "
+
+sqlmatriz(1) =" SELECT r.idregic ,  d.propiedad, d.valor, ifnull(t.idtp,0) as idtpa, ifnull(t.idp,0) as idpa, ifnull(t.codigo,' ') as codigoa , ifnull(t.nombre,' ') as nombrea, ifnull(t.articulo,' ') as articuloa, "
+sqlmatriz(2) =" ifnull(t.nivel,' ') as nivela , ifnull(v.idtp,0) as idtpb, ifnull(v.idp,0) as idpb, ifnull(v.codigo,' ') as codigob, ifnull(v.nombre,' ') as nombreb, ifnull(v.articulo,' ') as articulob, ifnull(v.nivel,' ') as nivelb, "
+sqlmatriz(3) =" mid(ifnull(t.codigo,' '),1,2) as categoriaa, mid(ifnull(v.codigo,' '),1,2) as categoriah "
+sqlmatriz(4) ="  FROM reldatosextra r  left join datosextra d on d.iddatosex = r.iddatosex "
+sqlmatriz(5) ="  left join "
+sqlmatriz(6) ="  ( SELECT t.idtp, t.idp , t.codigo, t.nombre, t.articulo, t.nivel  from processar.tipologias t "
+sqlmatriz(7) =" left join articulos a on a.articulo = t.articulo "
+sqlmatriz(8) =" where substring(t.codigo,1,2) = '01' and t.articulo <> '' ) t on t.articulo = r.idregic "
+sqlmatriz(9) =" left join  ( SELECT u.idtp, u.idp , u.codigo, u.nombre, u.articulo, u.nivel  from processar.tipologias u "
+sqlmatriz(10) =" left join articulos b on b.articulo = u.articulo "
+sqlmatriz(11) =" where substring(u.codigo,1,2) = '02' and u.articulo <> '' ) v on v.articulo = r.idregic "
+sqlmatriz(12) ="  where r.tabla = 'articulos' order by idregic, propiedad "
+
+
 verror=sqlrun(vconeccionF,"datosextrasweb_sql")
 IF verror=.f.  
     MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de AsientosCompro ",0+48+0,"Error")
 ENDIF 
 
+
+sqlmatriz(1) =" select * from tipologias "
+verror=sqlrun(vconeccionF,"tipologias_sql")
+IF verror=.f.  
+    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Tipologias ",0+48+0,"Error")
+ENDIF 
+
+
 =abreycierracon(vconeccionF,"")	
 
 SELECT * FROM datosextrasweb_sql INTO TABLE datosextraweb
+ALTER TABLE datosextraweb ALTER COLUMN idtpa i 
+ALTER TABLE datosextraweb ALTER COLUMN idtpb i 
+ALTER TABLE datosextraweb ALTER COLUMN idpa i 
+ALTER TABLE datosextraweb ALTER COLUMN idpb i 
 
-SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor ;
-FROM datosextrasweb_sql d ;
+
+SELECT * FROM tipologias_sql INTO TABLE tipologias
+SELECT tipologias
+INDEX on idtp TAG idtp 
+
+
+SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor, d.idtpa as idtp, d.idpa as idp, SPACE(254) as categoria  ;
+FROM datosextraweb d ;
 LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
-into table productos02 where ALLTRIM(d.categoriaa) == 'CATEGORIA-AMOBLARK' AND ISNULL(p.articulo) = .f. AND !EMPTY(ALLTRIM(d.valora))
+into table productos02 where ALLTRIM(d.categoriaa) == '01' AND ISNULL(p.articulo) = .f. 
 
-*!*	SELECT productos02
-*!*	BROWSE 
+** cargo todos los nombres de las categorias del arbol en el campo categoria
+SET ENGINEBEHAVIOR 70
+SELECT articulo, idtp, idp , categoria FROM productos02 INTO TABLE productos02_c GROUP BY articulo 
+SET ENGINEBEHAVIOR 90
 
-SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor ;
-FROM datosextrasweb_sql d ;
+GO TOP 
+DO WHILE !EOF()
+	v_idp = productos02_c.idp 
+	SELECT tipologias
+	DO WHILE v_idp > 0 
+		IF SEEK(v_idp) THEN 
+			SELECT productos02_c 
+			IF tipologias.idp > 0 THEN 
+				replace categoria WITH ALLTRIM(tipologias.nombre)+IIF(EMPTY(categoria),'',',')+ALLTRIM(categoria)
+			ENDIF 
+			SELECT tipologias	
+			v_idp = tipologias.idp 
+		ENDIF 
+	ENDDO 
+	SELECT productos02_c
+	SKIP 
+ENDDO 
+SELECT productos02_c
+INDEX on ALLTRIM(articulo) TAG articulo
+SELECT productos02
+SET RELATION TO ALLTRIM(articulo) INTO productos02_c
+replace ALL categoria WITH productos02_c.categoria
+USE IN productos02_c
+
+
+
+
+SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor,  d.idtpb as idtp, d.idpb as idp, SPACE(254) as categoria ;
+FROM datosextraweb d ;
 LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
-into table productos03 where ALLTRIM(d.categoriah) == 'CATEGORIA-HOGAR' AND ISNULL(p.articulo) = .f. AND !EMPTY(ALLTRIM(d.valorh))
+into table productos03 where ALLTRIM(d.categoriah) == '02' AND ISNULL(p.articulo) = .f. 
+
+
+** cargo todos los nombres de las categorias del arbol en el campo categoria
+SET ENGINEBEHAVIOR 70
+SELECT articulo, idtp, idp , categoria FROM productos03 INTO TABLE productos03_c GROUP BY articulo 
+SET ENGINEBEHAVIOR 90
+
+GO TOP 
+DO WHILE !EOF()
+	v_idp = productos03_c.idp 
+	SELECT tipologias
+	DO WHILE v_idp > 0 
+		IF SEEK(v_idp) THEN 
+			SELECT productos03_c 
+			IF tipologias.idp > 0 THEN 
+				replace categoria WITH ALLTRIM(tipologias.nombre)+IIF(EMPTY(categoria),'',',')+ALLTRIM(categoria)
+			ENDIF 
+			SELECT tipologias	
+			v_idp = tipologias.idp 
+		ENDIF 
+	ENDDO 
+	SELECT productos03_c
+	SKIP 
+ENDDO 
+SELECT productos03_c
+INDEX on ALLTRIM(articulo) TAG articulo
+SELECT productos03
+SET RELATION TO ALLTRIM(articulo) INTO productos03_c
+replace ALL categoria WITH productos03_c.categoria
+USE IN productos03_c
+
+
+
+** REEMPLAZAR ESTAS CONSULTAS ***
+*!*	SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor ;
+*!*	FROM datosextrasweb_sql d ;
+*!*	LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
+*!*	into table productos02 where ALLTRIM(d.categoriaa) == 'CATEGORIA-AMOBLARK' AND ISNULL(p.articulo) = .f. AND !EMPTY(ALLTRIM(d.valora))
+
+*!*	*!*	SELECT productos02
+*!*	*!*	BROWSE 
+
+*!*	SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor ;
+*!*	FROM datosextrasweb_sql d ;
+*!*	LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
+*!*	into table productos03 where ALLTRIM(d.categoriah) == 'CATEGORIA-HOGAR' AND ISNULL(p.articulo) = .f. AND !EMPTY(ALLTRIM(d.valorh))
 
 *!*	SELECT productos03
 *!*	BROWSE 
+*********************************
+
 
 IF USED("productosweb") THEN 
 	USE IN productosweb 
@@ -551,6 +661,21 @@ FOR j = 2 TO 3
 		IF !SEEK(ALLTRIM(&v_idx..articulo)+v_empre) THEN 
 			APPEND BLANK 
 			replace sku WITH ALLTRIM(&v_idx..articulo), nombre WITH &v_idx..nombre, iva WITH &v_idx..razonimpu, seccion WITH v_empre 
+			
+				nvalor = ALLTRIM(&v_idx..categoria)
+				nFilas = ALINES(ArrCategoWEB, nvalor  , ",")
+				IF nFilas >= 0 THEN 
+					i = 1
+					DO WHILE i <= nFilas AND i <=3
+						IF !EMPTY(ALLTRIM(ArrCategoWEB(i))) THEN 
+							eje = " replace cate"+ALLTRIM(STR(i))+" with ALLTRIM(ArrCategoWEB(i))  "
+							&eje
+						ENDIF 
+						i = i+1
+					ENDDO 
+				ENDIF 
+				RELEASE arrCategoWEB
+				
 		ENDIF 
 		SELECT preciosweb
 		IF !SEEK(ALLTRIM(&v_idx..articulo)+v_empre ) THEN 
@@ -564,21 +689,6 @@ FOR j = 2 TO 3
 		ENDIF 
 
 		DO CASE 
-			CASE ALLTRIM(&v_idx..propiedad)=='CATEGORIA-HOGAR' OR ALLTRIM(&v_idx..propiedad)=='CATEGORIA-AMOBLARK' 
-				
-				nvalor = ALLTRIM(&v_idx..valor)
-				nFilas = ALINES(ArrCategoWEB, nvalor  , ",")
-				IF nFilas >= 0 THEN 
-					i = 1
-					DO WHILE i <= nFilas AND i <=3
-						IF !EMPTY(ALLTRIM(ArrCategoWEB(i))) THEN 
-							eje = " UPDATE productosweb SET cate"+ALLTRIM(STR(i))+" = ALLTRIM(ArrCategoWEB(i)) WHERE ALLTRIM(sku) == ALLTRIM("+v_idx+".articulo)  AND ALLTRIM(seccion) == v_empre "
-							&eje
-						ENDIF 
-						i = i+1
-					ENDDO 
-				ENDIF 
-				RELEASE arrCategoWEB
 
 			CASE ALLTRIM(&v_idx..propiedad)=='DESCRIPCION'
 				UPDATE productosweb SET descrip = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 

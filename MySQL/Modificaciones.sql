@@ -618,3 +618,17 @@ END $$
 
 DELIMITER ;
 
+
+-- 20250712
+-- Agregado de Tabla para Tipificar y Clasificar articulostock`
+CREATE TABLE `processar_horlit`.`tipologias` (
+  `idtp` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `idp`  INTEGER UNSIGNED NOT NULL, 
+  `codigo` CHAR(20) NOT NULL,
+  `nombre` CHAR(150) NOT NULL,
+  `articulo` CHAR(20) NOT NULL,
+  `nivel` CHAR(1) NOT NULL,
+  `cantidad` FLOAT(13,2) NOT NULL,
+  PRIMARY KEY (`idtp`)
+)
+ENGINE = InnoDB;
