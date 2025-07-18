@@ -859,7 +859,18 @@ USE IN datosextrasweb_sql
 USE IN productosweb
 USE IN preciosweb
 USE IN stockweb 
-IF EMPTY(ALLTRIM(V_pathdestinoWEB03)) THEN  
+
+lcInputFile = v_prgpath+'productos.csv'
+v_convierteutf8=ConvertToUTF8(lcInputFile)
+
+IF !EMPTY(v_convierteutf8) THEN 
+	v_archivo_productos = STRTRAN(v_convierteutf8,'_utf-8.','.')
+	DELETE FILE &v_archivo_productos
+	COPY FILE &v_convierteutf8 TO &v_archivo_productos
+	DELETE FILE &v_convierteutf8
+ENDIF 
+
+IF EMPTY(ALLTRIM(V_pathdestinoWEB03))  THEN  
 	= MESSAGEBOX("Se han generado los archivos de Productos para la Web de la Empresa...",0+64,"Exportar Archivos para Web")
 	vpar_eje = "RUN /N  explorer.exe "+v_prgpath
 	&vpar_eje
