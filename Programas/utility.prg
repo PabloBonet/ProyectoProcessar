@@ -21432,18 +21432,22 @@ PARAMETERS p_fechaI, p_fechaF
 		    RETURN ""
 		ENDIF 	
 		
-								
+		SELECT r_movimientosstock_sql
+		GO TOP 
+		IF !EOF() THEN 	
+			SELECT s.*, IIF(ISNULL(m.ingreso)=.T.,0.00,m.ingreso) as ingreso, IIF(ISNULL(m.egreso)=.T.,0.00,m.egreso) as egreso FROM  r_articulostocksql s ;
+							LEFT JOIN r_movimientosstock_sql m ON s.articulo = m.articulo INTO TABLE r_artmovStocksql
 		
-		SELECT s.*, IIF(ISNULL(m.ingreso)=.T.,0.00,m.ingreso) as ingreso, IIF(ISNULL(m.egreso)=.T.,0.00,m.egreso) as egreso FROM  r_articulostocksql s LEFT JOIN r_movimientosstock_sql m ON s.articulo = m.articulo INTO TABLE r_artmovStocksql
-		
-		
-		
+		ELSE 
+			SELECT s.*, 0.00 as ingreso, 0.00 as egreso FROM  r_articulostocksql s INTO TABLE r_artmovStocksql
+			
+		ENDIF 
+
 		SELECT stockreto
 		APPEND FROM r_artmovStocksql
 		USE IN r_articulostocksql
 		USE IN r_articulostock_asql
 		USE IN r_movimientosstock_sql 
-		USE IN r_artmovStocksql
 		* me desconecto	
 		=abreycierracon(vconeccionA,"")
 		
@@ -21472,133 +21476,6 @@ PARAMETERS p_fechaI, p_fechaF
 	SELECT &valias
 	RETURN v_stockreto 
 ENDFUNC 
-
-
-*!*	FUNCTION Aso_StockArt
-*!*	*#/- Tipo de funciones de búsquedas de Datos en Esquemas Asociados
-*!*	*----------------------------------------------------------------
-*!*	** Obtiene el Stock de Artículos de las bases de Datos asociadas
-*!*	* * retorna una tabla con el stock de artículos en los esquemas asociados
-*!*	*#/----------------------------------------------------------------
-
-*!*		valias = ALIAS()
-*!*		
-*!*		v_stockreto = 'stockreto'+frandom()
-*!*		
-*!*		* Me conecto a la base de datos *
-*!*		vconeccionA=abreycierracon(0,_SYSSCHEMA)	
-*!*		* Obtengo los datos de los esquemas asociados
-*!*		sqlmatriz(1)=" select * from dbasociada "
-*!*		verror=sqlrun(vconeccionA,"dbasociada_sql")
-*!*		IF verror=.f.  
-*!*		    MESSAGEBOX("Ha Ocurrido un Error al Obtener los esquemas asociados ",0+48+0,"Error")
-*!*			* me desconecto	
-*!*			=abreycierracon(vconeccionA,"")
-*!*			SELECT &valias
-*!*		    RETURN ""
-*!*		ENDIF 
-*!*		
-*!*		SELECT dbasociada_sql
-*!*		GO TOP 
-*!*		
-*!*		IF EOF() THEN 
-*!*			USE IN dbasociada_sql
-*!*			* me desconecto	
-*!*			=abreycierracon(vconeccionA,"")
-*!*			SELECT &valias
-*!*			RETURN ""
-*!*		ENDIF 
-*!*		* me desconecto	
-*!*		=abreycierracon(vconeccionA,"")
-
-*!*		* Arranco a recorrer los esquemas asociados y traerme los stock de cada uno
-*!*		* Guardo el esquema en el que estoy trabajando 
-*!*	*	CREATE TABLE stockreto (articulo c(20), stocktot y)
-*!*		CREATE TABLE stockreto (articulo c(20), stocktot y, pendiente Y,pendientef Y,pendienter Y)
-*!*		
-*!*		vs_db_sysbgproce = _SYSBGPROCE 
-*!*		_SYSBBPROCE = 0 && detiene la ejecucion de procesos de Relojes en Segundo Plano
-*!*		vs_db_server = _SYSMYSQL_SERVER
-*!*		vs_db_user   = _SYSMYSQL_USER	
-*!*		vs_db_pass   = _SYSMYSQL_PASS  
-*!*		vs_db_port   = _SYSMYSQL_PORT  
-*!*		vs_db_schema = _SYSSCHEMA    
-*!*		vs_db_descrip= _SYSDESCRIP  
-
-*!*		SELECT dbasociada_sql 
-*!*		GO TOP 
-*!*		DO WHILE !EOF()
-
-*!*			_SYSMYSQL_SERVER = IIF(EMPTY(ALLTRIM(dbasociada_sql.host))=.T.,vs_db_server,ALLTRIM(dbasociada_sql.host))
-*!*			_SYSMYSQL_USER	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.usuario))=.T.,vs_db_user,ALLTRIM(dbasociada_sql.usuario))    	
-*!*			_SYSMYSQL_PASS 	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.password))=.T.,vs_db_pass,ALLTRIM(dbasociada_sql.password))
-*!*			_SYSMYSQL_PORT 	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.port))=.T.,vs_db_port,ALLTRIM(dbasociada_sql.port))
-*!*			_SYSSCHEMA    	 = IIF(EMPTY(ALLTRIM(dbasociada_sql.schemma))=.T.,vs_db_schema,ALLTRIM(dbasociada_sql.schemma))
-*!*			_SYSDESCRIP  	 = ALLTRIM(dbasociada_sql.descrip)
-
-
-*!*			* Me conecto a la base de datos *
-*!*			vconeccionA=abreycierracon(0,_SYSSCHEMA)	
-
-*!*	*		sqlmatriz(1)=" select * from r_articulostock "
-*!*			sqlmatriz(1)="  select articulo, SUM(stocktot) as stocktot, sum(pendiente) as pendiente, sum(pendientef) as pendientef, sum(pendienter) as pendienter "
-*!*			sqlmatriz(2)=" from r_depostock group by articulo "
-*!*			verror=sqlrun(vconeccionA,"r_articulostock_asql")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error al Obtener el Stock en Esquemas Asociados ",0+48+0,"Error")
-*!*				* me desconecto	
-
-*!*				_SYSMYSQL_SERVER = vs_db_server 
-*!*				_SYSMYSQL_USER	 = vs_db_user   	
-*!*				_SYSMYSQL_PASS 	 = vs_db_pass   
-*!*				_SYSMYSQL_PORT 	 = vs_db_port   
-*!*				_SYSSCHEMA    	 = vs_db_schema 
-*!*				_SYSDESCRIP  	 = vs_db_descrip
-*!*				_SYSBGPROCE 	 = vs_db_sysbgproce
-*!*				=abreycierracon(vconeccionA,"")
-*!*				USE IN dbasociada_sql
-*!*				
-*!*				SELECT &valias
-*!*			    RETURN ""
-*!*			ENDIF 		
-*!*			SELECT * FROM r_articulostock_asql INTO TABLE r_articulostocksql
-*!*			SELECT r_articulostocksql
-*!*			replace stocktot WITH 0, pendiente WITH 0,pendientef WITH 0 ,pendienter WITH 0 FOR ISNULL(stocktot)
-*!*			
-*!*			SELECT stockreto
-*!*			APPEND FROM .\r_articulostocksql
-*!*			USE IN r_articulostocksql
-*!*			USE IN r_articulostock_asql
-
-*!*			* me desconecto	
-*!*			=abreycierracon(vconeccionA,"")
-*!*			
-*!*			SELECT dbasociada_sql
-*!*			SKIP 	
-*!*		ENDDO 
-
-*!*		
-*!*		SET ENGINEBEHAVIOR 70
-*!*		SELECT articulo, SUM(IIF(ISNULL(stocktot),0,stocktot)) as stock,SUM(IIF(ISNULL(pendiente),0,pendiente)) as pendiente, ;
-*!*		SUM(IIF(ISNULL(pendientef),0,pendientef)) as pendientef,SUM(IIF(ISNULL(pendienter),0,pendienter)) as pendienter FROM stockreto INTO TABLE &v_stockreto GROUP BY articulo 
-*!*		SET ENGINEBEHAVIOR 90
-*!*		
-*!*		USE IN stockreto
-*!*		USE IN &v_stockreto
-*!*		USE IN dbasociada_sql
-
-*!*		_SYSMYSQL_SERVER = vs_db_server 
-*!*		_SYSMYSQL_USER	 = vs_db_user   	
-*!*		_SYSMYSQL_PASS 	 = vs_db_pass   
-*!*		_SYSMYSQL_PORT 	 = vs_db_port   
-*!*		_SYSSCHEMA    	 = vs_db_schema 
-*!*		_SYSDESCRIP  	 = vs_db_descrip
-*!*		_SYSBGPROCE 	 = vs_db_sysbgproce
-
-*!*		SELECT &valias
-*!*		RETURN v_stockreto 
-*!*	ENDFUNC 
-
 
 
 
@@ -29720,3 +29597,20 @@ PARAMETERS P_gdiPixelFormat, P_Dimensiones, P_tipoImagen, P_PathDestino, P_FileD
 	RETURN lcDestination
 
 ENDFUNC 
+
+
+
+FUNCTION ConvertToUTF8(lcInputFile)
+  LOCAL lcString, lcUTF8String,lcPath ,lcName 
+  lcString = FileToStr(lcInputFile)
+  lcPath = JUSTPATH(lcInputFile)
+  lcName = JUSTFNAME(lcInputFile)
+  lcOutputFile = ALLTRIM(lcPath)+'\'+STRTRAN(lcName,'.','_utf-8.')
+  IF EMPTY(lcString)
+    RETURN ""  && Error al leer el archivo
+  ENDIF
+  lcUTF8String = StrConv(lcString,9)  && Convertir a UTF-8
+  auxi = StrToFile(lcUTF8String, lcOutputFile)
+  RETURN lcOutputFile && Éxito
+ENDFUNC
+
