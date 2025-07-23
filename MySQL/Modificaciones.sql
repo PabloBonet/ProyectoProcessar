@@ -632,3 +632,32 @@ CREATE TABLE `tipologias` (
   PRIMARY KEY (`idtp`)
 )
 ENGINE = InnoDB;
+
+
+
+
+--- Correcciones vistas --
+
+-- Vista: remitospendfactax --
+
+DROP VIEW IF EXISTS `remitospendfactax`;
+CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `remitospendfactax` AS 
+select `h`.`idremitoh` AS `idremitoh`,`h`.`idremito` AS `idremito`,`h`.`articulo` AS `articulo`,`h`.`cantidad` AS `cantrem`,
+sum(ifnull(`d`.`cantidad`,0.00)) AS `cantfact`,(`h`.`cantidad` - sum(ifnull(`d`.`cantidad`,0.00))) AS `pendfact` 
+from (((`remitosh` `h` left join `linkregistro` `l` on(((`l`.`tablab` = 'remitosh') and (`l`.`idb` = `h`.`idremitoh`)))) 
+left join `ultimoestado` `u` on(((`u`.`tabla` = 'remitos') and (`u`.`campo` = 'idremito') and (`h`.`idremito` = `u`.`id`)))) 
+left join `detafactu` `d` on(((`l`.`tablaa` = 'detafactu') and (`d`.`idfacturah` = `l`.`ida`)))) 
+where (`u`.`idestador` <> 2) group by `h`.`idremito`,`h`.`articulo` 
+union 
+select `h`.`idremitoh` AS `idremitoh`,`h`.`idremito` AS `idremito`,`h`.`articulo` AS `articulo`,`h`.`cantidad` AS `cantrem`,
+sum(ifnull(`d`.`cantidad`,0.00)) AS `cantfact`,(`h`.`cantidad` - sum(ifnull(`d`.`cantidad`,0.00))) AS `pendfact` 
+from (((`remitosh` `h` left join `linkregistro` `l` on(((`l`.`tablaa` = 'remitosh') and (`l`.`ida` = `h`.`idremitoh`)))) 
+left join `ultimoestado` `u` on(((`u`.`tabla` = 'remitos') and (`u`.`campo` = 'idremito') and (`h`.`idremito` = `u`.`id`)))) 
+left join `detafactu` `d` on(((`l`.`tablab` = 'detafactu') and (`d`.`idfacturah` = `l`.`idb`)))) 
+where (`u`.`idestador` <> 2) group by `h`.`idremito`,`h`.`articulo`;
+
+
+-- Vista: remitopendfactaux
+
+DROP VIEW IF EXISTS `remitopendfactaux`;
+CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `remitopendfactaux` AS select `remitopendfact`.`articulo` AS `articulo`,sum(`remitopendfact`.`pendfact`) AS `pendfact` from (`remitopendfact` left join `ultimoestado` `u` on(((`u`.`tabla` = 'remitos') and (`u`.`campo` = 'idremito') and (`u`.`id` = `remitopendfact`.`idremito`)))) where (`u`.`idestador` <> 2) group by `remitopendfact`.`articulo`;
