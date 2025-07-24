@@ -661,3 +661,29 @@ where (`u`.`idestador` <> 2) group by `h`.`idremito`,`h`.`articulo`;
 
 DROP VIEW IF EXISTS `remitopendfactaux`;
 CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `remitopendfactaux` AS select `remitopendfact`.`articulo` AS `articulo`,sum(`remitopendfact`.`pendfact`) AS `pendfact` from (`remitopendfact` left join `ultimoestado` `u` on(((`u`.`tabla` = 'remitos') and (`u`.`campo` = 'idremito') and (`u`.`id` = `remitopendfact`.`idremito`)))) where (`u`.`idestador` <> 2) group by `remitopendfact`.`articulo`;
+
+
+
+
+-- Vista: facturaspendremax
+
+
+DROP VIEW IF EXISTS `facturaspendremax`;
+CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `facturaspendremax` AS select `d`.`idfacturah` AS `idfacturah`,`d`.`idfactura` AS `idfactura`,`d`.`articulo` AS `articulo`,`d`.`cantidad` AS `cantfact`,
+sum(ifnull(`h`.`cantidad`,0.00)) AS `cantrem`,(`d`.`cantidad` - sum(ifnull(`h`.`cantidad`,0.00))) AS `pendrem`
+from (((`detafactu` `d` left join `linkregistro` `l` on(((`l`.`tablab` = 'detafactu') and (`l`.`idb` = `d`.`idfacturah`))))
+left join `remitosh` `h` on(((`l`.`tablaa` = 'remitosh') and (`h`.`idremitoh` = `l`.`ida`))))
+left join `facturas` `f` on((`f`.`idfactura` = `d`.`idfactura`)))
+left join comprobantes c on f.idcomproba = c.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro
+where (`f`.`stock` = 'N')  and t.comprotipo = 'FC'
+group by `d`.`idfacturah`,`d`.`articulo`
+union
+select `d`.`idfacturah` AS `idfacturah`,`d`.`idfactura` AS `idfactura`,`d`.`articulo` AS `articulo`,`d`.`cantidad` AS `cantfact`,
+sum(ifnull(`h`.`cantidad`,0.00)) AS `cantrem`,(`d`.`cantidad` - sum(ifnull(`h`.`cantidad`,0.00))) AS `pendrem`
+from (((`detafactu` `d` left join `linkregistro` `l` on(((`l`.`tablaa` = 'detafactu') and (`l`.`ida` = `d`.`idfacturah`))))
+left join `remitosh` `h` on(((`l`.`tablab` = 'remitosh') and (`h`.`idremitoh` = `l`.`idb`))))
+left join `facturas` `f` on((`f`.`idfactura` = `d`.`idfactura`)))
+left join comprobantes c on f.idcomproba = c.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro
+where (`f`.`stock` = 'N')  and t.comprotipo = 'FC'
+group by `d`.`idfacturah`,`d`.`articulo`;
+
