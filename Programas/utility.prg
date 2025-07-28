@@ -16603,17 +16603,6 @@ PARAMETERS pIdregistro
 	ENDIF 
 	
 	
-	* Busco el comprobante a anular para saber si anulo un recibo o un pago a proveedor 
-*!*		sqlmatriz(1)=" select c.*, t.opera, p.pventa from comprobantes c left join tipocompro t on c.idtipocompro = t.idtipocompro "
-*!*		sqlmatriz(2)=" left join compactiv p on p.idcomproba = c.idcomproba "
-*!*		sqlmatriz(3)=" where c.idcomproba = "+ALLTRIM(STR(pan_idcomproba))+" or  c.tabla = 'anularp' " 
-*!*		verror=sqlrun(vconeccionAn ,"tablarp")
-*!*		IF verror=.f.  
-*!*		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la Tabla de comprobantes ",0+48+0,"Error")
-*!*			=abreycierracon(vconeccionAn ,"")	
-*!*		    RETURN .F.  
-*!*		ENDIF	 
-	
 	** Valido que no estè anulado **
 	sqlmatriz(1)=" select * from cajaie c left join linkcompro l on c.idcomproba = l.idcomprobaa and c.idcajaie = l.idregistroa  "
 	sqlmatriz(2)=" where l.idregistroa = "+ALLTRIM(STR(pIdregistro))+" or l.idregistrob = "+ALLTRIM(STR(pIdregistro)) 
@@ -29601,6 +29590,10 @@ ENDFUNC
 
 
 FUNCTION ConvertToUTF8(lcInputFile)
+*#/----------------------------------------
+****CONVERSION DE ARCHIVOS TXT A FORMATO UTF-8 ***
+*#/----------------------------------------
+
   LOCAL lcString, lcUTF8String,lcPath ,lcName 
   lcString = FileToStr(lcInputFile)
   lcPath = JUSTPATH(lcInputFile)
@@ -29614,3 +29607,84 @@ FUNCTION ConvertToUTF8(lcInputFile)
   RETURN lcOutputFile && Éxito
 ENDFUNC
 
+
+
+FUNCTION AnularRemitos
+PARAMETERS pIdremito
+
+*#/----------------------------------------
+**** INICIO FUNCION ANULAR REMITOS,  **************
+**********************************************************
+** FUNCIÓN para Generar un Ingreso con Remitos Anulados , Genera un movimiento en Stock si el remito movia stock de ingreso de la mercaderia
+** Parametros: pIdRegistro: Id del registro de la tabla Remitos que se desea anular - Ingresa la Mercaderia.
+** Retorno: 0 en caso que no se haya registrado hecho el ajuste, sino retorna el id del ajuste
+**********************************************************
+*#/----------------------------------------
+
+	v_ajustastockAN = 'N'
+	v_idcomprobaAN	= 0
+	v_nombreCampoAN	= 'idremito'
+	v_idregistroAN	= 0
+	v_depositoAN 	= 1
+	v_fechaAN		= ""
+	
+	
+	vconeccionAn = abreycierracon(0,_SYSSCHEMA)
+	
+	* Busco el Remito a anular para saber si genero o no el movimiento de stock 
+	sqlmatriz(1)=" select r.*, d.articulo, d.cantidad , p.deposito from remitos r "
+	sqlmatriz(2)=" left join puntosventa p on p.pventa = r.pventa  "
+	sqlmatriz(3)=" left join remitosh d on d.idremito = r.idremito "
+	sqlmatriz(4)=" where r.idremito = "+ALLTRIM(STR(pIdremito)) 
+	verror=sqlrun(vconeccionAn ,"remito_asql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Remito ",0+48+0,"Error")
+		=abreycierracon(vconeccionAn ,"")	
+	    RETURN .F.  
+	ENDIF	 
+	=abreycierracon(vconeccionAn ,"")	
+
+	SELECT remito_asql
+	GO TOP
+	IF !EOF() THEN 
+		v_ajustastockAN = remito_asql.stock
+		v_idcomprobaAN	= remito_asql.idcomproba
+		v_idregistroAN	= remito_asql.idremito
+		v_depositoAN	= remito_asql.deposito
+		v_fechaAN		= remito_asql.fecha
+	ENDIF 
+
+	IF ALLTRIM(v_ajustastockAN)  == 'S' THEN 
+
+		v_idtipomovAN		= tipoMStockobj.getidtipomstock("INGRESO POR ANULACION")
+
+		CREATE TABLE tmpDatos FREE (articulo C(50), cantidad Y, deposito I, fecha c(8))
+		
+		SELECT remito_asql
+		GO TOP 
+		DO WHILE NOT EOF()
+			v_articuloAN 	= remito_asql.articulo
+			v_cantidadAN	= remito_asql.cantidad
+
+			INSERT INTO tmpDatos VALUES (v_articuloAN,v_cantidadAN,v_depositoAN,v_fechaAN)
+		
+			SELECT remito_asql
+			SKIP 1 
+		ENDDO 
+		SELECT remito_asql
+		USE IN remito_asql 
+
+		v_resp = AjusteComprobante(v_idtipomovAN, v_idcomprobaAN, v_nombreCampoAN, v_idregistroAN,"tmpDatos")
+
+		USE IN tmpDatos
+		
+		IF v_resp =.F.
+			MESSAGEBOX("Hubo un error al generar el ajuste del remito",0+48+0,"Error al realizar el ajuste")
+		ENDIF 
+	ELSE 
+		SELECT remito_asql
+		USE IN remito_asql 
+	ENDIF 
+
+
+ENDFUNC 

@@ -33,6 +33,10 @@
   
   #DEFINE INTERNET_OPEN_TYPE_DIRECT 1
   #DEFINE INTERNET_SERVICE_FTP      1
+  #DEFINE INTERNET_SERVICE_GOPHER   2
+  #DEFINE INTERNET_SERVICE_HTTP     3
+
+  #DEFINE INTERNET_FLAG_PASSIVE 0x08000000
 
   #DEFINE VAR_MAX_BYTES 260
   #DEFINE VAR_NULL      Chr(0)
@@ -48,6 +52,7 @@
     cNombreUsuario   = ""
     cPuertoNro       = "21"
     cServidorFTP     = ""
+    cModoFTP		 = "ACTIVO"
     
     lApiCargadas     = .F.     && Para no volver a cargar las DLL en la memoria, si es que ya estaban cargadas
     
@@ -216,13 +221,24 @@
           RETURN(.F.)
         ENDIF
         *--- Si se pudo conectar a Internet, trata de conectarse al Servidor FTP
-        lnFtpHandle = InternetConnect(.nInternetHandle, (.cServidorFTP), VAL(.cPuertoNro), (.cNombreUsuario), (.cContrasena), INTERNET_SERVICE_FTP, 0, 0)
+
+
+*!*	        lnFtpHandle = InternetConnect(.nInternetHandle, (.cServidorFTP), VAL(.cPuertoNro), (.cNombreUsuario), (.cContrasena), INTERNET_SERVICE_FTP, 0, 0)
+ 		IF UPPER(.cModoFTP)=="PASIVO" THEN 
+        	lnFtpHandle = InternetConnect(.nInternetHandle, (.cServidorFTP), VAL(.cPuertoNro), (.cNombreUsuario), (.cContrasena), INTERNET_SERVICE_FTP, INTERNET_FLAG_PASSIVE, 0)
+ 		ELSE 
+        	lnFtpHandle = InternetConnect(.nInternetHandle, (.cServidorFTP), VAL(.cPuertoNro), (.cNombreUsuario), (.cContrasena), INTERNET_SERVICE_FTP, 0, 0)
+ 		ENDIF 
+ 		
+* 		hConnect = InternetConnect(hOpen, "ftp.servidorb.com", 21, "usuario", "clave", 1, INTERNET_FLAG_PASSIVE, 0)
+
         .OBTENER_ERROR(lnFtpHandle <= 0, "No me pude conectar al Servidor FTP**Probablemente los datos del Servidor o del usuario son incorrectos")
         *--- Si se pudo conectar al Servidor FTP, trata de obtener la carpeta remota raíz
         IF lnFtpHandle > 0 THEN
           .nFtpHandle       = lnFtpHandle
           lcCarpetaTemporal = .OBTENER_CARPETA_ACTUAL()
-          IF !Empty(lcCarpetaTemporal) THEN
+  
+         IF !Empty(lcCarpetaTemporal) THEN
             .cCarpetaRemota = lcCarpetaTemporal
           ENDIF
         ENDIF
@@ -385,6 +401,8 @@
         taArrayCarpeta[1, 1] = .F.
         lcEstructura = Space(319)     && Hay que alojar espacio para la estructura que se retornará
         lnHandleTemp = FtpFindFirstFile(This.nFtpHandle, @tcMascara, @lcEstructura, 0, 0)     && Se encuentra el primer archivo
+ 
+
         This.OBTENER_ERROR(lnHandleTemp = 0, "No pude obtener el primer archivo de la carpeta")
         IF lnHandleTemp = 0 .OR. This.nCodigoResultado = ERROR_NO_HAY_MAS_ARCHIVOS THEN
           RETURN (.F.)
@@ -396,6 +414,7 @@
           lcEstructura = Space(319)     && Hay que alojar espacio para la estructura que se retornará
           lnResultado  = InternetFindNextFile(lnHandleTemp, @lcEstructura)
           This.OBTENER_ERROR(.F.)
+
           IF This.nCodigoResultado <> ERROR_NO_HAY_MAS_ARCHIVOS .AND. lnResultado <> 0 THEN
             This.AGREGAR_AL_ARRAY(lcEstructura, @taArrayCarpeta)
           ENDIF
@@ -452,8 +471,10 @@
         lnError         = Iif(tlErrorSiExiste, 1, 0)
         tcArchivoRemoto = tcArchivoRemoto + VAR_NULL
         tcArchivoLocal  = tcArchivoLocal  + VAR_NULL
+
         lnResultado     = FtpGetFile(This.nFtpHandle, @tcArchivoRemoto, @tcArchivoLocal, lnError, FILE_ATTRIBUTE_NORMAL, FTP_TRANSFER_TYPE_BINARY, 0)
         This.OBTENER_ERROR(lnResultado = 0, "No pude recibir el archivo")
+
       ENDIF
       
       RETURN (lnResultado = 1)     && lnResultado = 1 significa que el archivo fue recibido exitosamente desde el Servidor FTP
@@ -534,6 +555,7 @@
       taArrayDatos[lnArrayLen, 4] = ltDateTimeUltimoAcceso
       taArrayDatos[lnArrayLen, 5] = ltDateTimeModificacion
       taArrayDatos[lnArrayLen, 6] = lcAtributos
+  
       
     ENDPROC
     *

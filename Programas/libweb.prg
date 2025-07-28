@@ -455,7 +455,12 @@ ENDIF
 
 IF !(TYPE('_SYSPRODUCTOSWEB')='C') THEN 
 	RETURN 
+ELSE
+	IF  (SUBSTR(_SYSPRODUCTOSWEB+' ',1,1)='N') then  
+		RETURN 
+	ENDIF 
 ENDIF 
+
 
 
 nFilas = ALINES(ArrProductoWEB, _SYSPRODUCTOSWEB , ";")
@@ -479,12 +484,6 @@ eje = eje +" AND b.idlista = "+v_listaWEB02+") INTO TABLE productos01 WHERE a.id
 
 vconeccionF=abreycierracon(0,_SYSSCHEMA)
 	* Traigo las propiedades de los articulos 
-*!*	sqlmatriz(1) =" SELECT r.idregic ,  d.propiedad, d.valor, ifnull(c.propiedad,'') as categoriaa, ifnull(c.valor,'') as valora, ifnull(w.propiedad,'') as categoriah, ifnull(w.valor,'') as valorh "
-*!*	sqlmatriz(2) =" FROM reldatosextra r "
-*!*	sqlmatriz(3) =" left join datosextra d on d.iddatosex = r.iddatosex "
-*!*	sqlmatriz(4) =" left join ( SELECT x.idregic, z.propiedad, z.valor FROM processar.reldatosextra x left join processar.datosextra z on z.iddatosex = x.iddatosex) c on (c.idregic = r.idregic and c.propiedad = 'CATEGORIA-AMOBLARK' and c.valor <> ''  ) "
-*!*	sqlmatriz(5) =" left join ( SELECT u.idregic, v.propiedad, v.valor FROM processar.reldatosextra u left join processar.datosextra v on v.iddatosex = u.iddatosex) w on (w.idregic = r.idregic and w.propiedad = 'CATEGORIA-HOGAR' and w.valor <> ''  ) "
-*!*	sqlmatriz(6) =" where r.tabla = 'articulos' order by idregic, propiedad "
 
 sqlmatriz(1) =" SELECT r.idregic ,  d.propiedad, d.valor, ifnull(t.idtp,0) as idtpa, ifnull(t.idp,0) as idpa, ifnull(t.codigo,' ') as codigoa , ifnull(t.nombre,' ') as nombrea, ifnull(t.articulo,' ') as articuloa, "
 sqlmatriz(2) =" ifnull(t.nivel,' ') as nivela , ifnull(v.idtp,0) as idtpb, ifnull(v.idp,0) as idpb, ifnull(v.codigo,' ') as codigob, ifnull(v.nombre,' ') as nombreb, ifnull(v.articulo,' ') as articulob, ifnull(v.nivel,' ') as nivelb, "
@@ -514,6 +513,7 @@ ENDIF
 
 
 =abreycierracon(vconeccionF,"")	
+
 
 SELECT * FROM datosextrasweb_sql INTO TABLE datosextraweb
 ALTER TABLE datosextraweb ALTER COLUMN idtpa i 
@@ -563,7 +563,6 @@ USE IN productos02_c
 
 
 
-
 SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor,  d.idtpb as idtp, d.idpb as idp, SPACE(254) as categoria ;
 FROM datosextraweb d ;
 LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
@@ -599,25 +598,6 @@ SET RELATION TO ALLTRIM(articulo) INTO productos03_c
 replace ALL categoria WITH productos03_c.categoria
 USE IN productos03_c
 
-
-
-** REEMPLAZAR ESTAS CONSULTAS ***
-*!*	SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor ;
-*!*	FROM datosextrasweb_sql d ;
-*!*	LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
-*!*	into table productos02 where ALLTRIM(d.categoriaa) == 'CATEGORIA-AMOBLARK' AND ISNULL(p.articulo) = .f. AND !EMPTY(ALLTRIM(d.valora))
-
-*!*	*!*	SELECT productos02
-*!*	*!*	BROWSE 
-
-*!*	SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor ;
-*!*	FROM datosextrasweb_sql d ;
-*!*	LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
-*!*	into table productos03 where ALLTRIM(d.categoriah) == 'CATEGORIA-HOGAR' AND ISNULL(p.articulo) = .f. AND !EMPTY(ALLTRIM(d.valorh))
-
-*!*	SELECT productos03
-*!*	BROWSE 
-*********************************
 
 
 IF USED("productosweb") THEN 
@@ -813,6 +793,7 @@ DO WHILE NOT EOF()
 ENDDO 		
 =fclose(p)
 
+
 v_archivo_productos = 'precios.csv'
 DELETE FILE &v_archivo_productos
 p=fcreate(v_archivo_productos,0)
@@ -830,6 +811,7 @@ DO WHILE NOT EOF()
 ENDDO 		
 =fclose(p)
 
+
 v_archivo_productos = 'stock.csv'
 DELETE FILE &v_archivo_productos
 p=fcreate(v_archivo_productos,0)
@@ -838,6 +820,7 @@ GO TOP
 v_linea ="sku,stock"
 =fputs(p, v_linea )
 =ViewBarProgress(0,RECCOUNT(),"Generando Archivo de Productos...")
+
 DO WHILE NOT EOF() 
 	v_linea = '"'+STRTRAN(ALLTRIM(sku),',',' ')+'",'+STRTRAN(str(stock,10,2),',',' ')
 	=fputs(p, v_linea )
@@ -860,7 +843,8 @@ USE IN productosweb
 USE IN preciosweb
 USE IN stockweb 
 
-lcInputFile = v_prgpath+'productos.csv'
+
+lcInputFile = ADDBS(v_prgpath)+'productos.csv'
 v_convierteutf8=ConvertToUTF8(lcInputFile)
 
 IF !EMPTY(v_convierteutf8) THEN 
@@ -870,11 +854,252 @@ IF !EMPTY(v_convierteutf8) THEN
 	DELETE FILE &v_convierteutf8
 ENDIF 
 
+
 IF EMPTY(ALLTRIM(V_pathdestinoWEB03))  THEN  
 	= MESSAGEBOX("Se han generado los archivos de Productos para la Web de la Empresa...",0+64,"Exportar Archivos para Web")
 	vpar_eje = "RUN /N  explorer.exe "+v_prgpath
 	&vpar_eje
 ENDIF 
-
 RETURN v_prgpath
+ENDFUNC 
+
+
+
+
+
+FUNCTION FTPUpDwFile
+PARAMETERS ftp_lpath,  ftp_rpath, ftp_arch, ftp_updw, ftp_host, ftp_port, ftp_user, ftp_passwd, ftp_Modo 
+*#/----------------------------------------
+* Funcion para subir y descargar archivos desde un sitio FTP  
+* PARAMETROS 
+* ftp_lpath	= path completo del archivo a subir o path donde descargarlo
+* ftp_rpath	= path remoto donde subir el archivo
+* ftp_arch	= nombre del archivo a subir o mascara de macheo para archivos, si viene vacio sube todo lo que halla en la carpeta 
+* ftp_updw  = up: sube el archivo al FTP , dw: descarga el archivo del FTP , de: elimina el archivo del FTP 
+* ftp_modo  = Modo para conexion FTP , ACTIVO O PASIVO  , en modo por default es ACTIVO
+
+*Ej Upload 		= FTPUpDwFile ( "c:\temp\",  "varios", "*.jpg", "UP", "ftp.processar.com.ar", "21", "usuario", "password" )
+*#/----------------------------------------
+
+	IF TYPE("ftp_Modo")<>"C" THEN 
+		ftp_modo = "ACTIVO"
+	ENDIF 
+
+	IF !EMPTY(ftp_lpath) THEN 
+		IF !(SUBSTR(ftp_lpath,LEN(ALLTRIM(ftp_lpath)),1)="\") THEN 
+			ftp_lpath = ALLTRIM(ftp_lpath)+"\"
+		ENDIF 
+	ENDIF 
+
+	IF EMPTY(ALLTRIM(ftp_lpath)) then
+		ftp_lpath = GETDIR()
+		SET DEFAULT TO &_SYSESTACION 
+	ENDIF 
+	IF EMPTY(ALLTRIM(ftp_lpath)) then
+		RETURN ""
+	ENDIF 
+
+	IF EMPTY(ftp_arch) THEN 
+		ftp_arch =  "*.*"
+	ENDIF 
+	
+	IF LEN(ftp_updw) < 1 THEN 
+		RETURN ""
+	ENDIF 
+
+	IF SUBSTR(UPPER(ALLTRIM(ftp_updw)),1,2) = "UP" && subir archivo
+
+
+		*** Obtengo la lista de subdirectorios ***
+		v_canfiles =  Adir(archiArreglo,ftp_lpath+ftp_arch,"D",1)
+		If v_canfiles > 0 THEN 
+            ** CONECTAR AL SERVIDOR **************************
+			oFTp = .NULL.
+			oFTP = CreateObject("CLASE_FTP")
+			IF Vartype(oFTP) == "O" THEN
+				oFTP.cServidorFTP   = ftp_host
+				oFTP.cPuertoNro     = ftp_port
+				oFTP.cNombreUsuario = ftp_user
+				oFTP.cContrasena    = ftp_passwd
+				oFTP.cModoFTP		= ftp_modo
+				oFTP.CONECTAR_SERVIDOR_FTP()
+
+				IF Empty(oFTP.cMensajeError) THEN
+				ELSE
+				    DO MENSAJE_ERROR WITH oFTP, oFTP.cMensajeError
+				 ENDIF
+			  	WAIT CLEAR 
+			ELSE
+				MESSAGEBOX("No se Puede Crear la Conexión... ( Error de Clase FTP ) ")	
+				RETURN ""
+			ENDIF
+			IF Empty(oFTP.cMensajeError) THEN && si no dio error lo subimos al ftp 
+				=ViewBarProgress(0,v_canfiles ,"Subiendo Archivos...")
+				FOR iar = 1 TO v_canfiles 
+					v_archivoup = archiArreglo(iar,1)
+				 	v_atributo  = archiArreglo(iar,5)
+					IF ATC('A',ALLTRIM(v_atributo)) > 0 THEN 
+						lcNombreLocal = ADDBS(ftp_lpath)+v_archivoup
+						lcNombreRemoto = IIF((EMPTY(ALLTRIM(ftp_rpath)) OR ALLTRIM(ftp_rpath)=='/'),'/','/'+ALLTRIM(ftp_rpath)+'/')+v_archivoup 
+						oFTP.ENVIAR_ARCHIVO_AL_SERVIDOR_FTP(lcNombreLocal,lcNombreRemoto)
+ 					ENDIF 
+ 					=ViewBarProgress(iar,v_canfiles ,"Subiendo Archivos...")
+	 			ENDFOR
+				oFTP.DESCONECTAR_SERVIDOR_FTP()
+ 			ENDIF 
+ 	 		RELEASE oFTP 
+		ENDIF
+	ENDIF 
+	
+
+
+	IF SUBSTR(UPPER(ALLTRIM(ftp_updw)),1,2) = "DW" && descargar archivo
+	
+       ** CONECTAR AL SERVIDOR **************************
+		oFTp = .NULL.
+		oFTP = CreateObject("CLASE_FTP")
+		IF Vartype(oFTP) == "O" THEN
+			oFTP.cServidorFTP   = ftp_host
+			oFTP.cPuertoNro     = ftp_port
+			oFTP.cNombreUsuario = ftp_user
+			oFTP.cContrasena    = ftp_passwd
+			oFTP.CONECTAR_SERVIDOR_FTP()
+
+		IF Empty(oFTP.cMensajeError) THEN
+			ELSE
+			    DO MENSAJE_ERROR WITH oFTP, oFTP.cMensajeError
+		    ENDIF
+			  	WAIT CLEAR 
+		ELSE
+			MESSAGEBOX("No se Puede Crear la Conexión... ( Error de Clase FTP ) ")	
+			RETURN ""
+		ENDIF
+		IF Empty(oFTP.cMensajeError) THEN && si no dio error lo subimos al ftp 
+			
+			lcNombreRemoto = IIF((EMPTY(ALLTRIM(ftp_rpath)) OR ALLTRIM(ftp_rpath)=='/'),'/','/'+ALLTRIM(ftp_rpath)+'/')
+			oFTP.CAMBIAR_A_LA_CARPETA_REMOTA(lcNombreRemoto)
+			
+			DIMENSION ArrayCarpeta[1, 6]
+			oFTP.OBTENER_CONTENIDO_DE_LA_CARPETA_REMOTA(@ArrayCarpeta,ftp_arch)
+			
+			lcCanFilas = ALEN(ArrayCarpeta,1)
+			IF lcCanfilas >0 THEN 
+				=ViewBarProgress(0,lcCanfilas ,"Descargando Archivos...")
+				FOR iad = 1 TO lcCanfilas && Descargo todos los archivos
+				
+					lcNombreArchivoRemoto = ALLTRIM(ArrayCarpeta(iad,1))
+					lcNombreArchivoLocal = ADDBS(ftp_lpath)+lcNombreArchivoRemoto
+					eje = "DELETE FILE '"+lcNombreArchivoLocal+"'"
+					&eje
+				    oFTP.RECIBIR_ARCHIVO_REMOTO(lcNombreArchivoRemoto, lcNombreArchivoLocal, .T.)     && .T. significa que ocurrirá un error si el archivo ya existe
+ 					=ViewBarProgress(iad,lcCanfilas ,"Descargando Archivos...")
+				ENDFOR 
+			ENDIF 
+		ENDIF 
+		oFTP.DESCONECTAR_SERVIDOR_FTP()
+		
+	ENDIF 
+
+
+	IF SUBSTR(UPPER(ALLTRIM(ftp_updw)),1,2) = "DE" && Eliminar Archivo
+
+	ENDIF 
+
+	RETURN "FIN"
+	
+ENDFUNC 
+
+
+
+
+FUNCTION UPProductosWeb
+PARAMETERS pup_ejecutar 
+*#/----------------------------------------
+* Funcion para subir los productos a la Web y las imagenes de forma Automatica
+* Todos los parametros de carpetas y accesos están en la Variable Asociada _SYSPRODUCTOSWEB
+* Si recibe como parametro .t. = Verdadelo lo ejecuta siempre sin importar si es la pc autorizada
+* Variable: _SYSPRODUCTOSWEB : ""
+* Ej Upload 		= UPProductosWeb( )
+*#/----------------------------------------
+
+	IF !(TYPE('_SYSPRODUCTOSWEB')='C') THEN 
+		RETURN 
+	ELSE
+		IF  (SUBSTR(_SYSPRODUCTOSWEB+' ',1,1)='N') then  
+			RETURN 
+		ENDIF 
+	ENDIF 
+
+	nFilas = ALINES(ArrProductoWEB, _SYSPRODUCTOSWEB , ";")
+	IF nFilas = 0 THEN 
+		RETURN "" 
+	ENDIF 
+	v_listaWEB01 	= ArrProductoWEB(1)
+	v_listaWEB02 	= ArrProductoWEB(2)
+	v_HostWEB		= ArrProductoWEB(3)
+	v_PortWEB		= ArrProductoWEB(4)		
+	v_UserWEB		= ArrProductoWEB(5)		
+	v_PassWEB		= ArrProductoWEB(6)		
+	v_PathLCSV		= ArrProductoWEB(7)
+	v_PathLIMG      = ArrProductoWEB(8)		
+	v_PathRCSV		= ArrProductoWEB(9)		
+	v_PathRIMG		= ArrProductoWEB(10)
+	v_DiasIMG		= ArrProductoWEB(11)		
+	v_HostLOC		= ArrProductoWEB(12)		
+	v_InteVALO		= ArrProductoWEB(13)
+	v_ModoFTP		= ArrProductoWEB(14)		
+			
+
+	v_PathLIMGtmp   = v_PathLIMG   
+			
+	IF ( ALLTRIM(_syshost)==ALLTRIM(ArrProductoWEB(12)) OR ALLTRIM(_sysip)==ALLTRIM(ArrProductoWEB(12)) OR pup_ejecutar ) THEN && Función para Controlar la subida de productos a la Web de forma automatica
+
+		** SUBIR LAS IMAGENES
+		IMGUPTMP = ADDBS(v_PathLIMG)+'tmpup'
+		IF !DIRECTORY(IMGUPTMP) then
+			MKDIR(IMGUPTMP)
+			v_PathLIMGtmp = ADDBS(IMGUPTMP)
+		ENDIF
+		v_PathLIMGtmp = ADDBS(IMGUPTMP)
+		eje = " DELETE FILE "+v_PathLIMGtmp+"*.* "
+		&eje
+
+		*** Obtengo la lista de archivos y copio a la carpeta temporaria de carga ***
+		v_canfiles =  Adir(ImagenArreglo,ADDBS(v_PathLIMG)+"*.*","D",1)
+		If v_canfiles > 0 THEN 
+
+			=ViewBarProgress(0,v_canfiles ,"Subiendo Archivos de Productos a la Nube...")
+			FOR imag = 1 TO v_canfiles 
+				v_archivoup    = ImagenArreglo(imag,1)
+			 	v_archivofecha = ImagenArreglo(imag,3)
+			 	v_atributo     = ImagenArreglo(imag,5)
+				
+				IF ( ATC('A',ALLTRIM(v_atributo)) > 0 ) AND ( ( DATE() - v_archivofecha ) < val(v_DiasIMG) )  THEN 
+					eje = "copy file "+ADDBS(v_PathLIMG)+ALLTRIM(v_archivoup)+" to "+ADDBS(v_PathLIMGtmp)+ALLTRIM(v_archivoup)
+					&eje
+ 				ENDIF 
+				
+ 				=ViewBarProgress(imag,v_canfiles ,"Subiendo Archivos de Productos a la Nube...")
+	 		ENDFOR
+			RELEASE ImagenArreglo
+			
+			FLUSH 
+			** Si hay Archivos de Imagenes los subo al sitio FTP
+			vsubida= FTPUpDwFile ( v_PathLIMGtmp,  v_PathRIMG, "*.*", "UP", v_HostWEB , v_PortWEB, v_UserWEB, v_PassWEB, v_ModoFTP )
+			
+		ENDIF
+
+
+		** GENERO los archivos de Productos para subirlos a la Web y Posteriormente los sube
+		=ExpoProductoWEB(v_PathLCSV)
+		FLUSH 
+		vsubida= FTPUpDwFile ( v_PathLCSV,  v_PathRCSV, "*.csv", "UP", v_HostWEB , v_PortWEB, v_UserWEB, v_PassWEB, v_ModoFTP )
+
+	ELSE
+*!*			MESSAGEBOX("PC Equivocada")
+		
+	ENDIF 
+	
+	RELEASE ArrProductoWEB
+	RETURN 
 ENDFUNC 
