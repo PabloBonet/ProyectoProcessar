@@ -3135,20 +3135,15 @@ PARAMETERS p_idnp
 
 	v_idnp = p_idnp
 
+	v_imprimeMonto	= 0			   
 
 	IF v_idnp  > 0
 		
-
-*		v_imprimeMonto = 0		
-*		sino = MESSAGEBOX("¿Desea imprimir la NP con montos?",4+48+256,"Imprimir montos")
-
-*		IF sino = 6
-			v_imprimeMonto	= 1
-		
-*		ELSE
-		
-*			v_imprimeMonto	= 0
-*		ENDIF 
+		IF TYPE('_SYSIMPMONTONP') = 'C'
+			IF _SYSIMPMONTONP = 'S'
+				v_imprimeMonto	= 1		
+			ENDIF 
+		ENDIF 
 		
 		*** Busco los datos de la np y el detalle
 		
@@ -6964,14 +6959,29 @@ PARAMETERS p_idremito, p_esElectronica
 			
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
+*!*				sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, TRIM(p.nombre) as nomProv, "
+*!*				sqlmatriz(2)=" com.comprobante as nomcomp from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+*!*				sqlmatriz(3)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+*!*				sqlmatriz(4)=" left join remitosh d on r.idremito = d.idremito "
+*!*				sqlmatriz(5)=" left join condfiscal c on r.iva = c.iva"
+*!*				sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
+*!*				sqlmatriz(7)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+*!*				sqlmatriz(8)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))
+
 			sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, TRIM(p.nombre) as nomProv, "
-			sqlmatriz(2)=" com.comprobante as nomcomp from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(3)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
-			sqlmatriz(4)=" left join remitosh d on r.idremito = d.idremito "
+			sqlmatriz(2)=" com.comprobante as nomcomp, ifnull(k.tablab,'') as tabla , ifnull(k.campob,'') as campo, ifnull(k.idb,0) as idot,ifnull(e.nombre,'') as nombaso,ifnull(e.apellido,'') as apeaso,ifnull(e.compania,'') as compaso "
+			sqlmatriz(3)=" from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom " 
+			sqlmatriz(4)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa left join remitosh d on r.idremito = d.idremito "
+																   
 			sqlmatriz(5)=" left join condfiscal c on r.iva = c.iva"
 			sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
 			sqlmatriz(7)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(8)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))
+			sqlmatriz(8)=" left join linkregistro k on k.tablaa = 'remitosh' and k.campoa = 'idremitoh' and d.idremitoh = k.ida left join entidades e on r.entidadaso = e.entidad "
+			sqlmatriz(9)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))+" and (isnull(k.tablab) or k.tablab = 'ot') "
+
+
+
+
 			verror=sqlrun(vconeccionF,"rec_det_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del Remito",0+48+0,"Error")
@@ -6986,6 +6996,7 @@ PARAMETERS p_idremito, p_esElectronica
 		
 		SELECT remi
 		ALTER table remi alter COLUMN apellido c(200)
+		ALTER table remi alter COLUMN idot I							  
 		replace ALL apellido WITH ALLTRIM(apellido)+" "+ALLTRIM(nombre)
 		GO TOP 
 		IF NOT EOF()
@@ -10923,9 +10934,14 @@ IF vtmp_recalcular = .t. THEN
 			RETURN 
 		ENDIF 
 
-		sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea, ifnull(f.base,1) as base, ifnull(f.unidadf, a.unidad) as unidadf "
-		sqlmatriz(2)="  from articulos a left join articulosf f on a.articulo = f.articulo left join lineas l on l.linea = a.linea left join sublineas sl on sl.idsublinea = a.idsublinea "
-		sqlmatriz(3)=" left join r_articulostock s on s.articulo = a.articulo  left join ultimoartcosto u on a.articulo = u.articulo " 
+*!*			sqlmatriz(1)="select a.*, l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea, ifnull(f.base,1) as base, ifnull(f.unidadf, a.unidad) as unidadf "
+*!*			sqlmatriz(2)="  from articulos a left join articulosf f on a.articulo = f.articulo left join lineas l on l.linea = a.linea left join sublineas sl on sl.idsublinea = a.idsublinea "
+*!*			sqlmatriz(3)=" left join r_articulostock s on s.articulo = a.articulo  left join ultimoartcosto u on a.articulo = u.articulo " 
+
+			sqlmatriz(1)=" select a.articulo,a.detalle,a.unidad,a.abrevia,a.codbarra,(a.costo*m.cotizacion) as costo,a.linea,a.idsublinea,a.ctrlstock,a.observa,a.ocultar,a.stockmin,a.desc1,a.desc2,a.desc3,a.desc4,a.desc5,a.reca1,a.moneda,a.costo as costom,a.timestamp, "
+			sqlmatriz(2)=" l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea, ifnull(f.base,1) as base, ifnull(f.unidadf, a.unidad) as unidadf "
+			sqlmatriz(3)=" from articulos a left join articulosf f on a.articulo = f.articulo left join lineas l on l.linea = a.linea left join sublineas sl on sl.idsublinea = a.idsublinea left join monedas m on a.moneda = m.moneda "
+			sqlmatriz(4)=" left join r_articulostock s on s.articulo = a.articulo  left join ultimoartcosto u on a.articulo = u.articulo "
 		verror=sqlrun(vconeccionF,fvarticulos_sql)
 		IF verror=.f.
 			MESSAGEBOX("No se puede obtener  Articulos ",0+16,"Advertencia")
@@ -10973,7 +10989,7 @@ IF vtmp_recalcular = .t. THEN
 
 		SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta,  p.idlistap, p.actualiza, l.idlistah, ;  
 			a.articulo, SUBSTR(a.detalle+SPACE(200),1,200) as detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea,a.idsublinea,a.sublinea, a.ctrlstock, a.ocultar, ;
-			a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.reca1, a.moneda, ;
+			a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.reca1, a.moneda, a.costom, ;
 			a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact, p.habilita, a.base, a.unidadf ;
 		 	FROM &fvlistaprecioh_sql l ;
 			LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
@@ -10984,7 +11000,7 @@ IF vtmp_recalcular = .t. THEN
 
 		SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
 			a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.detalinea, a.idsublinea, a.sublinea, a.ctrlstock, a.ocultar, ;
-			a.stockmin, a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.reca1, a.moneda, ;
+			a.stockmin, a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.reca1, a.moneda,a.costom, ;
 			a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,a.fechaact, a.base, a.unidadf   ;
 			FROM &fvarticulos_sql a ;
 			LEFT JOIN &fvarticulosimp_sql i  ON ALLTRIM(a.articulo) == ALLTRIM(i.articulo) ;
@@ -17550,7 +17566,7 @@ PARAMETERS p_ListaP
 
 		SELECT idlista, detallep, vigedesde, vigehasta, margenp, condvta,  idlistap, actualiza,idlistah, articulo, ;
 			detalle, unidad, abrevia, codbarra, costoa, linea, detalinea, idsublinea, sublinea, ctrlstock, ocultar, stockmin, IIF(ISNULL(stocktot),0,stocktot) as stocktot, ;
-			desc1, desc2, desc3,  desc4, desc5, reca1, moneda, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact, habilita, base, unidadf ;
+			desc1, desc2, desc3,  desc4, desc5, reca1, moneda,costom, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact, habilita, base, unidadf ;
 		from &p_ListaPA INTO TABLE p_listaPACSV
 		
 		SELECT p_listaPACSV

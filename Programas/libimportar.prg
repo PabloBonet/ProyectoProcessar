@@ -6879,3 +6879,508 @@ ENDFUNC
 
 
 *******************************************************
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaAcopiosCli
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Acopios de cliente, se carga un acopio con el valor indicado como ajuste.
+* Formato archivo csv serparado por ; ( idacopio I,fecha C(8), cliente I, descrip C(254), numero I, carpintero I, monto N(13,4), idmateacop I, precio N(13,4),tipocambio N(13,4), moneda I )			
+*#/----------------------------------------
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de acopios -
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+		if file(".\ctasctesentcar.dbf") THEN
+			if used("ctasctesentcar") then
+				sele ctasctesentcar
+				use
+			endif
+			DELETE FILE .\acopiosclicar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+
+		CREATE TABLE .\acopiosclicar FREE  ( idacopio I,fecha C(8), cliente I, descrip C(254), numero I, carpintero I, monto N(13,4), idmateacop I, precio N(13,4),tipocambio N(13,4), moneda I )			
+					
+		SELECT acopiosclicar
+*		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+		
+		ALTER table acopiosclicar ADD COLUMN cargarcomp l 
+		replace ALL cargarcomp WITH .t. 
+		
+		SELECT acopiosclicar 
+		GO top 
+		
+	
+*** AQUI AGREGAR LOGICA PARA CONSULTAR Y ELIMINAR FACTURAS SI ASI LO DESEA QUIEN IMPORTA ***
+		rta =MESSAGEBOX("Desea Eliminar los Comprobantes Existentes de acopios?",3+32+256,"Eliminar Comprobantes ")
+		IF rta=6  THEN 
+		
+			*Elimino las Facturas 
+			sqlmatriz(1)=" delete from acopio "
+			verror=sqlrun(vconeccionF,"ac")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Acopios... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF	
+			sqlmatriz(1)=" delete from acopiod "
+			verror=sqlrun(vconeccionF,"ad")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Detalles de Acopios ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)=" delete from ajustesacopio "
+			verror=sqlrun(vconeccionF,"aa")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Ajustes de acopio",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			sqlmatriz(1)=" delete from compacopio "
+			verror=sqlrun(vconeccionF,"ca")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de asociación de comprobantes acopiados ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+
+		ELSE 
+			IF rta = 2 THEN 
+				USE IN acopiosclicar 
+				=abreycierracon(vconeccionF,"")	
+				RETURN 0
+			ENDIF  	
+		ENDIF 
+		
+	
+	SELECT acopiosclicar 
+	GO TOP 
+	
+	
+	v_ret = .F.
+	
+	DO FORM cargaacopios WITH "acopiosclicar",.T. TO v_ret 
+	
+	IF v_ret = .F.
+		RETURN 0
+	ENDIF 
+	
+	
+	
+	SELECT acopiosclicar
+	GO TOP 
+		
+	
+	IF LEN(_SYSCOMPACOP) <> 4
+		 MESSAGEBOX("No se ha especificado correctamente los comprobantes de Acopio",0+48+0,"Error")
+		 RETURN 0
+	ENDIF 
+
+
+	SET ENGINEBEHAVIOR 70
+	
+	SELECT idacopio,fecha, cliente, descrip, numero, carpintero, monto FROM acopiosclicar INTO TABLE acopiosclicarA GROUP BY idacopio WHERE cargarcomp = .t. 
+	
+	SELECT idacopio,cliente, precio,tipocambio, moneda, idmateacop FROM acopiosclicar INTO TABLE detaacopiosclicar WHERE cargarcomp = .t. 
+
+	SET ENGINEBEHAVIOR 90
+
+
+
+	SELECT acopiosclicarA 
+	GO TOP 
+	
+	
+	
+	SELECT detaacopiosclicar 
+	GO TOP 
+	
+
+	v_pventaAco = VAL(ALLTRIM(SUBSTR(_SYSCOMPACOP,1,2)))
+	v_idcompAco = VAL(ALLTRIM(SUBSTR(_SYSCOMPACOP,3,2)))
+
+
+	v_idfactura_min = 0
+	v_idfactura_max = 0	
+
+	*** BUsco comprobantes de Ingreso y Egreso ***
+	sqlmatriz(1)="SELECT c.*,t.opera,v.pventa,v.puntov from comprobantes c left join compactiv v on c.idcomproba = v.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro "
+	sqlmatriz(2)=" WHERE t.opera = 0 and c.idcomproba = "+ALLTRIM(STR(v_idcompAco))+" and v.pventa = "+ALLTRIM(STR(v_pventaAco))
+
+
+	verror=sqlrun(vconeccionF,"compAcopios_sql")
+
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante de acopio ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 0
+	ENDIF 
+
+
+	SELECT compAcopios_sql
+	GO TOP 
+
+	IF EOF()
+		MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante de acopio ",0+48+0,"Error")
+		*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 0
+
+		
+	ENDIF 
+
+
+*!*		*** Busco las entidades ***
+
+*!*		sqlmatriz(1)= " SELECT e.*, IFNULL(h.servicio,0) as servicio, IFNULL(h.cuenta,0) as cuenta, "
+*!*		sqlmatriz(2)= " IFNULL(h.ruta1,0) as ruta1, IFNULL(h.folio1,0) as folio1, IFNULL(h.ruta2,0) as ruta2, IFNULL(h.folio2,0) as folio2, "
+*!*		sqlmatriz(3)= " IFNULL(h.compania,e.compania) as companiah, IFNULL(h.nombre,e.nombre) as nombreh, IFNULL(h.apellido,e.apellido) as apellidoh, "
+*!*		sqlmatriz(4)= " IFNULL(h.direccion,e.direccion) as direccionh, IFNULL(h.localidad,e.localidad) as localidadh, IFNULL(h.iva,e.iva) as ivah, IFNULL(h.dni,e.dni) as dnih, IFNULL(h.telefono,e.telefono) as telefonoh, "
+*!*		sqlmatriz(5)= " IFNULL(h.cuit,e.cuit) as cuith, IFNULL(h.cp,e.cp) as cph, IFNULL(h.fax,e.fax) as faxh, IFNULL(h.email,e.email) as emailh "
+*!*		sqlmatriz(6)= " from entidades e left join entidadesh h on e.entidad = h.entidad "
+
+*!*		verror=sqlrun(vconeccionF,"entidades0_sql")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las entidades ",0+48+0,"Error")
+*!*		*** me desconecto	
+*!*			=abreycierracon(vconeccionF,"")
+*!*		    RETURN 
+*!*		ENDIF 
+
+
+*!*	******************************************************************************************************
+*!*		SELECT * FROM entidades0_sql INTO TABLE entidades_sql
+*!*		
+*!*		
+*!*		
+*!*		ALTER table entidades_sql alter COLUMN servicio i
+*!*		ALTER table entidades_sql alter COLUMN cuenta i
+*!*		ALTER table entidades_sql alter COLUMN ruta1 i
+*!*		ALTER table entidades_sql alter COLUMN folio1 i
+*!*		ALTER table entidades_sql alter COLUMN ruta2 i
+*!*		ALTER table entidades_sql alter COLUMN folio2 i
+*!*		ALTER table entidades_sql alter COLUMN dni n(13)
+*!*		USE IN entidades0_sql 
+*!*		
+
+		SELECT acopiosclicarA 
+				
+		GO TOP 
+		DO WHILE !EOF()
+		
+		
+		
+		
+			SELECT compAcopios_sql
+			GO TOP 
+			v_pventa  = compAcopios_sql.pventa
+			v_idcomproba = compAcopios_sql.idcomproba
+			v_idacopiov = acopiosclicarA.idacopio
+			v_idacopio= 0
+			v_entidad = acopiosclicarA.cliente
+			v_descAcopiocli = acopiosclicarA.descrip
+			
+			v_fecha	  = acopiosclicarA.fecha
+			v_numero  = acopiosclicarA.numero
+			
+			v_monto	  = acopiosclicarA.monto
+			v_carpintero = acopiosclicarA.carpintero
+			v_descrip = "Acop: "+ALLTRIM(STR(v_numero))+" [ID: "+ALLTRIM(STR(v_idacopiov))+"] "+ALLTRIM(v_descAcopiocli)
+		
+			
+			
+			
+			
+			**idacopio,fecha, cliente, descrip, numero, carpintero, monto
+			*** GUARDA DATOS DE CABECERA DEL ACOPIO
+				
+
+
+
+	 ** `acopio` (`idacopio` int(10) ,  `pventa` int(10) ,  `idcomproba` int(10) ,  `fecha` ,  `entidad` int(10) ,  `descrip` ,  `numero` int(10) ,  `numcomp` int(10) ,  `carpintero` int(10) )
+
+			
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+				v_condicion = " where entidad = '"+ALLTRIM(STR(v_entidad))+"'"
+			
+				v_numOrden = maxNumero('numero','I','acopio',v_condicion)+1
+							
+*!*					v_var 	= ""
+*!*					v_var 	= thisform.cb_comproba.Value
+
+*!*					v_idcom = ""
+*!*					v_idcom = SUBSTR(v_var,1,(AT('-',v_var))-1)
+*!*						
+*!*					v_idcom = STR(&vcomproba..idcomproba)
+*!*					
+			v_nrocomp = maxnumerocom(v_idcomproba,v_pventa ,1)
+				
+			DIMENSION lamatriz(9,2)
+
+
+			lamatriz(1,1)='idacopio'
+			lamatriz(1,2)=ALLTRIM(STR(v_idacopio))
+			lamatriz(2,1)='pventa'
+			lamatriz(2,2)=ALLTRIM(STR(v_pventa))
+			lamatriz(3,1)='idcomproba'
+			lamatriz(3,2)=ALLTRIM(STR(v_idcomproba))
+			lamatriz(4,1)='fecha'
+			lamatriz(4,2)="'"+ALLTRIM(v_fecha)+"'"
+			lamatriz(5,1)='entidad'
+			lamatriz(5,2)=ALLTRIM(STR(v_entidad))
+			lamatriz(6,1)='descrip'
+			lamatriz(6,2)="'"+ALLTRIM(v_descrip)+"'"
+			lamatriz(7,1)='numero'
+			lamatriz(7,2)=ALLTRIM(STR(v_numOrden ))
+			lamatriz(8,1)='numcomp'
+			lamatriz(8,2)=ALLTRIM(STR(v_nrocomp))
+			lamatriz(9,1)='carpintero'
+			lamatriz(9,2)=ALLTRIM(STR(v_carpintero))
+			
+			p_tabla     = 'acopio'
+			p_matriz    = 'lamatriz'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
+			    RETURN 
+			ENDIF  
+
+			sqlmatriz(1)=" select last_insert_id() as maxid "
+			verror=sqlrun(vconeccionF,"ultimoId")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+				RETURN 0
+			ENDIF 
+			SELECT ultimoId
+			GO TOP 
+			v_idacopio_Ultimo = VAL(ultimoId.maxid)
+			USE IN ultimoId
+			v_idacopio = v_idacopio_Ultimo
+
+
+
+
+			*** Guardo el detalle de acopio ***
+			
+			
+			
+			SELECT * FROM detaacopiosclicar WHERE cliente = v_entidad AND idacopio = v_idacopiov INTO CURSOR detaacopclicar 
+			
+			
+			SELECT detaacopclicar 
+			GO TOP 
+			DO WHILE NOT EOF()
+			
+				
+					v_idacopiod = 0
+					v_idmateacopio = detaacopclicar.idmateacop
+					v_precio  = detaacopclicar.precio
+					v_tipocbio = detaacopclicar.tipocambio
+					v_moneda = detaacopclicar.moneda
+				
+			
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+
+		*			v_idacopiod= maxnumeroidx('idacopiod','I','acopiod',1)
+			
+					v_idacopiod = 0
+					DIMENSION lamatriz(6,2)
+
+
+					lamatriz(1,1)='idacopiod'
+					lamatriz(1,2)=ALLTRIM(STR(v_idacopiod))
+					lamatriz(2,1)='idacopio'
+					lamatriz(2,2)=ALLTRIM(STR(v_idacopio))
+					lamatriz(3,1)='idmateacopio'
+					lamatriz(3,2)=ALLTRIM(STR(v_idmateacopio))
+					lamatriz(4,1)='precio'
+					lamatriz(4,2)=ALLTRIM(STR(v_precio,13,4))
+					lamatriz(5,1)='tipocbio'
+					lamatriz(5,2)=ALLTRIM(STR(v_tipocbio,13,4))
+					lamatriz(6,1)='moneda'
+					lamatriz(6,2)=ALLTRIM(STR(v_moneda))
+					
+
+
+					p_tabla     = 'acopiod'
+					p_matriz    = 'lamatriz'
+					p_conexion  = vconeccionF
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+STR(v_idmate),0+48+0,"Error")
+					    RETURN 0
+					ENDIF  
+			
+			
+				SELECT detaacopclicar 
+				SKIP 1
+
+			ENDDO
+			
+			** Cargo el ajuste según el saldo del acopio **
+					
+			
+			
+				*** Creo ajuste ***
+				
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+
+				v_idajustea = maxnumeroidx('idajustea','I','ajustesacopio',1)
+			
+				v_idajustea = 0
+				v_fecha		= DTOS(DATE())
+				v_observa= "Ajuste autommático "+ALLTRIM(v_descrip)
+				
+				v_opera = IIF(v_monto >= 0, 1,-1)
+				
+				DIMENSION lamatriz(5,2)
+
+
+				lamatriz(1,1)='idajustea'
+				lamatriz(1,2)=ALLTRIM(STR(v_idajustea))
+				lamatriz(2,1)='fecha'
+				lamatriz(2,2)="'"+ALLTRIM(v_fecha)+"'"
+				lamatriz(3,1)='monto'
+				lamatriz(3,2)=ALLTRIM(STR(v_monto,13,4))
+				lamatriz(4,1)='observa'
+				lamatriz(4,2)="'"+ALLTRIM(v_observa)+"'"
+				lamatriz(5,1)='opera'
+				lamatriz(5,2)=ALLTRIM(STR(v_opera))
+			
+
+
+				p_tabla     = 'ajustesacopio'
+				p_matriz    = 'lamatriz'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+STR(thisform.idacopio),0+48+0,"Error")
+				    RETURN 0
+				ENDIF  
+				
+				sqlmatriz(1)=" select last_insert_id() as maxid "
+				verror=sqlrun(vconeccionF,"ultimoId")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+					=abreycierracon(vconeccionF,"")	
+				   	RETURN 0
+				ENDIF  
+			
+				SELECT ultimoId
+				GO TOP 
+				v_idajustea = VAL(ultimoId.maxid)
+				
+				USE IN ultimoId
+				
+				*** Creo detalle de acopio ***
+			
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+
+*				v_idcompacopio = maxnumeroidx('idcompacopio','I','compacopio',1)
+		
+				v_idcompacopio = 0
+				v_idcompAso = 0
+				v_idnp = 0
+				v_esAcop = 'S'
+				DIMENSION lamatriz(7,2)
+
+
+				lamatriz(1,1)='idcompacopio'
+				lamatriz(1,2)=ALLTRIM(STR(v_idcompacopio))
+				lamatriz(2,1)='idacopio'
+				lamatriz(2,2)=ALLTRIM(STR(v_idacopio))
+				lamatriz(3,1)='importe'
+				lamatriz(3,2)=ALLTRIM(STR(v_monto,13,4))
+				lamatriz(4,1)='idregistro'
+				lamatriz(4,2)=ALLTRIM(STR(v_idcompAso))
+				lamatriz(5,1)='idnp'
+				lamatriz(5,2)=ALLTRIM(STR(v_idnp))
+				lamatriz(6,1)='acopio'
+				lamatriz(6,2)="'"+ALLTRIM(v_esacop)+"'"
+				lamatriz(7,1)='idajustea'
+				lamatriz(7,2)=ALLTRIM(STR(v_idajustea))
+
+
+				p_tabla     = 'compacopio'
+				p_matriz    = 'lamatriz'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+STR(thisform.idacopio),0+48+0,"Error")
+					RETURN 0
+				ENDIF  
+			
+						
+			SELECT acopiosclicarA
+			SKIP 					
+		ENDDO 
+			
+		
+
+		
+*/*/*/*/*/*//*//*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT acopiosclicarA
+	USE IN acopiosclicarA
+	
+	SELECT detaacopclicar 
+	USE IN detaacopclicar 
+
+
+	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
+
+*******************************************************
