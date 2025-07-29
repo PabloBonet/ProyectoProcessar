@@ -6937,7 +6937,6 @@ ENDFUNC
 
 ***********************************************
 
-
 FUNCTION imprimirRemito
 PARAMETERS p_idremito, p_esElectronica
 *#/----------------------------------------
@@ -6959,6 +6958,20 @@ PARAMETERS p_idremito, p_esElectronica
 			
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
+			sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, TRIM(p.nombre) as nomProv, "
+			sqlmatriz(2)=" com.comprobante as nomcomp, ifnull(k.tablab,'') as tabla , ifnull(k.campob,'') as campo, ifnull(k.idb,0) as idot,ifnull(e.nombre,'') as nombaso,ifnull(e.apellido,'') as apeaso,ifnull(e.compania,'') as compaso "
+			sqlmatriz(3)=" from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom " 
+			sqlmatriz(4)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa left join remitosh d on r.idremito = d.idremito "
+												   
+			sqlmatriz(5)=" left join condfiscal c on r.iva = c.iva"
+			sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
+			sqlmatriz(7)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(8)=" left join linkregistro k on k.tablaa = 'remitosh' and k.campoa = 'idremitoh' and d.idremitoh = k.ida and (isnull(k.tablab) or k.tablab = 'ot') left join entidades e on r.entidadaso = e.entidad "
+			sqlmatriz(9)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))+"  "
+
+		
+		
+		
 *!*				sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, TRIM(p.nombre) as nomProv, "
 *!*				sqlmatriz(2)=" com.comprobante as nomcomp from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 *!*				sqlmatriz(3)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
@@ -6967,21 +6980,6 @@ PARAMETERS p_idremito, p_esElectronica
 *!*				sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
 *!*				sqlmatriz(7)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
 *!*				sqlmatriz(8)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))
-
-			sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, TRIM(p.nombre) as nomProv, "
-			sqlmatriz(2)=" com.comprobante as nomcomp, ifnull(k.tablab,'') as tabla , ifnull(k.campob,'') as campo, ifnull(k.idb,0) as idot,ifnull(e.nombre,'') as nombaso,ifnull(e.apellido,'') as apeaso,ifnull(e.compania,'') as compaso "
-			sqlmatriz(3)=" from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom " 
-			sqlmatriz(4)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa left join remitosh d on r.idremito = d.idremito "
-																   
-			sqlmatriz(5)=" left join condfiscal c on r.iva = c.iva"
-			sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
-			sqlmatriz(7)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(8)=" left join linkregistro k on k.tablaa = 'remitosh' and k.campoa = 'idremitoh' and d.idremitoh = k.ida left join entidades e on r.entidadaso = e.entidad "
-			sqlmatriz(9)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))+" and (isnull(k.tablab) or k.tablab = 'ot') "
-
-
-
-
 			verror=sqlrun(vconeccionF,"rec_det_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del Remito",0+48+0,"Error")
@@ -6993,16 +6991,67 @@ PARAMETERS p_idremito, p_esElectronica
 		SELECT * FROM rec_det_sql INTO TABLE remi
 		
 		
-		
 		SELECT remi
 		ALTER table remi alter COLUMN apellido c(200)
-		ALTER table remi alter COLUMN idot I							  
-		replace ALL apellido WITH ALLTRIM(apellido)+" "+ALLTRIM(nombre)
+		ALTER table remi alter COLUMN idot I
+		ALTER table remi ADD COLUMN comproAso M 
+									  
+		replace ALL apellido WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre))
 		GO TOP 
 		IF NOT EOF()
 		
 *			ALTER table factu ADD COLUMN codBarra	 C(42)
 		
+		** Agrego comprobantes asociados **
+	 
+	
+			v_comproAso  = ""
+			tipoComproObjtmp 	= CREATEOBJECT('comprobantesclass')
+		
+
+			v_idCompRemi = tipoComproObjtmp.getidcomprobante("REMITO R")
+			
+			v_idCompFa = tipoComproObjtmp.getidcomprobante("FACTURA A")
+			v_idCompFb = tipoComproObjtmp.getidcomprobante("FACTURA B")
+			v_idCompFc = tipoComproObjtmp.getidcomprobante("FACTURA C")
+			
+			v_idCompNDa = tipoComproObjtmp.getidcomprobante("NOTA DE DEBITO A")
+			v_idCompNDb = tipoComproObjtmp.getidcomprobante("NOTA DE DEBITO B")
+			v_idCompNDc = tipoComproObjtmp.getidcomprobante("NOTA DE DEBITO C")
+													
+			v_idCompNCa = tipoComproObjtmp.getidcomprobante("NOTA DE CREDITO A")
+			v_idCompNCb = tipoComproObjtmp.getidcomprobante("NOTA DE CREDITO B")		
+			v_idCompNCc = tipoComproObjtmp.getidcomprobante("NOTA DE CREDITO C")		
+			
+			v_idcomproba =remi.idcomproba
+			
+		
+		 	v_comproAsore = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompRemi )
+		 	
+		 	v_comproASo = v_comproAso + ALLTRIM(v_comproAsore)
+		 	
+		 	v_comproAsofa = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompFa )
+		 	v_comproAsofb = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompFb)
+			v_comproAsofc = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompFc)
+			
+			
+			v_comproAso = ALLTRIM(v_comproAso)  + ALLTRIM(v_comproAsofa) + ALLTRIM(v_comproAsofb) + ALLTRIM(v_comproAsofc)
+			
+			v_comproAsoNDa = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompNDa )
+		 	v_comproAsoNDb = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompNDb)
+			v_comproAsoNDc = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompNDc)
+			
+			v_comproAso = ALLTRIM(v_comproAso)  + ALLTRIM(v_comproAsoNDa) + ALLTRIM(v_comproAsoNDb) + ALLTRIM(v_comproAsoNDc)
+			
+			
+			v_comproAsoNCa = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompNCa )
+		 	v_comproAsoNCb = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompNCb)
+			v_comproAsoNCc = comprobantesAsociados(v_idcomproba, v_idremito, vconeccionF,v_idCompNCc)
+			
+			v_comproAso = ALLTRIM(v_comproAso)  + ALLTRIM(v_comproAsoNCa) + ALLTRIM(v_comproAsoNCb) + ALLTRIM(v_comproAsoNCc)
+			
+					
+			
 			v_idcomproba = remi.idcomproba
 			v_tipoCompAfip	= ALLTRIM(remi.tipcomAFIP)
 			
@@ -7016,18 +7065,17 @@ PARAMETERS p_idremito, p_esElectronica
 		
 		
 		
+			SELECT remi
+			replace ALL comproAso WITH v_comproAso 
+		
+		
+			
+			SELECT remi
+			GO TOP 
 		
 		
 		
 		
-			*Anexo prop Detalle
-*!*				sqlmatriz(1)=" SELECT CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(r.tabla,SPACE(15)) as tabla,sum(o.cantidad*d.valor) as valor  FROM ocd o left join reldatosextra r on o.articulo = r.idregic and r.tabla = 'articulos' "
-*!*				sqlmatriz(2)=" left join datosextra d on r.iddatosex = d.iddatosex where d.imprimir = 'S' and d.operable = 'S' group by d.propiedad "
-*!*				sqlmatriz(3)=" union "
-*!*				sqlmatriz(4)=" SELECT CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(r.tabla,SPACE(15)) as tabla,sum(o.cantidad*d.valor) as valor  FROM ocd o left join reldatosextra r on o.idmate = r.idregistro and r.tabla = 'otmateriales' "
-*!*				sqlmatriz(5)=" left join datosextra d on r.iddatosex = d.iddatosex where d.imprimir = 'S' and d.operable = 'S'  group by d.propiedad "
-
-
 			sqlmatriz(1)="SELECT CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(r.tabla,SPACE(15)) as tabla,sum(h.cantidad*d.valor) as valor  FROM remitosh h left join reldatosextra r on h.articulo = r.idregic and r.tabla = 'articulos' "
 			sqlmatriz(2)=" left join datosextra d on r.iddatosex = d.iddatosex where d.imprimir = 'S' and d.operable = 'S' and h.idremito = "+ ALLTRIM(STR(v_idremito)) +" group by d.propiedad "
 			sqlmatriz(3)=" union "
@@ -7065,12 +7113,6 @@ PARAMETERS p_idremito, p_esElectronica
 		
 		
 		
-		
-		
-		
-		
-		
-		
 			
 			DO FORM reporteform WITH "remi;remihex","remitoscr;remihexcr",v_idcomproba
 			
@@ -7088,6 +7130,8 @@ PARAMETERS p_idremito, p_esElectronica
 	ENDIF 
 
 ENDFUNC 
+
+
 
 
 FUNCTION imprimirRetenciones

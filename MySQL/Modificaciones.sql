@@ -689,6 +689,9 @@ group by `d`.`idfacturah`,`d`.`articulo`;
 
 
 
+ALTER TABLE `remitos` ADD COLUMN `entidadaso` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `timestamp`;
+
+
 -- Correcciones para unidad de facturación --
 
 DROP VIEW IF EXISTS `otpendientes`;
@@ -713,7 +716,7 @@ BEGIN
 
 
     delete from r_otpendientes where idot = pidot ;
-    if @vcantidad <> 0 and @vcantcumpfc <> 0 then
+    if @vcantidad <> 0 or @vcantcumpfc <> 0 then
         insert into r_otpendientes values (pidot, @varticulo, @vidmate, @vcantidad, @vcantcump, @vpendiente,@vcantcumpfc);
     end if ;
 
