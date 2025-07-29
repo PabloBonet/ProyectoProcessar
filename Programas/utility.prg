@@ -29407,6 +29407,137 @@ ENDFUNC
 
 
 
+FUNCTION obtenerFormularioFN
+PARAMETERS p_claveform, p_conexion
+*#/----------------------------------------
+* Obtiene el nombre del formulario según la clave pasada como parámetro
+* Parametros : p_claveform = Clave para buscar el nombre del formulario
+*			 : p_conexion  = Conexión a la base de datos, si se pasa la conexión 
+* Retorna el nombre del formulario
+*#/----------------------------------------
+
+	IF TYPE("p_conexion") = 'N' THEN 
+		IF pl_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionFN = p_conexion
+		ELSE 
+			vconeccionFN = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionFN = abreycierracon(0,_SYSSCHEMA)	
+		p_conexion = 0
+	ENDIF 
+	
+
+	sqlmatriz(1) = " SELECT formulario FROM formulariosfn "
+	sqlmatriz(2) = " where claveform = '"+ALLTRIM(p_claveform)+"'"
+	verror=sqlrun(vconeccionFN ,"formulariofn_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del formulario ",0+48+0,"Error")
+	    RETURN ""
+	ENDIF
+
+	SELECT formulariofn_sql
+	GO TOP 
+	
+	IF NOT EOF()
+		v_formulariofn = formulariofn_sql.formulario
+		RETURN v_formulariofn
+	
+	ELSE
+		MESSAGEBOX("No se encontra el formulario: '"+ALLTRIM(v_formulario)+"'",0+16+256,"Error al cargar el formulario")
+		RETURN ""
+		
+	ENDIF 
+
+
+ENDFUNC 
+
+
+
+
+
+
+
+
+
+
+
+
+
+FUNCTION listaFiltroComp
+PARAMETERS p_idcomproba, p_grupo, p_conexion
+*#/----------------------------------------
+* Obtiene una lista de comprobantes separadas por ; según los parámetros
+* Parametros : p_idcomproba = ID del comprobante utilizado para el filtro
+*			 : P_grupo	= Grupo utilizado para filtrar comprobantes (se puede utilizar como grupo el nombre del formulario donde se usa) permitiendo filtrar un comprobante según la circunstancia
+*			 : p_conexion  = Conexión a la base de datos, si se pasa la conexión 
+* Retorna lista de comprobantes separadas por ;
+*#/----------------------------------------
+	v_retorno = ""
+	IF TYPE("p_conexion") = 'N' THEN 
+		IF pl_conexion > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionFN = p_conexion
+		ELSE 
+			vconeccionFN = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionFN = abreycierracon(0,_SYSSCHEMA)	
+		p_conexion = 0
+	ENDIF 
+	
+	v_condGrupo = ""
+
+	IF TYPE("p_grupo") = 'C'
+		IF EMPTY(ALLTRIM(p_grupo)) = .T.
+			v_condGrupo = ""
+		ELSE
+			v_condGrupo = " and f.grupo = '"+ALLTRIM(p_grupo)+"'"
+		ENDIF 
+	ELSE
+		v_condGrupo = ""
+	ENDIF 
+
+	sqlmatriz(1) = " SELECT * FROM filtrocomp f "
+	sqlmatriz(2) = " left join comprobantes c on f.idcompb = c.idcomproba "
+	sqlmatriz(3) = " where f.idcompa = "+ALLTRIM(STR(p_idcomproba))+ v_condGrupo 
+
+	verror=sqlrun(vconeccionFN ,"filtrocomp_sql")
+	
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del filtro de comprobante",0+48+0,"Error")
+	    RETURN ""
+	ENDIF
+
+	SELECT filtrocomp_sql
+	GO TOP 
+	
+	IF NOT EOF()
+		
+		DO WHILE NOT EOF()
+
+			IF LEN(ALLTRIM(v_retorno)) > 0
+			v_retorno = v_retorno+";"
+			ENDIF 
+	
+			v_comprobante = filtrocomp_sql.comprobante
+						
+			v_retorno = v_retorno + ALLTRIM(v_comprobante)
+			
+			
+			SELECT filtrocomp_sql
+			SKIP 1
+			
+
+		ENDDO
+		RETURN v_retorno 
+	ELSE
+		
+		RETURN ""
+		
+	ENDIF 
+
+
+ENDFUNC 
 
 
 ******************************************************************************
