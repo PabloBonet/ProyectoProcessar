@@ -687,3 +687,36 @@ left join comprobantes c on f.idcomproba = c.idcomproba left join tipocompro t o
 where (`f`.`stock` = 'N')  and t.comprotipo = 'FC'
 group by `d`.`idfacturah`,`d`.`articulo`;
 
+
+
+-- Correcciones para unidad de facturación --
+
+DROP VIEW IF EXISTS `otpendientes`;
+ CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`tulior`@`%` SQL SECURITY DEFINER VIEW `otpendientes` AS select `o`.`idot` AS `idot`,`o`.`articulo` AS `articulo`,`o`.`idmate` AS `idmate`,`o`.`cantidad` AS `cantidad`,sum(ifnull(`h`.`cantidad`,0.00)) AS `cantcump`,`o`.`cantidad` - sum(ifnull(`h`.`cantidad`,0.00)) AS `pendiente`,sum(ifnull(`h`.`cantidaduf`,0.00)) AS `cantcumpuf` from (`ot` `o` left join `cumplimentah` `h` on(`o`.`idot` = `h`.`idot`)) group by `o`.`idot`;
+ 
+ DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `p_otpendientes` $$
+CREATE DEFINER=`tulior`@`%` PROCEDURE `p_otpendientes`(in pidot int)
+BEGIN
+
+    set @varticulo    := ' ' ;
+    set @vcantidad    := 0.00 ;
+    set @vcantcump    := 0.00 ;
+    set @vpendiente   := 0.00 ;
+    set @vidmate      := 0;
+    set @vcantcumpfc  := 0.00;
+
+    select `o`.`articulo`,`o`.`idmate` ,`o`.`cantidad` ,sum(ifnull(`h`.`cantidad`,0.00)), (`o`.`cantidad` - sum(ifnull(`h`.`cantidad`,0.00))), (`o`.`cantidadfc` - sum(ifnull(`h`.`cantidaduf`,0.00)))
+    into @varticulo, @vidmate, @vcantidad, @vcantcump, @vpendiente,@vcantcumpfc
+    from (`ot` `o` left join `cumplimentah` `h` on((`o`.`idot` = `h`.`idot`))) where `o`.`idot` = pidot ;
+
+
+    delete from r_otpendientes where idot = pidot ;
+    if @vcantidad <> 0 and @vcantcumpfc <> 0 then
+        insert into r_otpendientes values (pidot, @varticulo, @vidmate, @vcantidad, @vcantcump, @vpendiente,@vcantcumpfc);
+    end if ;
+
+END $$
+
+DELIMITER ;
