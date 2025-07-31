@@ -723,3 +723,30 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+
+-- Tabla formulariosfn --
+DROP TABLE IF EXISTS `formulariosfn`;
+CREATE TABLE  `formulariosfn` (
+  `idformulario` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `claveform` char(100) CHARACTER SET ucs2 COLLATE ucs2_general_ci NOT NULL,
+  `formulario` char(100) NOT NULL,
+  PRIMARY KEY (`idformulario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+insert into formulariosfn values (1, 'remitos', 'remitosuf'),
+(2, 'cumplimentacion', 'cumplimentacionuf'),
+(3, 'facturas', 'facturasuf'),
+(4, 'np', 'npuf'),
+(6, 'recibos', 'recibos'),
+(8, 'facturasprov', 'facturasprov'),
+(9, 'cajaie', 'cajaie'),
+(10, 'transfecajas', 'transfecajas'),
+(11, 'costos', 'costos'),
+(12, 'cumpleoc', 'cumpleoc'),
+(13, 'oc', 'oc'),
+(14, 'pagares', 'pagares'),
+(15, 'pagosprov', 'pagosprov'),
+(16, 'presupuesto', 'presupuesto'),
+(17, 'transferencia', 'transferencia');
