@@ -28174,59 +28174,114 @@ PARAMETERS pfc_idtipocomp, pfc_idregistro
 	IF EMPTY(v_tablacomprobante) THEN 
 		RETURN 
 	ENDIF 
-
+	v_formulario = ""
 	DO CASE 
 		CASE v_tablacomprobante == "cajaie"
-			DO FORM cajaie WITH pfc_idregistro
+		
+			v_formulario = obtenerFormularioFN("cajaie")
+			
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+			
+	*		DO FORM cajaie WITH pfc_idregistro
 			
 		CASE v_tablacomprobante == "cajamovip"
-			DO FORM transfecajas WITH pfc_idregistro
+		
+			v_formulario = obtenerFormularioFN("transfecajas")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM transfecajas WITH pfc_idregistro
 			
 		CASE v_tablacomprobante == "costop"
-			DO FORM costos WITH pfc_idregistro			
+		
+			v_formulario = obtenerFormularioFN("costos")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM costos WITH pfc_idregistro			
 			
-		CASE v_tablacomprobante == "cumplimentaoc"
-			DO FORM cumpleoc WITH pfc_idregistro
+		CASE v_tablacomprobante == "cumpleoc"
+		
+			v_formulario = obtenerFormularioFN("transfecajas")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM cumpleoc WITH pfc_idregistro
 			
 		CASE v_tablacomprobante == "cumplimentap"
-			DO FORM cumplimentacion WITH pfc_idregistro
+
+			v_formulario = obtenerFormularioFN("cumplimentacion")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM cumplimentacion WITH pfc_idregistro
 			
 		CASE v_tablacomprobante == "factuprove"
-			DO FORM facturasprov WITH pfc_idregistro
+			
+			v_formulario = obtenerFormularioFN("facturasprov")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM facturasprov WITH pfc_idregistro
 			
 		CASE v_tablacomprobante == "facturas"
-			DO FORM facturas WITH pfc_idregistro
+
+			v_formulario = obtenerFormularioFN("facturas")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM facturas WITH pfc_idregistro
 			
 		CASE v_tablacomprobante == "np"
-			DO FORM np WITH pfc_idregistro			
+
+			v_formulario = obtenerFormularioFN("np")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM np WITH pfc_idregistro			
 			
 		CASE v_tablacomprobante == "oc"
-			DO FORM oc WITH pfc_idregistro		
+
+			v_formulario = obtenerFormularioFN("oc")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM oc WITH pfc_idregistro		
 			
 		CASE v_tablacomprobante == "pagares"
-			DO FORM pagares WITH pfc_idregistro, 0			
+
+			v_formulario = obtenerFormularioFN("pagares")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro, 0"
+*			DO FORM pagares WITH pfc_idregistro, 0			
 
 		CASE v_tablacomprobante == "pagosprov"
-			DO FORM pagosprov WITH pfc_idregistro,0,0,0
+
+			v_formulario = obtenerFormularioFN("pagosprov")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro,0,0,0"
+*			DO FORM pagosprov WITH pfc_idregistro,0,0,0
 
 		CASE v_tablacomprobante == "presupu"
-			DO FORM presupuesto WITH pfc_idregistro			
+
+			v_formulario = obtenerFormularioFN("presupuesto")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM presupuesto WITH pfc_idregistro			
 				
 		CASE v_tablacomprobante == "recibos"
-			DO FORM recibos WITH pfc_idregistro,0,0,0
+
+			v_formulario = obtenerFormularioFN("recibos")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro,0,0,0"
+*			DO FORM recibos WITH pfc_idregistro,0,0,0
 
 		CASE v_tablacomprobante == "remitos"
-			DO FORM remitos WITH pfc_idregistro
+
+			v_formulario = obtenerFormularioFN("remitos")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM remitos WITH pfc_idregistro
 
 		CASE v_tablacomprobante == "transferencias"
-			DO FORM transferencia WITH pfc_idregistro
+
+			v_formulario = obtenerFormularioFN("transferencia")
+			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+*			DO FORM transferencia WITH pfc_idregistro
 
 		OTHERWISE 
+			v_ejecform = ""
 	ENDCASE 
+	
+		IF EMPTY(ALLTRIM(v_formulario)) = .T.
+			RETURN 	
+		ELSE
+		
+			&v_ejecform 	
+		ENDIF 
+		
 
 	RETURN 		
 ENDFUNC 
-
 
 ************************************************************************
 ************************************************************************
