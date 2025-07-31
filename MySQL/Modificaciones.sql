@@ -735,10 +735,10 @@ CREATE TABLE  `formulariosfn` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
-insert into formulariosfn values (1, 'remitos', 'remitosuf'),
-(2, 'cumplimentacion', 'cumplimentacionuf'),
-(3, 'facturas', 'facturasuf'),
-(4, 'np', 'npuf'),
+insert into formulariosfn values (1, 'remitos', 'remitos'),
+(2, 'cumplimentacion', 'cumplimentacion'),
+(3, 'facturas', 'facturas'),
+(4, 'np', 'np'),
 (6, 'recibos', 'recibos'),
 (8, 'facturasprov', 'facturasprov'),
 (9, 'cajaie', 'cajaie'),
