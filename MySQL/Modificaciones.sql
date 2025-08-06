@@ -790,6 +790,8 @@ CREATE TABLE  `clasificanp` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
-ALTER TABLE `np` ADD COLUMN `idclasifnp` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `idetiqueta`, ADD INDEX `idetiqueta`(`idetiqueta`);
-
+ALTER TABLE `np` ADD COLUMN `idetiqueta` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `fechaentre`,
+ ADD COLUMN `idclasifnp` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `idetiqueta`,
+ ADD INDEX `idetiqueta`(`idetiqueta`),
+ ADD INDEX `idclasifnp`(`idclasifnp`);
 
