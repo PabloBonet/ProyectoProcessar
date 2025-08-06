@@ -750,3 +750,46 @@ insert into formulariosfn values (1, 'remitos', 'remitos'),
 (15, 'pagosprov', 'pagosprov'),
 (16, 'presupuesto', 'presupuesto'),
 (17, 'transferencia', 'transferencia');
+
+
+
+
+-- Clasificación de NP --
+
+
+
+
+
+CREATE TABLE  `clasnpcomp` (
+  `idclasnpco` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idclasifnp` int(10) unsigned NOT NULL,
+  `idcompactiv` int(10) unsigned NOT NULL,
+  `idclasifop` int(10) unsigned NOT NULL,
+  `valor` char(50) NOT NULL,
+  PRIMARY KEY (`idclasnpco`),
+  KEY `Index_2` (`idclasifnp`),
+  KEY `Index_3` (`idcompactiv`),
+  KEY `Index_4` (`idclasifop`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+CREATE TABLE  `clasifopera` (
+  `idclasifop` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `codigo` char(50) NOT NULL,
+  `descrip` char(250) NOT NULL,
+  PRIMARY KEY (`idclasifop`),
+  KEY `Index_2` (`codigo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+CREATE TABLE  `clasificanp` (
+  `idclasifnp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nombre` char(100) NOT NULL,
+  `descrip` char(250) NOT NULL,
+  PRIMARY KEY (`idclasifnp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+ALTER TABLE `np` ADD COLUMN `idclasifnp` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `idetiqueta`, ADD INDEX `idetiqueta`(`idetiqueta`);
+
+
