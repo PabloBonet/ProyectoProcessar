@@ -795,3 +795,30 @@ ALTER TABLE `np` ADD COLUMN `idetiqueta` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFT
  ADD INDEX `idetiqueta`(`idetiqueta`),
  ADD INDEX `idclasifnp`(`idclasifnp`);
 
+
+
+--20250811--
+
+ALTER TABLE `agendadeta` ADD COLUMN `infotodos` CHAR(1) NOT NULL DEFAULT 'N' AFTER `detallereg`, ADD COLUMN `repetir` CHAR(1) NOT NULL DEFAULT 'N' AFTER `infotodos`;
+ 
+ALTER TABLE `ajustesacopio` MODIFY COLUMN `monto` DOUBLE(13,4) NOT NULL;
+
+ALTER TABLE `ajustesacopiop` MODIFY COLUMN `monto` DOUBLE(13,4) NOT NULL;
+
+ALTER TABLE `compacopio` MODIFY COLUMN `importe` DOUBLE(13,4) NOT NULL;
+
+ALTER TABLE `compacopiop` MODIFY COLUMN `importe` DOUBLE(13,4) NOT NULL;
+
+ ALTER TABLE `ejercicioecon` ADD COLUMN `ctaresulta` CHAR(20) NOT NULL AFTER `idejerci`;
+ 
+ALTER TABLE `facturasbsertmp` ADD COLUMN `consumo` DOUBLE(13,2) NOT NULL AFTER `idtiposer`,
+ ADD COLUMN `mactual` DOUBLE(13,2) NOT NULL AFTER `consumo`,
+ ADD COLUMN `manterior` DOUBLE(13,2) NOT NULL AFTER `mactual`,
+ ADD COLUMN `consextra` DOUBLE(13,2) NOT NULL DEFAULT 0.00 AFTER `manterior`,
+ ADD COLUMN `unidadref` CHAR(10) NOT NULL AFTER `consextra`,
+ ADD COLUMN `valorref` DOUBLE(13,2) NOT NULL AFTER `unidadref`,
+ ADD COLUMN `idcateser` INTEGER UNSIGNED NOT NULL DEFAULT 1 AFTER `valorref`,
+ ADD COLUMN `factorm` DOUBLE(13,2) NOT NULL DEFAULT 1.00 AFTER `idcateser`,
+ ADD COLUMN `dataextra` CHAR(254) NOT NULL AFTER `factorm`;
+ 
+
