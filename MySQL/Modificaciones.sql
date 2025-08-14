@@ -822,3 +822,10 @@ ALTER TABLE `facturasbsertmp` ADD COLUMN `consumo` DOUBLE(13,2) NOT NULL AFTER `
  ADD COLUMN `dataextra` CHAR(254) NOT NULL AFTER `factorm`;
  
 
+--20250814--
+
+ALTER TABLE `remitos` ADD COLUMN `cai` CHAR(100) NOT NULL DEFAULT ' ' AFTER `entidadaso`,  ADD COLUMN `caiven` CHAR(8) NOT NULL DEFAULT ' ' AFTER `cai`;
+
+ALTER TABLE `compactiv` ADD COLUMN `cai` CHAR(100) NOT NULL DEFAULT ' ' AFTER `idcompactiv`, ADD COLUMN `nromax` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `cai`;
+
+
