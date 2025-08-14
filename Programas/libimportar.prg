@@ -2172,9 +2172,6 @@ ENDFUNC
 
 
 
-
-
-
 */------------------------------------------------------------------------------------------------------------
 FUNCTION CargaLineas
 PARAMETERS p_idimportap, p_archivo, p_func
@@ -2212,9 +2209,10 @@ PARAMETERS p_idimportap, p_archivo, p_func
 			RETURN 0
 		ENDIF
 
-		CREATE TABLE .\lineascar FREE (linea C(20), detalle C(254), codigoctac c(20), codigoctav C(20), margen N(13,4), codmin C(50), codmax C(50))			
+		CREATE TABLE .\lineascarcomp FREE (linea C(20), detalle C(254), codigoctac c(20), codigoctav C(20), margen N(13,4), codmin C(50), codmax C(50), nomsublin C(254))			
+	**	CREATE TABLE .\lineascar FREE (linea C(20), detalle C(254), codigoctac c(20), codigoctav C(20), margen N(13,4), codmin C(50), codmax C(50))			
 					
-		SELECT lineascar
+		SELECT lineascarcomp 
 *		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
  		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
 		&eje
@@ -2244,13 +2242,21 @@ PARAMETERS p_idimportap, p_archivo, p_func
 
 		ENDIF 		
 		
+		
+		SET ENGINEBEHAVIOR 70
+		
+		SELECT * FROM lineascarcomp GROUP BY linea INTO TABLE lineascar
+		SELECT * FROM lineascarcomp WHERE EMPTY(ALLTRIM(nomsublin)) = .F. INTO TABLE sublineascar
+		SET ENGINEBEHAVIOR 90		
 		DIMENSION lamatriz(7,2)
 		DIMENSION lamatriz1(3,2)
 		p_tipoope     = 'I'
 		p_condicion   = ''
 		v_titulo      = " EL ALTA "
 		
+		SELECT lineascar
 		GO TOP 
+		
 		DO WHILE !EOF()
 			lamatriz(1,1) = 'linea'
 			lamatriz(1,2) = "'"+ALLTRIM(lineascar.linea)+"'"
@@ -2274,24 +2280,34 @@ PARAMETERS p_idimportap, p_archivo, p_func
 			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lineas ",0+48+0,"Error")
 			ENDIF 
-
+			SELECT lineascar
+			SKIP 
+		ENDDO  
+		
+		select sublineascar
+		GO TOP 
+		browse
+		DO WHILE !EOF()
+			IF EMPTY(ALLTRIM(sublineascar.nomsublin)) = .F.
 			
-			lamatriz1(1,1) = 'idsublinea'
-			lamatriz1(1,2) = "0"
-			lamatriz1(2,1) = 'linea'
-			lamatriz1(2,2) = "'"+ALLTRIM(lineascar.linea)+"'"
-			lamatriz1(3,1) = 'sublinea'
-			lamatriz1(3,2) = "'"+ALLTRIM(lineascar.detalle)+"'"
+				lamatriz1(1,1) = 'idsublinea'
+				lamatriz1(1,2) = "0"
+				lamatriz1(2,1) = 'linea'
+				lamatriz1(2,2) = "'"+ALLTRIM(sublineascar.linea)+"'"
+				lamatriz1(3,1) = 'sublinea'
+				lamatriz1(3,2) = "'"+ALLTRIM(sublineascar.nomsublin)+"'"
 
-			p_tabla     = 'sublineas'
-			p_matriz    = 'lamatriz1'
-			p_conexion  = vconeccionF
-			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lineas ",0+48+0,"Error")
+				p_tabla     = 'sublineas'
+				p_matriz    = 'lamatriz1'
+				p_conexion  = vconeccionF
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lineas ",0+48+0,"Error")
+				ENDIF 
+				
 			ENDIF 
 			
 			
-			SELECT lineascar
+			SELECT sublineascar
 			SKIP 					
 		ENDDO 
 */*/*/*/*/*/
@@ -2315,11 +2331,180 @@ PARAMETERS p_idimportap, p_archivo, p_func
 ENDFUNC  
 
 
-*******************************************************
 
-*/------------------------------------------------------------------------------------------------------------
-*/ FINAL  Carga de Lineas
-*/------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*!*	*/------------------------------------------------------------------------------------------------------------
+*!*	FUNCTION CargaLineas
+*!*	PARAMETERS p_idimportap, p_archivo, p_func
+*!*	*#/----------------------------------------
+*!*	*/ Carga de Lineas
+*!*	*#/----------------------------------------
+
+*!*		IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+*!*			RETURN p_func
+*!*		ENDIF 
+*!*	*/**************************************************************
+
+*!*		IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*	*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*	*!*			RETURN p_func 
+*!*		
+
+*!*		ENDIF 
+*!*	*/**************************************************************
+*!*		IF p_func = 1 then && 1- Carga de Archivo de Lineas -
+*!*			p_archivo = alltrim(p_archivo)
+*!*			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+*!*			if file(".\lineascar.dbf") THEN
+*!*				if used("lineascar") then
+*!*					sele lineascar
+*!*					use
+*!*				endif
+*!*				DELETE FILE .\lineascar.dbf
+*!*			ENDIF
+*!*			
+*!*			if !file(p_archivo) THEN
+*!*				=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+*!*				=abreycierracon(vconeccionF,"")	
+*!*				RETURN 0
+*!*			ENDIF
+
+*!*			CREATE TABLE .\lineascar FREE (linea C(20), detalle C(254), codigoctac c(20), codigoctav C(20), margen N(13,4), codmin C(50), codmax C(50))			
+*!*						
+*!*			SELECT lineascar
+*!*	*		eje = "APPEND FROM "+p_archivo+" TYPE CSV"
+*!*	 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+*!*			&eje
+
+*!*			COUNT TO v_registros 
+*!*			IF v_registros > 0 THEN 
+*!*				*Elimino las Lineas que tenga el sistema
+*!*				*La carga debe hacerce con la tabla vacia
+*!*				sqlmatriz(1)=" delete from lineas "
+*!*				verror=sqlrun(vconeccionF,"lineas")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Lineas... ",0+48+0,"Error")
+*!*				    RETURN 
+*!*				ENDIF
+*!*				sqlmatriz(1)=" delete from sublineas "
+*!*				verror=sqlrun(vconeccionF,"sublineas")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de SubLineas... ",0+48+0,"Error")
+*!*				    RETURN 
+*!*				ENDIF
+*!*				sqlmatriz(1)="alter table sublineas auto_increment = 1"
+*!*				verror=sqlrun(vconeccion,"modifauto")
+*!*				IF verror=.f.  
+*!*			    	MESSAGEBOX("Ha Ocurrido un Error el reseteo del valor de auto_increment de sublineas",0+48+0,"Eliminación de Registros")
+*!*			    	RETURN -9
+*!*				ENDIF 
+
+*!*			ENDIF 		
+*!*			
+*!*			DIMENSION lamatriz(7,2)
+*!*			DIMENSION lamatriz1(3,2)
+*!*			p_tipoope     = 'I'
+*!*			p_condicion   = ''
+*!*			v_titulo      = " EL ALTA "
+*!*			
+*!*			GO TOP 
+*!*			DO WHILE !EOF()
+*!*				lamatriz(1,1) = 'linea'
+*!*				lamatriz(1,2) = "'"+ALLTRIM(lineascar.linea)+"'"
+*!*				lamatriz(2,1) = 'detalle'
+*!*				lamatriz(2,2) = "'"+ALLTRIM(lineascar.detalle)+"'"
+*!*				lamatriz(3,1) = 'codigoctac'
+*!*				lamatriz(3,2) = "'"+ALLTRIM(lineascar.codigoctac)+"'"
+*!*				lamatriz(4,1) = 'codigoctav'
+*!*				lamatriz(4,2) = "'"+ALLTRIM(lineascar.codigoctav)+"'"
+*!*				lamatriz(5,1) = 'margen'
+*!*				lamatriz(5,2) = ALLTRIM(STR(lineascar.margen))
+*!*				lamatriz(6,1) = 'codmin'
+*!*				lamatriz(6,2) = "'"+ALLTRIM(lineascar.codmin)+"'"
+*!*				lamatriz(7,1) = 'codmax'
+*!*				lamatriz(7,2) = "'"+ALLTRIM(lineascar.codmax)+"'"
+*!*				
+
+*!*				p_tabla     = 'lineas'
+*!*				p_matriz    = 'lamatriz'
+*!*				p_conexion  = vconeccionF
+*!*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lineas ",0+48+0,"Error")
+*!*				ENDIF 
+
+*!*				
+*!*				lamatriz1(1,1) = 'idsublinea'
+*!*				lamatriz1(1,2) = "0"
+*!*				lamatriz1(2,1) = 'linea'
+*!*				lamatriz1(2,2) = "'"+ALLTRIM(lineascar.linea)+"'"
+*!*				lamatriz1(3,1) = 'sublinea'
+*!*				lamatriz1(3,2) = "'"+ALLTRIM(lineascar.detalle)+"'"
+
+*!*				p_tabla     = 'sublineas'
+*!*				p_matriz    = 'lamatriz1'
+*!*				p_conexion  = vconeccionF
+*!*				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" de Importaciones de Lineas ",0+48+0,"Error")
+*!*				ENDIF 
+*!*				
+*!*				
+*!*				SELECT lineascar
+*!*				SKIP 					
+*!*			ENDDO 
+*!*	*/*/*/*/*/*/
+
+*!*		=abreycierracon(vconeccionF,"")	
+*!*			SELECT lineascar
+*!*			USE IN lineascar
+*!*			RELEASE lamatriz1
+*!*			RELEASE lamatriz
+*!*			MESSAGEBOX("Importación de Lineas de Articulos Finalizada",0+64,"Importar Lineas de Articulos")
+*!*		ENDIF 	&& 1- Carga de Archivo de CPP -
+*!*	*/**************************************************************
+*!*	*/**************************************************************
+*!*	*/ && 2- Visualiza Datos de Claro
+*!*		IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+*!*	*		=fconsutablas(p_idimportap,'lineascar',.T.)
+*!*		ENDIF && 2- Visualiza Datos de CPP -
+*!*	*/**************************************************************
+*!*		lreto = p_func
+*!*		RETURN lreto
+*!*	ENDFUNC  
+
+
+*!*	*******************************************************
+
+*!*	*/------------------------------------------------------------------------------------------------------------
+*!*	*/ FINAL  Carga de Lineas
+*!*	*/------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
 
 
 */------------------------------------------------------------------------------------------------------------
