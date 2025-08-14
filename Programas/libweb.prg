@@ -603,9 +603,14 @@ USE IN productos03_c
 IF USED("productosweb") THEN 
 	USE IN productosweb 
 ENDIF 
-CREATE TABLE productosweb (seccion C(50), sku c(100), nombre c(254), descrip c(254), cate1 c(150), cate2 c(150), cate3 c(150), peso n(8,2), altura n(8,2), longitud n(8,2), ancho n(8,2), ;
-						   titulo1 c(150), valor1 c(254),titulo2 c(150), valor2 c(254),titulo3 c(150), valor3 c(254),titulo4 c(150), valor4 c(254), titulo5 c(150), valor5 c(250), ;
-						   titulo6 c(150), valor6 c(254),titulo7 c(150), valor7 c(254),titulo8 c(150), valor8 c(254), iva n(5,2) )
+*!*	CREATE TABLE productosweb (seccion C(50), sku c(100), nombre c(254), descrip c(254), cate1 c(150), cate2 c(150), cate3 c(150), peso n(8,2), altura n(8,2), longitud n(8,2), ancho n(8,2), ;
+*!*							   titulo1 c(150), valor1 c(254),titulo2 c(150), valor2 c(254),titulo3 c(150), valor3 c(254),titulo4 c(150), valor4 c(254), titulo5 c(150), valor5 c(250), ;
+*!*							   titulo6 c(150), valor6 c(254),titulo7 c(150), valor7 c(254),titulo8 c(150), valor8 c(254), iva n(5,2) )
+
+CREATE TABLE productosweb (seccion C(50), sku c(100), nombre c(254), descrip M, cate1 c(150), cate2 c(150), cate3 c(150), peso n(8,2), altura n(8,2), longitud n(8,2), ancho n(8,2), ;
+						   titulo1 c(150), valor1 M,titulo2 c(150), valor2 M,titulo3 c(150), valor3 M,titulo4 c(150), valor4 M, titulo5 c(150), valor5 M, ;
+						   titulo6 c(150), valor6 M,titulo7 c(150), valor7 M,titulo8 c(150), valor8 M, iva n(5,2) )
+
 SELECT productosweb
 INDEX on ALLTRIM(sku)+ALLTRIM(seccion) TAG sku
 
@@ -671,7 +676,7 @@ FOR j = 2 TO 3
 		DO CASE 
 
 			CASE ALLTRIM(&v_idx..propiedad)=='DESCRIPCION'
-				UPDATE productosweb SET descrip = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				UPDATE productosweb SET descrip = STRTRAN(&v_idx..valor,CHR(13)+CHR(10),' ') WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='PESO EN KG'
 				UPDATE productosweb SET peso = VAL(STRTRAN(&v_idx..valor,',','.')) WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
@@ -709,28 +714,28 @@ FOR j = 2 TO 3
 				UPDATE productosweb SET titulo8 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A1'
-				UPDATE productosweb SET valor1 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				UPDATE productosweb SET valor1 = STRTRAN(&v_idx..valor,CHR(13)+CHR(10),' ') WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A2'
-				UPDATE productosweb SET valor2 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				UPDATE productosweb SET valor2 = STRTRAN(&v_idx..valor,CHR(13)+CHR(10),' ') WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A3'
-				UPDATE productosweb SET valor3 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				UPDATE productosweb SET valor3 = STRTRAN(&v_idx..valor,CHR(13)+CHR(10),' ') WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A4'
-				UPDATE productosweb SET valor4 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				UPDATE productosweb SET valor4 = STR(&v_idx..valor,,CHR(13)+CHR(10),' ') WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A5'
-				UPDATE productosweb SET valor5 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				UPDATE productosweb SET valor5 = STRTRAN(&v_idx..valor,CHR(13)+CHR(10),' ') WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A6'
-				UPDATE productosweb SET valor6 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				UPDATE productosweb SET valor6 = STRTRAN(&v_idx..valor,CHR(13)+CHR(10),' ') WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A7'
-				UPDATE productosweb SET valor7 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				UPDATE productosweb SET valor7 = STRTRAN(&v_idx..valor,CHR(13)+CHR(10),' ') WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 			CASE ALLTRIM(&v_idx..propiedad)=='VALOR A8'
-				UPDATE productosweb SET valor8 = &v_idx..valor WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
+				UPDATE productosweb SET valor8 = STRTRAN(&v_idx..valor,CHR(13)+CHR(10),' ') WHERE ALLTRIM(sku) == ALLTRIM(&v_idx..articulo) AND ALLTRIM(seccion) == v_empre 
 			
 		ENDCASE 
 		
