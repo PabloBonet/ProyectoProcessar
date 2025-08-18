@@ -29902,6 +29902,10 @@ PARAMETERS pIdremito
 
 	IF ALLTRIM(v_ajustastockAN)  == 'S' THEN 
 
+		IF TYPE("tipoMStockobj") = 'U' THEN 
+			tipoMStockobj = CREATEOBJECT('tipomstockclass')
+		ENDIF 
+
 		v_idtipomovAN		= tipoMStockobj.getidtipomstock("INGRESO POR ANULACION")
 
 		CREATE TABLE tmpDatos FREE (articulo C(50), cantidad Y, deposito I, fecha c(8))
