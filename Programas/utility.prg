@@ -20542,8 +20542,7 @@ TRY
 				***  0: EXENTO?
 				*** 20: MONOTRIBUTO
 				*** 30: IVA
-				
-				
+			
 				
 				
 				v_sentIns1 = "INSERT INTO "+ALLTRIM(p_tablaRetorno)+ " VALUES ('"+ALLTRIM(v_apellido)+"','"+ALLTRIM(v_nombre)+"','"+ALLTRIM(v_codPostal)+"',"
@@ -21230,6 +21229,7 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 	sqlmatriz(1)=" Select l.localidad, l.nombre as nomLoc, l.cp, pr.provincia, pr.nombre as nomProv, pa.pais, pa.nombre as nomPais "
 	sqlmatriz(2)=" from paises pa left join provincias pr on pa.pais = pr.pais left join localidades l  on pr.provincia = l.provincia "
 	sqlmatriz(3)=" where pa.nombre = '"+ALLTRIM(p_nomPais_car)+"' and pr.nombre = '"+ALLTRIM(p_nomProv_car) + "' and l.nombre = '"+ALLTRIM(p_nomLoc_car)+"'"
+
 
 	verror=sqlrun(vconeccion_car,"localidad_sql_car")
 	IF verror=.f.  

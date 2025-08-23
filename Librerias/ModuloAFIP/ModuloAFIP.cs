@@ -973,11 +973,13 @@ namespace ModuloAFIP
         /// </summary>
         /// <param name="ubicacionComp">Ubicación del archivo XML con información del comprobante a autorizar y ubicacion del archivo con comprobantes asociados en caso que tenga</param>
         /// <param name="idRegistro">ID del registro a autorizar, debe coincidir con el ID registrado en el XML</param>
-        /// <returns>Retorna True si no se generaron errores propios del modulo</returns>
-        public bool AutorizarComp(string ubicacionCompAso, int idRegistro)
+        /// <returns>Retorna un string con los datos obtenidos del AFIP, separados por ';'
+        ///     Formato cadena: R;CAE;VTOCAE;NUMERO;IDFACTURA;FECHA;PVENTA (Donde R: resultado pudiendo ser A|R|E|S)
+        /// </returns>
+        public string AutorizarComp(string ubicacionCompAso, int idRegistro)
         {
             UtilClass.EscribirArchivoLog("AutorizarCOMP", _strLog);
-            bool retorno;
+            string retorno = "S";
             _observaciones = new List<string>();
             _error = false;
             _errores = new List<string>();
@@ -989,23 +991,23 @@ namespace ModuloAFIP
                     string mensaje = "El nombre del Archivo de configuración es incorrecto\n";
                     _errores.Add(mensaje);
                     UtilClass.EscribirArchivoLog(mensaje, _strLog);
-                    retorno = false;
+                    retorno = "E";
                 }
                 else
                 {
 
 
-                    UtilClass.EscribirArchivoLog("CARGA COMPROBANTE\n", _strLog);
+                    UtilClass.EscribirArchivoLog("Antes CargaComprobante\n", _strLog);
 
                     ComprobanteClass comprobante = CargaComprobante(ubicacionCompAso, idRegistro,_strCuit);
-                    UtilClass.EscribirArchivoLog("DESPUES COMPROBANTE\n", _strLog);
+                    UtilClass.EscribirArchivoLog("Despues CargaComprobante\n", _strLog);
                     if (comprobante != null)
                     {
                        
                         ComprobanteClass comprobanteRespuesta = null;
-                        UtilClass.EscribirArchivoLog("ANTES  AutorizarComprobante\n", _strLog);
+                        UtilClass.EscribirArchivoLog("Antes  AutorizarComprobante\n", _strLog);
                         comprobanteRespuesta = _gestionFE.AutorizarComprobante(_ticketAcceso, comprobante, idRegistro);
-                        UtilClass.EscribirArchivoLog("DESUES  AutorizarComprobante\n", _strLog);
+                        UtilClass.EscribirArchivoLog("Despues  AutorizarComprobante\n", _strLog);
                         UtilClass.EscribirArchivoLog((_gestionFE.Observaciones)+"\n", _strLog);
                        
                         
@@ -1039,8 +1041,8 @@ namespace ModuloAFIP
 
                                         _error = true;
                                         _errores.Add("El ID del registro pasado como parámetro no coincide con el ID registro del archivo XML");
-                                        return false;
-                                        break;
+                                        return "E";
+                                        
                                 }
 
                                 if (ubicacionComp == null || ubicacionComp.Length == 0)
@@ -1062,7 +1064,9 @@ namespace ModuloAFIP
                                     comprobanteXML.SelectSingleNode("//resultado").InnerText = comprobanteRespuesta.Resultado;
                                     comprobanteXML.SelectSingleNode("//observa").InnerText = comprobanteRespuesta.ObservacionesAFIP;
                                     comprobanteXML.SelectSingleNode("//errores").InnerText = comprobanteRespuesta.ErroresAFIP;
-                                    
+
+                                    //Formato cadena: R;CAE;VTOCAE;NUMERO;IDFACTURA;FECHA;PVENTA (Donde R: resultado pudiendo ser A|R|E|S)
+                                    retorno = comprobanteRespuesta.Resultado + ";" + comprobanteRespuesta.CAE + ";" + comprobanteRespuesta.FechaVtoCAE + ";" + comprobanteRespuesta.NroComprobante.ToString() + ";" + comprobanteRespuesta.IDComprobante.ToString() + ";" + comprobanteRespuesta.FechaComprobante + ";" + comprobanteRespuesta.PtoVta.ToString();
 
                                     comprobanteXML.Save(ubicacionComp);
                                     string mensaje = "Respuesta Obtenida: \n";
@@ -1070,9 +1074,12 @@ namespace ModuloAFIP
                                     mensaje += "\n CESP - CAE: " + comprobanteRespuesta.CAE;
                                     mensaje += "\n Numero: " + comprobanteRespuesta.NroComprobante.ToString();
                                     mensaje += "\n Observaciones: "+ comprobanteRespuesta.ObservacionesAFIP;
-                                    mensaje += "\n Errores: " + comprobanteRespuesta.ErroresAFIP;
+                                    mensaje += "\n Errores: " + comprobanteRespuesta.ErroresAFIP+"\n";
 
                                     UtilClass.EscribirArchivoLog(mensaje, _strLog);
+
+                                    return retorno;
+
                                 }
                             }
                             catch (Exception e)
@@ -1083,25 +1090,32 @@ namespace ModuloAFIP
                                 _errores.Add(mensaje);
                                 
                                 UtilClass.EscribirArchivoLog(mensaje, _strLog);
-                                return false;
+                                return "E";
                             }
 
-
-                            retorno = true;
+                            if (comprobanteRespuesta != null )
+                            {
+                                retorno = "E";
+                            }
+                            else
+                            {
+                                retorno = "S";
+                            }
+                           
                         }
                         else
                         {
 
                             UtilClass.EscribirArchivoLog("COMPROBANTE RESPUESTA NULL\n", _strLog);
 
-                            retorno = false;
+                            retorno = "S";
                         }
 
                     }
                     else
                     {
                         UtilClass.EscribirArchivoLog("COMPROBANTE NULL\n", _strLog);
-                        retorno = false;
+                        retorno = "S";
                     }
 
                 }
@@ -1113,7 +1127,7 @@ namespace ModuloAFIP
                 string mensaje = "Ocurrio un error: " + e.Message;
                 _errores.Add(mensaje);
                 UtilClass.EscribirArchivoLog(mensaje, _strLog);
-                return false;
+                return "E";
             }
 
             return retorno;
