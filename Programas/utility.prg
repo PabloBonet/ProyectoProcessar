@@ -30158,3 +30158,197 @@ v_fecha		 = Ajuste_sql.fecha
 ENDFUNC 
 
 
+
+
+FUNCTION registrarTraza
+PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
+*#/----------------------------------------
+* Función que registra la traza si corresponde según los parámetros pasados en la tabla trazaie
+* Parámetros:
+*	p_idcomproba: ID del comprobante que se pasa como parámetro y que va a generar el movimiento de la traza
+*   p_nomTabla: nombre de la tabla
+*	p_nomCampo: nombre del campo indice de la tabla
+*	p_indice: valor del campo indice
+**
+* Retorno:
+*	True: si no se produjeron errores, False en otro caso
+*#/----------------------------------------
+
+	
+	IF EMPTY(ALLTRIM(_SYSCOMPTRAZAS)) =.T.
+		RETURN .T.
+	ENDIF 
+	
+	
+	v_tamarr = ALINES(arrcomptrazas,ALLTRIM(_SYSCOMPTRAZAS),";")
+	v_idcompTraza = 0
+	v_idoperaTraza = 0
+	v_encontro = .F.
+	IF v_tamarr > 0
+		
+		i = 1
+		
+		DO WHILE i <= v_tamarr OR v_encontro = .F.
+
+			v_compop = arrcomptrazas(i)
+			
+			v_tamct = ALINES(arrct,ALLTRIM(v_compop),",")
+		
+			IF v_tamct = 2
+			
+				v_idcomparr = arrct(1)
+				v_operaarr  = arrct(2)
+				
+						
+				IF VAL(v_idcomparr) == p_idcomproba
+				
+					v_idcompTraza = VAL(v_idcomparr) 
+					v_operaTraza = VAL(v_operaarr)
+					
+					v_encontro =.T.
+				
+				ENDIF 
+	
+			
+			ENDIF 
+				
+			i = i+1
+
+		ENDDO
+	
+		IF v_encontro = .T.
+			
+			** Si llego hasta acá es porque encontró la operación del comprobante para la traza. 
+			*** Entonces: 
+			**** Busco para el comprobante, el detalle, si es pesada -> pesadah para obtner las cantidades y los articulos y los agrego a la tabla trazaie
+			
+			v_tituloiv = "INGRESAR TRAZA"
+			v_descripiv = "TRAZA"
+			v_tiporetiv = "C"
+			v_valoriv = ""
+			
+			v_trazaiv = ""
+			
+			DO FORM ingresarvalor WITH  v_tituloiv,v_descripiv,v_tiporetiv,v_valoriv TO v_trazaiv
+			
+			MESSAGEBOX(v_trazaiv)
+			
+			IF EMPTY(ALLTRIM(v_trazaiv))=.F.
+				v_idtraza = ALLTRIM(v_trazaiv)
+			ELSE
+				v_idtraza = "0000000"
+			ENDIF 				
+				v_tablah = ""
+				v_campoh = ""
+				v_registroh = ""
+
+
+			
+			DO CASE  
+			CASE lower(p_nomTabla) == 'cumplimentap'
+				sqlmatriz(1)=" select h.articulo, h.cantidad, p.fecha,h.idcumph as registroi from cumplimentap p left join cumplimentah h on p.idcump = h.idcump "
+				sqlmatriz(2)=" where p."+ALLTRIM(p_nomCampo)+" = "+ALLTRIM(STR(p_indice))
+				
+				v_tablah = "cumplimentah"
+				v_campoh = "iducumph"
+				
+			
+			OTHERWISE
+				sqlmatriz(1)=""
+				sqlmatriz(2)=""
+			ENDCASE 	
+				
+			IF !EMPTY(ALLTRIM(sqlmatriz(1))) THEN 
+							
+					verror=sqlrun(vconeccionF,"detacomp_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un error al obtener ",0+48+0,"Error")
+					    RETURN p_aliasreto  
+					ENDIF	
+					
+						* me conecto a la base de datos
+						vconeccionE=abreycierracon(0,_SYSSCHEMA)	
+						
+					SELECT detacomp_sql
+					GO top
+					
+					DO WHILE NOT EOF()
+					
+						
+						
+						v_idtie	= 0
+						v_articulo = detacomp_sql.articulo
+						v_cantidad = (detacomp_sql.cantidad)*v_operaTraza 
+						v_fecha	= DTOS(DATE())
+						v_registroi  = detacomp_sql.registroi
+						
+						p_tipoope     = 'I'
+						p_condicion   = ''
+						p_titulo      = " EL ALTA "
+						p_tabla     = 'trazaie'
+						p_matriz    = 'lamatriz'
+
+
+						p_conexion  = vconeccionE	
+
+						
+						DIMENSION lamatriz(8,2)
+						
+						lamatriz(1,1)='idtie'
+						lamatriz(1,2)= ALLTRIM(STR(v_idtie))
+						lamatriz(2,1)='idtraza'
+						lamatriz(2,2)= "'"+ALLTRIM(v_idtraza)+"'"
+						lamatriz(3,1)='articulo'
+						lamatriz(3,2)="'"+ALLTRIM(v_articulo)+"'"
+						lamatriz(4,1)='cantidad'
+						lamatriz(4,2)=ALLTRIM(STR(v_cantidad,13,2))
+						lamatriz(5,1)='fecha'
+						lamatriz(5,2)="'"+ALLTRIM(v_fecha)+"'"
+						lamatriz(6,1)='tabla'
+						lamatriz(6,2)="'"+ALLTRIM(v_tablah)+"'"
+						lamatriz(7,1)='campo'
+						lamatriz(7,2)="'"+alltrim(v_campoh)+"'"
+						lamatriz(8,1)='registroi'
+						lamatriz(8,2)=alltrim(STR(v_registroi))
+						
+						
+						
+						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+						    MESSAGEBOX("Ha Ocurrido un Error al registrar el movimiento de traza",0+48+0,"Error")
+						    * me desconecto	
+							=abreycierracon(vconeccionE,"") 
+							RETURN .F.
+							
+						ENDIF
+
+						
+						SELECT detacomp_sql
+						SKIP 1
+
+					ENDDO
+										
+						* me desconecto	
+						=abreycierracon(vconeccionE,"") 
+																
+				ENDIF 
+					
+			
+		ELSE	
+			MESSAGEBOX("No se pudo obtener el comprobante indicado en la variable: '_SYSCOMPTRAZAS'",0+16+256,"Error al registrar la traza")
+				
+			RETURN .F.
+		ENDIF 
+	
+	
+	ELSE
+		MESSAGEBOX("No se pudo obtener los comprobantes de la variable: '_SYSCOMPTRAZAS'",0+16+256,"Error al registrar la traza")
+			
+		RETURN .F.
+	ENDIF 
+
+	RETURN .T.
+ENDFUNC 
+
+
+
+
