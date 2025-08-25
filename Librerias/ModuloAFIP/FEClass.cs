@@ -822,7 +822,9 @@ namespace ModuloAFIP
                 detReq.MonId = comprobante.IDMoneda;
                
                 detReq.MonCotiz = comprobante.CotizacionMoneda;
+                detReq.CondicionIVAReceptorIdSpecified = true;
                 detReq.CondicionIVAReceptorId = comprobante.CondicionIVAReceptorId;
+                
                 detReq.MonCotizSpecified = true;
                 if (comprobante.CanMisMonExt != "")
                 {
@@ -1255,29 +1257,24 @@ namespace ModuloAFIP
                 detReq.MonId = comprobante.IDMoneda;
               
                 detReq.MonCotiz = comprobante.CotizacionMoneda;
-                               
+
 
                 /*
                  MODIFICAR este gragmento de código despues que se actualice el servicio web de afip
                  */
-                DateTime fechaAct = DateTime.Now;
-                DateTime fechaLimite = new DateTime(2025, 4, 15);
-                
-                
-                if(fechaAct >= fechaLimite)
-                {
-                    detReq.CondicionIVAReceptorId = comprobante.CondicionIVAReceptorId;
-                    detReq.MonCotizSpecified = true;
-                    if (comprobante.CanMisMonExt != "")
-                    {
-                        detReq.CanMisMonExt = comprobante.CanMisMonExt;
-                    }
-                }
-                
-            
 
-               
-                
+                detReq.CondicionIVAReceptorIdSpecified = true;
+                detReq.CondicionIVAReceptorId = comprobante.CondicionIVAReceptorId;
+                detReq.MonCotizSpecified = true;
+                if (comprobante.CanMisMonExt != "")
+                {
+                    detReq.CanMisMonExt = comprobante.CanMisMonExt;
+                }
+
+
+
+
+
 
                 detReq.ImpTrib = comprobante.ImporteTributo;
 
@@ -1952,7 +1949,7 @@ namespace ModuloAFIP
             {
                 string mensaje;
 
-                mensaje = "Error al autorizar comprobante (ID " + idComprobante + "). " + e.Message;
+                mensaje = "Error al autorizar comprobante (ID " + idComprobante + "). " + e.Message+"\n";
                 this.AgregarObservaciones(mensaje, true);
                 Exception ex = new Exception(mensaje);
                 throw ex;

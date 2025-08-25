@@ -357,6 +357,15 @@ namespace ModuloAFIP
                         string direccion = contribuyente.datosGenerales.domicilioFiscal.direccion;
                         string localidad = contribuyente.datosGenerales.domicilioFiscal.localidad;
                         string razonSocial = contribuyente.datosGenerales.razonSocial;
+                        
+                        UtilClass.EscribirArchivoLog("Apellido: \n" + apellido, _strLog);
+                        UtilClass.EscribirArchivoLog("nombre: \n" + nombre, _strLog);
+                        UtilClass.EscribirArchivoLog("descripProv: \n" + descripProv, _strLog);
+                        UtilClass.EscribirArchivoLog("direccion: \n" + direccion, _strLog);
+                        UtilClass.EscribirArchivoLog("localidad: \n" + localidad, _strLog);
+                        UtilClass.EscribirArchivoLog("razonSocial: \n" + razonSocial, _strLog);
+                        
+
 
                         // contribuyente.datosGenerales.domicilioFiscal.direccion = decodificado;
                         contribuyente.datosGenerales.apellido = System.Net.WebUtility.HtmlDecode(apellido);
@@ -366,6 +375,13 @@ namespace ModuloAFIP
                         contribuyente.datosGenerales.domicilioFiscal.localidad = System.Net.WebUtility.HtmlDecode(localidad);
                         contribuyente.datosGenerales.razonSocial = System.Net.WebUtility.HtmlDecode(razonSocial);
 
+                        UtilClass.EscribirArchivoLog("Datos Generales: \n" + contribuyente.datosGenerales.ToString(), _strLog);
+                        UtilClass.EscribirArchivoLog("Datos Monotributo: \n" + contribuyente.datosMonotributo.ToString(), _strLog);
+                        UtilClass.EscribirArchivoLog("Datos Regimen gral.: \n" + contribuyente.datosRegimenGeneral.ToString(), _strLog);
+
+                        UtilClass.EscribirArchivoLog("Error Constancia: \n" + contribuyente.errorConstancia.ToString(), _strLog);
+                        UtilClass.EscribirArchivoLog("Error Monotributo: \n" + contribuyente.errorMonotributo.ToString(), _strLog);
+                        UtilClass.EscribirArchivoLog("Error Regimen gral.: \n" + contribuyente.errorRegimenGeneral.ToString(), _strLog);
 
                         //  UtilClass.EscribirArchivoLog(contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
 
@@ -586,19 +602,48 @@ namespace ModuloAFIP
                 if(_produccion)
                 {
                     ClienteLoginCms_CS.ar.gov.afip.personaws.personaReturn contribuyente = _servicioProduccion.getPersona(ticket.Token, ticket.Sign, cuitEmisorlg, cuitContriblg);
-
+                    UtilClass.EscribirArchivoLog("Antes contribuyente", _strLog);
                     if (contribuyente != null)
                     {
-                       // UtilClass.EscribirArchivoLog(contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
-                        
+                        // UtilClass.EscribirArchivoLog(contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
+                       
                         string apellido = contribuyente.datosGenerales.apellido;
+                     
                         string nombre = contribuyente.datosGenerales.nombre;
+                     
                         string descripProv = contribuyente.datosGenerales.domicilioFiscal.descripcionProvincia;
+                     
                         string direccion = contribuyente.datosGenerales.domicilioFiscal.direccion;
+                       
                         string localidad = contribuyente.datosGenerales.domicilioFiscal.localidad;
+                       
                         string razonSocial = contribuyente.datosGenerales.razonSocial;
+                       
+                        if (localidad == null)
+                        {
+                            localidad = "SIN_LOCALIDAD";
+                        }
+                        else
+                        {
+                            if (localidad.Length == 0)
+                            {
+                                localidad = "SIN_LOCALIDAD";
+                            }
+                        }
                         
-                       // contribuyente.datosGenerales.domicilioFiscal.direccion = decodificado;
+                        
+
+
+                        UtilClass.EscribirArchivoLog("\nApellido: " + apellido, _strLog);
+                        UtilClass.EscribirArchivoLog("\nnombre: " + nombre, _strLog);
+                        UtilClass.EscribirArchivoLog("\ndescripProv: " + descripProv, _strLog);
+                        UtilClass.EscribirArchivoLog("\ndireccion: " + direccion, _strLog);
+                        UtilClass.EscribirArchivoLog("\nlocalidad: " + localidad, _strLog);
+                        UtilClass.EscribirArchivoLog("\nrazonSocial: " + razonSocial, _strLog);
+
+
+
+                        // contribuyente.datosGenerales.domicilioFiscal.direccion = decodificado;
                         contribuyente.datosGenerales.apellido = System.Net.WebUtility.HtmlDecode(apellido);
                         contribuyente.datosGenerales.nombre = System.Net.WebUtility.HtmlDecode(nombre);
                         contribuyente.datosGenerales.domicilioFiscal.descripcionProvincia = System.Net.WebUtility.HtmlDecode(descripProv);
@@ -606,8 +651,14 @@ namespace ModuloAFIP
                         contribuyente.datosGenerales.domicilioFiscal.localidad = System.Net.WebUtility.HtmlDecode(localidad);
                         contribuyente.datosGenerales.razonSocial = System.Net.WebUtility.HtmlDecode(razonSocial);
 
+                    /*    UtilClass.EscribirArchivoLog("\nDatos Generales: " + contribuyente.datosGenerales.ToString(), _strLog);
+                        UtilClass.EscribirArchivoLog("\nDatos Monotributo: " + contribuyente.datosMonotributo.ToString(), _strLog);
+                        UtilClass.EscribirArchivoLog("\nDatos Regimen gral.: " + contribuyente.datosRegimenGeneral.ToString(), _strLog);
 
-                        //UtilClass.EscribirArchivoLog(contribuyente.datosGenerales.domicilioFiscal.direccion, _strLog);
+                        UtilClass.EscribirArchivoLog("\nError Constancia: " + contribuyente.errorConstancia.ToString(), _strLog);
+                        UtilClass.EscribirArchivoLog("\nError Monotributo: " + contribuyente.errorMonotributo.ToString(), _strLog);
+                        UtilClass.EscribirArchivoLog("\nError Regimen gral.: " + contribuyente.errorRegimenGeneral.ToString(), _strLog);
+                    */
                         return contribuyente;
                     }
                     else

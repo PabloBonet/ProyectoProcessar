@@ -69,6 +69,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.servicios1 {
         
         private System.Threading.SendOrPostCallback FEParamGetTiposCbteOperationCompleted;
         
+        private System.Threading.SendOrPostCallback FEParamGetCondicionIvaReceptorOperationCompleted;
+        
         private System.Threading.SendOrPostCallback FEParamGetTiposDocOperationCompleted;
         
         private System.Threading.SendOrPostCallback FEParamGetTiposPaisesOperationCompleted;
@@ -166,6 +168,9 @@ namespace ClienteLoginCms_CS.ar.gov.afip.servicios1 {
         
         /// <remarks/>
         public event FEParamGetTiposCbteCompletedEventHandler FEParamGetTiposCbteCompleted;
+        
+        /// <remarks/>
+        public event FEParamGetCondicionIvaReceptorCompletedEventHandler FEParamGetCondicionIvaReceptorCompleted;
         
         /// <remarks/>
         public event FEParamGetTiposDocCompletedEventHandler FEParamGetTiposDocCompleted;
@@ -492,26 +497,28 @@ namespace ClienteLoginCms_CS.ar.gov.afip.servicios1 {
         
         /// <remarks/>
         [System.Web.Services.Protocols.SoapDocumentMethodAttribute("http://ar.gov.afip.dif.FEV1/FEParamGetCotizacion", RequestNamespace="http://ar.gov.afip.dif.FEV1/", ResponseNamespace="http://ar.gov.afip.dif.FEV1/", Use=System.Web.Services.Description.SoapBindingUse.Literal, ParameterStyle=System.Web.Services.Protocols.SoapParameterStyle.Wrapped)]
-        public FECotizacionResponse FEParamGetCotizacion(FEAuthRequest Auth, string MonId) {
+        public FECotizacionResponse FEParamGetCotizacion(FEAuthRequest Auth, string MonId, string FchCotiz) {
             object[] results = this.Invoke("FEParamGetCotizacion", new object[] {
                         Auth,
-                        MonId});
+                        MonId,
+                        FchCotiz});
             return ((FECotizacionResponse)(results[0]));
         }
         
         /// <remarks/>
-        public void FEParamGetCotizacionAsync(FEAuthRequest Auth, string MonId) {
-            this.FEParamGetCotizacionAsync(Auth, MonId, null);
+        public void FEParamGetCotizacionAsync(FEAuthRequest Auth, string MonId, string FchCotiz) {
+            this.FEParamGetCotizacionAsync(Auth, MonId, FchCotiz, null);
         }
         
         /// <remarks/>
-        public void FEParamGetCotizacionAsync(FEAuthRequest Auth, string MonId, object userState) {
+        public void FEParamGetCotizacionAsync(FEAuthRequest Auth, string MonId, string FchCotiz, object userState) {
             if ((this.FEParamGetCotizacionOperationCompleted == null)) {
                 this.FEParamGetCotizacionOperationCompleted = new System.Threading.SendOrPostCallback(this.OnFEParamGetCotizacionOperationCompleted);
             }
             this.InvokeAsync("FEParamGetCotizacion", new object[] {
                         Auth,
-                        MonId}, this.FEParamGetCotizacionOperationCompleted, userState);
+                        MonId,
+                        FchCotiz}, this.FEParamGetCotizacionOperationCompleted, userState);
         }
         
         private void OnFEParamGetCotizacionOperationCompleted(object arg) {
@@ -721,6 +728,37 @@ namespace ClienteLoginCms_CS.ar.gov.afip.servicios1 {
             if ((this.FEParamGetTiposCbteCompleted != null)) {
                 System.Web.Services.Protocols.InvokeCompletedEventArgs invokeArgs = ((System.Web.Services.Protocols.InvokeCompletedEventArgs)(arg));
                 this.FEParamGetTiposCbteCompleted(this, new FEParamGetTiposCbteCompletedEventArgs(invokeArgs.Results, invokeArgs.Error, invokeArgs.Cancelled, invokeArgs.UserState));
+            }
+        }
+        
+        /// <remarks/>
+        [System.Web.Services.Protocols.SoapDocumentMethodAttribute("http://ar.gov.afip.dif.FEV1/FEParamGetCondicionIvaReceptor", RequestNamespace="http://ar.gov.afip.dif.FEV1/", ResponseNamespace="http://ar.gov.afip.dif.FEV1/", Use=System.Web.Services.Description.SoapBindingUse.Literal, ParameterStyle=System.Web.Services.Protocols.SoapParameterStyle.Wrapped)]
+        public CondicionIvaReceptorResponse FEParamGetCondicionIvaReceptor(FEAuthRequest Auth, string ClaseCmp) {
+            object[] results = this.Invoke("FEParamGetCondicionIvaReceptor", new object[] {
+                        Auth,
+                        ClaseCmp});
+            return ((CondicionIvaReceptorResponse)(results[0]));
+        }
+        
+        /// <remarks/>
+        public void FEParamGetCondicionIvaReceptorAsync(FEAuthRequest Auth, string ClaseCmp) {
+            this.FEParamGetCondicionIvaReceptorAsync(Auth, ClaseCmp, null);
+        }
+        
+        /// <remarks/>
+        public void FEParamGetCondicionIvaReceptorAsync(FEAuthRequest Auth, string ClaseCmp, object userState) {
+            if ((this.FEParamGetCondicionIvaReceptorOperationCompleted == null)) {
+                this.FEParamGetCondicionIvaReceptorOperationCompleted = new System.Threading.SendOrPostCallback(this.OnFEParamGetCondicionIvaReceptorOperationCompleted);
+            }
+            this.InvokeAsync("FEParamGetCondicionIvaReceptor", new object[] {
+                        Auth,
+                        ClaseCmp}, this.FEParamGetCondicionIvaReceptorOperationCompleted, userState);
+        }
+        
+        private void OnFEParamGetCondicionIvaReceptorOperationCompleted(object arg) {
+            if ((this.FEParamGetCondicionIvaReceptorCompleted != null)) {
+                System.Web.Services.Protocols.InvokeCompletedEventArgs invokeArgs = ((System.Web.Services.Protocols.InvokeCompletedEventArgs)(arg));
+                this.FEParamGetCondicionIvaReceptorCompleted(this, new FEParamGetCondicionIvaReceptorCompletedEventArgs(invokeArgs.Results, invokeArgs.Error, invokeArgs.Cancelled, invokeArgs.UserState));
             }
         }
         
@@ -1182,6 +1220,96 @@ namespace ClienteLoginCms_CS.ar.gov.afip.servicios1 {
         
         /// <remarks/>
         public DocTipo[] ResultGet {
+            get {
+                return this.resultGetField;
+            }
+            set {
+                this.resultGetField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public Err[] Errors {
+            get {
+                return this.errorsField;
+            }
+            set {
+                this.errorsField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public Evt[] Events {
+            get {
+                return this.eventsField;
+            }
+            set {
+                this.eventsField = value;
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.9037.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://ar.gov.afip.dif.FEV1/")]
+    public partial class CondicionIvaReceptor {
+        
+        private int idField;
+        
+        private string descField;
+        
+        private string cmp_ClaseField;
+        
+        /// <remarks/>
+        public int Id {
+            get {
+                return this.idField;
+            }
+            set {
+                this.idField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public string Desc {
+            get {
+                return this.descField;
+            }
+            set {
+                this.descField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public string Cmp_Clase {
+            get {
+                return this.cmp_ClaseField;
+            }
+            set {
+                this.cmp_ClaseField = value;
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.8.9037.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://ar.gov.afip.dif.FEV1/")]
+    public partial class CondicionIvaReceptorResponse {
+        
+        private CondicionIvaReceptor[] resultGetField;
+        
+        private Err[] errorsField;
+        
+        private Evt[] eventsField;
+        
+        /// <remarks/>
+        public CondicionIvaReceptor[] ResultGet {
             get {
                 return this.resultGetField;
             }
@@ -2840,14 +2968,14 @@ namespace ClienteLoginCms_CS.ar.gov.afip.servicios1 {
         private string monIdField;
         
         private double monCotizField;
-
-        // Agregado manualmente
+        
         private bool monCotizFieldSpecified;
-
+        
         private string canMisMonExtField;
-
+        
         private int condicionIVAReceptorIdField;
-        // -- 
+        
+        private bool condicionIVAReceptorIdFieldSpecified;
         
         private CbteAsoc[] cbtesAsocField;
         
@@ -3032,53 +3160,49 @@ namespace ClienteLoginCms_CS.ar.gov.afip.servicios1 {
                 this.monCotizField = value;
             }
         }
-
-        // Agregado manualmente
-
+        
         /// <remarks/>
         [System.Xml.Serialization.XmlIgnoreAttribute()]
-        public bool MonCotizSpecified
-        {
-            get
-            {
+        public bool MonCotizSpecified {
+            get {
                 return this.monCotizFieldSpecified;
             }
-            set
-            {
+            set {
                 this.monCotizFieldSpecified = value;
             }
         }
-
+        
         /// <remarks/>
-        public string CanMisMonExt
-        {
-            get
-            {
+        public string CanMisMonExt {
+            get {
                 return this.canMisMonExtField;
             }
-            set
-            {
+            set {
                 this.canMisMonExtField = value;
             }
         }
-
+        
         /// <remarks/>
-        public int CondicionIVAReceptorId
-        {
-            get
-            {
+        public int CondicionIVAReceptorId {
+            get {
                 return this.condicionIVAReceptorIdField;
             }
-            set
-            {
+            set {
                 this.condicionIVAReceptorIdField = value;
             }
         }
-
-
-        // ---
-
-
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlIgnoreAttribute()]
+        public bool CondicionIVAReceptorIdSpecified {
+            get {
+                return this.condicionIVAReceptorIdFieldSpecified;
+            }
+            set {
+                this.condicionIVAReceptorIdFieldSpecified = value;
+            }
+        }
+        
         /// <remarks/>
         public CbteAsoc[] CbtesAsoc {
             get {
@@ -4383,6 +4507,32 @@ namespace ClienteLoginCms_CS.ar.gov.afip.servicios1 {
             get {
                 this.RaiseExceptionIfNecessary();
                 return ((CbteTipoResponse)(this.results[0]));
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.9037.0")]
+    public delegate void FEParamGetCondicionIvaReceptorCompletedEventHandler(object sender, FEParamGetCondicionIvaReceptorCompletedEventArgs e);
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Web.Services", "4.8.9037.0")]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    public partial class FEParamGetCondicionIvaReceptorCompletedEventArgs : System.ComponentModel.AsyncCompletedEventArgs {
+        
+        private object[] results;
+        
+        internal FEParamGetCondicionIvaReceptorCompletedEventArgs(object[] results, System.Exception exception, bool cancelled, object userState) : 
+                base(exception, cancelled, userState) {
+            this.results = results;
+        }
+        
+        /// <remarks/>
+        public CondicionIvaReceptorResponse Result {
+            get {
+                this.RaiseExceptionIfNecessary();
+                return ((CondicionIvaReceptorResponse)(this.results[0]));
             }
         }
     }

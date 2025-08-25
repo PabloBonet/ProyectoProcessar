@@ -1509,6 +1509,8 @@ ENDFUNC
 
 
 
+
+
 FUNCTION autorizarCompFE
 PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 *#/----------------------------------------
@@ -1617,7 +1619,7 @@ LOCAL loException AS Exception
 
 			
 			    
-      MESSAGEBOX(ALLTRIM(loException.MESSAGE),0+48+0,"Se produjo un Error")
+     		 MESSAGEBOX(ALLTRIM(loException.MESSAGE),0+48+0,"Se produjo un Error")
       
 		ENDIF 
 
@@ -1647,6 +1649,32 @@ LOCAL loException AS Exception
 		v_respuesta = objModuloAFIP.AutorizarComp(v_ubicacionXML,v_idComprobante)
 			
 				
+		v_tamresp = ALINES(respAutComp,ALLTRIM(v_respuesta),";")
+		
+		*Formato cadena: R;CAE;VTOCAE;NUMERO;IDFACTURA;FECHA;PVENTA (Donde R: resultado pudiendo ser A|R|E|S)
+		*v_resultrep = respAutComp[1] &&Resultado
+				
+		IF v_tamresp == 7
+			v_resultado		= respAutComp[1] && Resultado
+			v_caecesp		= respAutComp[2] && CAE
+			v_caecespven	= respAutComp[3] && VTOCAE
+			v_numerofe		= respAutComp[4] && NUMERO
+			v_numerofe		= VAL(v_numerofe)
+			v_idfactura		= respAutComp[5] && IDCOMP
+			v_idfactura		= VAL(v_idfactura)
+			v_fecha			= respAutComp[6] && FECHA
+			v_pventa		= respAutComp[7] && PVENTA
+			v_pventa		= VAL(v_pventa)
+		ELSE
+			IF v_tamresp = 1
+				v_resultado = respAutComp[1] &&Resultado
+			ELSE
+				v_resultado = ""
+			ENDIF 	
+		ENDIF 
+			
+		
+		
 		v_observaciones = objModuloAFIP.Observaciones
 
 			
@@ -1656,32 +1684,50 @@ LOCAL loException AS Exception
 			ENDIF 
 		ENDIF 
 	
-		IF v_respuesta = .T. && Hubo respuesta del objeto que maneja el Módulo de AFIP, sin errores
+		*IF v_respuesta = .T. && Hubo respuesta del objeto que maneja el Módulo de AFIP, sin errores
+		
+		
 		
 			vcan_ubica=alines(arreglo,v_ubicacionXML, ";")
 			v_ubicacionCompXML = arreglo(1)
+			
+				
+			v_errorxml = .F.
+			
+			ON ERROR v_errorxml = .T.
+
+			
 			XMLTOCURSOR(v_ubicacionCompXML,"respuestaComp",512)
 
-			SELECT respuestaComp
-			GO TOP 
-			ALTER table respuestaComp alter COLUMN fchvtopago C(8)
-			SELECT respuestaComp
-			GO TOP 
-			IF NOT EOF()
+			ON ERROR 
+		
+
+
+	
+			*ALTER table respuestaComp alter COLUMN fchvtopago C(8)
+			IF v_errorxml = .F.
+			
+				SELECT respuestaComp
+				GO TOP 
+				IF NOT EOF()
+				
+					v_observa = ALLTRIM(SUBSTR(STRTRAN(respuestaComp.observa,"'","")+SPACE(250),1,250))
+					v_errores = ALLTRIM(SUBSTR(STRTRAN(respuestaComp.errores,"'","")+SPACE(250),1,250))
+				ENDIF 
+			ELSE
+			
+				v_observa = ""
+				v_errores = ""
+			ENDIF 
+
 				*** REGISTRO LA RESPUESTA DEL COMPROBANTE EN LA TABLA facturasfe ***
-									
+			IF ALLTRIM(v_resultado) = "A" OR ALLTRIM(v_resultado) = "R" 		
+							
 				p_tipoope     = 'I'
 				p_condicion   = ''
 				v_titulo      = " EL ALTA "
-				*ALTER table respuestaComp alter COLUMN idcomproba I
 				
-				*thisform.calcularmaxh
 				v_idfe = maxnumeroidx("idfe","I","facturasfe",1)
-				v_idfactura = respuestaComp.idfactura
-				v_fecha		= ALLTRIM(STR(respuestaComp.fecha))
-				v_resultado	= respuestaComp.resultado
-				*v_idcomproba= respuestaComp.idcomproba
-				v_pventa	= respuestaComp.pventa
 
 				IF TYPE('v_pventa') = 'L' THEN 
 					v_pventa = IIF(v_pventa=.f.,0,1)
@@ -1691,10 +1737,7 @@ LOCAL loException AS Exception
 				ENDIF 
 				
 				IF ALLTRIM(v_resultado) == "A"
-					v_caecesp	= ALLTRIM(STR(respuestaComp.cespcae,14,0))
 
-					v_caecespven= ALLTRIM(STR(respuestaComp.caecespven))
-					v_numerofe	= respuestaComp.numero
 					IF TYPE('v_numerofe') = 'L' THEN 
 						v_numerofe = IIF(v_numerofe=.f.,0,1)
 					ENDIF 
@@ -1705,11 +1748,7 @@ LOCAL loException AS Exception
 					v_numerofe	= 0
 					v_autorizar = .F.
 				endif	
-				
-*!*					v_observa	= respuestaComp.observa
-*!*					v_errores = respuestaComp.errores
-				v_observa = ALLTRIM(SUBSTR(STRTRAN(respuestaComp.observa,"'","")+SPACE(250),1,250))
-				v_errores = ALLTRIM(SUBSTR(STRTRAN(respuestaComp.errores,"'","")+SPACE(250),1,250))
+
 				DIMENSION lamatriz(9,2)
 				
 				lamatriz(1,1)='idfe'
@@ -1730,8 +1769,7 @@ LOCAL loException AS Exception
 				lamatriz(8,2)="'"+ALLTRIM(v_errores)+"'"
 				lamatriz(9,1)='numerofe'
 				lamatriz(9,2)=ALLTRIM(STR(v_numerofe))
-
-
+				
 				
 				p_tabla     = 'facturasfe'
 				p_matriz    = 'lamatriz'
@@ -1748,10 +1786,9 @@ LOCAL loException AS Exception
 					p_tipoope     = 'U'
 					p_condicion   = " idfactura = "+ ALLTRIM(STR(v_idfactura))
 					v_titulo      = " LA MODIFICACIÓN "
-				
-				
+								
 					
-						DIMENSION lamatriz(4,2)
+					DIMENSION lamatriz(4,2)
 				
 					lamatriz(1,1)='numero'
 					lamatriz(1,2)=ALLTRIM(STR(v_numerofe))
@@ -1789,7 +1826,6 @@ LOCAL loException AS Exception
 						lamatriz(1,1)='maxnumero'
 						lamatriz(1,2)=ALLTRIM(STR(v_numerofe))
 								
-
 						
 						p_tabla     = 'compactiv'
 						p_matriz    = 'lamatriz'
@@ -1807,53 +1843,55 @@ LOCAL loException AS Exception
 				ELSE
 					registrarEstado("facturas","idfactura",v_idfactura,'I',"RECHAZADO")
 				ENDIF 	
-				
-											
-			
-				
+													
 				abreycierracon(vconeccionp,"")
 				
-				
-			
-			ELSE
-				v_autorizar = .F.
-			ENDIF 
 							
-			
-			
-		ELSE	&& Ocurrieron errores
-			
-			IF p_nomsg = .f. THEN 
-				MESSAGEBOX("Ha Ocurrido un Error al autorizar el comprobante en el servicio",0+48+0,"Error")
-			ENDIF 					
-			v_objerror = objModuloAFIP.Error
-			
-			IF v_objerror = .T.
-			
-				v_errores = ""
-				v_errores = objModuloAFIP.Errores
+			ELSE
+			DO CASE
+				CASE ALLTRIM(v_respuesta) == "E"
+					MESSAGEBOX("El modulo de facturación generó un error. Respuesta obtenida: 'E' (Error). Consulte el LOG de AFIP",0+16+256,"Error")
+					
+				CASE ALLTRIM(v_respuesta) == "S"
+					MESSAGEBOX("El modulo de facturación no pudo obtener una respuesta. Respuesta obtenida: 'S' (SIN respuesta de AFIP). Consulte el LOG de AFIP",0+16+256,"Error")
+				OTHERWISE
+					MESSAGEBOX("El modulo de facturación generó un error inesperado. Respuesta obtenida: '"+ALLTRIM(v_respuesta)+"' Consulte el LOG de AFIP",0+16+256,"Error")
+				ENDCASE
 
-				IF p_nomsg = .f. THEN 
-					MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
-				ENDIF 			
-			ENDIF 
 				
-			v_observaciones = objModuloAFIP.Observaciones
-
-			
-			IF EMPTY(v_observaciones) = .F.
+						
 				IF p_nomsg = .f. THEN 
-					MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))				
+					MESSAGEBOX("Ha Ocurrido un Error al autorizar el comprobante en el servicio",0+48+0,"Error")
+				ENDIF 					
+				v_objerror = objModuloAFIP.Error
+				
+				IF v_objerror = .T.
+				
+					v_errores = ""
+					v_errores = objModuloAFIP.Errores
+
+					IF p_nomsg = .f. THEN 
+						MESSAGEBOX("Errores: "+ALLTRIM(v_errores))
+					ENDIF 			
 				ENDIF 
-			ENDIF 
-			
-			v_autorizar = .F.
+					
+				v_observaciones = objModuloAFIP.Observaciones
+
+				
+				IF EMPTY(v_observaciones) = .F.
+					IF p_nomsg = .f. THEN 
+						MESSAGEBOX("Observaciones: "+ALLTRIM(v_observaciones))				
+					ENDIF 
+				ENDIF 
+				
+				v_autorizar = .F.
 		ENDIF 	
 
 	RETURN v_autorizar
 
 ENDFUNC
 
+  
   
   
   **********************************
@@ -20504,8 +20542,7 @@ TRY
 				***  0: EXENTO?
 				*** 20: MONOTRIBUTO
 				*** 30: IVA
-				
-				
+			
 				
 				
 				v_sentIns1 = "INSERT INTO "+ALLTRIM(p_tablaRetorno)+ " VALUES ('"+ALLTRIM(v_apellido)+"','"+ALLTRIM(v_nombre)+"','"+ALLTRIM(v_codPostal)+"',"
@@ -21192,6 +21229,7 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 	sqlmatriz(1)=" Select l.localidad, l.nombre as nomLoc, l.cp, pr.provincia, pr.nombre as nomProv, pa.pais, pa.nombre as nomPais "
 	sqlmatriz(2)=" from paises pa left join provincias pr on pa.pais = pr.pais left join localidades l  on pr.provincia = l.provincia "
 	sqlmatriz(3)=" where pa.nombre = '"+ALLTRIM(p_nomPais_car)+"' and pr.nombre = '"+ALLTRIM(p_nomProv_car) + "' and l.nombre = '"+ALLTRIM(p_nomLoc_car)+"'"
+
 
 	verror=sqlrun(vconeccion_car,"localidad_sql_car")
 	IF verror=.f.  

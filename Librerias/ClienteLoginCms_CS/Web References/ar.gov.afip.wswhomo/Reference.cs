@@ -2975,6 +2975,8 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
         
         private int condicionIVAReceptorIdField;
         
+        private bool condicionIVAReceptorIdFieldSpecified;
+        
         private CbteAsoc[] cbtesAsocField;
         
         private Tributo[] tributosField;
@@ -3187,6 +3189,17 @@ namespace ClienteLoginCms_CS.ar.gov.afip.wswhomo {
             }
             set {
                 this.condicionIVAReceptorIdField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlIgnoreAttribute()]
+        public bool CondicionIVAReceptorIdSpecified {
+            get {
+                return this.condicionIVAReceptorIdFieldSpecified;
+            }
+            set {
+                this.condicionIVAReceptorIdFieldSpecified = value;
             }
         }
         
