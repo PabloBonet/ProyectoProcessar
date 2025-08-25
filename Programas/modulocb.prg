@@ -2736,8 +2736,8 @@ FUNCTION ImputarCobros
 		
 
 			
-			** GENERO EL ASIENTO PARA EL RECIBO			
-			v_cargo = ContabilizaCompro('recibos', v_idrecibo, vconeccionF, v_recibo_importe)
+*!*				** GENERO EL ASIENTO PARA EL RECIBO			
+*!*				v_cargo = ContabilizaCompro('recibos', v_idrecibo, vconeccionF, v_recibo_importe)
 			
 			v_ret = ctaCteBancos('RECIBOS',v_idrecibo,0)
 			
@@ -3293,3 +3293,5 @@ PARAMETERS pcb_EmpresaID, pcb_archivo, pcb_operacion
 
 	RETURN pcb_Retorno
 ENDFUNC 
+
+
