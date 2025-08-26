@@ -2739,7 +2739,7 @@ FUNCTION ImputarCobros
 *!*				** GENERO EL ASIENTO PARA EL RECIBO			
 *!*				v_cargo = ContabilizaCompro('recibos', v_idrecibo, vconeccionF, v_recibo_importe)
 			
-			v_ret = ctaCteBancos('RECIBOS',v_idrecibo,0)
+*!*				v_ret = ctaCteBancos('RECIBOS',v_idrecibo,0)
 			
 			
 			* me desconecto	
@@ -2753,7 +2753,7 @@ FUNCTION ImputarCobros
 				IF (v_recargo > 0 OR  v_interesFin> 0) AND ( v_impcobro > 0 ) AND !(SUBSTR(_SYSNDRECARGOS,1,1)='N') THEN 
 						v_nd_idrecibo = v_idrecibo
 						v_nd_entidad  = v_entidadRecibo
-						ndreto =GenNDRecargo( v_nd_entidad , v_recargo,v_interesFin, 0, 0, v_nd_idrecibo , 0, 'N' )
+						ndreto =GenNDRecargo( v_nd_entidad , v_recargo,v_interesFin, 0, 0, v_nd_idrecibo , 0, 'N',.T. )
 				ENDIF 
 			ENDIF 
 
@@ -2766,7 +2766,8 @@ FUNCTION ImputarCobros
 
 	ENDDO
 	
-	
+		v_ret = ctaCteBancos('RECIBOS',0,0)
+		
 		RETURN 1
 	
 ENDFUNC 

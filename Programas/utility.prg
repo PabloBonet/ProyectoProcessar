@@ -24046,12 +24046,13 @@ ENDIF
 
 
 FUNCTION GenerarFDC
-PARAMETERS p_tablaarti, p_cone, p_idvincular, p_imprimircmp
+PARAMETERS p_tablaarti, p_cone, p_idvincular, p_imprimircmp, p_NOContabilizar
 *#/ ------------------------------
 * Crea un Comprobante de facturacion a partir de los articulos recibidos en la tabla pasada como parámetros
 * PARAMETROS : 
 *	p_tablaarti: tabla conteniendo los datos para generar el comprobante (entidad i , servicio i, cuenta i, articulo c(15), cantidad y, unitario y, fecha c(8), idcomproba i, pventa i)
 *   p_cone :  conexion a la base de datos, si es 0 abre una nueva conexion
+*	p_NOContabilizar: Parámetro que indica si se va a contabilizar, Por defecto (Falso) contabiliza
 * RETORNO: 
 * 	retorna el idfactura del comprobante generado
 *   Si hay error retorna 0
@@ -24504,9 +24505,10 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular, p_imprimircmp
 			IF v_electroag = 'S' THEN					
 				vauto = autorizarCompFE(v_idfacturaag,v_idcomag)
 			ENDIF 
-			*** CONTABILIZO  EL COMPROBANTE ***
-			v_cargo = ContabilizaCompro('facturas', v_idfacturaag, 0, v_totalfactu)
-
+			IF p_NOContabilizar = .F.
+				*** CONTABILIZO  EL COMPROBANTE ***
+				v_cargo = ContabilizaCompro('facturas', v_idfacturaag, 0, v_totalfactu)
+			ENDIF 
 			*** IMPRIMIR ***				
 			IF ALLTRIM(p_imprimircmp)='S' THEN 
 				sino = MESSAGEBOX("¿Desea imprimir el comprobante: "+v_comprobantenom+"?",4+32,"Imprimir comprobante")
@@ -24534,7 +24536,7 @@ ENDFUNC
 
 
 FUNCTION GenNDRecargo
-PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaRec, P_IdReciboRec, p_coneg, p_ImprimirNDR
+PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaRec, P_IdReciboRec, p_coneg, p_ImprimirNDR, P_NOContabilizar
 *#/ ------------------------------
 * Crea una Nota de Débito por Recargos, recibe como parametros el monto total del recargo y genera una Nota de Debito y lo cancela con el recibo pasado como parámetro si lo hubiere
 * PARAMETROS : 
@@ -24552,6 +24554,7 @@ PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaR
 *   OBS: si no recibe p_idcomproba o p_pventaREc entonces verifica la existencia de la variable _SYSNDRECARGOS
 *		 esta variable contiene el idcomproba y pventa (comprobante y punto de venta utilizado para hacer ND por intereses)
 *	_SYSNDINTERES = 'PP;I,ID;I,ID;I,ID' ej '0101' si tiene '0000' o 'N' es porque no hace ND de intereses
+*	P_NOContabilizar: parametro que indica si se va a contabilizar, por defecto (Falso) contabiliza
 * RETORNO: 
 * 	retorna el idfactura del comprobante generado
 *   Si hay error retorna 0
@@ -24765,7 +24768,7 @@ PARAMETERS P_EntidadRec, p_ImporteRec, p_ImporteFin,  P_idcomprobaRec, p_pventaR
 
 	USE IN tmpndinteres 
 	
-	v_idndRec = GenerarFDC("tmpndinteres",0,v_IDfacturaVin, p_ImprimirNDR )
+	v_idndRec = GenerarFDC("tmpndinteres",0,v_IDfacturaVin, p_ImprimirNDR,P_NOContabilizar )
 
 	
 	IF v_idndRec > 0 AND P_IdReciboRec > 0 AND V_idcomproRERec > 0 AND V_SaldoREcibo > 0 THEN 
