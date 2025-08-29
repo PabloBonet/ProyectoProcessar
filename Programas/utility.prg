@@ -6996,28 +6996,31 @@ PARAMETERS p_idremito, p_esElectronica
 			
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		
-			sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, TRIM(p.nombre) as nomProv, "
-			sqlmatriz(2)=" com.comprobante as nomcomp, ifnull(k.tablab,'') as tabla , ifnull(k.campob,'') as campo, ifnull(k.idb,0) as idot,ifnull(e.nombre,'') as nombaso,ifnull(e.apellido,'') as apeaso,ifnull(e.compania,'') as compaso "
-			sqlmatriz(3)=" from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom " 
-			sqlmatriz(4)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa left join remitosh d on r.idremito = d.idremito "
-												   
-			sqlmatriz(5)=" left join condfiscal c on r.iva = c.iva"
-			sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
-			sqlmatriz(7)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(8)=" left join linkregistro k on k.tablaa = 'remitosh' and k.campoa = 'idremitoh' and d.idremitoh = k.ida and (isnull(k.tablab) or k.tablab = 'ot') left join entidades e on r.entidadaso = e.entidad "
-			sqlmatriz(9)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))+"  "
-
-		
-		
-		
 *!*				sqlmatriz(1)="Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, TRIM(p.nombre) as nomProv, "
-*!*				sqlmatriz(2)=" com.comprobante as nomcomp from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-*!*				sqlmatriz(3)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
-*!*				sqlmatriz(4)=" left join remitosh d on r.idremito = d.idremito "
+*!*				sqlmatriz(2)=" com.comprobante as nomcomp, ifnull(k.tablab,'') as tabla , ifnull(k.campob,'') as campo, ifnull(k.idb,0) as idot,ifnull(e.nombre,'') as nombaso,ifnull(e.apellido,'') as apeaso,ifnull(e.compania,'') as compaso "
+*!*				sqlmatriz(3)=" from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom " 
+*!*				sqlmatriz(4)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa left join remitosh d on r.idremito = d.idremito "
+*!*													   
 *!*				sqlmatriz(5)=" left join condfiscal c on r.iva = c.iva"
 *!*				sqlmatriz(6)=" left join vendedores v on r.vendedor = v.vendedor"
 *!*				sqlmatriz(7)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-*!*				sqlmatriz(8)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))
+*!*				sqlmatriz(8)=" left join linkregistro k on k.tablaa = 'remitosh' and k.campoa = 'idremitoh' and d.idremitoh = k.ida and (isnull(k.tablab) or k.tablab = 'ot') left join entidades e on r.entidadaso = e.entidad "
+*!*				sqlmatriz(9)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))+"  "
+
+		sqlmatriz(1)=" Select r.*,d.*,c.*,v.*,r.numero as numRem, c.detalle as detIVA,ca.puntov, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, TRIM(p.nombre) as nomProv, "
+		sqlmatriz(2)=" com.comprobante as nomcomp, ifnull(k.tablab,'') as tabla , ifnull(k.campob,'') as campo, ifnull(k.idb,0) as idot,ifnull(e.nombre,'') as nombaso,ifnull(e.apellido,'') as apeaso,ifnull(e.compania,'') as compaso, "
+		sqlmatriz(3)=" ifnull(kf.idb,0) as idfacturah , ifnull(f.idfactura,0) as idfactura, ifnull(f.numero,0) as numerofac,ifnull(f.tipo,'') as tipofac, ifnull(co.comprobante,'') as compfac,ifnull(co.abrevia,'') as abreviafac,ifnull(pf.puntov,'') as puntovfac "
+		sqlmatriz(4)="  from remitos r left join comprobantes com on r.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+		sqlmatriz(5)=" left join compactiv ca on r.idcomproba = ca.idcomproba and r.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa left join remitosh d on r.idremito = d.idremito "
+		sqlmatriz(6)=" left join condfiscal c on r.iva = c.iva "
+		sqlmatriz(7)=" left join vendedores v on r.vendedor = v.vendedor "
+		sqlmatriz(8)=" left join localidades l on r.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+		sqlmatriz(9)=" left join linkregistro k on k.tablaa = 'remitosh' and k.campoa = 'idremitoh' and d.idremitoh = k.ida and (isnull(k.tablab) or k.tablab = 'ot')  left join entidades e on r.entidadaso = e.entidad "
+		sqlmatriz(10)=" left join linkregistro kf on kf.tablaa = 'remitosh' and kf.campoa = 'idremitoh' and d.idremitoh = kf.ida and (isnull(kf.tablab) or kf.tablab = 'detafactu') left join detafactu df on kf.idb = df.idfacturah "
+		sqlmatriz(11)=" left join facturas f on df.idfactura = f.idfactura left join comprobantes co on f.idcomproba = co.idcomproba left join puntosventa pf on f.pventa  = pf.pventa "
+		sqlmatriz(12)=" where r.idremito = "+ ALLTRIM(STR(v_idremito))+"  "
+
+
 			verror=sqlrun(vconeccionF,"rec_det_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del Remito",0+48+0,"Error")
@@ -7030,11 +7033,14 @@ PARAMETERS p_idremito, p_esElectronica
 		
 		
 		SELECT remi
+		
 		ALTER table remi alter COLUMN apellido c(200)
 		ALTER table remi alter COLUMN idot I
+		ALTER table remi alter COLUMN numerofac I
 		ALTER table remi ADD COLUMN comproAso M 
+		ALTER table remi ADD COLUMN factaso C(100)
 									  
-		replace ALL apellido WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre))
+		replace ALL apellido WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), factaso WITH ALLTRIM(abreviafac)+" "+ALLTRIM(puntovfac)+"-"+ALLTRIM(STRTRAN(STR((numerofac),8,0),' ','0'))
 		GO TOP 
 		IF NOT EOF()
 		
