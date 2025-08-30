@@ -27080,7 +27080,7 @@ PARAMETERS p_nombreTabRet, p_fechaHasta, p_entidadD, p_entidadH
 *!*		sqlmatriz(1)=" Select f.entidad, f.servicio, f.cuenta, TRIM(f.nombre) as nombre ,f.cuit, f.idclascomp, c.descrip as clasifica , SUM(saldof) as saldo, detaservi  "
 *!*		sqlmatriz(2)=" from facturasaldof f left join clasificacomp c on c.idclascomp = f.idclascomp where f.saldof <> 0 group by f.entidad, f.servicio, f.cuenta, f.idclascomp  "
 	sqlmatriz(1)=" Select f.entidad, f.servicio, f.cuenta, TRIM(f.nombre) as nombre ,f.cuit,f.fechafac as fecha, f.total, SUM(ifnull(f.imputado,0)) as imputado, SUM(f.saldof) as saldo, p.puntov, o.abrevia,o.comprobante as comproba, o.tipo, s.numero,t.opera,	 "
-	sqlmatriz(2)=" s.idfactura as idregistro, s.idcomproba "
+	sqlmatriz(2)=" s.idfactura as idregistro, s.idcomproba, s.fechavenc1, s.fechavenc2, s.fechavenc3, s.interesd, 'FACTURAS' as tabla "
 	sqlmatriz(3)=" from facturasaldof f left join clasificacomp c on c.idclascomp = f.idclascomp left join facturas s on f.idfactura = s.idfactura left join puntosventa p on s.pventa = p.pventa "
 	sqlmatriz(4)=" left join comprobantes o on s.idcomproba = o.idcomproba left join tipocompro t on o.idtipocompro = t.idtipocompro "
 	sqlmatriz(5)=" where f.saldof <> 0  group by f.idfactura"
@@ -27105,7 +27105,7 @@ SELECT * FROM servicios_deudaA INTO TABLE servicios_deuda
 *!*		sqlmatriz(3)=" group by r.entidad "
 
 	sqlmatriz(1)=" Select f.entidad,0 as servicio, 0 as cuenta, TRIM(f.nombre) as nombre , e.cuit,f.fecha,f.importe as total, SUM(ifnull(f.totimputado,0)) as imputado, SUM(f.saldo) as saldo, p.puntov, o.abrevia,o.comprobante as comproba, o.tipo, s.numero,t.opera,  "
-	sqlmatriz(2)=" s.idrecibo as idregistro, s.idcomproba "
+	sqlmatriz(2)=" s.idrecibo as idregistro, s.idcomproba, '        ' as fechavenc1, '        ' as fechavenc2, '        ' as fechavenc3, 0.00 as interesd , 'RECIBOS' as tabla " 
 	sqlmatriz(3)=" from recibossaldof  f left join entidades e on e.entidad = f.entidad left join recibos s on f.idrecibo = s.idrecibo left join puntosventa p on s.pventa = p.pventa "
 	sqlmatriz(4)=" left join comprobantes o on s.idcomproba = o.idcomproba left join tipocompro t on o.idtipocompro = t.idtipocompro  "
 	sqlmatriz(5)=" where f.saldo <> 0 group by f.idrecibo"
@@ -27126,7 +27126,9 @@ SELECT * FROM servicios_deudaA INTO TABLE servicios_deuda
 		*** Cierro conexión ***
 		=abreycierracon(vconeccionDV ,"")
 	
-	v_sent = "CREATE TABLE "+ALLTRIM(p_nombreTabRet)+" (entidad I,servicio I,cuenta I,nombre C(250),cuit C(13),fecha C(8),total N(13,4), imputado N(13,4), saldo N(13,4),puntov C(5), abrevia C(20), comproba C(100), tipo C(1), numero I, opera I, idregistro I, idcomproba I)"
+	v_sent = "CREATE TABLE "+ALLTRIM(p_nombreTabRet)+" ( entidad I,servicio I,cuenta I,nombre C(250),cuit C(13),fecha C(8),total N(13,4), imputado N(13,4), " + ;
+			 " saldo N(13,4),puntov C(5), abrevia C(20), comproba C(100), tipo C(1), numero I, opera I, idregistro I, idcomproba I, fechavenc1 C(8), fechavenc2 c(8), fechavenc3 c(8), interesd N(10,2), tabla C(50) ) "
+			 
 	
 	&v_sent
 	
