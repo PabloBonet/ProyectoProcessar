@@ -828,3 +828,9 @@ ALTER TABLE `remitos` ADD COLUMN `cai` CHAR(100) NOT NULL DEFAULT ' ' AFTER `ent
 
 ALTER TABLE `compactiv` ADD COLUMN `cai` CHAR(100) NOT NULL DEFAULT ' ' AFTER `idcompactiv`, ADD COLUMN `nromax` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `cai`;
 
+
+--20250904--
+ALTER TABLE `impuretencion` ADD COLUMN `divimporte` DOUBLE(12,4) NOT NULL DEFAULT 1.21 AFTER `regimen`;
+
+ALTER TABLE `impupercepcion` ADD COLUMN `divimporte` DOUBLE(12,4) NOT NULL DEFAULT 1.21 AFTER `idconcepto`;
+
