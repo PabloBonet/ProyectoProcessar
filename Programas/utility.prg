@@ -2060,32 +2060,17 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 		*** Busco los datos de la factura y el detalle
 		IF v_esElectronica  = .T.
 
-*!*				sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov, ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
-*!*				sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv, com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
-*!*				sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-*!*				sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
-*!*				sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
-*!*				sqlmatriz(6)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
-*!*				sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
-*!*				sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-*!*				sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
-*!*				sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
-
-	
-	
 			sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov, ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
-			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv, com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
- 			sqlmatriz(3)=" ifnull(k.ida,0) as idremitoh , ifnull(r.idremito,0) as idremito, ifnull(r.numero,0) as numerorem,ifnull(r.tipo,'') as tiporem, ifnull(co.comprobante,'') as comprem,ifnull(co.abrevia,'') as abreviarem,ifnull(pf.puntov,'') as puntovrem "
-			sqlmatriz(4)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(5)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa "
-			sqlmatriz(6)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
- 			sqlmatriz(7)=" left join linkregistro k on k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh') left join remitosh rh on k.ida = rh.idremitoh "
- 			sqlmatriz(8)=" left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
- 			sqlmatriz(9)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva "
-			sqlmatriz(10)=" left join vendedores v on f.vendedor = v.vendedor "
-	 		sqlmatriz(11)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(12)=" left join servicios se on se.servicio = f.servicio "
- 			sqlmatriz(13)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
+			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv, com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
+			sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+			sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(6)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
+			*sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) &&+  " and fe.resultado = 'A'"
 			
 			verror=sqlrun(vconeccionF,"fac_det_sql_au")
 			IF verror=.f.  
@@ -2094,32 +2079,18 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			
 			v_idperiodo = fac_det_sql_au.idperiodo
 		ELSE
-*!*				
-*!*				sqlmatriz(1)="Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
-*!*				sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
-*!*				sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-*!*				sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
-*!*				sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
-*!*				sqlmatriz(6)=" left join condfiscal c on f.iva = c.iva"
-*!*				sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
-*!*				sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-*!*				sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
-*!*				sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+			
+			sqlmatriz(1)="Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
+			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
+			sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+			sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(6)=" left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 
-
-			sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
-			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
-			sqlmatriz(3)=" ifnull(k.ida,0) as idremitoh , ifnull(r.idremito,0) as idremito, ifnull(r.numero,0) as numerorem,ifnull(r.tipo,'') as tiporem, ifnull(co.comprobante,'') as comprem,ifnull(co.abrevia,'') as abreviarem,ifnull(pf.puntov,'') as puntovrem "
-			sqlmatriz(4)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(5)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
-			sqlmatriz(6)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
-			sqlmatriz(7)=" left join linkregistro k on k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh') left join remitosh rh on k.ida = rh.idremitoh "
- 			sqlmatriz(8)=" left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
-			sqlmatriz(9)=" left join condfiscal c on f.iva = c.iva"
-			sqlmatriz(10)=" left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(11)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(12)=" left join servicios se on se.servicio = f.servicio "
-			sqlmatriz(13)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
@@ -2226,12 +2197,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			ALTER table factu ADD COLUMN apeynom C(200)
 			ALTER table factu ADD COLUMN totalletra C(254)
 			ALTER table factu ADD COLUMN compAso M
-			ALTER table factu ADD COLUMN remiaso C(100)
-			ALTER table factu alter COLUMN numerorem I
 
-
-
-	
 
 	** Agrego el importe total en letras **
 		SELECT factu
@@ -2291,8 +2257,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.F.)
 			SELECT factu 
 			GO TOP 
-			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso), ;
-			remiaso with ALLTRIM(abreviarem)+" "+ALLTRIM(puntovrem)+"-"+ALLTRIM(STRTRAN(STR((numerorem),8,0),' ','0'))
+			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso)
 
 	** AGREGO EL CALCULO PARA LOS RECARGOS PARA AQUELLAS FACTURAS QUE TIENEN VENCIMIENTOS 1 2 Y 3
 			ALTER table factu ADD COLUMN recargo1 n(13,2)
@@ -21262,10 +21227,11 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 
 
 	IF TYPE('p_nomPais_car') <> 'C'
-		p_nomPais = "ARGENTINA"
+		p_nomPais_car = "ARGENTINA"
 	ENDIF 
 	* Me conecto a la base de datos *
 	vconeccion_car=abreycierracon(0,_SYSSCHEMA)	
+
 		
 	sqlmatriz(1)=" Select l.localidad, l.nombre as nomLoc, l.cp, pr.provincia, pr.nombre as nomProv, pa.pais, pa.nombre as nomPais "
 	sqlmatriz(2)=" from paises pa left join provincias pr on pa.pais = pr.pais left join localidades l  on pr.provincia = l.provincia "
@@ -21281,6 +21247,9 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 
 	SELECT localidad_sql_car
 	GO TOP 
+
+
+	
 	IF NOT EOF()
 	
 		
@@ -21299,7 +21268,7 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 		sqlmatriz(2)=" from paises pa left join provincias pr on pa.pais = pr.pais "
 		sqlmatriz(3)=" where pa.nombre = '"+ALLTRIM(p_nomPais_car)+"' and pr.nombre = '"+ALLTRIM(p_nomProv_car)+"'"
 
-		verror=sqlrun(vconeccionF,"provPais_sql_car")
+		verror=sqlrun(vconeccion_car,"provPais_sql_car")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la información de la Provincia-Pais",0+48+0,"Error")
 		    * me desconecto	
@@ -21317,7 +21286,7 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 			v_provincia_car = provPais_sql_car.provincia
 			
 			sqlmatriz(1)="SELECT MAX(CAST(localidad as unsigned)) AS maxi FROM localidades  "
-			verror=sqlrun(vconeccionF,"maximo_car")
+			verror=sqlrun(vconeccion_car,"maximo_car")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo código de Localidades ",0+48+0,"Error")
 			    * me desconecto	
@@ -21337,7 +21306,7 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 			ELSE
 				v_cod_loc_car = v_maximo_car + 1
 			ENDIF 
-			USE IN maximo
+			USE IN maximo_car
 			
 			p_tipoope_car     = 'I'
 			p_condicion_car   = ''
@@ -21345,14 +21314,14 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 							
 			DIMENSION lamatriz_car(4,2)
 			
-			lamatriz(1,1) = 'localidad'
-			lamatriz(1,2) = "'"+ALLTRIM(STR(v_cod_loc_car))+"'"
-			lamatriz(2,1) = 'nombre'
-			lamatriz(2,2) = "'"+ALLTRIM(v_nomLoc_car)+"'"
-			lamatriz(3,1) = 'cp'
-			lamatriz(3,2) = "'"+ALLTRIM(v_cp_car)+"'"
-			lamatriz(4,1) = 'provincia'
-			lamatriz(4,2) = "'"+ALLTRIM(v_provincia_car)+"'"
+			lamatriz_car(1,1) = 'localidad'
+			lamatriz_car(1,2) = "'"+ALLTRIM(STR(v_cod_loc_car))+"'"
+			lamatriz_car(2,1) = 'nombre'
+			lamatriz_car(2,2) = "'"+ALLTRIM(p_nomLoc_car)+"'"
+			lamatriz_car(3,1) = 'cp'
+			lamatriz_car(3,2) = "'"+ALLTRIM(P_cp_car)+"'"
+			lamatriz_car(4,1) = 'provincia'
+			lamatriz_car(4,2) = "'"+ALLTRIM(v_provincia_car)+"'"
 
 			p_tabla_car     = 'localidades'
 			p_matriz_car    = 'lamatriz_car'
@@ -21361,11 +21330,13 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo_car+" de la Localidad "+ALLTRIM(v_cod_loc_car)+"-"+;
 			                ALLTRIM(v_nomLoc_car),0+48+0,"Error")
 			            * me desconecto	
-			=abreycierracon(vconeccion_car,"")    
+				=abreycierracon(vconeccion_car,"")    
+				RELEASE lamatriz_car
 			    RETURN v_cod_loc_car
 			ENDIF 
 			* me desconecto	
 			=abreycierracon(vconeccion_car,"")
+			RELEASE lamatriz_car
 		
 			RETURN v_cod_loc_car
 		ELSE

@@ -472,6 +472,7 @@ v_listaWEB02 		= ArrProductoWEB(2)
 
 RELEASE ArrProductoWEB
 
+_SYSLISTAPRECIO=""
 =GetListasPrecios('listaspreweb')
 
 eje=" SELECT a.*, IIF( isnull(b.pventatot) =  .f., b.pventatot,0.00)  as pventatot2 FROM listaspreweba a LEFT JOIN listaspreweba b ON ( ALLTRIM(a.articulo) == ALLTRIM(b.articulo) "
