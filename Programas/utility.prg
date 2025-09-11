@@ -2060,17 +2060,32 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 		*** Busco los datos de la factura y el detalle
 		IF v_esElectronica  = .T.
 
+*!*				sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov, ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
+*!*				sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv, com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
+*!*				sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+*!*				sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+*!*				sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+*!*				sqlmatriz(6)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
+*!*				sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
+*!*				sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+*!*				sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
+*!*				sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
+
+	
+	
 			sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov, ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
-			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv, com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
-			sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
-			sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
-			sqlmatriz(6)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva"
-			sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
-			sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
-			*sqlmatriz(8)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) &&+  " and fe.resultado = 'A'"
+			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv, com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
+ 			sqlmatriz(3)=" ifnull(k.ida,0) as idremitoh , ifnull(r.idremito,0) as idremito, ifnull(r.numero,0) as numerorem,ifnull(r.tipo,'') as tiporem, ifnull(co.comprobante,'') as comprem,ifnull(co.abrevia,'') as abreviarem,ifnull(pf.puntov,'') as puntovrem "
+			sqlmatriz(4)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(5)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa "
+			sqlmatriz(6)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+ 			sqlmatriz(7)=" left join linkregistro k on k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh') left join remitosh rh on k.ida = rh.idremitoh "
+ 			sqlmatriz(8)=" left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+ 			sqlmatriz(9)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva "
+			sqlmatriz(10)=" left join vendedores v on f.vendedor = v.vendedor "
+	 		sqlmatriz(11)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(12)=" left join servicios se on se.servicio = f.servicio "
+ 			sqlmatriz(13)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
 			
 			verror=sqlrun(vconeccionF,"fac_det_sql_au")
 			IF verror=.f.  
@@ -2079,18 +2094,32 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			
 			v_idperiodo = fac_det_sql_au.idperiodo
 		ELSE
-			
-			sqlmatriz(1)="Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
-			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
-			sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
-			sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
-			sqlmatriz(6)=" left join condfiscal c on f.iva = c.iva"
-			sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
-			sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+*!*				
+*!*				sqlmatriz(1)="Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
+*!*				sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio "
+*!*				sqlmatriz(3)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+*!*				sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+*!*				sqlmatriz(5)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+*!*				sqlmatriz(6)=" left join condfiscal c on f.iva = c.iva"
+*!*				sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor"
+*!*				sqlmatriz(8)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+*!*				sqlmatriz(9)=" left join servicios se on se.servicio = f.servicio "
+*!*				sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 
+
+			sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
+			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
+			sqlmatriz(3)=" ifnull(k.ida,0) as idremitoh , ifnull(r.idremito,0) as idremito, ifnull(r.numero,0) as numerorem,ifnull(r.tipo,'') as tiporem, ifnull(co.comprobante,'') as comprem,ifnull(co.abrevia,'') as abreviarem,ifnull(pf.puntov,'') as puntovrem "
+			sqlmatriz(4)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(5)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+			sqlmatriz(6)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(7)=" left join linkregistro k on k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh') left join remitosh rh on k.ida = rh.idremitoh "
+ 			sqlmatriz(8)=" left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+			sqlmatriz(9)=" left join condfiscal c on f.iva = c.iva"
+			sqlmatriz(10)=" left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(11)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(12)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(13)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
@@ -2197,7 +2226,12 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			ALTER table factu ADD COLUMN apeynom C(200)
 			ALTER table factu ADD COLUMN totalletra C(254)
 			ALTER table factu ADD COLUMN compAso M
+			ALTER table factu ADD COLUMN remiaso C(100)
+			ALTER table factu alter COLUMN numerorem I
 
+
+
+	
 
 	** Agrego el importe total en letras **
 		SELECT factu
@@ -2257,7 +2291,8 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.F.)
 			SELECT factu 
 			GO TOP 
-			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso)
+			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso), ;
+			remiaso with ALLTRIM(abreviarem)+" "+ALLTRIM(puntovrem)+"-"+ALLTRIM(STRTRAN(STR((numerorem),8,0),' ','0'))
 
 	** AGREGO EL CALCULO PARA LOS RECARGOS PARA AQUELLAS FACTURAS QUE TIENEN VENCIMIENTOS 1 2 Y 3
 			ALTER table factu ADD COLUMN recargo1 n(13,2)
@@ -21213,6 +21248,8 @@ ENDFUNC
 ************ FIN FUNCION ANULAR TRANSFERENCIAS *********************************
 
 
+
+
 FUNCTION cargarLocalidad
 PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 *#/----------------------------------------
@@ -21353,6 +21390,7 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 		
 
 ENDFUNC 
+
 
 
 
@@ -22566,8 +22604,6 @@ ENDIF
 	RETURN v_retorno
 ENDFUNC 
 
-
-
 FUNCTION percepciones
 PARAMETERS p_entidad, P_fecha, p_nomTabResu,P_importeNeto,p_importeIva, p_tipo
 
@@ -22689,6 +22725,128 @@ v_importeTot = 0.00
 
 	RETURN .F.
 ENDFUNC 
+
+*!*	FUNCTION percepciones
+*!*	PARAMETERS p_entidad, P_fecha, p_nomTabResu,P_importeNeto,p_importeIva, p_tipo
+
+*!*	*#/**************************************************************
+*!*	*** FUNCIÓN PARA EL CALCULO DE PERCEPCIONES A APLICAR ***
+*!*	****************************************************************
+*!*	** PARÁMETROS: 	P_entidad: id de la entidad a percibir
+*!*	*				P_fecha: Fecha para el cálculo de la percepcion
+*!*	*				p_nomTabResu: Nombre de la tabla donde se va a entregar el resultado, la cual incluye: idimpuper,netoTotal,importeARetener,totpagosmes,totRetenmes )
+*!*	*               P_importeNeto: Importe Neto, del cuál se va a calcular las percepciones. en caso de no pasar parámetro se pedirá en la pantalla
+*!*	*				p_importeIva: Importe IVA
+*!*	*La función recibe los parámetros indicados y va a determinar si se va a aplicar percepcion a la entidad, y cuanto percibir
+*!*	****************************************************************
+*!*	** RETORNO: Retorna el importe a percibir, el total de percepciones al mes y total de pagos. True si terminó correctamente, False en otro caso
+*!*	*#/**************************************************************
+
+*!*	v_importeTot = 0.00
+
+*!*	****************************************************************
+*!*	** 1- Verificar Si la empresa es agente de percepcion, se debe activar la variable _SYSAGENTEPER = ‘S’
+*!*	****************************************************************
+
+*!*	 IF ALLTRIM(_SYSAGENTEPER) = 'S'
+*!*	 	
+*!*	 	IF TYPE('P_importeNeto') = 'N' OR TYPE('P_importeNeto') = 'Y'
+*!*	 		v_importeNeto = P_importeNeto
+*!*	 	ELSE
+*!*	 		v_importeNeto = 0.00
+*!*	 	ENDIF 
+*!*	 	
+*!*	 	IF TYPE('p_importeIva') = 'N' OR TYPE('p_importeIva') = 'Y'
+*!*	 		v_importeIva = p_importeIva
+*!*	 	ELSE
+*!*	 		v_importeIva = 0.00
+*!*	 	ENDIF 
+*!*	 	
+*!*	 	
+*!*	 	
+*!*	 	
+*!*	 	****************************************************************
+*!*		** 2- Verificar si a la entidad le corresponde percepción. Ver en las percepciones asociadas a la entidad en la tabla: entidadper
+*!*		****************************************************************
+*!*			* Me conecto a la base de datos *
+*!*			vconeccion=abreycierracon(0,_SYSSCHEMA)	
+
+
+*!*	*!*			sqlmatriz(1)=" select e.identper,e.entidad,e.idimpuret,e.enconvenio, i.detalle,i.razonin,i.baseimpon, i.idtipopago, i.funcion, i.razonnin "
+*!*	*!*			sqlmatriz(2)=" from entidadper e left join impupercepcion i on e.idimpuper = i.idimpuper "
+*!*			sqlmatriz(1)=" select e.identper,e.entidad,e.idimpuper,e.enconvenio, i.detalle,i.razon,i.baseimpon,  i.funcion "
+*!*			sqlmatriz(2)=" from entidadper e left join impupercepcion i on e.idimpuper = i.idimpuper "
+*!*			sqlmatriz(3)=" where e.entidad = "+ALLTRIM(STR(p_entidad))
+*!*			verror=sqlrun(vconeccion,"entidadper_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error al Obtener las percepciones asociadas a la entidad",0+48+0,"Error")
+*!*				* me desconecto	
+
+*!*				=abreycierracon(vconeccion,"")
+*!*				
+*!*				RETURN .F.
+*!*			ENDIF
+*!*			
+*!*			SELECT * FROM entidadper_sql INTO TABLE &p_nomTabResu
+*!*			
+*!*			SELECT &p_nomTabResu
+*!*			GO TOP 
+*!*			
+*!*			IF NOT EOF()	
+*!*				SELECT &p_nomTabResu
+*!*				ALTER table &p_nomTabResu ADD COLUMN impNeto Y
+*!*				ALTER table &p_nomTabResu ADD COLUMN impIva Y
+*!*				ALTER table &p_nomTabResu ADD COLUMN impAPer Y
+*!*				**ALTER table &p_nomTabResu ADD COLUMN totapagmes Y
+*!*				**ALTER table &p_nomTabResu ADD COLUMN totpermes Y
+*!*				ALTER table &p_nomTabResu ADD COLUMN totapagdia Y
+*!*				ALTER table &p_nomTabResu ADD COLUMN totperdia Y
+*!*				ALTER table &p_nomTabResu ADD COLUMN sel I
+*!*				ALTER table &p_nomTabResu ADD COLUMN sujaper Y
+*!*				ALTER table &p_nomTabResu ADD COLUMN tabart C(100)
+*!*				ALTER table &p_nomTabResu ADD COLUMN campoart C(100)
+*!*				ALTER table &p_nomTabResu ADD COLUMN codiArt C(50) 
+*!*				ALTER table &p_nomTabResu ADD COLUMN tipo C(1)
+*!*				ALTER table  &p_nomTabResu ADD COLUMN operacion C(100)
+*!*				
+*!*				SELECT &p_nomTabResu 
+*!*				GO TOP 
+*!*				
+*!*				replace ALL impNeto WITH v_importeNeto, impIva WITH v_importeIva , impAper WITH 0.00, totAPagDia WITH 0.00, totPerDia WITH 0.00, sel WITH 1, sujaper WITH 0.00, ;
+*!*							tabart WITH "", campoart WITH "", codiart WITH "", tipo WITH p_tipo, operacion WITH ""
+*!*				
+*!*				
+*!*			ELSE
+*!*				RETURN .T.
+*!*			endif
+
+*!*			USE IN entidadper_sql
+
+*!*			* me desconecto	
+*!*			=abreycierracon(vconeccion,"")
+*!*			
+*!*		****************************************************************	
+*!*		** 3- En caso de que le corresponda percepciones, abrir una ventana con las percepciones asociadas, pidiendo ingresar el monto total y una lista para poder elegir las percepciones que quiera aplicar
+*!*		****************************************************************
+
+*!*	 	v_retSelPer = 0.00 
+*!*		 DO FORM selectpercepciones WITH P_fecha,v_importeNeto, v_importeIva ,p_nomTabResu TO v_retSelPer
+
+*!*	 	IF v_retSelPer >= 0.00
+
+*!*	 		SELECT &p_nomTabResu
+*!*	 		GO TOP  		
+*!*	 		
+*!*	 		RETURN .T.
+*!*	 	ELSE
+*!*	 		*MESSAGEBOX("Hubo un problema al intentar aplicar percepciones",0+48+0,"Aplicar percepciones")
+*!*	 		RETURN .F.
+*!*	 	ENDIF 
+
+*!*	 ENDIF 
+
+*!*		RETURN .F.
+*!*	ENDFUNC 
 
 
 
