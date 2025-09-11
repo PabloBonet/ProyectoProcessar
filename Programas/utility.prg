@@ -21242,7 +21242,7 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la comprobanción de la localidad ",0+48+0,"Error")
 	    
-	    RETURN 0
+	    RETURN "0"
 	ENDIF 
 
 	SELECT localidad_sql_car
@@ -21273,7 +21273,7 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la información de la Provincia-Pais",0+48+0,"Error")
 		    * me desconecto	
 			=abreycierracon(vconeccion_car,"")
-		    RETURN 0
+		    RETURN "0"
 		ENDIF 
 		
 		SELECT provPais_sql_car
@@ -21291,7 +21291,7 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo código de Localidades ",0+48+0,"Error")
 			    * me desconecto	
 					=abreycierracon(vconeccion_car,"")
-				RETURN 0
+				RETURN "0"
 			ENDIF 
 
 			*v_cod_loc  = INT(VAL(localidades.localidad))
@@ -21344,10 +21344,9 @@ PARAMETERS p_nomLoc_car, p_cp_car, p_nomProv_car, p_nomPais_car
 			* me desconecto	
 			=abreycierracon(vconeccion_car,"")
 		
-			RETURN 0
+			RETURN "0"
 			
 		ENDIF 
-		
 		
 	
 	ENDIF 
