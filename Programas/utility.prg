@@ -7424,7 +7424,8 @@ PARAMETERS p_idtipomov, p_idcomproba,p_nombreCampo,p_idregistro,p_tablaDatos
 ***				P_idcomproba: ID de la tabla comprobante (comprobante relacionado al ajuste)
 ***				P_nomreCampo: Nombre del campo Indice de la tabla asociada al comprobante
 ***				P_Idregistro: ID de la tabla asociada al comprobante
-***				P_TablaDatos: Tabla con los articulos a los que se le hará el ajuste, tiene el siguiente formato: [articulo C(50),cantidad Y,deposito I]
+***				P_TablaDatos: Tabla con los articulos a los que se le hará el ajuste, tiene el siguiente formato: [articulo C(50),cantidad Y,deposito I, fecha C(8)], 
+***								Si es vacia -> se busca en la Base de datos los articulos asociados al comprobante pasado como parámetro
 **RETORNO:		.T. o .F. Dependiendo si se realizó el ajuste correctamente o no respectivamente
 *#/----------------------------------------
 
@@ -7439,6 +7440,96 @@ v_tablaDatos	= p_tablaDatos
 
 **** Busco el comprobante asociado ***
 vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+	
+	
+
+
+*!*		**** Busco el comprobante asociado ***
+*!*		vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+
+	*** Busco los comprobantes y sus respectivos puntos de venta 
+	sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla, t.pventa, "
+	sqlmatriz(2)=" t.puntov from comprobantes c left join compactiv t on c.idcomproba = t.idcomproba "
+	verror=sqlrun(vconeccionA,"Comprobantes_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de comprobantes ",0+48+0,"Error")
+	    =abreycierracon(vconeccionA,"")
+	    RETURN .F.
+	ENDIF
+	
+	
+
+IF EMPTY(ALLTRIM(v_tablaDatos)) = .T. AND v_idcomproba > 0 AND EMPTY(ALLTRIM(v_nombreCampo)) = .F. AND v_idregistro > 0
+*** Si la tabla de datos está vacia y tengo los otros campos, busco en la base de datos los articulos para ese comprobante, antes de hacer los ajustes **
+	v_tablaDatos = "tmpDatos"
+	SELECT comprobantes_sql
+	GO TOP 
+	IF NOT EOF()
+	
+		v_tablaAsociada = comprobantes_sql.tabla
+	
+	
+		DO CASE
+			CASE ALLTRIM(v_tablaAsociada) == "facturas"
+				
+				sqlmatriz(1)=" Select d.articulo, d.cantidad, 1 as deposito, f.fecha "
+				sqlmatriz(2)=" from detafactu d left join facturas f on d.idfactura = f.idfactura "
+				sqlmatriz(3)=" where d."+ALLTRIM(v_nombreCampo)+ " = " +ALLTRIM(STR(v_idregistro))
+				
+
+				
+			CASE ALLTRIM(v_tablaAsociada) == "remitos"
+				sqlmatriz(1)=" Select articulo, cantidad, 1 as deposito "
+				sqlmatriz(2)=" remitosh d left join remitos f on d.idremito = f.idremito "
+				sqlmatriz(3)=" where d."+ALLTRIM(v_nombreCampo)+ " = " +ALLTRIM(STR(v_idregistro))
+				
+
+			OTHERWISE
+
+		ENDCASE
+		
+		
+		verror=sqlrun(vconeccionA,"detallecomp_sqla")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del detalle del comprobante ",0+48+0,"Error")
+		    =abreycierracon(vconeccionA,"")
+		    RETURN .F.
+		ENDIF
+
+		SELECT * FROM detallecomp_sqla INTO TABLE detallecomp_sql
+				
+		ALTER table detallecomp_sql alter COLUMN deposito I
+		
+		
+		
+			v_sent = " CREATE TABLE " +ALLTRIM(v_tablaDatos) +" FREE (articulo C(50), cantidad Y, deposito I, fecha c(8)) "
+			
+			&v_sent
+			SELECT &v_tablaDatos
+			INDEX on articulo TAG articulo
+		
+		
+		
+		SELECT detallecomp_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			INSERT INTO &v_tablaDatos SELECT * FROM detallecomp_sql
+		
+		ENDIF 
+				
+
+
+	ENDIF 
+	
+ENDIF 
+
+
+	SELECT &v_tablaDatos
+	GO TOP 
+
+	
+	
 	
 SELECT &v_tablaDatos
 ALTER table &v_tablaDatos ADD COLUMN ajustar c(1)
@@ -7474,18 +7565,7 @@ ENDIF
 SELECT &v_tablaDatos
 GO TOP 
 
-*!*		**** Busco el comprobante asociado ***
-*!*		vconeccionA=abreycierracon(0,_SYSSCHEMA)	
 
-	*** Busco los comprobantes y sus respectivos puntos de venta 
-	sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla, t.pventa, "
-	sqlmatriz(2)=" t.puntov from comprobantes c left join compactiv t on c.idcomproba = t.idcomproba "
-	verror=sqlrun(vconeccionA,"Comprobantes_sql")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de comprobantes ",0+48+0,"Error")
-	    =abreycierracon(vconeccionA,"")
-	    RETURN .F.
-	ENDIF
 
 IF v_idregistro	> 0
 
@@ -8024,10 +8104,10 @@ IF v_idregistro	> 0
 								
 								
 									sqlmatriz(1)=" select last_insert_id() as maxid "
-									verror=sqlrun(vconeccionF,"ultimoId")
+									verror=sqlrun(vconeccionA,"ultimoId")
 									IF verror=.f.  
 									    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
-										=abreycierracon(vconeccionF,"")	
+										=abreycierracon(vconeccionA,"")	
 									   
 									ENDIF 
 									SELECT ultimoId
@@ -8062,7 +8142,7 @@ IF v_idregistro	> 0
 
 									p_tabla     = 'ajustestocke'
 									p_matriz    = 'lamatriz4'
-									p_conexion  = vconeccionF
+									p_conexion  = vconeccionA
 									IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 									    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajustestocke)),0+48+0,"Error")
 																		
@@ -26395,7 +26475,7 @@ PARAMETERS pcl_idcomprobaa, pcl_idregistroa, pcl_idcomprobab, pcl_idregistrob, p
 			ENDIF 
 			
 			sqlmatriz(1)=" select last_insert_id() as maxid "
-			verror=sqlrun(vconeccionF,"ultimoId")
+			verror=sqlrun(vconeccionPCL,"ultimoId")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
 				=abreycierracon(vconeccionPCL,"")	
