@@ -1294,6 +1294,128 @@ ENDFUNC
 
 
 
+FUNCTION validarUltNumComp
+PARAMETERS p_idregistro
+*#/----------------------------------------
+* FUNCIÓN PARA VALIDAR EL ULTIMO COMPROBANTE INGRESADO CON EL AFIP
+* SI EL ULTIMO NUMERO DE COMPROBANTE AUTORIZADO EN EL SISTEMA CONINCIDE CON EL ULTIMO NUMERO EN AFIP, RETORNA TRUE.
+* PARAMETROS: p_idregistro: ID del registro a comprobar
+* RETORNO: Retorna True si la numeración del afip conincide con el del sistema
+*#/----------------------------------------
+
+	v_ret = .F.
+	
+	
+	vconeccion=abreycierracon(0,_SYSSCHEMA)	
+		
+	sqlmatriz(1)=" select f.idfactura, f.pventa,f.idcomproba, p.puntov from facturas f left join puntosventa p on f.pventa = p.pventa "
+	sqlmatriz(2)=" where f.idfactura = "+ ALLTRIM(STR(p_idregistro))
+
+	verror=sqlrun(vconeccion,"factaut_sql")
+	IF verror=.f.  
+		
+		MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del ultimo numero de factura [1]",0+48+0,"Error")
+
+  		   	vconeccion=abreycierracon(vconeccion,'')
+	   	RETURN .F.
+	   	
+	ELSE
+	
+		SELECT factaut_sql
+		GO TOP 
+	
+		IF NOT EOF()
+			p_idcomproba = factaut_sql.idcomproba
+			p_puntovta = factaut_sql.puntov
+			p_puntovtaN = VAL(p_puntovta)
+			p_pventa = factaut_sql.pventa
+			
+			sqlmatriz(1)=" select ifnull(max(f.numero),0) as maxnum from facturas  f "
+			sqlmatriz(2)=" where f.idcomproba = "+ ALLTRIM(STR(p_idcomproba))+" and f.pventa = "+ALLTRIM(STR(p_pventa))+" and f.cespcae <> ''"
+
+			verror=sqlrun(vconeccion,"factmax_sqla")
+			IF verror=.f.  
+				
+				MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del ultimo numero de factura [2]",0+48+0,"Error")
+
+		  		   	vconeccion=abreycierracon(vconeccion,'')
+			   	RETURN .F.
+			   	
+			ELSE
+				
+				SELECT * FROM factmax_sqla INTO TABLE factmax_sql
+				ALTER table factmax_sql alter COLUMN maxnum I
+				
+				SELECT factmax_sql
+				GO TOP 
+				
+				IF eof()
+					MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del ultimo numero de factura [3]",0+48+0,"Error")
+			   		   	
+			   		RETURN .F.
+			
+				ELSE
+					
+					
+					sqlmatriz(1)=" SELECT c.idcomproba,ifnull(a.idafipcom,0) as idafipcom, ifnull(a.codigo,'000') as codafip "
+					sqlmatriz(2)=" FROM comprobantes c left join tipocompro t on c.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom "
+					sqlmatriz(3)=" where c.idcomproba = "+ ALLTRIM(STR(p_idcomproba))
+
+					verror=sqlrun(vconeccion,"afipcomp_sql")
+					IF verror=.f.  
+					
+						MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del ultimo numero de factura [1]",0+48+0,"Error")
+					   	
+			  		   	vconeccion=abreycierracon(vconeccion,'')	   	
+					   	RETURN .F.
+				   	
+					ELSE
+					
+					
+						SELECT afipcomp_sql
+						GO TOP 
+						
+						IF NOT EOF()
+						
+							v_ultimoNumReg = factmax_sql.maxnum
+					   		v_idcodafip = afipcomp_sql.codafip
+					   		v_idcodafipN = VAL(v_idcodafip) 
+						   	v_ultimoNumAutorizado = obtenerUltNroComp(p_puntoVtaN, v_idcodafipN )
+						
+						   	IF v_ultimoNumReg <> v_ultimoNumAutorizado 
+						   	
+						   		MESSAGEBOX("El último número autorizado no coincide con el registrado en la Base de Datos. Verifique",0+48+0,"Error")
+						   						  		   		
+						   		RETURN .F.
+						   	ELSE
+						   		RETURN .T.
+						   	
+						   	ENDIF 
+						ENDIF 
+							
+					ENDIF 
+					
+				ENDIF 
+			
+			ENDIF 
+		
+		ENDIF 
+	
+	ENDIF 
+	
+	
+	RETURN v_ret
+
+ENDFUNC 
+
+
+
+
+
+
+
+
+
 FUNCTION validarCompAutorizado
 PARAMETERS p_idcomprobante
 *#/----------------------------------------
@@ -1534,6 +1656,12 @@ LOCAL loException AS Exception
 		RETURN .F. 
 	ENDIF 
 	
+	
+	v_validarUltNum = validarUltNumComp(p_idregistro)
+	
+	IF v_validarUltNum = .F.
+		RETURN .F. 
+	ENDIF 
 	
 	TRY 
 		v_tipoObj = TYPE("objModuloAFIP")
