@@ -2209,11 +2209,13 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(6)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
  			sqlmatriz(7)=" left join linkregistro k on (k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh')) or "
  			sqlmatriz(8)=" (k.tablaa = 'detafactu' and k.campoa = 'idfacturah' and d.idfacturah = k.ida and (isnull(k.tablab) or k.tablab = 'remitosh')) "
-			sqlmatriz(9)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
-			sqlmatriz(10)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
-	 		sqlmatriz(11)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(12)=" left join servicios se on se.servicio = f.servicio "
- 			sqlmatriz(13)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
+*			sqlmatriz(9)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+			sqlmatriz(9)=" left join remitosh rh on (k.ida = rh.idremitoh and k.tablab = 'detafactu' and d.idfacturah = k.idb ) or (k.idb = rh.idremitoh and k.tablaa = 'detafactu' and d.idfacturah = k.ida ) "
+			sqlmatriz(10)=	" left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+			sqlmatriz(11)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
+	 		sqlmatriz(12)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(13)=" left join servicios se on se.servicio = f.servicio "
+ 			sqlmatriz(14)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
 			
 			verror=sqlrun(vconeccionF,"fac_det_sql_au")
 			IF verror=.f.  
@@ -2243,11 +2245,13 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(6)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
 			sqlmatriz(7)=" left join linkregistro k on (k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh')) or "
  			sqlmatriz(8)=" (k.tablaa = 'detafactu' and k.campoa = 'idfacturah' and d.idfacturah = k.ida and (isnull(k.tablab) or k.tablab = 'remitosh')) "
-			sqlmatriz(9)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
-			sqlmatriz(10)=" left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(11)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(12)=" left join servicios se on se.servicio = f.servicio "
-			sqlmatriz(13)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+*!*				sqlmatriz(9)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+			sqlmatriz(9)=" left join remitosh rh on (k.ida = rh.idremitoh and k.tablab = 'detafactu' and d.idfacturah = k.idb ) or (k.idb = rh.idremitoh and k.tablaa = 'detafactu' and d.idfacturah = k.ida ) "
+			sqlmatriz(10)= " left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+			sqlmatriz(11)=" left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(12)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(13)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(14)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
