@@ -2203,19 +2203,21 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 	
 			sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,fe.*,c.*,v.*,fe.numerofe as numFac,c.detalle as detIVA, v.nombre as nomVend,ca.puntov, ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
 			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv, com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
- 			sqlmatriz(3)=" ifnull(k.ida,0) as idremitoh , ifnull(r.idremito,0) as idremito, ifnull(r.numero,0) as numerorem,ifnull(r.tipo,'') as tiporem, ifnull(co.comprobante,'') as comprem,ifnull(co.abrevia,'') as abreviarem,ifnull(pf.puntov,'') as puntovrem "
-			sqlmatriz(4)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(5)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa "
-			sqlmatriz(6)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
- 			sqlmatriz(7)=" left join linkregistro k on (k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh')) or "
- 			sqlmatriz(8)=" (k.tablaa = 'detafactu' and k.campoa = 'idfacturah' and d.idfacturah = k.ida and (isnull(k.tablab) or k.tablab = 'remitosh')) "
-*			sqlmatriz(9)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
-			sqlmatriz(9)=" left join remitosh rh on (k.ida = rh.idremitoh and k.tablab = 'detafactu' and d.idfacturah = k.idb ) or (k.idb = rh.idremitoh and k.tablaa = 'detafactu' and d.idfacturah = k.ida ) "
-			sqlmatriz(10)=	" left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
-			sqlmatriz(11)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
-	 		sqlmatriz(12)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(13)=" left join servicios se on se.servicio = f.servicio "
- 			sqlmatriz(14)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" order by fe.idfe desc " &&+  " and fe.resultado = 'A'"
+ 			*sqlmatriz(3)=" ifnull(k.ida,0) as idremitoh , ifnull(r.idremito,0) as idremito, ifnull(r.numero,0) as numerorem,ifnull(r.tipo,'') as tiporem, ifnull(co.comprobante,'') as comprem,ifnull(co.abrevia,'') as abreviarem,ifnull(pf.puntov,'') as puntovrem "
+ 			sqlmatriz(3)=" group_concat(ifnull(k.ida,0)) as idremitoh ,group_concat(ifnull(r.idremito,0)) as idremito, group_concat(ifnull(r.numero,0)) as numerorem,group_concat(ifnull(r.tipo,'')) as tiporem, group_concat(ifnull(co.comprobante,'')) as comprem, "
+ 			sqlmatriz(4)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat('R ',concat(ifnull(cast(pf.puntov as int),''),'-',ifnull(r.numero,0))) as remiaso "
+			sqlmatriz(5)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(6)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa "
+			sqlmatriz(7)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+ 			sqlmatriz(8)=" left join linkregistro k on (k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh')) or "
+ 			sqlmatriz(9)=" (k.tablaa = 'detafactu' and k.campoa = 'idfacturah' and d.idfacturah = k.ida and (isnull(k.tablab) or k.tablab = 'remitosh')) "
+*			sqlmatriz(10)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+			sqlmatriz(10)=" left join remitosh rh on (k.ida = rh.idremitoh and k.tablab = 'detafactu' and d.idfacturah = k.idb ) or (k.idb = rh.idremitoh and k.tablaa = 'detafactu' and d.idfacturah = k.ida ) "
+			sqlmatriz(11)=	" left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+			sqlmatriz(12)=" left join facturasfe fe on f.idfactura = fe.idfactura left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
+	 		sqlmatriz(13)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(14)=" left join servicios se on se.servicio = f.servicio "
+ 			sqlmatriz(15)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" group by d.idfacturah order by fe.idfe desc  " &&+  " and fe.resultado = 'A'"
 			
 			verror=sqlrun(vconeccionF,"fac_det_sql_au")
 			IF verror=.f.  
@@ -2237,21 +2239,38 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 *!*				sqlmatriz(10)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 
 
+*!*				sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
+*!*				sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
+*!*				sqlmatriz(3)=" ifnull(k.ida,0) as idremitoh , ifnull(r.idremito,0) as idremito, ifnull(r.numero,0) as numerorem,ifnull(r.tipo,'') as tiporem, ifnull(co.comprobante,'') as comprem,ifnull(co.abrevia,'') as abreviarem,ifnull(pf.puntov,'') as puntovrem "
+*!*				sqlmatriz(4)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+*!*				sqlmatriz(5)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+*!*				sqlmatriz(6)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+*!*				sqlmatriz(7)=" left join linkregistro k on (k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh')) or "
+*!*	 			sqlmatriz(8)=" (k.tablaa = 'detafactu' and k.campoa = 'idfacturah' and d.idfacturah = k.ida and (isnull(k.tablab) or k.tablab = 'remitosh')) "
+*!*	*!*				sqlmatriz(9)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+*!*				sqlmatriz(9)=" left join remitosh rh on (k.ida = rh.idremitoh and k.tablab = 'detafactu' and d.idfacturah = k.idb ) or (k.idb = rh.idremitoh and k.tablaa = 'detafactu' and d.idfacturah = k.ida ) "
+*!*				sqlmatriz(10)= " left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+*!*				sqlmatriz(11)=" left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
+*!*				sqlmatriz(12)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+*!*				sqlmatriz(13)=" left join servicios se on se.servicio = f.servicio "
+*!*				sqlmatriz(14)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+
 			sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
 			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
-			sqlmatriz(3)=" ifnull(k.ida,0) as idremitoh , ifnull(r.idremito,0) as idremito, ifnull(r.numero,0) as numerorem,ifnull(r.tipo,'') as tiporem, ifnull(co.comprobante,'') as comprem,ifnull(co.abrevia,'') as abreviarem,ifnull(pf.puntov,'') as puntovrem "
-			sqlmatriz(4)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
-			sqlmatriz(5)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
-			sqlmatriz(6)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
-			sqlmatriz(7)=" left join linkregistro k on (k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh')) or "
- 			sqlmatriz(8)=" (k.tablaa = 'detafactu' and k.campoa = 'idfacturah' and d.idfacturah = k.ida and (isnull(k.tablab) or k.tablab = 'remitosh')) "
-*!*				sqlmatriz(9)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
-			sqlmatriz(9)=" left join remitosh rh on (k.ida = rh.idremitoh and k.tablab = 'detafactu' and d.idfacturah = k.idb ) or (k.idb = rh.idremitoh and k.tablaa = 'detafactu' and d.idfacturah = k.ida ) "
-			sqlmatriz(10)= " left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
-			sqlmatriz(11)=" left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
-			sqlmatriz(12)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(13)=" left join servicios se on se.servicio = f.servicio "
-			sqlmatriz(14)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
+			sqlmatriz(3)=" group_concat(ifnull(k.ida,0)) as idremitoh ,group_concat(ifnull(r.idremito,0)) as idremito, group_concat(ifnull(r.numero,0)) as numerorem,group_concat(ifnull(r.tipo,'')) as tiporem, group_concat(ifnull(co.comprobante,'')) as comprem, "
+ 			sqlmatriz(4)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat(concat('R ',ifnull(cast(pf.puntov as int),''),'-',ifnull(r.numero,0))) as remiaso "
+			sqlmatriz(5)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+			sqlmatriz(6)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
+			sqlmatriz(7)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(8)=" left join linkregistro k on (k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh')) or "
+ 			sqlmatriz(9)=" (k.tablaa = 'detafactu' and k.campoa = 'idfacturah' and d.idfacturah = k.ida and (isnull(k.tablab) or k.tablab = 'remitosh')) "
+*!*				sqlmatriz(10)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+			sqlmatriz(10)=" left join remitosh rh on (k.ida = rh.idremitoh and k.tablab = 'detafactu' and d.idfacturah = k.idb ) or (k.idb = rh.idremitoh and k.tablaa = 'detafactu' and d.idfacturah = k.ida ) "
+			sqlmatriz(11)= " left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
+			sqlmatriz(12)=" left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
+			sqlmatriz(13)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+			sqlmatriz(14)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(15)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))+ " group by d.idfacturah "
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
@@ -2358,8 +2377,8 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			ALTER table factu ADD COLUMN apeynom C(200)
 			ALTER table factu ADD COLUMN totalletra C(254)
 			ALTER table factu ADD COLUMN compAso M
-			ALTER table factu ADD COLUMN remiaso C(100)
-			ALTER table factu alter COLUMN numerorem I
+*!*				ALTER table factu ADD COLUMN remiaso C(100)
+			ALTER table factu alter COLUMN numerorem c(100)
 
 
 
@@ -2423,8 +2442,15 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.F.)
 			SELECT factu 
 			GO TOP 
-			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso), ;
-			remiaso with ALLTRIM(abreviarem)+" "+ALLTRIM(puntovrem)+"-"+ALLTRIM(STRTRAN(STR((numerorem),8,0),' ','0'))
+			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso)
+*!*				remiaso with ALLTRIM(abreviarem)+" "+ALLTRIM(puntovrem)+"-"+ALLTRIM(STRTRAN(STR((numerorem),8,0),' ','0'))
+*!*	ACA HAGO UN WHILE PARA REMI ASO
+
+
+*!*				SELECT factu 
+*!*				GO TOP 
+*!*				replace remiaso WITH '' FOR VAL(numerorem) = 0
+
 
 	** AGREGO EL CALCULO PARA LOS RECARGOS PARA AQUELLAS FACTURAS QUE TIENEN VENCIMIENTOS 1 2 Y 3
 			ALTER table factu ADD COLUMN recargo1 n(13,2)
