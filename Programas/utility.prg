@@ -18233,6 +18233,15 @@ PARAMETERS  para_aliasrnl
 * Obtiene todos los Registros de Agenda Habilitados para el Día de Hoy
 *#/----------------------------------------
 
+*******************************************************************
+*** COMIENZO CARGA DE EVENTOS DE AGENDA ******************************
+
+** Caga a la Agenda del dia de hoy si hay Eventos Pendientes de la Web
+ v_web = EVProductosWeb ( DATE() )
+
+*** FIN DE CARGA DE EVENTOS ***************************************
+*******************************************************************
+
 p_aliasretorno  = ""
 
 	vconeccionM = abreycierracon(0,_SYSSCHEMA)
@@ -30760,6 +30769,170 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 
 	RETURN .T.
 ENDFUNC 
+
+
+
+
+
+FUNCTION FNotificaAgenda
+PARAMETERS pa_codigonoti,pa_detalleregi, pa_detalleag, pa_repite, p_conn
+*#/----------------------------------------
+* Incerta un Evento en Agenda para Notificacion del Sistema a Todos los Usuarios
+* Parametros : pa_codigonoti 	= Codigo de Notificacion de Alertas para Notificaciones tabuladas , si es 0 no busca
+*			   pa_detalleregi 	= Texto a agregar como titulo del registro a insertar en la agenda
+* 			   pa_detalleag 	= Texto detalle de Notificacion para incertar en agenda
+*			   pa_repite		= .T.: inserta el registro independientemente si ya lo ingresó. / .F.: si ya ingreso el registro con ese codigo y fecha no vuelve a insertar
+*              p_conexion  		= Conexión a la base de datos, si se pasa la conexión 
+* Ejemplos: 			
+*			vaa = FNotificaAgenda("A0001","","") 															  No inserta repetidos
+*			vaa = FNotificaAgenda("A0001","TITULO NOTIFICACION","Detalle de la Notificación o Registro")      No inserta repetidos, concatena titulos y detalles
+*			vaa = FNotificaAgenda("A0001","TITULO NOTIFICACION","Detalle de la Notificación o Registro",.T.)  Inserta repetido, concatena titulos y detalles
+*			vaa = FNotificaAgenda("","TITULO NOTIFICACION","Detalle de la Notificación o Registro",.T.)  	  Inserta repetido, concatena titulos y detalles , no busca en tablas de alertas
+*			vaa = FNotificaAgenda("A0001","","",.f.,1)														  No inserta repetidos, busca en tabla de alertas , utiliza la conexion 1 pasada como parámetro
+
+*#/----------------------------------------
+	v_retorno = ""
+	IF TYPE("p_conn") = 'N' THEN 
+		IF p_conn > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionFN = p_conn
+		ELSE 
+			vconeccionFN = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionFN = abreycierracon(0,_SYSSCHEMA)	
+		p_conn = 0
+	ENDIF 
+
+
+************************************************************************************************
+
+	IF !EMPTY(pa_codigonoti) THEN 
+
+		*** Busco Codigo de Notificaciones para determinar el mensaje
+		sqlmatriz(1)=" select * from sysalertas where codigo='"+ALLTRIM(pa_codigonoti)+"'"
+		verror=sqlrun(vconeccionFN,"sysalertas_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  Alertas y Notificaciones ",0+48+0,"Error")
+		     =abreycierracon(vconeccionFN,"")
+		    RETURN .F.
+		ENDIF
+
+		SELECT sysalertas_sql
+		GO TOP 
+		IF !EOF() THEN 
+			pa_detalleag = ALLTRIM(sysalertas_sql.tipoalerta)+': '+ALLTRIM(pa_detalleag)+' '+ALLTRIM(sysalertas_sql.detalle)
+			pa_detalleregi= ALLTRIM(pa_detalleregi)+' '+ALLTRIM(sysalertas_sql.alerta)+' [ '+ALLTRIM(sysalertas_sql.codigo)+' ]'
+		ENDIF 
+		USE IN sysalertas_sql
+		***********************************************************************
+		
+
+		*** Determino si ya existe un alerta igual en la misma fecha **********
+		IF pa_repite = .f. THEN 
+		
+			sqlmatriz(1)=" select * from agendadeta where detallereg='"+ALLTRIM(pa_detalleregi)+"' and fecha = '"+DTOS(DATE())+"'"
+			verror=sqlrun(vconeccionFN,"repiteag_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Detalles Repetidos ",0+48+0,"Error")
+			     =abreycierracon(vconeccionFN,"")
+			    RETURN .F.
+			ENDIF
+			SELECT repiteag_sql
+			GO TOP 
+			IF !EOF() THEN && ya hay un registro con ese codigo en la misma fecha 
+				USE IN repiteag_sql
+				IF p_conn = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+					=abreycierracon(vconeccionFN,"")
+				ENDIF 	
+				RETURN .f.
+	 		ENDIF 
+			USE IN repiteag_sql
+			
+		ENDIF 
+		***********************************************************************
+		
+	ENDIF 
+
+	DIMENSION lamatriz(16,2)
+
+	v_idagenda	= 0
+	v_fecha		= DTOS(DATE())
+	v_detalle	= ALLTRIM(pa_detalleag)
+	v_calendario= 'S'
+	v_fagendad	= DTOS(DATE())
+	v_hagendad	= "00:00:00"
+	v_fagendah	= ""
+	v_hagendah	= ""
+	v_usuario	= _SYSUSUARIO
+	v_infotodos = 'S'
+	v_repetir   = 'N'
+	v_tabla 	= "empresa" 
+	v_idregistro= "1"
+	v_tipo 		= "N"
+	v_detallereg= ALLTRIM(pa_detalleregi)
+		
+	lamatriz(1,1)='idagenda'
+	lamatriz(1,2)=ALLTRIM(STR(v_idagenda))
+	lamatriz(2,1)='fecha'
+	lamatriz(2,2)="'"+ALLTRIM(v_fecha)+"'"
+	lamatriz(3,1)='detalle'
+	lamatriz(3,2)="'"+ALLTRIM(v_detalle)+"'"
+	lamatriz(4,1)='calendario'
+	lamatriz(4,2)="'"+ALLTRIM(v_calendario)+"'"
+	lamatriz(5,1)='fagendad'
+	lamatriz(5,2)="'"+ALLTRIM(v_fagendad)+"'"
+	lamatriz(6,1)='hagendad'
+	lamatriz(6,2)="'"+ALLTRIM(v_hagendad)+"'"
+	lamatriz(7,1)='fagendah'
+	lamatriz(7,2)="'"+ALLTRIM(v_fagendah)+"'"
+	lamatriz(8,1)='hagendah'
+	lamatriz(8,2)="'"+ALLTRIM(v_hagendah)+"'"
+	lamatriz(9,1)='usuario'
+	lamatriz(9,2)="'"+allTRIM(v_usuario)+"'"
+	lamatriz(10,1)='infotodos'
+	lamatriz(10,2)="'"+allTRIM(v_infotodos)+"'"
+	lamatriz(11,1)='repetir'
+	lamatriz(11,2)="'"+allTRIM(v_repetir)+"'"
+		
+	lamatriz(12,1)='tabla'
+	lamatriz(12,2)="'"+allTRIM(v_tabla)+"'"
+	lamatriz(13,1)='idregistro'
+	lamatriz(13,2)="'"+allTRIM(v_idregistro)+"'"
+	lamatriz(14,1)='tipo'
+	lamatriz(14,2)="'"+allTRIM(v_tipo)+"'"
+	lamatriz(15,1)='detallereg'
+	lamatriz(15,2)="'"+v_detallereg+"'"
+	lamatriz(16,1)='hora'
+	lamatriz(16,2)="'"+ALLTRIM(TIME())+"'"
+
+
+	p_tipoope   = 'I'
+	p_condicion = ''
+	v_titulo    = " EL ALTA "
+	p_tabla     = 'agendadeta'
+	p_matriz    = 'lamatriz'
+	p_conexion  = vconeccionFN 	
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en ",0+48+0,"Error")
+	    RETURN .f.
+	ENDIF  
+
+	RELEASE lamatriz 
+
+
+*************************************************************************************************
+
+	IF p_conn = 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+		=abreycierracon(vconeccionFN,"")
+	ENDIF 	
+
+	RETURN .t. 
+	
+ENDFUNC 
+
+
+
+
 
 
 

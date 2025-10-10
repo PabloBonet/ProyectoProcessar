@@ -469,6 +469,9 @@ IF nFilas = 0 THEN
 ENDIF 
 v_listaWEB01 		= ArrProductoWEB(1)
 v_listaWEB02 		= ArrProductoWEB(2)
+v_depositoWEB   	= ArrProductoWEB(3)
+
+MESSAGEBOX(v_depositoWEB)
 
 RELEASE ArrProductoWEB
 
@@ -479,25 +482,23 @@ eje=" SELECT a.*, IIF( isnull(b.pventatot) =  .f., b.pventatot,0.00)  as pventat
 eje = eje +" AND b.idlista = "+v_listaWEB02+") INTO TABLE productos01 WHERE a.idlista = "+v_listaWEB01 
 &eje
 
-*!*	SELECT productos01
-*!*	BROWSE 
 
 
 vconeccionF=abreycierracon(0,_SYSSCHEMA)
 	* Traigo las propiedades de los articulos 
 
-sqlmatriz(1) =" SELECT r.idregic ,  d.propiedad, d.valor, ifnull(t.idtp,0) as idtpa, ifnull(t.idp,0) as idpa, ifnull(t.codigo,' ') as codigoa , ifnull(t.nombre,' ') as nombrea, ifnull(t.articulo,' ') as articuloa, "
-sqlmatriz(2) =" ifnull(t.nivel,' ') as nivela , ifnull(v.idtp,0) as idtpb, ifnull(v.idp,0) as idpb, ifnull(v.codigo,' ') as codigob, ifnull(v.nombre,' ') as nombreb, ifnull(v.articulo,' ') as articulob, ifnull(v.nivel,' ') as nivelb, "
-sqlmatriz(3) =" mid(ifnull(t.codigo,' '),1,2) as categoriaa, mid(ifnull(v.codigo,' '),1,2) as categoriah "
-sqlmatriz(4) ="  FROM reldatosextra r  left join datosextra d on d.iddatosex = r.iddatosex "
-sqlmatriz(5) ="  left join "
-sqlmatriz(6) ="  ( SELECT t.idtp, t.idp , t.codigo, t.nombre, t.articulo, t.nivel  from tipologias t "
-sqlmatriz(7) =" left join articulos a on a.articulo = t.articulo "
-sqlmatriz(8) =" where substring(t.codigo,1,2) = '01' and t.articulo <> '' ) t on t.articulo = r.idregic "
-sqlmatriz(9) =" left join  ( SELECT u.idtp, u.idp , u.codigo, u.nombre, u.articulo, u.nivel  from tipologias u "
+sqlmatriz(1)  =" SELECT r.idregic ,  d.propiedad, d.valor, ifnull(t.idtp,0) as idtpa, ifnull(t.idp,0) as idpa, ifnull(t.codigo,' ') as codigoa , ifnull(t.nombre,' ') as nombrea, ifnull(t.articulo,' ') as articuloa, "
+sqlmatriz(2)  =" ifnull(t.nivel,' ') as nivela , ifnull(v.idtp,0) as idtpb, ifnull(v.idp,0) as idpb, ifnull(v.codigo,' ') as codigob, ifnull(v.nombre,' ') as nombreb, ifnull(v.articulo,' ') as articulob, ifnull(v.nivel,' ') as nivelb, "
+sqlmatriz(3)  =" mid(ifnull(t.codigo,' '),1,2) as categoriaa, mid(ifnull(v.codigo,' '),1,2) as categoriah "
+sqlmatriz(4)  ="  FROM reldatosextra r  left join datosextra d on d.iddatosex = r.iddatosex "
+sqlmatriz(5)  ="  left join "
+sqlmatriz(6)  ="  ( SELECT t.idtp, t.idp , t.codigo, t.nombre, t.articulo, t.nivel  from tipologias t "
+sqlmatriz(7)  =" left join articulos a on a.articulo = t.articulo "
+sqlmatriz(8)  =" where substring(t.codigo,1,2) = '01' and t.articulo <> '' ) t on t.articulo = r.idregic "
+sqlmatriz(9)  =" left join  ( SELECT u.idtp, u.idp , u.codigo, u.nombre, u.articulo, u.nivel  from tipologias u "
 sqlmatriz(10) =" left join articulos b on b.articulo = u.articulo "
 sqlmatriz(11) =" where substring(u.codigo,1,2) = '02' and u.articulo <> '' ) v on v.articulo = r.idregic "
-sqlmatriz(12) ="  where r.tabla = 'articulos' order by idregic, propiedad "
+sqlmatriz(12) =" where r.tabla = 'articulos' order by idregic, propiedad "
 
 
 verror=sqlrun(vconeccionF,"datosextrasweb_sql")
@@ -512,8 +513,17 @@ IF verror=.f.
     MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Tipologias ",0+48+0,"Error")
 ENDIF 
 
+sqlmatriz(1) =" select articulo, SUM(stock) as stock  from r_depostock where deposito in ( "+ALLTRIM(v_depositoWEB)+" ) group by articulo "
+
+MESSAGEBOX(sqlmatriz(1) )
+
+verror=sqlrun(vconeccionF,"r_depostock_sql")
+IF verror=.f.  
+    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Tipologias ",0+48+0,"Error")
+ENDIF 
 
 =abreycierracon(vconeccionF,"")	
+
 
 
 SELECT * FROM datosextrasweb_sql INTO TABLE datosextraweb
@@ -528,9 +538,16 @@ SELECT tipologias
 INDEX on idtp TAG idtp 
 
 
-SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor, d.idtpa as idtp, d.idpa as idp, SPACE(254) as categoria  ;
+SELECT * FROM r_depostock_sql INTO TABLE r_depostock WHERE stock >= 0
+SELECT r_depostock
+INDEX on articulo TAG articulo 
+
+
+
+SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, IIF(ISNULL(s.stock)=.t.,0.00,s.stock) as stocktot, d.propiedad, d.valor, d.idtpa as idtp, d.idpa as idp, SPACE(254) as categoria  ;
 FROM datosextraweb d ;
 LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
+LEFT JOIN r_depostock s ON ALLTRIM(p.articulo) == ALLTRIM(s.articulo) ;
 into table productos02 where ALLTRIM(d.categoriaa) == '01' AND ISNULL(p.articulo) = .f. 
 
 ** cargo todos los nombres de las categorias del arbol en el campo categoria
@@ -564,9 +581,10 @@ USE IN productos02_c
 
 
 
-SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, p.stocktot, d.propiedad, d.valor,  d.idtpb as idtp, d.idpb as idp, SPACE(254) as categoria ;
+SELECT p.articulo, p.detalle as nombre, p.pventatot, p.pventatot2, p.razonimpu, IIF(ISNULL(s.stock)=.t.,0.00,s.stock) as stocktot, d.propiedad, d.valor,  d.idtpb as idtp, d.idpb as idp, SPACE(254) as categoria ;
 FROM datosextraweb d ;
 LEFT JOIN productos01 p ON ALLTRIM(p.articulo) == ALLTRIM(d.idregic) ;
+LEFT JOIN r_depostock s ON ALLTRIM(p.articulo) == ALLTRIM(s.articulo) ;
 into table productos03 where ALLTRIM(d.categoriah) == '02' AND ISNULL(p.articulo) = .f. 
 
 
@@ -1042,18 +1060,20 @@ PARAMETERS pup_ejecutar
 	ENDIF 
 	v_listaWEB01 	= ArrProductoWEB(1)
 	v_listaWEB02 	= ArrProductoWEB(2)
-	v_HostWEB		= ArrProductoWEB(3)
-	v_PortWEB		= ArrProductoWEB(4)		
-	v_UserWEB		= ArrProductoWEB(5)		
-	v_PassWEB		= ArrProductoWEB(6)		
-	v_PathLCSV		= ArrProductoWEB(7)
-	v_PathLIMG      = ArrProductoWEB(8)		
-	v_PathRCSV		= ArrProductoWEB(9)		
-	v_PathRIMG		= ArrProductoWEB(10)
-	v_DiasIMG		= ArrProductoWEB(11)		
-	v_HostLOC		= ArrProductoWEB(12)		
-	v_InteVALO		= ArrProductoWEB(13)
-	v_ModoFTP		= ArrProductoWEB(14)		
+	v_depositoWEB   = ArrProductoWEB(3)
+	v_HostWEB		= ArrProductoWEB(4)
+	v_PortWEB		= ArrProductoWEB(5)		
+	v_UserWEB		= ArrProductoWEB(6)		
+	v_PassWEB		= ArrProductoWEB(7)		
+	v_PathLCSV		= ArrProductoWEB(8)
+	v_PathLIMG      = ArrProductoWEB(9)		
+	v_PathRCSV		= ArrProductoWEB(10)		
+	v_PathRIMG		= ArrProductoWEB(11)
+	v_DiasIMG		= ArrProductoWEB(12)		
+	v_HostLOC		= ArrProductoWEB(13)		
+	v_InteVALO		= ArrProductoWEB(14)
+	v_ModoFTP		= ArrProductoWEB(15)
+	v_fechaUA		= ArrProductoWEB(16)		
 			
 
 	v_PathLIMGtmp   = v_PathLIMG   
@@ -1100,7 +1120,26 @@ PARAMETERS pup_ejecutar
 		=ExpoProductoWEB(v_PathLCSV)
 		FLUSH 
 		vsubida= FTPUpDwFile ( v_PathLCSV,  v_PathRCSV, "*.csv", "UP", v_HostWEB , v_PortWEB, v_UserWEB, v_PassWEB, v_ModoFTP )
+		
+		
+*!*			*** Actualización de Fecha de Ultima Subida de Productos a la WEB
+*!*				v_diasultimactu = DATE() - DATE(INT(VAL(SUBSTR(v_fechaUA,1,4))),INT(VAL(SUBSTR(v_fechaUA,5,2))),INT(VAL(SUBSTR(v_fechaUA,7,2))))  
 
+
+		_SYSPRODUCTOSWEB = SUBSTR(_SYSPRODUCTOSWEB,1,LEN(_SYSPRODUCTOSWEB)-8)+DTOS(DATE())
+
+		* Actualizo el registro de la variable puntos para el chequeo de actualización de puntos
+		vconeccionVP=abreycierracon(0,_SYSSCHEMA)
+			
+		sqlmatriz(1)= " update varpublicas set valor =  '"+_SYSPRODUCTOSWEB+"' "
+		sqlmatriz(2)= " where  variable = '_SYSPRODUCTOSWEB'"
+		verror=sqlrun(vconeccionVP ,"varpubl_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la Actualizacion de la fecha de ejecución de _SYSPRODUCTOSWEB ",0+48+0,"Error")
+		    RETURN ""  
+		ENDIF	
+		=abreycierracon(vconeccionVP ,"")
+		******************************************************************
 	ELSE
 *!*			MESSAGEBOX("PC Equivocada")
 		
@@ -1109,3 +1148,7 @@ PARAMETERS pup_ejecutar
 	RELEASE ArrProductoWEB
 	RETURN 
 ENDFUNC 
+
+
+
+

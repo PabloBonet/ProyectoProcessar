@@ -13,19 +13,6 @@ PARAMETERS pa_fecha, pa_conexion
 *			Retorna True si la validación es correcta, False en otro caso
 *#/----------------------------------------
 
-
-*!*		** Creo la conexión **
-*!*		IF TYPE("pa_conexion") = 'N' THEN 
-*!*			IF pa_conexion> 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
-*!*				vconeccionAn = pa_conexion
-*!*			ELSE 
-*!*				vconeccionAn = abreycierracon(0,_SYSSCHEMA)
-*!*			ENDIF 	
-*!*		ELSE 
-*!*			vconeccionAn = abreycierracon(0,_SYSSCHEMA)	
-*!*			pa_conexion = 0
-*!*		ENDIF 
-
 	** Valido las fechas **
 	IF TYPE("pa_fecha") <> 'C' &&La fecha pasada no es caracter -> Retorno Falso
 		RETURN .F.
@@ -95,3 +82,63 @@ PARAMETERS pl_conexion
 	ENDIF 
 
 RETURN v_maxifecha
+
+
+
+
+
+FUNCTION EVProductosWeb
+PARAMETERS pa_fecha
+*#/----------------------------------------
+* Funcion de Control de ultima actualización WEB de productos
+* Si la diferencia entre la ultima actualizacion y el dia de hoy es mayor 
+* Al parametro de dias de actualizacion de imagenes
+* Inserta un Evento de Agenda para informar que no se están haciendo
+* las actualizaciones en la web
+*#/----------------------------------------
+
+	IF !(TYPE('_SYSPRODUCTOSWEB')='C') THEN 
+		RETURN .T.
+	ELSE
+		IF  (SUBSTR(_SYSPRODUCTOSWEB+' ',1,1)='N') then  
+			RETURN .T. 
+		ENDIF 
+	ENDIF 
+
+	nFilas = ALINES(ArrProductoWEB, _SYSPRODUCTOSWEB , ";")
+	IF nFilas = 0 THEN 
+		RETURN .T. 
+	ENDIF 
+	
+	v_listaWEB01 	= ArrProductoWEB(1)
+	v_listaWEB02 	= ArrProductoWEB(2)
+	v_depositoWEB   = ArrProductoWEB(3) 
+	v_HostWEB		= ArrProductoWEB(4)
+	v_PortWEB		= ArrProductoWEB(5)		
+	v_UserWEB		= ArrProductoWEB(6)		
+	v_PassWEB		= ArrProductoWEB(7)		
+	v_PathLCSV		= ArrProductoWEB(8)
+	v_PathLIMG      = ArrProductoWEB(9)		
+	v_PathRCSV		= ArrProductoWEB(10)		
+	v_PathRIMG		= ArrProductoWEB(11)
+	v_DiasIMG		= ArrProductoWEB(12)		
+	v_HostLOC		= ArrProductoWEB(13)		
+	v_InteVALO		= ArrProductoWEB(14)
+	v_ModoFTP		= ArrProductoWEB(15)
+	v_fechaUA		= ArrProductoWEB(16)		
+
+
+	** Valido las fechas **	
+	IF !EMPTY(ALLTRIM(v_fechaUA))  && La variable está vacia -> la validación no se hace
+		v_fechaUAD = cftofc(v_fechaUA)
+		v_cantidaddias = ABS( pa_fecha - v_fechaUAD )
+		IF v_cantidaddias >= ( VAL(v_DiasIMG) - 1 ) THEN && cantidad de dias mayor a los de las actualizaciones de imagenes debo informar
+			vaa = FNotificaAgenda("A0001","","")
+		ENDIF 			
+	ENDIF 
+	
+	RELEASE ArrProductoWEB
+	
+	RETURN .t. 
+	
+RETURN 
