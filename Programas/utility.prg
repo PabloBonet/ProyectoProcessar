@@ -30596,7 +30596,7 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 *#/----------------------------------------
 
 	
-	IF EMPTY(ALLTRIM(_SYSCOMPTRAZAS)) =.T.
+	IF ALLTRIM(TYPE('_SYSCOMPTRAZAS')) = 'U' or EMPTY(ALLTRIM(_SYSCOMPTRAZAS)) =.T.
 		RETURN .T.
 	ENDIF 
 	
