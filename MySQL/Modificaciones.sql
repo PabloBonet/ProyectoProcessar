@@ -834,3 +834,8 @@ ALTER TABLE `impuretencion` ADD COLUMN `divimporte` DOUBLE(12,4) NOT NULL DEFAUL
 
 ALTER TABLE `impupercepcion` ADD COLUMN `divimporte` DOUBLE(12,4) NOT NULL DEFAULT 1.21 AFTER `idconcepto`;
 
+--20251014--
+ALTER TABLE `detafactu` ADD INDEX `idfactura`(`idfactura`), ADD INDEX `articulo`(`articulo`), ADD INDEX `impuesto`(`impuesto`);
+
+ALTER TABLE `sectorcomp` ADD COLUMN `stock` CHAR(1) NOT NULL DEFAULT 'N' AFTER `idcomproba`;
+
