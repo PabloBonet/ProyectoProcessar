@@ -2205,10 +2205,10 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv, com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
  			*sqlmatriz(3)=" ifnull(k.ida,0) as idremitoh , ifnull(r.idremito,0) as idremito, ifnull(r.numero,0) as numerorem,ifnull(r.tipo,'') as tiporem, ifnull(co.comprobante,'') as comprem,ifnull(co.abrevia,'') as abreviarem,ifnull(pf.puntov,'') as puntovrem "
  			sqlmatriz(3)=" group_concat(ifnull(k.ida,0)) as idremitoh ,group_concat(ifnull(r.idremito,0)) as idremito, group_concat(ifnull(r.numero,0)) as numerorem,group_concat(ifnull(r.tipo,'')) as tiporem, group_concat(ifnull(co.comprobante,'')) as comprem, "
- 			sqlmatriz(4)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat('R ',concat(ifnull(cast(pf.puntov as int),''),'-',ifnull(r.numero,0))) as remiaso "
+ 			sqlmatriz(4)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat('R ',concat(ifnull(cast(pf.puntov as int),''),'-',ifnull(r.numero,0))) as remiaso, a.linea "
 			sqlmatriz(5)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 			sqlmatriz(6)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa "
-			sqlmatriz(7)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(7)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura left join articulos a on d.articulo = a.articulo "
  			sqlmatriz(8)=" left join linkregistro k on (k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh')) or "
  			sqlmatriz(9)=" (k.tablaa = 'detafactu' and k.campoa = 'idfacturah' and d.idfacturah = k.ida and (isnull(k.tablab) or k.tablab = 'remitosh')) "
 *			sqlmatriz(10)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
@@ -2258,10 +2258,10 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
 			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
 			sqlmatriz(3)=" group_concat(ifnull(k.ida,0)) as idremitoh ,group_concat(ifnull(r.idremito,0)) as idremito, group_concat(ifnull(r.numero,0)) as numerorem,group_concat(ifnull(r.tipo,'')) as tiporem, group_concat(ifnull(co.comprobante,'')) as comprem, "
- 			sqlmatriz(4)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat(concat('R ',ifnull(cast(pf.puntov as int),''),'-',ifnull(r.numero,0))) as remiaso "
+ 			sqlmatriz(4)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat(concat('R ',ifnull(cast(pf.puntov as int),''),'-',ifnull(r.numero,0))) as remiaso, a.linea "
 			sqlmatriz(5)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 			sqlmatriz(6)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa  left join puntosventa pv on ca.pventa = pv.pventa  " 
-			sqlmatriz(7)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura "
+			sqlmatriz(7)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura left join articulos a on d.articulo = a.articulo "
 			sqlmatriz(8)=" left join linkregistro k on (k.tablab = 'detafactu' and k.campob = 'idfacturah' and d.idfacturah = k.idb and (isnull(k.tablaa) or k.tablaa = 'remitosh')) or "
  			sqlmatriz(9)=" (k.tablaa = 'detafactu' and k.campoa = 'idfacturah' and d.idfacturah = k.ida and (isnull(k.tablab) or k.tablab = 'remitosh')) "
 *!*				sqlmatriz(10)=" left join remitosh rh on k.ida = rh.idremitoh or k.idb = rh.idremitoh  left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
@@ -3382,14 +3382,14 @@ PARAMETERS p_idnp
 		
 
 		sqlmatriz(1)=" Select f.*,d.*,c.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit,e.direccion, "
-		sqlmatriz(2)=" e.telefono, e.email, com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump "
+		sqlmatriz(2)=" e.telefono, e.email, com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump, t.etiqueta, ifnull(s.nombre, 'SIN CLASIFICACION') as nomclasif "
 		sqlmatriz(3)=" from np f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 		sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
-		sqlmatriz(5)="  left join ot d on f.idnp = d.idnp "
-		sqlmatriz(6)=" left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva"
-		sqlmatriz(7)=" left join vendedores v on f.vendedor = v.vendedor "
-		sqlmatriz(8)=" left join r_otpendientes r on r.idot = d.idot "
-		sqlmatriz(9)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+		sqlmatriz(5)="  left join ot d on f.idnp = d.idnp left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva "
+		sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor left join r_otpendientes r on r.idot = d.idot "
+		sqlmatriz(7)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+		sqlmatriz(8)=" left join etiquetanp t on f.idetiqueta = t.idetiqueta "
+		sqlmatriz(9)=" left join clasificanp s on f.idclasifnp = s.idclasifnp "
 		sqlmatriz(10)=" where f.idnp = "+ ALLTRIM(STR(v_idnp))
 			
 					
@@ -3424,10 +3424,13 @@ PARAMETERS p_idnp
 		IF NOT EOF()
 			SELECT np_impr
 			ALTER table np_impr ADD COLUMN imprMonto I
+			ALTER table np_impr ADD COLUMN sectores C(200)
+			v_sectores		= sectoresPorNp(v_idnp,vconeccionF)
+			
 			
 			SELECT np_impr
 			GO TOP 
-			replace ALL imprMonto WITH v_imprimeMonto, otvincula WITH v_otvincula
+			replace ALL imprMonto WITH v_imprimeMonto, otvincula WITH v_otvincula, sectores WITH ALLTRIM(v_sectores)
 			
 			SELECT np_impr
 			GO TOP 
@@ -3440,6 +3443,9 @@ PARAMETERS p_idnp
 			v_cuitEmpresa	= _SYSCUIT
 			v_entidad		= np_impr.entidad
 			
+			
+			
+	
 			*********************************************
 			** Obtengo los datos anexos a la Nota de Pedido y el cliente si los hubiere 
 			** agrega los datos extra y anexos de la entidad y la nota de pedido a la impresion
@@ -30931,6 +30937,60 @@ PARAMETERS pa_codigonoti,pa_detalleregi, pa_detalleag, pa_repite, p_conn
 ENDFUNC 
 
 
+
+
+FUNCTION sectoresPorNp
+PARAMETERS p_idnp, p_conexion
+*#/----------------------------------------
+* Retorna un listado separado por ; de los sectores que se asociaron a la NP 
+* Parametros : p_idnp 		= Codigo de Notificacion de Alertas para Notificaciones tabuladas , si es 0 no busca
+*              p_conexion	= Conexión a la base de datos, si se pasa la conexión 
+*RETURN: lista de sectores
+
+*#/----------------------------------------
+
+	v_retorno = ""
+	IF TYPE("p_conn") = 'N' THEN 
+		IF p_conn > 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+			vconeccionFN = p_conn
+		ELSE 
+			vconeccionFN = abreycierracon(0,_SYSSCHEMA)
+		ENDIF 	
+	ELSE 
+		vconeccionFN = abreycierracon(0,_SYSSCHEMA)	
+		p_conn = 0
+	ENDIF 
+
+	sqlmatriz(1)= " select idnp, group_concat(sector) as sectores "
+	sqlmatriz(2)= " from ( "
+	sqlmatriz(3)= " select idnp, sector  "
+	sqlmatriz(4)= " from ot o left join otsector s on o.idot = s.idot left join sector e on s.idsector = e.idsector  "
+	sqlmatriz(5)= " where idnp = "+ALLTRIM(STR(p_idnp))+" group by idnp, sector) as gruponp "
+
+		verror=sqlrun(vconeccionFN,"sectoresnp_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los sectores de NP",0+48+0,"Error")
+		     =abreycierracon(vconeccionFN,"")
+		    RETURN ""
+		ENDIF
+
+	
+	
+	
+	SELECT sectoresnp_sql
+	GO TOP 
+	
+	IF NOT EOF()
+	
+		v_retorno = sectoresnp_sql.sectores
+		v_retorno  = strtran(v_retorno,',',';')
+	
+	ENDIF 
+		
+
+	RETURN v_retorno 
+
+ENDFUNC 
 
 
 
