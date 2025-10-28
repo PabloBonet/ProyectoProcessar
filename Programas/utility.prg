@@ -28624,6 +28624,7 @@ PARAMETERS pfc_idtipocomp, pfc_idregistro
 	
 	vconeccionCO = abreycierracon(0,_SYSSCHEMA)
 	sqlmatriz(1)= "SELECT tabla FROM comprobantes where idtipocompro = "+ALLTRIM(STR(pfc_idtipocomp))
+	
 	verror=sqlrun(vconeccionCO,"tablacompro_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de la Tabla del Comprobante a Mostrar ",0+48+0,"Error")
@@ -28637,6 +28638,7 @@ PARAMETERS pfc_idtipocomp, pfc_idregistro
 		RETURN 
 	ENDIF 
 	v_tablacomprobante = ALLTRIM(tablacompro_sql.tabla)
+	
 	USE IN tablacompro_sql 
 	IF EMPTY(v_tablacomprobante) THEN 
 		RETURN 
@@ -28726,7 +28728,9 @@ PARAMETERS pfc_idtipocomp, pfc_idregistro
 		CASE v_tablacomprobante == "remitos"
 
 			v_formulario = obtenerFormularioFN("remitos")
+			
 			v_ejecform = "DO FORM "+ALLTRIM(v_formulario)+" WITH pfc_idregistro"
+			
 *			DO FORM remitos WITH pfc_idregistro
 
 		CASE v_tablacomprobante == "transferencias"
