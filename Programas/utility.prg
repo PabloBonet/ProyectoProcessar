@@ -2211,7 +2211,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(3)=" com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
  			sqlmatriz(4)=" group_concat(ifnull(k.ida,0)) as idremitoh ,group_concat(ifnull(r.idremito,0)) as idremito, group_concat(ifnull(r.numero,0)) as numerorem,group_concat(ifnull(r.tipo,'')) as tiporem, group_concat(ifnull(co.comprobante,'')) as comprem, "
 *!*	 			sqlmatriz(5)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat('R ',concat(ifnull(cast(pf.puntov as int),''),'-',ifnull(r.numero,0))) as remiaso, a.linea "
- 			sqlmatriz(5)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat('R ',concat(ifnull(pf.puntov),''),'-',ifnull(r.numero,0))) as remiaso, a.linea "
+ 			sqlmatriz(5)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat(concat('R ',ifnull(pf.puntov,''),'-',ifnull(r.numero,0))) as remiaso, a.linea "
 			sqlmatriz(6)=" from facturas f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 			sqlmatriz(7)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa "
 			sqlmatriz(8)=" left join tipooperacion ti on f.idtipoopera = ti.idtipoopera left join detafactu d on f.idfactura = d.idfactura left join articulos a on d.articulo = a.articulo "
@@ -31198,352 +31198,352 @@ ENDFUNC
 *!*	ENDFUNC 
 
 
-FUNCTION AnularEliminarComprobante
-PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
-*#/----------------------------------------
-* Función para eliminar o anular comprobantes. Se va a usar una variable para indicar el comportamiento.
-*			si la variable '_SYSVALANULAR' es 1 -> usa la tabla: 'validaanular', sino si la variable no existe o es 0 -> no usa la validación y sigue funcionando igual
-* Parametros : p_idcomproba	= ID del comprobante a anular/eliminar
-*              p_idregistro	= ID del registro a anular/eliminar
-*			   p_anulaElimina = 'A': indica que se quiere anular, 'E': indica que se quiere eliminar. Si no se pasa parámetro, se busca de eliminar o anular	
-*			   p_conexion	= Conexión a la base de datos, si se pasa la conexión 
-* RETURN: 0: si no se anuló/eliminó, 1: si se elimino, 2: si se anuló
+*!*	FUNCTION AnularEliminarComprobante
+*!*	PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
+*!*	*#/----------------------------------------
+*!*	* Función para eliminar o anular comprobantes. Se va a usar una variable para indicar el comportamiento.
+*!*	*			si la variable '_SYSVALANULAR' es 1 -> usa la tabla: 'validaanular', sino si la variable no existe o es 0 -> no usa la validación y sigue funcionando igual
+*!*	* Parametros : p_idcomproba	= ID del comprobante a anular/eliminar
+*!*	*              p_idregistro	= ID del registro a anular/eliminar
+*!*	*			   p_anulaElimina = 'A': indica que se quiere anular, 'E': indica que se quiere eliminar. Si no se pasa parámetro, se busca de eliminar o anular	
+*!*	*			   p_conexion	= Conexión a la base de datos, si se pasa la conexión 
+*!*	* RETURN: 0: si no se anuló/eliminó, 1: si se elimino, 2: si se anuló
 
-** Pido autorización para anulación de comprobantes **
+*!*	** Pido autorización para anulación de comprobantes **
 
-	IF pedirautorizacion(SYS(16),"ANULACION DE COMPROBANTES - FACTURACION ")  = .f.
-		MESSAGEBOX("No está autorizado para Anular / Eliminar comprobantes",0+48+256,"Anular/Eliminar comprobates")
-		RETURN 0
-	ENDIF
+*!*		IF pedirautorizacion(SYS(16),"ANULACION DE COMPROBANTES - FACTURACION ")  = .f.
+*!*			MESSAGEBOX("No está autorizado para Anular / Eliminar comprobantes",0+48+256,"Anular/Eliminar comprobates")
+*!*			RETURN 0
+*!*		ENDIF
 
-** Controlo parámetros **
+*!*	** Controlo parámetros **
 
-	IF TYPE('p_idocomproba') <> 'N' or TYPE('p_idregistro') <> 'N'
-		MESSAGEBOX("Parámetros de la función 'AnularEliminarComprobante' incorrectos [1,2]",0+48+256,"Anular/Eliminar comprobates")
-		RETURN 0
-	ENDIF 
+*!*		IF TYPE('p_idocomproba') <> 'N' or TYPE('p_idregistro') <> 'N'
+*!*			MESSAGEBOX("Parámetros de la función 'AnularEliminarComprobante' incorrectos [1,2]",0+48+256,"Anular/Eliminar comprobates")
+*!*			RETURN 0
+*!*		ENDIF 
 
-	v_anulaElimina 	= "I"
-	v_aetabla 		= ""
-
-
-	IF TYPE('p_anulaElimina') = 'C'
-		v_anulaElimina = ALLTRIM(p_anulaElimina)
-	ENDIF 
+*!*		v_anulaElimina 	= "I"
+*!*		v_aetabla 		= ""
 
 
+*!*		IF TYPE('p_anulaElimina') = 'C'
+*!*			v_anulaElimina = ALLTRIM(p_anulaElimina)
+*!*		ENDIF 
 
-	IF TYPE("p_conexion") = 'N' THEN 
-		IF p_conexion> 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
-			vconeccionFN = p_conexion
-		ELSE 
-			vconeccionFN = abreycierracon(0,_SYSSCHEMA)
-		ENDIF 	
-	ELSE 
-		vconeccionFN = abreycierracon(0,_SYSSCHEMA)	
-		p_conn = 0
-	ENDIF 
 
-** Obtengo la tabla del comprobante pasado **
 
-	sqlmatriz(1)= " select tabla "
-	sqlmatriz(2)= " from comprobantes "
-	sqlmatriz(3)= " where idcomproba = "+ALLTRIM(STR(p_idcomproba))
+*!*		IF TYPE("p_conexion") = 'N' THEN 
+*!*			IF p_conexion> 0 THEN && Se le Paso la Conexion entonces no abre ni cierra 
+*!*				vconeccionFN = p_conexion
+*!*			ELSE 
+*!*				vconeccionFN = abreycierracon(0,_SYSSCHEMA)
+*!*			ENDIF 	
+*!*		ELSE 
+*!*			vconeccionFN = abreycierracon(0,_SYSSCHEMA)	
+*!*			p_conn = 0
+*!*		ENDIF 
 
-	verror=sqlrun(vconeccionFN,"aecomprobante_sql")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante",0+48+0,"Anular/Eliminar comprobates")
-	     =abreycierracon(vconeccionFN,"")
-	    RETURN 0
-	ENDIF
+*!*	** Obtengo la tabla del comprobante pasado **
 
-	SELECT aecomprobante_sql
-	GO top
+*!*		sqlmatriz(1)= " select tabla "
+*!*		sqlmatriz(2)= " from comprobantes "
+*!*		sqlmatriz(3)= " where idcomproba = "+ALLTRIM(STR(p_idcomproba))
 
-	IF NOT EOF()
+*!*		verror=sqlrun(vconeccionFN,"aecomprobante_sql")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante",0+48+0,"Anular/Eliminar comprobates")
+*!*		     =abreycierracon(vconeccionFN,"")
+*!*		    RETURN 0
+*!*		ENDIF
 
-		v_aetabla = ALLTRIM(aecomprobante_sql.tabla)
+*!*		SELECT aecomprobante_sql
+*!*		GO top
 
-	ENDIF 
+*!*		IF NOT EOF()
 
-	IF ALLTRIM(v_aetabla) =='anularp' OR ALLTRIM(v_aetabla) =='cajamovip' THEN 
-		RETURN 0
-	ENDIF 
+*!*			v_aetabla = ALLTRIM(aecomprobante_sql.tabla)
 
-** Obtengo el nombre del campo indice **
+*!*		ENDIF 
 
-	v_aenomindice = obtenerCampoIndice(v_aetabla)
+*!*		IF ALLTRIM(v_aetabla) =='anularp' OR ALLTRIM(v_aetabla) =='cajamovip' THEN 
+*!*			RETURN 0
+*!*		ENDIF 
 
-	v_tipoInd = TYPE('p_idregistro')
+*!*	** Obtengo el nombre del campo indice **
 
-	
+*!*		v_aenomindice = obtenerCampoIndice(v_aetabla)
 
-	IF TYPE('_SYSVALANULAR') = 'N'
-		** Valido que pueda anular / eliminar según variable '_SYSVALANULAR'
-		IF _SYSVALANULAR = 1
-			v_puedeAE = 0 
-			DO CASE
-				CASE ALLTRIM(_SYSVALANULAR) = 'A'
-					v_puedeAnular = puedeAnular(v_aetabla, v_aenomindice , p_idregistro,v_tipoInd)
-					IF v_puedeAnular = .T.
-						v_puedeAE = 1
-					ELSE
-						v_puedeAE = 0
-					ENDIF 
-				CASE ALLTRIM(_SYSVALANULAR) = 'E'
-*!*						v_puedeEliminar = puedeEliminar(v_aetabla, v_aenomindice , p_idregistro,v_tipoInd)
-*!*						
-*!*						IF v_puedeEliminar = .T.
-*!*							v_puedeAE = 2
+*!*		v_tipoInd = TYPE('p_idregistro')
+
+*!*		
+
+*!*		IF TYPE('_SYSVALANULAR') = 'N'
+*!*			** Valido que pueda anular / eliminar según variable '_SYSVALANULAR'
+*!*			IF _SYSVALANULAR = 1
+*!*				v_puedeAE = 0 
+*!*				DO CASE
+*!*					CASE ALLTRIM(_SYSVALANULAR) = 'A'
+*!*						v_puedeAnular = puedeAnular(v_aetabla, v_aenomindice , p_idregistro,v_tipoInd)
+*!*						IF v_puedeAnular = .T.
+*!*							v_puedeAE = 1
 *!*						ELSE
 *!*							v_puedeAE = 0
 *!*						ENDIF 
-					
-				CASE ALLTRIM(_SYSVALANULAR) = 'I'
-					v_puedeAnular = puedeAnular(v_aetabla, v_aenomindice , p_idregistro,v_tipoInd)
-					IF v_puedeAnular = .T.
-						v_puedeAE = 1
-					ELSE
-						v_puedeAE = 0
-					ENDIF 
-				OTHERWISE
-					MESSAGEBOX("Parámetros de la función 'AnularEliminarComprobante' incorrectos [3]",0+48+256,"Anular/Eliminar comprobates")
-					RETURN 0
-			ENDCASE
+*!*					CASE ALLTRIM(_SYSVALANULAR) = 'E'
+*!*	*!*						v_puedeEliminar = puedeEliminar(v_aetabla, v_aenomindice , p_idregistro,v_tipoInd)
+*!*	*!*						
+*!*	*!*						IF v_puedeEliminar = .T.
+*!*	*!*							v_puedeAE = 2
+*!*	*!*						ELSE
+*!*	*!*							v_puedeAE = 0
+*!*	*!*						ENDIF 
+*!*						
+*!*					CASE ALLTRIM(_SYSVALANULAR) = 'I'
+*!*						v_puedeAnular = puedeAnular(v_aetabla, v_aenomindice , p_idregistro,v_tipoInd)
+*!*						IF v_puedeAnular = .T.
+*!*							v_puedeAE = 1
+*!*						ELSE
+*!*							v_puedeAE = 0
+*!*						ENDIF 
+*!*					OTHERWISE
+*!*						MESSAGEBOX("Parámetros de la función 'AnularEliminarComprobante' incorrectos [3]",0+48+256,"Anular/Eliminar comprobates")
+*!*						RETURN 0
+*!*				ENDCASE
 
-			IF v_puedeAE  = 0
-				MESSAGEBOX("El comprobante no se puede Anular/Eliminar",0+64+256,"Anular/Eliminar comprobates")
-				RETURN 0 
-			ENDIF 
-			
-		ENDIF 
-	ELSE
-		_SYSVALANULAR= 0	
-	ENDIF 
+*!*				IF v_puedeAE  = 0
+*!*					MESSAGEBOX("El comprobante no se puede Anular/Eliminar",0+64+256,"Anular/Eliminar comprobates")
+*!*					RETURN 0 
+*!*				ENDIF 
+*!*				
+*!*			ENDIF 
+*!*		ELSE
+*!*			_SYSVALANULAR= 0	
+*!*		ENDIF 
 
-	
-	
-	
-	
-	**************
-	
-	aeestadosObjc		= CREATEOBJECT('estadosclass')
-		
-	v_eliminarComp = IIF(v_puedeAE = 2,.T.,.F.) && INDICA si se va a eliminar el comprobante, Falso: no se elimina (Puede que se anule, depende las condiciones); Verdadero: Se elimina el registro de la base de datos
-
-
-*!*	v_idcomp	= grillaComp.idregistro
-*!*	v_idcomproba = grillaComp.idcomproba
-*!*	v_numero	= ALLTRIM(grillaComp.tipo)+ALLTRIM(grillaComp.puntov)+' - '+ALLTRIM(STRTRAN(STR((grillaComp.numero),8,0),' ','0'))
-
-
-v_estadoAnulado 	= aeestadosObjc.getIdestado("ANULADO")
-v_estadoRechazado 	= aeestadosObjc.getIdestado("RECHAZADO")
-v_estadoError 		= aeestadosObjc.getIdestado("ERROR")
-v_estadoPendiente 	= aeestadosObjc.getIdestado("PENDIENTE AUTORIZACION")
-v_estadoActivo   	= aeestadosObjc.getIdestado("ACTIVO")
-v_estadoAutorizado	= aeestadosObjc.getIdestado("AUTORIZADO")	
-
-	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
-	sqlmatriz(1)= "SELECT id as idcomp, fechaest as fecha, idestador "
-	sqlmatriz(2)= " FROM ultimoestado "
-	sqlmatriz(3)= " where tabla = '"+ALLTRIM(v_aetabla)+"' and campo = '"+ALLTRIM(v_aenomindice)+"' and (idestador = "+ALLTRIM(STR(v_estadoPendiente))+" or idestador = "+ALLTRIM(STR(v_estadoAnulado ))+" or idestador = "+ALLTRIM(STR(v_estadoRechazado)) +") and id = '"+ ALLTRIM(STR(p_idregistro))+"'"
-
-	verror=sqlrun(vconeccionFN,"ComAnuRec_sql")
-	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error al Buscar estado del comprobante",0+48+0,"Anular/Eliminar comprobates")
-	    RETURN 
-	ENDIF	
-
-v_fechaAnulado = ""
- SELECT ComAnuRec_sql
- GO top
- 
- IF NOT EOF()
- 	v_estador = ComAnuRec_sql.idestador
- 	DO CASE
-	 	CASE v_estador = v_estadoAnulado
- 			MESSAGEBOX("El comprobante ya esta Anulado.",0+48+0,"Anulación de Comprobante")
- 			v_eliminarComp = .F.
-			RETURN 
- 		CASE v_estador = v_estadoRechazado
-			v_eliminarComp = .T.
- 		CASE v_estador = v_estadoPendiente
-			v_eliminarComp = .T.
-	 	OTHERWISE
-			v_eliminarComp = .F.
- 	ENDCASE
- 
- ELSE
- 	v_eliminarComp = .F.
- ENDIF 
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		**************
+*!*		
+*!*		aeestadosObjc		= CREATEOBJECT('estadosclass')
+*!*			
+*!*		v_eliminarComp = IIF(v_puedeAE = 2,.T.,.F.) && INDICA si se va a eliminar el comprobante, Falso: no se elimina (Puede que se anule, depende las condiciones); Verdadero: Se elimina el registro de la base de datos
 
 
-	IF v_eliminarComp = .T. &&Elimina el comprobante de la Base de Datos
-		sino=MESSAGEBOX("¿Confirma la ELIMINACIÓN del Comprobante Nro:"+CHR(13)+CHR(13)+alltrim(v_numero),4+32+256,"Confirmar")
-		IF sino<> 6 THEN 
-			* no hago nada
-		ELSE
-
-			DO CASE
-				CASE ALLTRIM(thisform.tabla) == 'facturas' AND (v_estadoRechazado = v_estador OR v_estadoError = v_estador OR v_estadoPendiente = v_estador )
-				
-					**************************************************************************	
-					* Elimino el Asiento Contable si se contabilizo la Factura  
-					* Que ya ha sido Contabilizado 
-					*
-					IF ALLTRIM(thisform.tabla) == 'facturas' THEN 
-						IF grillaComp.idasiento > 0 THEN 
-							v_eliasiento = EliminaAsientoC(grillaComp.idasiento)
-							IF v_eliasiento <> 0 THEN 
-								MESSAGEBOX("El comprobante no se puede anular porque el Asiento Asociado pertenece a otro Ejercicio.",0+48+0,"Anulación de Comprobante")
-								RETURN 
-							ENDIF 
-						ENDIF 
-						
-					ENDIF 
-					**************************************************************************	
-				
-					v_ret = eliminarRegistros("facturas","idfactura",v_idcomp)
-					
-					IF v_ret THEN 
-						MESSAGEBOX("Se ha eliminado el registro correctamente",0+64+0,"Registro eliminado")
-					ENDIF 
-				CASE ALLTRIM(thisform.tabla) == 'pagares'
-
-					vconeccionF = abreycierracon(0,_SYSSCHEMA)
-
-					sqlmatriz(1)="delete from linkcompro where idregistroa = " + ALLTRIM(STR(v_idcomp))+" and idcomprobaa = "+ALLTRIM(STR(v_idcomproba))
-					verror=sqlrun(vconeccionF,"eliminalink")
-					IF verror=.f.  
-					    MESSAGEBOX("Ha Ocurrido un Error al Eliminar el link del Pagare ",0+48+0,"Error")
-					    RETURN 
-					ENDIF 
-
-					sqlmatriz(1)="delete from pagares where idpagare = " + ALLTRIM(STR(v_idcomp))
-					verror=sqlrun(vconeccionF,"eliminapagare")
-					IF verror=.f.  
-					    MESSAGEBOX("Ha Ocurrido un Error al Eliminar el Pagare ",0+48+0,"Error")
-					    RETURN 
-					ENDIF 
-					= abreycierracon(vconeccionF,"")
-					
-		
-			OTHERWISE
-		
-				MESSAGEBOX("El comprobante seleccionado no se puede eliminar",0+48+0,"Error")
-				RETURN 	
-
-			ENDCASE
-
-		ENDIF 
-	
-	ELSE &&Marca el comprobante con el estado anulado
-	
-		sino=MESSAGEBOX("¿Confirma la ANULACION del Comprobante Nro:"+CHR(13)+CHR(13)+alltrim(v_numero),4+32+256,"Confirmar")
-		IF sino<> 6 THEN 
-			* no hago nada
-		ELSE 
-			* Anular
-			v_electronico = grillaComp.electro
-			IF v_electronico == 'S'
-				MESSAGEBOX("El comprobante no se puede anular porque es un comprobante electrónico.",0+48+0,"Anulación de Comprobante")
-				RETURN 
-			ELSE
-			
-			
-				* Generacion del comprobante de anulacion para recibos y ordenes de pago
-				* Este comprobante anula el recibo u orden de pago con un contra-movimiento
-				IF ALLTRIM(thisform.tabla) = 'recibos' OR ALLTRIM(thisform.tabla) = 'pagosprov' THEN 
-					v_anular = AnularRP(grillaComp.idcomproba,grillaComp.idregistro,grillaComp.entidad)
-					IF !v_anular THEN 
-						RETURN 
-					ENDIF 
-				ENDIF 
-
-				
-				IF ALLTRIM(thisform.tabla) = 'transferencias'   THEN 
-				
-					 vnewTransfe = AnularTransfe(grillaComp.idregistro)
-				
-				ENDIF 
+*!*	*!*	v_idcomp	= grillaComp.idregistro
+*!*	*!*	v_idcomproba = grillaComp.idcomproba
+*!*	*!*	v_numero	= ALLTRIM(grillaComp.tipo)+ALLTRIM(grillaComp.puntov)+' - '+ALLTRIM(STRTRAN(STR((grillaComp.numero),8,0),' ','0'))
 
 
-				IF ALLTRIM(thisform.tabla) = 'remitos'   THEN 
-					 v_anularRe = AnularRemitos(grillaComp.idregistro)
-					 MESSAGEBOX(v_anularRe)
-				ENDIF 
-				
+*!*	v_estadoAnulado 	= aeestadosObjc.getIdestado("ANULADO")
+*!*	v_estadoRechazado 	= aeestadosObjc.getIdestado("RECHAZADO")
+*!*	v_estadoError 		= aeestadosObjc.getIdestado("ERROR")
+*!*	v_estadoPendiente 	= aeestadosObjc.getIdestado("PENDIENTE AUTORIZACION")
+*!*	v_estadoActivo   	= aeestadosObjc.getIdestado("ACTIVO")
+*!*	v_estadoAutorizado	= aeestadosObjc.getIdestado("AUTORIZADO")	
 
-				IF ALLTRIM(thisform.tabla) = 'costop'   THEN 
-				
-					IF grillaComp.idasiento > 0 THEN 
-						v_eliasiento = EliminaAsientoC(grillaComp.idasiento)
-						IF v_eliasiento <> 0 THEN 
-							MESSAGEBOX("El comprobante no se puede anular porque el Asiento Asociado pertenece a otro Ejercicio.",0+48+0,"Anulación de Comprobante")
-							RETURN 
-						ENDIF 
-					ENDIF 						
-				ENDIF 
-				
-				
-				IF ALLTRIM(thisform.tabla) = 'cajaie' THEN 
-				
-					v_idregAnul = anularCajaIE(grillaComp.idregistro)
-					
-					IF v_idregAnul <= 0
-					
-						MESSAGEBOX("El comprobante no se pudo anular",0+48+0,"Error al anular el comprobante")
-						RETURN
-					
-					ENDIF 
-					
-				ELSE
-					
-					**************************************************************************	
-					
-					IF !(ALLTRIM(thisform.tabla) = 'transferencias') THEN 
-						v_tab 	= ALLTRIM(thisform.tabla)
-						v_nomId	= ALLTRIM(thisform.nomindice)
-						registrarEstado(v_tab ,v_nomId,v_idcomp,'I',"ANULADO")
-						
-					ENDIF 
-				ENDIF 
-				
-				
-			
-			ENDIF 
-	
-		ENDIF 
+*!*		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+*!*		sqlmatriz(1)= "SELECT id as idcomp, fechaest as fecha, idestador "
+*!*		sqlmatriz(2)= " FROM ultimoestado "
+*!*		sqlmatriz(3)= " where tabla = '"+ALLTRIM(v_aetabla)+"' and campo = '"+ALLTRIM(v_aenomindice)+"' and (idestador = "+ALLTRIM(STR(v_estadoPendiente))+" or idestador = "+ALLTRIM(STR(v_estadoAnulado ))+" or idestador = "+ALLTRIM(STR(v_estadoRechazado)) +") and id = '"+ ALLTRIM(STR(p_idregistro))+"'"
 
-	ENDIF 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-ENDFUNC 
+*!*		verror=sqlrun(vconeccionFN,"ComAnuRec_sql")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error al Buscar estado del comprobante",0+48+0,"Anular/Eliminar comprobates")
+*!*		    RETURN 
+*!*		ENDIF	
+
+*!*	v_fechaAnulado = ""
+*!*	 SELECT ComAnuRec_sql
+*!*	 GO top
+*!*	 
+*!*	 IF NOT EOF()
+*!*	 	v_estador = ComAnuRec_sql.idestador
+*!*	 	DO CASE
+*!*		 	CASE v_estador = v_estadoAnulado
+*!*	 			MESSAGEBOX("El comprobante ya esta Anulado.",0+48+0,"Anulación de Comprobante")
+*!*	 			v_eliminarComp = .F.
+*!*				RETURN 
+*!*	 		CASE v_estador = v_estadoRechazado
+*!*				v_eliminarComp = .T.
+*!*	 		CASE v_estador = v_estadoPendiente
+*!*				v_eliminarComp = .T.
+*!*		 	OTHERWISE
+*!*				v_eliminarComp = .F.
+*!*	 	ENDCASE
+*!*	 
+*!*	 ELSE
+*!*	 	v_eliminarComp = .F.
+*!*	 ENDIF 
+
+
+*!*		IF v_eliminarComp = .T. &&Elimina el comprobante de la Base de Datos
+*!*			sino=MESSAGEBOX("¿Confirma la ELIMINACIÓN del Comprobante Nro:"+CHR(13)+CHR(13)+alltrim(v_numero),4+32+256,"Confirmar")
+*!*			IF sino<> 6 THEN 
+*!*				* no hago nada
+*!*			ELSE
+
+*!*				DO CASE
+*!*					CASE ALLTRIM(thisform.tabla) == 'facturas' AND (v_estadoRechazado = v_estador OR v_estadoError = v_estador OR v_estadoPendiente = v_estador )
+*!*					
+*!*						**************************************************************************	
+*!*						* Elimino el Asiento Contable si se contabilizo la Factura  
+*!*						* Que ya ha sido Contabilizado 
+*!*						*
+*!*						IF ALLTRIM(thisform.tabla) == 'facturas' THEN 
+*!*							IF grillaComp.idasiento > 0 THEN 
+*!*								v_eliasiento = EliminaAsientoC(grillaComp.idasiento)
+*!*								IF v_eliasiento <> 0 THEN 
+*!*									MESSAGEBOX("El comprobante no se puede anular porque el Asiento Asociado pertenece a otro Ejercicio.",0+48+0,"Anulación de Comprobante")
+*!*									RETURN 
+*!*								ENDIF 
+*!*							ENDIF 
+*!*							
+*!*						ENDIF 
+*!*						**************************************************************************	
+*!*					
+*!*						v_ret = eliminarRegistros("facturas","idfactura",v_idcomp)
+*!*						
+*!*						IF v_ret THEN 
+*!*							MESSAGEBOX("Se ha eliminado el registro correctamente",0+64+0,"Registro eliminado")
+*!*						ENDIF 
+*!*					CASE ALLTRIM(thisform.tabla) == 'pagares'
+
+*!*						vconeccionF = abreycierracon(0,_SYSSCHEMA)
+
+*!*						sqlmatriz(1)="delete from linkcompro where idregistroa = " + ALLTRIM(STR(v_idcomp))+" and idcomprobaa = "+ALLTRIM(STR(v_idcomproba))
+*!*						verror=sqlrun(vconeccionF,"eliminalink")
+*!*						IF verror=.f.  
+*!*						    MESSAGEBOX("Ha Ocurrido un Error al Eliminar el link del Pagare ",0+48+0,"Error")
+*!*						    RETURN 
+*!*						ENDIF 
+
+*!*						sqlmatriz(1)="delete from pagares where idpagare = " + ALLTRIM(STR(v_idcomp))
+*!*						verror=sqlrun(vconeccionF,"eliminapagare")
+*!*						IF verror=.f.  
+*!*						    MESSAGEBOX("Ha Ocurrido un Error al Eliminar el Pagare ",0+48+0,"Error")
+*!*						    RETURN 
+*!*						ENDIF 
+*!*						= abreycierracon(vconeccionF,"")
+*!*						
+*!*			
+*!*				OTHERWISE
+*!*			
+*!*					MESSAGEBOX("El comprobante seleccionado no se puede eliminar",0+48+0,"Error")
+*!*					RETURN 	
+
+*!*				ENDCASE
+
+*!*			ENDIF 
+*!*		
+*!*		ELSE &&Marca el comprobante con el estado anulado
+*!*		
+*!*			sino=MESSAGEBOX("¿Confirma la ANULACION del Comprobante Nro:"+CHR(13)+CHR(13)+alltrim(v_numero),4+32+256,"Confirmar")
+*!*			IF sino<> 6 THEN 
+*!*				* no hago nada
+*!*			ELSE 
+*!*				* Anular
+*!*				v_electronico = grillaComp.electro
+*!*				IF v_electronico == 'S'
+*!*					MESSAGEBOX("El comprobante no se puede anular porque es un comprobante electrónico.",0+48+0,"Anulación de Comprobante")
+*!*					RETURN 
+*!*				ELSE
+*!*				
+*!*				
+*!*					* Generacion del comprobante de anulacion para recibos y ordenes de pago
+*!*					* Este comprobante anula el recibo u orden de pago con un contra-movimiento
+*!*					IF ALLTRIM(thisform.tabla) = 'recibos' OR ALLTRIM(thisform.tabla) = 'pagosprov' THEN 
+*!*						v_anular = AnularRP(grillaComp.idcomproba,grillaComp.idregistro,grillaComp.entidad)
+*!*						IF !v_anular THEN 
+*!*							RETURN 
+*!*						ENDIF 
+*!*					ENDIF 
+
+*!*					
+*!*					IF ALLTRIM(thisform.tabla) = 'transferencias'   THEN 
+*!*					
+*!*						 vnewTransfe = AnularTransfe(grillaComp.idregistro)
+*!*					
+*!*					ENDIF 
+
+
+*!*					IF ALLTRIM(thisform.tabla) = 'remitos'   THEN 
+*!*						 v_anularRe = AnularRemitos(grillaComp.idregistro)
+*!*						 MESSAGEBOX(v_anularRe)
+*!*					ENDIF 
+*!*					
+
+*!*					IF ALLTRIM(thisform.tabla) = 'costop'   THEN 
+*!*					
+*!*						IF grillaComp.idasiento > 0 THEN 
+*!*							v_eliasiento = EliminaAsientoC(grillaComp.idasiento)
+*!*							IF v_eliasiento <> 0 THEN 
+*!*								MESSAGEBOX("El comprobante no se puede anular porque el Asiento Asociado pertenece a otro Ejercicio.",0+48+0,"Anulación de Comprobante")
+*!*								RETURN 
+*!*							ENDIF 
+*!*						ENDIF 						
+*!*					ENDIF 
+*!*					
+*!*					
+*!*					IF ALLTRIM(thisform.tabla) = 'cajaie' THEN 
+*!*					
+*!*						v_idregAnul = anularCajaIE(grillaComp.idregistro)
+*!*						
+*!*						IF v_idregAnul <= 0
+*!*						
+*!*							MESSAGEBOX("El comprobante no se pudo anular",0+48+0,"Error al anular el comprobante")
+*!*							RETURN
+*!*						
+*!*						ENDIF 
+*!*						
+*!*					ELSE
+*!*						
+*!*						**************************************************************************	
+*!*						
+*!*						IF !(ALLTRIM(thisform.tabla) = 'transferencias') THEN 
+*!*							v_tab 	= ALLTRIM(thisform.tabla)
+*!*							v_nomId	= ALLTRIM(thisform.nomindice)
+*!*							registrarEstado(v_tab ,v_nomId,v_idcomp,'I',"ANULADO")
+*!*							
+*!*						ENDIF 
+*!*					ENDIF 
+*!*					
+*!*					
+*!*				
+*!*				ENDIF 
+*!*		
+*!*			ENDIF 
+
+*!*		ENDIF 
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*	ENDFUNC 
 
 
 
