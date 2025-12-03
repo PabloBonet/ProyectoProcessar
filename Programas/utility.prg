@@ -31008,9 +31008,9 @@ PARAMETERS p_idnp, p_conexion
 		p_conn = 0
 	ENDIF 
 
-	sqlmatriz(1)= " select idnp, group_concat(sector) as sectores "
+	sqlmatriz(1)= " select ifnull(idnp, 0) as idnp, ifnull(group_concat(sector),' ') as sectores "
 	sqlmatriz(2)= " from ( "
-	sqlmatriz(3)= " select idnp, sector  "
+	sqlmatriz(3)= " select idnp , sector  "
 	sqlmatriz(4)= " from ot o left join otsector s on o.idot = s.idot left join sector e on s.idsector = e.idsector  "
 	sqlmatriz(5)= " where idnp = "+ALLTRIM(STR(p_idnp))+" group by idnp, sector) as gruponp "
 
@@ -31037,6 +31037,74 @@ PARAMETERS p_idnp, p_conexion
 
 	RETURN v_retorno 
 
+ENDFUNC 
+
+
+
+FUNCTION GeneraQR
+PARAMETERS pqr_contenido, pqr_archivoqr,  pqr_tablatmp, pqr_campoqr
+*#/------------------------------------------------
+* Genera un archivo .bmp con el nombre en pqr_archivoqr y el contenido en pqr_contenido
+* Parametros : pqr_archivoqr	= Nombre del Archivo con el que se generará el 	QR
+*              pqr_contenido	= Contenido con el cual se va agenerar un QR
+*			   pqr_tablatmp		= Opciona, Tabla temporaria para guardar el nombre completo y ubicacion del archivo qr generado
+*			   pqr_campoqr		= Opciona, Nombre del Campo en la tabla temporaria para guardar el nombre completo y ubicacion del archivo qr generado
+*RETURN: Devielve el Path completo y nombre del archivo generado}
+
+	IF EMPTY(ALLTRIM(pqr_contenido)) THEN 
+		RETURN ""
+	ENDIF 
+	IF !(TYPE("pqr_tablatmp")="C") THEN 
+		pqr_tablatmp = ""
+	ENDIF 
+	IF !(TYPE("pqr_campoqr")="C") THEN 
+		pqr_campoqr= ""
+	ENDIF 
+	IF !(TYPE("pqr_archivoqr")="C") THEN 
+		pqr_archivoqr= ""
+	ENDIF 
+	IF EMPTY(ALLTRIM(pqr_archivoqr)) THEN 
+		pqr_archivoqr= "QR_generado"
+	ENDIF 
+
+	*** Genero Código QR ***	
+	PRIVATE poFbc
+	poFbcQR = CREATEOBJECT("FoxBarcodeQR")
+							
+	poFbcQR.nBackColor 			= RGB(255,255,255) && White
+	poFbcQR.nBarColor 			= RGB(0,0,0) && Black
+	poFbcQR.nCorrectionLevel 	= 0 && Medium 15%
+	  
+	v_ubicacionImagenQR = _SYSESTACION+"\"+ALLTRIM(pqr_archivoqr)
+	v_codImgQR			= poFbcQR.FullQRCodeImage(ALLTRIM(pqr_contenido),v_ubicacionImagenQR,250)
+	v_ubicacionImAgenQR = v_ubicacionImagenQR+".bmp"
+
+	IF !EMPTY(pqr_tablatmp) THEN 
+		v_tablaabierta = USED(pqr_tablatmp)
+		IF !v_tablaabierta  THEN 
+			USE &pqr_tablatmp IN 0 EXCLUSIVE 
+		ENDIF 
+		IF EMPTY(pqr_campoqr) THEN 		
+			pqr_campoqr = "QRFILE"
+		ENDIF 
+
+		SELECT &pqr_tablatmp 
+		=AFIELDS(lpqr_Campos)
+		
+		IF ASCAN(lpqr_Campos,pqr_campoqr) = 0  THEN 
+			ALTER TABLE  &pqr_tablatmp ADD COLUMN &pqr_campoqr C(200)
+		ENDIF 
+		RELEASE lpqr_Campos
+		replace ALL &pqr_campoqr WITH v_ubicacionImAgenQR 
+		
+		IF !v_tablaabierta  THEN 
+			USE IN &pqr_tablatmp
+		ENDIF 
+		
+	ENDIF 
+	
+	RELEASE poFbcQR
+	RETURN v_ubicacionImAgenQR 
 ENDFUNC 
 
 
