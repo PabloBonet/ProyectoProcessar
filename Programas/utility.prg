@@ -1967,6 +1967,21 @@ LOCAL loException AS Exception
 					ENDIF 
 						
 					
+					*** Para el caso que esté Autorizado, elimino los Rechazados de esa factura ***
+					
+					sqlmatriz(1)=" delete from facturasfe where idfactura = "+ALLTRIM(STR(v_idfactura))+" and resultado = 'R' "
+					
+					verror=sqlrun(vconeccion,"eliminofacfe_sql")
+					IF verror=.f.  
+						IF p_nomsg = .f. THEN 
+						    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la facturasFE",0+48+0,"Error")
+					   	ENDIF 
+					    v_autorizar = .F.
+					    RETURN v_autorizar 
+					ELSE
+					
+					ENDIF 
+			
 					
 				ELSE
 					registrarEstado("facturas","idfactura",v_idfactura,'I',"RECHAZADO")
