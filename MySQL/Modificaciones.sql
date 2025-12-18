@@ -839,3 +839,27 @@ ALTER TABLE `detafactu` ADD INDEX `idfactura`(`idfactura`), ADD INDEX `articulo`
 
 ALTER TABLE `sectorcomp` ADD COLUMN `stock` CHAR(1) NOT NULL DEFAULT 'N' AFTER `idcomproba`;
 
+
+--20251217--
+CREATE TABLE `compcai` (
+  `idcompcai` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `idcompactiv` INTEGER UNSIGNED NOT NULL,
+  `cai` CHAR(100) NOT NULL,
+  `nromin` INTEGER UNSIGNED NOT NULL,
+  `nromax` INTEGER UNSIGNED NOT NULL,
+  `vtocai` CHAR(8) NOT NULL,
+  PRIMARY KEY (`idcompcai`)
+)
+ENGINE = InnoDB;
+
+
+ALTER TABLE `compcai` ADD INDEX `idcompactiv`(`idcompactiv`);
+
+ALTER TABLE `compactiv` ADD INDEX `idcomproba`(`idcomproba`), ADD INDEX `pventa`(`pventa`);
+
+
+ALTER TABLE `remitos` MODIFY COLUMN `cai` CHAR(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT ' ',
+ MODIFY COLUMN `caiven` CHAR(8) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT ' ';
+
+
+
