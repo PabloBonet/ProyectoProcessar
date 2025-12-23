@@ -7649,6 +7649,7 @@ vconeccionA=abreycierracon(0,_SYSSCHEMA)
 	*** Busco los comprobantes y sus respectivos puntos de venta 
 	sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla, t.pventa, "
 	sqlmatriz(2)=" t.puntov from comprobantes c left join compactiv t on c.idcomproba = t.idcomproba "
+*	sqlmatriz(3)=" where c.idcomproba = "+ALLTRIM(STR(v_idcomproba))
 	verror=sqlrun(vconeccionA,"Comprobantes_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de comprobantes ",0+48+0,"Error")
@@ -7664,8 +7665,10 @@ IF EMPTY(ALLTRIM(v_tablaDatos)) = .T. AND v_idcomproba > 0 AND EMPTY(ALLTRIM(v_n
 	SELECT comprobantes_sql
 	GO TOP 
 	IF NOT EOF()
-	
-		v_tablaAsociada = comprobantes_sql.tabla
+
+		SELECT * FROM comprobantes_sql WHERE idcomproba = v_idcomproba INTO cursor compSelecc00
+		v_tablaAsociada = compSelecc00.tabla
+		USE IN compSelecc00
 	
 	
 		DO CASE
@@ -7678,8 +7681,8 @@ IF EMPTY(ALLTRIM(v_tablaDatos)) = .T. AND v_idcomproba > 0 AND EMPTY(ALLTRIM(v_n
 
 				
 			CASE ALLTRIM(v_tablaAsociada) == "remitos"
-				sqlmatriz(1)=" Select articulo, cantidad, 1 as deposito "
-				sqlmatriz(2)=" remitosh d left join remitos f on d.idremito = f.idremito "
+				sqlmatriz(1)=" Select articulo, cantidad, 1 as deposito, f.fecha "
+				sqlmatriz(2)=" from remitosh d left join remitos f on d.idremito = f.idremito "
 				sqlmatriz(3)=" where d."+ALLTRIM(v_nombreCampo)+ " = " +ALLTRIM(STR(v_idregistro))
 				
 
@@ -28205,7 +28208,7 @@ PARAMETERS pren_tipoAsi, pren_desde, pren_hasta, pren_inicial, pa_conexion
 		v_campo_asiento = "idasiento"
 		
 	ELSE
-		sqlmatriz(1)=" Select g.idasientog as ida , g.numero, g.fecha, a.idtipoasi, t.detalle as detatipo  from asientosg g "
+		sqlmatriz(1)=" Select g.idasientog as ida , g.numero, g.fecha, a.idtipoasi, t.detalle as detatipo, t.orden  from asientosg g "
 		sqlmatriz(2)=" left join asientos a on a.idasiento = g.idasiento "
 		sqlmatriz(3)=" left join tipoasiento t on t.idtipoasi = a.idtipoasi "
 		sqlmatriz(4)=" where g.fecha >= '"+alltrim(pren_desde)+"' and g.fecha <= '"+alltrim(pren_hasta)+"'"
@@ -28225,7 +28228,9 @@ PARAMETERS pren_tipoAsi, pren_desde, pren_hasta, pren_inicial, pa_conexion
 	    RETURN .F.
 	ENDIF 	
 
-	SELECT *, IIF(ALLTRIM(detatipo)=='APERTURA' ,"A",IIF(ALLTRIM(detatipo)=='CIERRE' ,"Z","B")) AS tipo , ;
+*	SELECT *, IIF(ALLTRIM(detatipo)=='APERTURA' ,"A",IIF(ALLTRIM(detatipo)=='CIERRE' ,"Z","B")) AS tipo , 
+
+	SELECT *, ALLTRIM(orden) AS tipo , ;
 	STRTRAN(STR(ida,13),' ','0') as idasi, 100000000 AS numerado  ;
 	FROM numasientos_sql INTO TABLE numeraasientos 
 	
