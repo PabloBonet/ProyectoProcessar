@@ -7221,6 +7221,29 @@ PARAMETERS p_idremito, p_esElectronica
 	v_esElectronica = p_esElectronica 
 
 	IF v_idremito > 0
+	
+	
+			** Veo si mando el remito a pdf o genero un txt ***
+			
+			IF TYPE('_SYSUBIREMITOMAT') = 'C'
+				
+				IF EMPTY(ALLTRIM(_SYSUBIREMITOMAT)) = .F.
+					
+					p_ubicacion = ALLTRIM(_SYSUBIREMITOMAT)
+					
+					v_ret = imprimirRemitoMatricial(p_idremito, p_ubicacion)
+									
+					RETURN 
+					
+				ENDIF 
+								
+			ENDIF 
+		
+		
+		
+		
+		
+		
 		
 		*** Busco los datos de la factura y el detalle
 *!*			IF v_esElectronica  = .T.
@@ -7408,6 +7431,461 @@ PARAMETERS p_idremito, p_esElectronica
 	ENDIF 
 
 ENDFUNC 
+
+
+
+
+FUNCTION imprimirRemitoMatricial
+PARAMETERS p_idremito, p_ubicacion
+*#/****************************
+* FUNCIÓN PARA IMPRIMIR UN REMITO EN LA IMPRESORA MATRICIAL. GENERA UN TXT, EL CUAL VA A LEER LA IMPRESORA, NO IMPRIME DIRECTAMENTE
+* PARAMETROS: 	p_idremito: ID del remito
+*				p_ubicacion: Ubicación del txt desde donde la impresora va a leer
+* La función genera un txt en la ubicación indicada para imprimir el remito
+* Retorna True: si se genero el TXT correctamente, False en otro caso
+*#/****************************
+
+
+
+	IF TYPE('p_idremito') <> 'N'
+		MESSAGEBOX("Parametro 'P_IDREMITO' incorrecto",0+16+256,"Imprimir Remito")
+		RETURN .F.
+	ENDIF 
+
+
+	IF TYPE('p_ubicacion') <> 'C'
+		MESSAGEBOX("Parametro 'P_UBICACION' incorrecto",0+16+256,"Imprimir Remito")
+		RETURN .F.
+	ENDIF 
+
+	CREATE TABLE TmpGrilla FREE (fecha D, idnumero I, desctipo c(25), cantsoli i, cantotint i, detalle c(150), ;
+									facturada I, cumplida i, cargar i, tipoot c(2), idartp i, subtipo c(2), definida c(1), ;
+									pesofactu y, idotint I, codigo c(25), nroreng I, propiedad i, nomprop c(80),  ;
+									codvalor c(10), nomvalor c(80), color c(10), nomcolor c(80), sremitoaso c(4), ;
+									nremitoaso i, nrootclien c(15), clientego c(20), razonsocgo c(100), piezxpaqgo i, ;
+									codigoart c(40), nombreart c(100), kgscalcu y )
+	INDEX ON idnumero TAG IDNUMERO
+	INDEX ON idotint  TAG idotint
+	INDEX ON detalle  TAG detalle
+	SET ORDER TO detalle
+	GO TOP 
+
+
+******************************
+** Variables para Impresión **
+******************************
+	LOCAL v_fecharemi,v_Sucursal,v_Cliente,v_Nombre,v_Domicilio,v_CondIva,v_Cuit,V_SUCTRANSPO,V_TRANSPORTE,V_NOMTRANS,v_entrega,v_condvta,v_pie1,v_pie2,v_pie3,v_pie4
+	LOCAL v_formapago1, v_formapago2, v_formapago3, v_formapago4, v_formapago5, v_formapago6, v_formapago7
+	LOCAL I_SQLFlagErrorTrans,SQLFlagErrorTrans
+
+	v_charSc=SETMP(15) && Selecciona Modo Condensado
+	v_charCc=SETMP(18) && Cancela Modo Condensado
+	v_charSn=SETMP(69) && Selecciona Negrita
+	v_charCn=SETMP(70) && Cancela Negrita
+	v_charSt2=SETMP(14) && Selecciona Tamaño Doble
+	v_charCt2=SETMP(20) && Cancela Tamaño Doble
+	v_char6i=setmp(67)+'0'+'6' && Setea el Tamaño pagina en 6 Inches
+	v_char12i=setmp(67)+'0'+'12' && Setea el Tamaño pagina en 12 Inches
+	v_LongMax = 75 && Cantidad de caracteres que imprime en el detalle cuando el cliente es la Sucursal Rosario
+
+
+**********************************
+** Impresión de la Primer Copia **
+**********************************
+
+
+
+** Me conecto a la base de datos			
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+				
+	sqlmatriz(1)=" select e.*, s.*, r.* "
+	sqlmatriz(2)=" from linkregistro l left join cumplimentah h on l.tablaa = 'remitosh' and l.campoa = 'idremitoh' and l.tablab = 'cumplimentah' and l.campob = 'idcumph' and l.idb = h.idcumph "
+	sqlmatriz(3)=" left join cumplimentap p on h.idcump = p.idcump left join sectorcomp s on p.idcomproba = s.idcomproba left join sector r on s.idsector = r.idsector "
+	sqlmatriz(4)=" left join remitosh e on l.ida = e.idremitoh "
+	sqlmatriz(5)=" where l.tablaa = 'remitosh' and l.campoa = 'idremitoh' and l.tablab = 'cumplimentah' and l.campob = 'idcumph' and e.idremito = "+ALLTRIM(STR(p_idremito))
+								
+	verror=sqlrun(vconeccionF,"sectorComp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error al buscar el sector del remito.",0+48+0,"Error")
+		=abreycierracon(vconeccionF,"")
+		RETURN .F.
+	ENDIF 
+				
+	SELECT sectorComp_sql
+	GO TOP 
+	IF NOT EOF()
+		v_tipoNotaPedido = SUBSTR(ALLTRIM(sectorcomp_sql.sector),1,3)	
+	ELSE
+		v_tipoNotaPedido = "" 
+	ENDIF 
+				
+		
+	sqlmatriz(1)=" select p.idcomproba as idcomp, v.puntov as actividad, p.numero, '0001' as succliente, p.entidad as cliente, p.apellido as nomb_fanta,p.direccion as domi_fanta, c.detalle as iva, "
+	sqlmatriz(2)=" p.cuit, '0001' as suctranspo, p.transporte, p.nomtransp as nomtrans,p.fecha as fecharemi, if(u.idestador = 2, 'S','N') as anulado, p.direntrega as domi_entre, p.observa1 as pieremito1, "
+	sqlmatriz(3)=" p.observa2 as pieremito2,p.observa3 as pieremito3,p.observa4 as pieremito4, a.apellido as nomcarpi,ifnull(l.idb,0) as idot,ifnull(l.idb,0) as nroot, '0001' as nroserie, ifnull(t.idnp,0) as nronp, "
+	sqlmatriz(4)=" ifnull(n.fecha,'') as fechanp, ifnull(n.idnp,0) as idnp, 0 as propiedad, '' as nomprop, '' as codvalor, '' as nomvalor, '' as color, '' as nomcolor, h.cantidad as cantsoli, h.cantidad as cantfactu,  "
+	sqlmatriz(5)=" h.cantidadfc as kgfactu, 0.00 as mt2factu, ifnull(q.etiqueta,'') as etiqueta, ifnull(d.valor,'              ') as nrooc, h.articulo, h.detalle as nomarti, '01' as tipoot, "	
+	sqlmatriz(6)=" if(substr(h.articulo,1,1) = '0','04',if(substr(h.articulo,1,1) = '1' or substr(h.articulo,1,1) = '2','02','')) as subtipo "
+	sqlmatriz(7)=" from remitos p left join remitosh h on p.idremito = h.idremito "
+	sqlmatriz(8)=" left join linkregistro l on tablaa = 'remitosh' and campoa = 'idremitoh' and tablab = 'ot' and campob = 'idot' and h.idremitoh = l.ida "
+	sqlmatriz(9)=" left join ot t on l.idb = t.idot left join np n on t.idnp = n.idnp left join etiquetanp q on n.idetiqueta = q.idetiqueta "
+	sqlmatriz(10)=" left join reldatosextra r on r.tabla = 'np' and n.idnp = r.idregistro left join datosextra d on r.iddatosex = d.iddatosex and d.propiedad = 'OC' " 
+	sqlmatriz(11)=" left join puntosventa v on p.pventa = v.pventa left join entidades e on p.entidad = e.entidad left join condfiscal c on e.iva = c.iva "
+	sqlmatriz(12)=" left join ultimoestado u  on u.tabla = 'remitos' and u.campo = 'idremito' and p.idremito = u.id left join entidades a on p.entidadaso = a.entidad "
+	sqlmatriz(13)=" where p.idremito = "+ALLTRIM(STR(p_idremito))+" order by l.idb "
+
+
+	verror=sqlrun(vconeccionF,"TmpRemiAux")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error al EXAMINAR el Archivo de Cabecera de Remitos.",0+48+0,"Error")
+		=abreycierracon(vconeccionF,"")
+		RETURN .F.
+	ENDIF 
+	
+	SELECT * from TmpRemiAux INTO TABLE tmpRemi
+
+	SELECT tmpRemi 
+	GO TOP 
+	PPP_SUCCLIENTE = TmpRemi.SUCCLIENTE
+	PPP_CLIENTE    = TmpRemi.CLIENTE
+	P_NOMCARPI     = TmpRemi.NOMCARPI
+	
+	
+	
+	v_OriDup= "ORI"
+
+	FOR v_od=1 TO 2 && Para generar el remito Original y Duplicado
+
+		IF v_od = 1
+			v_OriDup= "ORI"	
+		ELSE
+			v_OriDup= "DUP"
+		ENDIF  
+
+
+		WAIT WINDOW "IMPRIMIENDO REMITO..." NOWAIT 
+			
+		* asignar valores 
+		I_NUMERO=alltrim(TmpRemi.actividad)+" - "+STRTRAN(STR((TmpRemi.numero),8,0)," ","0")
+		i_fecharemito= CTOD(SUBSTR(TmpRemi.fecharemi,7,2)+"/"+SUBSTR(TmpRemi.fecharemi,5,2)+"/"+SUBSTR(TmpRemi.fecharemi,1,4))
+		v_entrega = ALLTRIM(tmpRemi.domi_entre)
+		v_NombreArchi=_SYSESTACION+"\"+STRTRAN(STR((TmpRemi.numero),8,0)," ","0")+"-"+ALLTRIM(v_OriDup)+".TXT"	
+		
+		H=FCREATE(v_NombreArchi,0)
+		IF H < 0 THEN 
+			MESSAGEBOX("No se pudo CREAR el Archivo de Impresión "+ALLTRIM(v_NombreArchi),0+48+0,"Error") 
+		ELSE
+			v_charC=SETMP(18)			
+			chars=FWRITE(H,v_charC)
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo Cancelar el modo condensado de impresión.",0+48+0,"Error")
+			ENDIF 
+
+			v_charC=SETMP(116)			
+			chars=FWRITE(H,v_charC)
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo Setear la Tabla de Códigos Extendidos.",0+48+0,"Error")
+			ENDIF 
+			v_charC=SETMP(82)			
+			chars=FWRITE(H,v_charC)
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo Setear la Tabla de Códigos Internacional.",0+48+0,"Error")
+			ENDIF 			
+		
+			* Imprimo Cabecera del REMITO
+			chars=FPUTS(H," ")
+			chars=FPUTS(H," ")
+		
+			v_charS=SETMP(15)
+			chars=FWRITE(H,v_charS)
+			chars=FPUTS(H,SPACE(90)+I_NUMERO+ v_tipoNotaPedido  )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Numero del REMITO ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			v_charC=SETMP(18)
+			chars=FWRITE(H,v_charC)			
+		
+			chars=FPUTS(H," ")
+		
+			chars=FPUTS(H," "+SPACE(55)+DTOC(i_fecharemito) )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Fecha...' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 			
+			chars=FPUTS(H," ")
+			chars=FPUTS(H," ")
+			chars=FPUTS(H," ")
+			chars=FPUTS(H," ")
+			chars=FPUTS(H," ")
+			chars=FPUTS(H," ")
+			
+			v_charC=SETMP(14)			
+			chars=FWRITE(H,v_charC)
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo Iniciar el Modo Letra Doble.",0+48+0,"Error")
+			ENDIF 						
+			chars=FPUTS(H,"    "+SUBSTR(alltrim(TmpRemi.nomb_fanta),1,35))
+			
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'CLIENTE ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			v_charC=SETMP(20)			
+			chars=FWRITE(H,v_charC)
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo Cancelar el Modo Letra Doble.",0+48+0,"Error")
+			ENDIF 			
+						
+			chars=FPUTS(H,"        "+alltrim(TmpRemi.domi_fanta) )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'DOMICILIO ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H," ")
+			
+			chars=FPUTS(H,"        "+alltrim(TmpRemi.iva)+SPACE(20)+alltrim(TmpRemi.cuit) )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'COND.IVA ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			v_condvta="Cuenta Corriente"
+			v_condvta = v_condvta +SPACE(40)
+			chars=FPUTS(H," ")
+			chars=FPUTS(H," ")
+			chars=FPUTS(H,"  "+SUBSTR(v_condvta,1,35)+SPACE(8)+alltrim(TmpRemi.succliente)+"/"+ALLTRIM(STR(TmpRemi.cliente)) )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'COND. VTA. ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H," ")
+			
+			chars=FPUTS(H," Codigo  Cant. Descripcion         Serv.          Color                 Kgs" )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Item  Codigo Cant. Descripción ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+
+		* Imprimo Detalle del REMITO
+			v_charS=SETMP(15)
+			v_charC=SETMP(18)
+			
+			chars=FWRITE(H,v_charS)
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo iniciar el modo condensado de impresión.",0+48+0,"Error")
+			ENDIF 
+
+			chars=FPUTS(H," ")
+			v_falta=29
+			v_TotalKilos=0.0
+			v_codigo=""
+			v_detalle=""
+			SELECT TmpRemi
+			GO TOP 
+			DO WHILE NOT EOF()
+	 		*************  Busco el codigo de Facturaciòn y el detalle de lo ingresado en el Remito  ****************************************
+	 			v_idnumero =TmpRemi.idot
+				v_codigo=""
+				v_detalle=""
+				DO CASE 
+					CASE TmpRemi.tipoot=="01" && Ventas
+						DO CASE 
+							CASE TmpRemi.subtipo == "02" && Perfiles
+								v_detalle=""
+								v_codigo = ""	
+								v_detalle 	= ALLTRIM(TmpRemi.nomarti)
+								v_codigo	= substr(ALLTRIM(articulo),1,len(ALLTRIM(articulo))-1)+"-"+ substr(ALLTRIM(articulo),len(ALLTRIM(articulo)),1)
+								
+							CASE TmpRemi.subtipo == "04" && Accesorios
+								v_detalle=""
+								v_codigo = ""
+								v_detalle 	= ALLTRIM(TmpRemi.nomarti)
+								v_codigo	= ALLTRIM(articulo)
+						ENDCASE 
+	 			ENDCASE 
+	 			*********************************************************************************************************************************
+	 			IF PPP_SUCCLIENTE = '0001' AND PPP_CLIENTE = 3000 THEN 
+					v_detalle = SUBSTR(ALLTRIM(v_detalle),1,v_LongMax)
+				ENDIF   
+				
+				v_nrooc		  = IIF((!EMPTY(ALLTRIM(tmpRemi.nrooc)) and !(ALLTRIM(tmpRemi.nrooc)=='""')) ,' - O.C.:'+ALLTRIM(tmpRemi.nrooc),'')
+				v_etiqueta	  = IIF((!EMPTY(ALLTRIM(tmpRemi.etiqueta)) and !(ALLTRIM(tmpRemi.etiqueta)=='""')) ,' Etq.:'+ALLTRIM(tmpRemi.etiqueta),'')
+				v_detalle	  = v_detalle + v_nrooc + v_etiqueta + SPACE(96)
+
+				DO CASE 
+					CASE TmpRemi.subtipo == "04" && Accesorios
+						chars=FPUTS(H,v_charSn+"A"+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+SUBSTR(v_detalle,1,96)+" "+STR(TmpRemi.kgfactu,8,2)+v_charCc )
+					CASE TmpRemi.subtipo == "03" && PLACAS
+						chars=FPUTS(H,v_charSn+"P"+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+STR(TmpRemi.idot,6)+" "+SUBSTR(v_detalle,1,89)+" "+STR(TmpRemi.kgfactu,8,2)+v_charCc )
+					OTHERWISE 
+						chars=FPUTS(H,v_charSn+" "+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+SUBSTR(v_detalle,1,96)+" "+STR(TmpRemi.kgfactu,8,2)+v_charCc )
+				ENDCASE
+				
+				IF chars <= 0 THEN 
+					MESSAGEBOX("NO se pudo escribir el Item "+STR(NRORENG,3,0)+" en el archivo "+v_NombreArchi,0+48+0,"Error")
+				ENDIF 
+				v_falta = v_falta - 1 
+				v_TotalKilos = v_TotalKilos + TmpRemi.kgfactu
+						
+				SELECT TmpRemi
+				SKIP 1
+			ENDDO 
+
+			chars=FWRITE(H,v_charC)
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo cancelar el modo condensado de impresión.",0+48+0,"Error")
+			ENDIF 
+			DO WHILE v_falta > 0
+				chars=FPUTS(H," ")
+				v_falta = v_falta - 1 
+			ENDDO 
+			chars=FPUTS(H," ")
+
+		* Imprimo el Pie de la Factura
+			v_charS=SETMP(15)
+			v_charC=SETMP(18)
+			
+			SELECT TmpRemi
+			GO TOP 
+		*Asigno Valores
+			v_formapago1 = ""
+			v_formapago2 = ""
+			v_formapago3 = ""
+			v_formapago4 = ""
+			v_formapago5 = ""
+			v_formapago6 = ""
+			v_formapago7 = ""
+	
+
+		* BUSCO LOS DATOS DEL TRANSPORTISTA
+
+			sqlmatriz(1)=" select * from transporte t left join entidades e on t.entidad = e.entidad where t.entidad = "+ALLTRIM(STR(TmpRemi.transporte))
+			verror=sqlrun(vconeccionF,"transp")
+			IF verror=.f.
+				MESSAGEBOX("Ha Ocurrido un Error en la Búsqueda del Transporte "+ALLTRIM(STR(TmpRemi.transporte)),+48+0,"Aviso del Sistema")
+			ELSE 
+				SELECT transp
+				GO TOP
+				IF EOF() AND RECNO()=1
+					*Asigno Valores
+					v_formapago1 = "DATOS DEL TRANSPORTISTA"
+					v_formapago2 = ""
+					v_formapago3 = "CODIGO   : 0000/00000"
+					v_formapago4 = "R.SOCIAL : SIN TRANSPORTE"
+					v_formapago5 = "DIRECCION: - "
+					v_formapago6 = "CUIT     : - "
+					v_formapago7 = ""
+
+					USE IN transp
+				ELSE
+					*Asigno Valores
+					v_formapago1 = "DATOS DEL TRANSPORTISTA"
+					v_formapago2 = ""
+					v_formapago3 = "CODIGO   : 0001/"+ALLTRIM(STR(transp.entidad))
+					v_formapago4 = "R.SOCIAL : "+ALLTRIM(transp.apellido)
+					v_formapago5 = "DIRECCION: "+ALLTRIM(transp.direccion)
+					v_formapago6 = "CUIT     : "+ALLTRIM(transp.cuit)
+					v_formapago7 = ""
+
+					USE IN transp
+				ENDIF
+			ENDIF 
+			v_formapago1 = v_formapago1 + SPACE(50)
+			v_formapago2 = v_formapago2 + SPACE(50)
+			v_formapago3 = v_formapago3 + SPACE(50)
+			v_formapago4 = v_formapago4 + SPACE(50)
+			v_formapago5 = v_formapago5 + SPACE(50)
+			v_formapago6 = v_formapago6 + SPACE(50)
+			v_formapago7 = v_formapago7 + SPACE(50)
+
+
+			chars=FPUTS(H,v_charS+SUBSTR(v_formapago1,1,50)+v_charC+SPACE(13)+" TOTAL de Kilos: "+STR(v_TotalKilos,10,2) )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'TOTAL de Kilos ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H,v_charS+SUBSTR(v_formapago2,1,50)+v_charC+SPACE(13))
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Impuesto ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H,v_charS+SUBSTR(v_formapago3,1,50)+v_charC+SPACE(13))
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Subtotal 2....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H,v_charS+SUBSTR(v_formapago4,1,50)+v_charC+SPACE(13))
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Iva Inscr ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H,v_charS+SUBSTR(v_formapago5,1,50)+v_charC+SPACE(13))
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Iva No Inscr ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H,v_charS+SUBSTR(v_formapago6,1,50)+v_charC )
+			v_charSN=SETMP(69)
+			v_charCN=SETMP(70)
+			chars=FPUTS(H,v_charS+SUBSTR(v_formapago7,1,50)+v_charC+v_charSN+SPACE(13)+v_charCN )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir ' ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+
+			chars=FPUTS(H,"Domicilio de Entrega: "+v_charS+SUBSTR(ALLTRIM(v_entrega),1,90)+v_charC)
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir ' Domicilio de Entrega....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			
+			v_charS=SETMP(69)
+			chars=FWRITE(H,v_charS)			
+			chars=FPUTS(H,alltrim(TmpRemi.pieremito1) )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Renglón 1 de Obserb. ....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H,alltrim(TmpRemi.pieremito2) )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Renglón 2 de Obserb.....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H,alltrim(TmpRemi.pieremito3) )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Renglón 3 de Obserb.....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			chars=FPUTS(H,alltrim(TmpRemi.pieremito4) )
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo escribir 'Renglón 4 de Obserb.....' en el archivo "+v_NombreArchi,0+48+0,"Error")
+			ENDIF 
+			v_charC=SETMP(70)
+			chars=FWRITE(H,v_charC)	
+			
+			* Avance de Hoja
+			v_charC=setmp(12)			
+			chars=FWRITE(H,v_charC)
+			IF chars <= 0 THEN 
+				MESSAGEBOX("NO se pudo realizar el Avance de Página.",0+48+0,"Error")
+			ENDIF 
+
+			FCLOSE(H)
+		ENDIF 
+
+		v_eje=" copy file '"+ALLTRIM(v_NombreArchi)+"' to '"+ALLTRIM(p_ubicacion)+"\"+STRTRAN(STR((TmpRemi.numero),8,0)," ","0")+"-"+ALLTRIM(v_OriDup)+".TXT'"
+
+		&v_eje
+					
+		WAIT CLEAR
+
+	ENDFOR
+	
+
+	USE IN TmpGrilla 
+
+	** me desconecto
+
+	=abreycierracon(vconeccionF,"")
+
+
+	*****************************   FIN DE IMPRESIÓN   ****************************************
+	RELEASE v_fecharemi,v_Sucursal,v_Cliente,v_Nombre,v_Domicilio,v_CondIva,v_Cuit,v_entrega,v_pie1,v_pie2,v_pie3,v_pie4
+	RELEASE v_formapago1, v_formapago2, v_formapago3, v_formapago4, v_formapago5, v_formapago6, v_formapago7
+	RELEASE I_SQLFlagErrorTrans,SQLFlagErrorTrans
+
+
+	MESSAGEBOX("Remito enviado a impresora",0+64+256,"Impresión de remito",2000)
+	
+	RETURN .T.
+
+
+ENDFUNC 
+
+
 
 
 
@@ -31923,6 +32401,7 @@ PARAMETERS p_idnp, p_conexion
 ENDFUNC 
 
 
+
 FUNCTION GeneraQR
 PARAMETERS pqr_contenido, pqr_archivoqr,  pqr_tablatmp, pqr_campoqr
 *#/------------------------------------------------
@@ -32682,3 +33161,37 @@ PARAMETERS p_idcomproba, p_pventa
 RETURN v_retorno
 
 ENDFUNC 
+
+
+
+
+
+*!*	FUNCTION obtenerSectorComp 
+*!*	PARAMETERS p_idcomproba, p_idregistro
+*!*	*#/----------------------------------------
+*!*	* Función para obtener el sector del comprobante pasado como parámetro. El comprobante puede estar asociado directamente a un sector o indirectamente, en el caso de
+*!*	*  por ejemplo un remito, que tiene una cumplimentación donde la cumplimentación está asociada al remito.
+*!*	* Parametros : p_idcomproba	= ID del comprobante 
+*!*	*              p_idregistro = ID del regustro
+*!*	* RETURN: Retorno ID del sector, 0 en caso de no pertenecer a algún sector, -1 en caso de error
+*!*	*#/----------------------------------------
+
+*!*			
+*!*		v_retorno = 0
+*!*		
+*!*		*** Me conecto a la base de datos
+*!*		vconeccionO=abreycierracon(0,_SYSSCHEMA)
+
+
+
+*!*		*** me desconecto	
+*!*			=abreycierracon(vconeccionO,"")
+*!*		
+
+*!*		
+
+
+
+
+
+*!*	ENDFUNC 
