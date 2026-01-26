@@ -7399,3 +7399,712 @@ FUNCTION CargaAcopiosCli
 ENDFUNC  
 
 *******************************************************
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*******************************************************
+
+*/------------------------------------------------------------------------------------------------------------
+FUNCTION CargaNPPerfiles
+	PARAMETERS p_idimportap, p_archivo, p_func
+*#/----------------------------------------
+*/ Carga de Cuentas corrientes de clientes
+* Formato archivo csv serparado por ; ( entidad I, servicio I, cuenta I, fecha C(8), numeronp I, idot I, 	articulo C(50), cantidad I, cantfc Y, zona C(250), nrooc C(20), etiqueta C(20), tipope I, observa c(200), vendedor C(200) )			
+*									(nronp	I, idot	I, fechanp C(8), cliente I, apesar	I, kgspesar	Y, codigofact	C(50), nomzona	C(250), nrooc	C(20), etiqueta	C(20), tipope	I, observac	C(200), vendedor C(200))
+*#/----------------------------------------
+
+
+	IF p_func = 9 then && Chequeo de Funcion retorna 9 si es valida
+		RETURN p_func
+	ENDIF 
+*/**************************************************************
+
+	IF p_func = -1 THEN  &&  Eliminacion de Registros
+*!*			p_func = fdeltablas("cablemodems",p_idimportap)
+*!*			RETURN p_func 
+	
+
+	ENDIF 
+*/**************************************************************
+	IF p_func = 1 then && 1- Carga de Archivo de 
+		p_archivo = alltrim(p_archivo)
+		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+
+
+		if file(".\ctasctesentcar.dbf") THEN
+			if used("ctasctesentcar") then
+				sele ctasctesentcar
+				use
+			endif
+			DELETE FILE .\ctasctesentcar.dbf
+		ENDIF
+		
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			=abreycierracon(vconeccionF,"")	
+			RETURN 0
+		ENDIF
+		CREATE TABLE npcarcsv FREE (numeronp I, idot I, fecha C(8), entidad I, cantidad I, cantfc Y, articulop C(50), zona	C(250), nrooc	C(20), etiqueta	C(20), tipope	I, observa	C(200), vendedor C(200))
+		
+		CREATE TABLE npcarax FREE ( entidad I, servicio I, cuenta I, fecha C(8), numeronp I, idot I, articulop C(50), cantidad I, cantfc Y, zona C(250), nrooc C(20), etiqueta C(20), tipope I, observa c(200), vendedor C(200)  )			
+
+		
+		SELECT npcarcsv 
+		
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+
+		SELECT entidad, 0 as servicio, 0 as cuenta, fecha, numeronp,idot,articulop, cantidad, cantfc, zona, nrooc, etiqueta, tipope, observa, vendedor FROM npcarcsv INTO TABLE npcarax
+		
+		
+				
+		
+		
+		*** BUsco los articulos asociados al 'proveedor' 5000  ***
+		
+		
+		sqlmatriz(1)="SELECT a.*, ap.idartpro, ap.entidad,ap.codigop FROM articulospro  ap left join articulos a on ap.articulo = a.articulo where ap.entidad = 5000 "
+		
+		verror=sqlrun(vconeccionF,"articulospro_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los articulos equivalentes",0+48+0,"Error")
+		*** me desconecto	
+			=abreycierracon(vconeccionF,"")
+		    RETURN 0
+		ENDIF 
+	
+	
+
+		
+		SELECT n.*,IIF(ISNULL(a.articulo)=.T.,'',a.articulo) as articulo, IIF(ISNULL(a.detalle)=.T.,'',a.detalle) as detarti, IIF(ISNULL(a.unidad)=.T.,'',a.unidad) as unidad, IIF(ISNULL(a.articulo)=.T.,.F.,.T.) as cargarcomp ;
+		 FROM npcarax n LEFT JOIN articulospro_sql a ON ALLTRIM(n.articulop) = ALLTRIM(a.codigop) INTO TABLE npcar
+		
+		
+*** AQUI AGREGAR LOGICA PARA CONSULTAR Y ELIMINAR NP SI ASI LO DESEA QUIEN IMPORTA ***
+		rta =MESSAGEBOX("Desea Eliminar los Comprobantes Existentes de las NP",3+32+256,"Eliminar Comprobantes ")
+		IF rta=6  THEN 
+		
+			*Elimino las Facturas 
+			sqlmatriz(1)=" delete from np "
+			verror=sqlrun(vconeccionF,"dnp")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de las NP... ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF	
+			sqlmatriz(1)=" delete from ot "
+			verror=sqlrun(vconeccionF,"dot")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de OTs",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+			
+			
+			 
+			
+			sqlmatriz(1)=" delete from linkcompro where  idcomprobaa in (select idcomproba from comprobantes where tabla = 'np' ) or idcomprobab in (select idcomproba from comprobantes where tabla = 'np' )  "
+			sqlmatriz(2)= " or idcomprobaa in (select idcomproba from comprobantes where tabla = 'ot' ) or idcomprobab in (select idcomproba from comprobantes where tabla = 'ot' ) "
+			
+			verror=sqlrun(vconeccionF,"dlc")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación Link compro para NP ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF	
+			
+			
+			sqlmatriz(1)=" delete from from estadosreg where tabla = 'np' or tabla = 'ot' "
+			
+			verror=sqlrun(vconeccionF,"der")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Estados",0+48+0,"Error")
+			    RETURN 0
+			ENDIF	
+			
+			
+
+			* Reinicio indices de tablas afectadas a facturas 
+			sqlmatriz(1)=" update tablasidx set maxvalori = 0 where tabla = 'np' or tabla ='ot' "
+			verror=sqlrun(vconeccionF,"er")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la puesta a 0 del indice de la np y ot ",0+48+0,"Error")
+			    RETURN 0
+			ENDIF		
+
+
+
+
+		ELSE 
+			IF rta = 2 THEN 
+				USE IN npcar
+				=abreycierracon(vconeccionF,"")	
+				RETURN 0
+			ENDIF  	
+		ENDIF 
+		
+	
+	SELECT npcar
+	GO TOP 
+	
+	
+	v_ret = .F.
+	
+	DO FORM carganp WITH "npcar",.T. TO v_ret 
+	
+	IF v_ret = .F.
+		RETURN 0
+	ENDIF 
+	
+	
+
+	
+	SELECT npcar
+	GO TOP 
+
+		
+		
+		
+		
+
+	SET ENGINEBEHAVIOR 70
+	
+	SELECT entidad, servicio, cuenta, fecha, numeronp, zona, nrooc, etiqueta, tipope, observa, vendedor FROM npcar WHERE cargarcomp = .T. GROUP BY entidad, numeronp INTO TABLE npcarA 
+*!*		 
+*!*		SELECT entidad,servicio,cuenta,fecha,numerocomp,SUM(monto) as monto,cuota,vtocta,fechavenc1,fechavenc2,fechavenc3, idregistro FROM ctasctesentcar ;
+*!*			 GROUP BY entidad,numerocomp INTO TABLE ctasctesentcarA WHERE cargarcomp = .t. 
+
+	SET ENGINEBEHAVIOR 90
+*!*		
+*!*		v_pventaIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,1,2)))
+*!*		v_idcompIng = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,3,2)))
+*!*		v_pventaEgr = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,5,2)))
+*!*		v_idcompEgr = VAL(ALLTRIM(SUBSTR(_SYSCOMPACC,7,2)))
+
+*!*		v_idfactura_min = 0
+*!*		v_idfactura_max = 0	
+
+
+SELECT npcarA 
+GO  TOP 
+
+
+
+
+	*** BUsco comprobantes de NP  ***
+	sqlmatriz(1)="SELECT c.*,t.opera,v.pventa,v.puntov from comprobantes c left join compactiv v on c.idcomproba = v.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro  where c.tabla ='np' "
+	
+	verror=sqlrun(vconeccionF,"compNP_sql")
+
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes de NP ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 0
+	ENDIF 
+
+
+	SELECT compNP_sql
+	GO TOP 
+
+	IF EOF()
+		MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes de Ingreso y Egreso ",0+48+0,"Error")
+		*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 0
+
+
+	ELSE
+		v_idcompNP 	= compNP_sql.idcomproba
+		v_pventaNP	= compNP_sql.pventa
+		v_puntovNP	= compNP_sql.puntov
+	ENDIF 
+
+
+
+	*** Busco las entidades ***
+*!*		sqlmatriz(1)=" SELECT e.*, IFNULL(h.servicio,0) as servicio, IFNULL(h.cuenta,0) as cuenta, "
+*!*		sqlmatriz(2)=" IFNULL(h.ruta1,0) as ruta1, IFNULL(h.folio1,0) as folio1, IFNULL(h.ruta2,0) as ruta2, IFNULL(h.folio2,0) as folio2 "
+*!*		sqlmatriz(3)=" from entidades e left join entidadesh h on e.entidad = h.entidad "
+
+	sqlmatriz(1)= " SELECT e.*, IFNULL(h.servicio,0) as servicio, IFNULL(h.cuenta,0) as cuenta, "
+	sqlmatriz(2)= " IFNULL(h.ruta1,0) as ruta1, IFNULL(h.folio1,0) as folio1, IFNULL(h.ruta2,0) as ruta2, IFNULL(h.folio2,0) as folio2, "
+	sqlmatriz(3)= " IFNULL(h.compania,e.compania) as companiah, IFNULL(h.nombre,e.nombre) as nombreh, IFNULL(h.apellido,e.apellido) as apellidoh, "
+	sqlmatriz(4)= " IFNULL(h.direccion,e.direccion) as direccionh, IFNULL(h.localidad,e.localidad) as localidadh, IFNULL(h.iva,e.iva) as ivah, IFNULL(h.dni,e.dni) as dnih, IFNULL(h.telefono,e.telefono) as telefonoh, "
+	sqlmatriz(5)= " IFNULL(h.cuit,e.cuit) as cuith, IFNULL(h.cp,e.cp) as cph, IFNULL(h.fax,e.fax) as faxh, IFNULL(h.email,e.email) as emailh "
+	sqlmatriz(6)= " from entidades e left join entidadesh h on e.entidad = h.entidad "
+
+	verror=sqlrun(vconeccionF,"entidades0_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las entidades ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 
+	ENDIF 
+
+
+******************************************************************************************************
+	SELECT * FROM entidades0_sql INTO TABLE entidades_sql
+	
+	
+	
+	ALTER table entidades_sql alter COLUMN servicio i
+	ALTER table entidades_sql alter COLUMN cuenta i
+	ALTER table entidades_sql alter COLUMN ruta1 i
+	ALTER table entidades_sql alter COLUMN folio1 i
+	ALTER table entidades_sql alter COLUMN ruta2 i
+	ALTER table entidades_sql alter COLUMN folio2 i
+	ALTER table entidades_sql alter COLUMN dni n(13)
+	USE IN entidades0_sql 
+	
+
+*** Busco los vendedores ***
+
+	sqlmatriz(1)= " SELECT * "
+	sqlmatriz(2)= " from vendedores "
+
+	verror=sqlrun(vconeccionF,"vendedores_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los vendedores ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 
+	ENDIF 
+
+
+
+*** Busco las etiquetas ***
+
+	sqlmatriz(1)= " SELECT * "
+	sqlmatriz(2)= " from etiquetanp "
+
+	verror=sqlrun(vconeccionF,"etiquetasnp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las Etiquetas ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 
+	ENDIF 
+	
+
+** Busco las clasificaciones de NP **
+
+	sqlmatriz(1)= " SELECT * "
+	sqlmatriz(2)= " from clasificanp "
+
+	verror=sqlrun(vconeccionF,"clasificanp_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de las Clasificaciones ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN 
+	ENDIF 
+
+
+	
+		SELECT npcarA
+		GO TOP 
+		
+		DO WHILE !EOF()
+			
+			a_entidad 	= npcarA.entidad
+			a_servicio	= npcarA.servicio
+			a_cuenta  	= npcarA.cuenta
+			a_fecha	  	= npcarA.fecha
+			a_numComp 	= npcarA.numeronp
+			a_zona		= npcarA.zona
+			a_nrooc		= npcarA.nrooc
+			a_etiqueta	= npcarA.etiqueta
+			a_tipope	= npcarA.tipope && 1: PRENSA; 2: DISTRIBUCION; 3: PINTURA; 4: SERVICIOS
+			a_observa	= npcarA.observa
+			a_vendedor	= npcarA.vendedor
+			
+		
+			
+			
+		
+			
+			** Busco la entidad de la  NP **
+			
+			SELECT entidad, nombre, apellido,cuit from entidades_sql WHERE entidad = a_entidad INTO CURSOR entidadNP
+			
+			SELECT entidadNP
+			GO TOP 
+			IF NOT EOF()
+				v_nombreEntidadNP = entidadNP.nombre
+				v_apellidoEntidadNP = entidadNP.apellido
+			
+				v_nomEntidad = ALLTRIM(v_nombreEntidadNP)+" "+ALLTRIM(v_apellidoEntidadNP)
+			ELSE
+				v_nombreEntidadNP =  ""
+				v_apellidoEntidadNP = ""
+				v_nomEntidad = ALLTRIM(v_nombreEntidadNP)+" "+ALLTRIM(v_apellidoEntidadNP)
+			ENDIF 					
+			
+			
+			** Busco el vendedor de la NP **
+			
+			SELECT vendedor, nombre as nomvendedor from vendedores_sql WHERE ALLTRIM(nombre) = ALLTRIM(a_vendedor) INTO CURSOR vendedorNP
+			
+			SELECT vendedorNP
+			GO TOP 
+			IF NOT EOF()
+				v_vendedorNP = vendedorNP.vendedor
+			ELSE
+				v_vendedorNP = 0
+
+			ENDIF 	
+						
+			
+			** Busco la etiqueta de la NP **
+			
+			SELECT idetiqueta, etiqueta, descrip, orden, habilitado FROM etiquetasnp_sql INTO CURSOR etiquetanp
+			
+			SELECT etiquetanp
+			GO TOP 
+			IF NOT EOF()
+				v_idetiquetaNP = etiquetanp.idetiqueta
+			ELSE
+				v_idetiquetaNP = 0
+
+			ENDIF 
+			
+			
+			** Busco la clasificación de la NP **
+				v_condicion = "NP NORMAL"
+			IF AT("ACOPIO",UPPER(ALLTRIM(a_observa))) > 0 && Existe la palabra acopio -> Clasifico como acopio
+				
+				v_condicion = "NP ACOPIO"
+			ELSE
+				v_condicion = "NP NORMAL"
+			ENDIF 
+						
+			SELECT idclasifnp, nombre, descrip FROM clasificanp_sql WHERE ALLTRIM(nombre) == v_condicion INTO CURSOR clasificanp
+			
+			SELECT clasificanp
+			GO TOP 
+			IF NOT EOF()
+				v_idclasifNP = clasificanp.idclasifnp
+			ELSE
+				v_idclasifNP = 0
+
+			ENDIF 
+			
+			
+			
+			
+			
+			
+			
+			
+									
+			*** GUARDA DATOS DE CABECERA DEL COMPROBANTE
+
+			v_idnp  = maxnumeroidx("idnp","I","np",1)
+	
+			IF v_idnp  <= 0
+				MESSAGEBOX("No se pudo recuperar el ultimo indice de la NP",0+16,"Error")
+				RETURN 
+			ENDIF 
+
+			v_numeroNP = maxnumerocom(v_idcompNP,v_pventaNP ,1)
+
+
+			v_observa = ALLTRIM(a_observa)+ " COMP ASO: "+ALLTRIM(STR(a_numComp))
+			
+			p_tipoope     = 'I'
+			p_condicion   = ''
+			v_titulo      = " EL ALTA "
+						
+			DIMENSION lamatriz1(18,2)
+	
+			
+	
+
+			lamatriz1(1,1)='idnp'
+			lamatriz1(1,2)= ALLTRIM(STR(v_idnp))
+			lamatriz1(2,1)='puntov'
+			lamatriz1(2,2)="'"+ALLTRIM(v_puntovNP)+"'"
+			lamatriz1(3,1)='numero'
+			lamatriz1(3,2)= ALLTRIM(STR(v_numeroNP))
+			lamatriz1(4,1)='fecha'
+			lamatriz1(4,2)= "'"+ALLTRIM(a_fecha)+"'"
+			lamatriz1(5,1)='hora'
+			lamatriz1(5,2)= "'00:00:00'"
+			lamatriz1(6,1)='usuario'
+			lamatriz1(6,2)="'"+ALLTRIM(_SYSUSUARIO)+"'"
+			lamatriz1(7,1)='vendedor'
+			lamatriz1(7,2)= ALLTRIM(STR(v_vendedorNP))
+			lamatriz1(8,1)='transporte'
+			lamatriz1(8,2)= "0"
+			lamatriz1(9,1)='nombretran'
+			lamatriz1(9,2)="''"
+			lamatriz1(10,1)='entidad'
+			lamatriz1(10,2)=ALLTRIM(STR(a_entidad))
+			lamatriz1(11,1)='nombre'
+			lamatriz1(11,2)="'"+alltrim(v_nomEntidad)+"'"
+			lamatriz1(12,1)='observa'
+			lamatriz1(12,2)="'"+ALLTRIM(a_observa)+"'"
+			lamatriz1(13,1)='idtiponp'
+			lamatriz1(13,2)= "1" && Venta
+			lamatriz1(14,1)='idcomproba'
+			lamatriz1(14,2)=ALLTRIM(STR(v_idcompNP))
+			lamatriz1(15,1)='pventa'
+			lamatriz1(15,2)=ALLTRIM(STR(v_pventaNP))
+			lamatriz1(16,1)='fechaentre'
+			lamatriz1(16,2)= "'"+ALLTRIM(a_fecha)+"'"
+			lamatriz1(17,1)='idetiqueta'
+			lamatriz1(17,2)=ALLTRIM(STR(v_idetiquetaNP))
+			lamatriz1(18,1)='idclasifnp'
+			lamatriz1(18,2)=ALLTRIM(STR(v_idclasifnp))
+
+			p_tabla     = 'np'
+			p_matriz    = 'lamatriz1'
+			p_conexion  = vconeccionF
+			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+STR(v_numeronp),0+48+0,"Error")
+			ENDIF  
+						
+			
+			
+			
+			
+			SELECT * FROM npcar WHERE cargarcomp = .T. AND numeronp = a_numComp INTO TABLE npdet
+
+			
+			
+			
+			SELECT npdet
+			GO TOP 
+			
+			DO WHILE NOT EOF()
+				a_articulo = npdet.articulo
+				
+				IF !EMPTY(a_articulo) THEN 
+					p_tipoope     = 'I'
+					p_condicion   = ''
+					v_titulo      = " EL ALTA "
+					
+		
+					v_id_ot = maxnumeroidx("idot","I","ot",1)
+					
+					v_idtipoot	= 1 
+					v_nomart	= npdet.detarti
+					a_cantidad	= npdet.cantidad
+					v_unidad 	= npdet.unidad
+					v_unidatio	= 0.00								
+					v_observa	= ""
+					a_cantfc 	= npdet.cantfc 
+					
+					
+					
+													
+					v_fechaentre =a_fecha
+					v_unidadFC 	 = ""
+					v_impuestos	 = 0.00
+					v_idimpuesto = 0
+				*	v_idimpuesto = 1
+					v_unitario = 0.00
+					v_neto		 = 0.00
+					v_razonimp	 = 0.00
+					v_total		 = 0.00
+					v_idmate	 = 0
+					v_idtiponpot = 0
+					v_impr		 = "S"
+
+
+
+
+*!*						v_cantidadFC = &vTmpGrillaNP..cantidadFc
+*!*						v_unidadFC 	 = &vTmpGrillaNP..unidadFc
+*!*						v_impuestos	 = &vTmpGrillaNP..impuestos
+*!*						v_idimpuesto	 = &vTmpGrillaNP..impuesto
+*!*						v_idimpuesto = 1
+
+*!*						v_neto		 = &vTmpGrillaNP..neto
+*!*						v_razonimp	 = &vTmpGrillaNP..razonimp
+*!*						v_total		 = &vTmpGrillaNP..total
+*!*						v_idmate	 = &vTmpGrillaNP..idmate
+*!*						v_idtiponpot = &vTmpGrillaNP..idtiponp
+*!*						v_impr		 = IIF(&vTmpGrillaNP..impr=.t.,"S","N")
+					
+
+	
+				
+				
+*!*						SET ENGINEBEHAVIOR 70			
+*!*						SELECT SUM(razon) as razon, impuesto, articulo, nroreg FROM &vtmpArtimpNP WHERE ALLTRIM(articulo)==v_articulo AND  nroreg = v_nroreg  INTO CURSOR artImpSel GROUP BY articulo, nroreg
+*!*						SET ENGINEBEHAVIOR 90 
+*!*						SELECT artImpSel
+*!*						GO TOP 
+*!*						v_idimpuesto = artImpSel.impuesto
+*!*						v_razonImpuesto = artImpSel.razon
+				
+					DIMENSION lamatriz2(20,2)
+						
+	
+					lamatriz2(1,1)='idnp'
+					lamatriz2(1,2)=ALLTRIM(STR(v_idnp))
+					lamatriz2(2,1)='idot'
+					lamatriz2(2,2)=ALLTRIM(STR(v_id_ot))
+					lamatriz2(3,1)='idtipoot'
+					lamatriz2(3,2)=ALLTRIM(STR(v_idtipoot))
+					lamatriz2(4,1)='articulo'
+					lamatriz2(4,2)="'"+ALLTRIM(a_articulo)+"'"
+					lamatriz2(5,1)='detalle'
+					lamatriz2(5,2)= "'"+ALLTRIM(v_nomart)+"'"
+					lamatriz2(6,1)='cantidad'
+					lamatriz2(6,2)=ALLTRIM(STR(a_cantidad,13,4))
+					lamatriz2(7,1)='unidad'
+					lamatriz2(7,2)="'"+alltrim(v_unidad)+"'"
+					lamatriz2(8,1)='unitario'
+					lamatriz2(8,2)=ALLTRIM(STR(v_unitario,13,4))
+					lamatriz2(9,1)='observa'
+					lamatriz2(9,2)="'"+alltrim(v_observa)+"'"
+					lamatriz2(10,1)='fechaentre'
+					lamatriz2(10,2)="'"+ALLTRIM(v_fechaentre)+"'"
+					lamatriz2(11,1)='cantidadfc'
+					lamatriz2(11,2)=ALLTRIM(STR(a_cantfc ,13,4))
+					lamatriz2(12,1)='unidadfc'
+					lamatriz2(12,2)="'"+ALLTRIM(v_unidadFC )+"'"
+					lamatriz2(13,1)='impuestos'
+					lamatriz2(13,2)=ALLTRIM(STR(v_impuestos,13,4))
+					lamatriz2(14,1)='total'
+					lamatriz2(14,2)=ALLTRIM(STR(v_total,13,4))
+					lamatriz2(15,1)='impuesto'
+					lamatriz2(15,2)=ALLTRIM(STR(v_idimpuesto))
+					lamatriz2(16,1)='razonimp'
+					lamatriz2(16,2)=ALLTRIM(STR(v_razonimp,13,4))
+					lamatriz2(17,1)='neto'
+					lamatriz2(17,2)=ALLTRIM(STR(v_neto,13,4))
+					lamatriz2(18,1)='idmate'
+					lamatriz2(18,2)=ALLTRIM(STR(v_idmate))
+					lamatriz2(19,1)='idtiponp'
+					lamatriz2(19,2)=ALLTRIM(STR(v_idtiponpot))
+					lamatriz2(20,1)='imprimir'
+					lamatriz2(20,2)="'"+ALLTRIM(v_impr)+"'"
+
+					p_tabla     = 'ot'
+					p_matriz    = 'lamatriz2'
+					p_conexion  = vconeccionF
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_id_ot)),0+48+0,"Error")
+					ENDIF						
+			 
+				ENDIF
+				
+				
+				
+				** Asocio la OT al sector **
+				
+					DO CASE
+						CASE a_tipope = 1 && PRENSA
+							v_idsector = 4
+						CASE a_tipope = 2 && DISTRIBUCION
+							v_idsector = 2
+						CASE a_tipope = 3 && PINTURA
+							v_idsector = 3
+						CASE a_tipope = 4 && SERVICIOS
+							v_idsector = 0
+						OTHERWISE
+							v_idsector  = 0
+					ENDCASE
+					
+					DIMENSION lamatriz3(5,2)
+					
+					
+					lamatriz3(1,1) = 'idotsector'
+					lamatriz3(1,2) = "0"
+					lamatriz3(2,1) = 'idot'
+					lamatriz3(2,2) = ALLTRIM(STR(v_id_ot))
+					lamatriz3(3,1) = 'idsector'
+					lamatriz3(3,2) = ALLTRIM(STR(v_idsector))
+					lamatriz3(4,1) = 'cantidad'
+					lamatriz3(4,2) = ALLTRIM(STR(a_cantidad,13,2))
+					lamatriz3(5,1) = 'cantidaduf'
+					lamatriz3(5,2) =  ALLTRIM(STR(a_cantfc ,13,2))
+
+
+					p_tabla     = 'otsector'
+					p_matriz    = 'lamatriz3'
+					p_conexion  = vconeccion
+					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la actualización de la lista de precios: ID "+ALLTRIM(STR(v_idlista)),0+48+0,"Error")
+					ENDIF
+					
+				
+				SELECT npdet
+				SKIP 1
+			ENDDO	
+
+
+	
+			
+			
+
+	*** REGISTRO estado activo ***
+
+	registrarEstado("np","idnp",v_idnp,"I","ACTIVO")
+
+	*** REGISTRAR TABLAS FALTANTES ***
+
+			*** ACTUALIZO CAJARECAUDAH CON EL COMPROBANTE GUARDADO  ***
+
+	guardaCajaRecaH (v_idcompNP, v_idnp)
+
+	SELECT npcarA
+	SKIP 1
+
+ENDDO 
+			
+			
+					
+		
+			
+				
+		
+*/*/*/*/*/*/
+	=abreycierracon(vconeccionF,"")	
+	SELECT npcarA
+	USE IN npcarA
+	
+	SELECT npdet
+	USE IN npdet
+
+*!*		*//* Actualizo los Numeros de Facturas y puntos de venta con los numero del comprobante
+*!*		** pasado en el archivo de importacion en el campo observa1
+
+*!*		 =CargaCtaCteCliRenumera ( v_idfactura_min, v_idfactura_max )
+
+
+	ENDIF 	&& 1- Carga de Archivo de comprobantes de ingreso y egeso -
+*/**************************************************************
+*/**************************************************************
+*/ && 2- Visualiza Datos 
+	IF p_func = 2 THEN && Llama al formulario para visualizar los datos de la tabla
+	*	=fconsutablas(p_idimportap)
+	ENDIF && 2- Visualiza Datos de CPP -
+*/**************************************************************
+	lreto = p_func
+	RETURN lreto
+ENDFUNC  
