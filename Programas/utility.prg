@@ -1380,11 +1380,17 @@ PARAMETERS p_idregistro
 							v_ultimoNumReg = factmax_sql.maxnum
 					   		v_idcodafip = afipcomp_sql.codafip
 					   		v_idcodafipN = VAL(v_idcodafip) 
+					   		v_ultimoNumAutorizado = 0
+					   		
 						   	v_ultimoNumAutorizado = obtenerUltNroComp(p_puntoVtaN, v_idcodafipN )
 						
-						   	IF v_ultimoNumReg <> v_ultimoNumAutorizado 
+						   	IF v_ultimoNumReg <> v_ultimoNumAutorizado THEN 
 						   	
-						   		MESSAGEBOX("El último número autorizado no coincide con el registrado en la Base de Datos. Verifique",0+48+0,"Error")
+						   		IF v_ultimoNumAutorizado <= 0 THEN 
+						   			MESSAGEBOX("El Servicio de Autorización Externo no está funcionando... Aguarde unos minutos... ",0+48+0,"Error")
+						   		ELSE 
+							   		MESSAGEBOX("El ULTIMO NUMERO autorizado:  "+ALLTRIM(STR(v_ultimoNumAutorizado))+"  NO COINCIDE con el registrado en la Base de Datos:  "+ALLTRIM(STR(v_ultimoNumReg))+"  Verifique...",0+48+0,"Error")
+							   	ENDIF 
 						   						  		   		
 						   		RETURN .F.
 						   	ELSE
@@ -10812,96 +10818,102 @@ ENDFUNC
 
 
 
-FUNCTION cambiaAEstado
-	PARAMETERS p_reclamop, p_sector, p_estado
-*#/----------------------------------------
-* Cambia los estados del reclamo según el sector y los sectores asociados al reclamo si está habilitada la opción
-* Retorna: True o False, según se cambió o no el estado
-*#/----------------------------------------
+*!*	FUNCTION cambiaAEstado
+*!*		PARAMETERS p_reclamop, p_sector, p_estado
+*!*	*#/----------------------------------------
+*!*	* Cambia los estados del reclamo según el sector y los sectores asociados al reclamo si está habilitada la opción
+*!*	* Retorna: True o False, según se cambió o no el estado
+*!*	*#/----------------------------------------
 
-	v_idreclamop	= p_reclamop
-	v_idsector		= p_sector
-	v_idestado		= p_estado
-	v_retorno		= .F.
-	
-	estadoRecObjTmp = CREATEOBJECT('estadosrecclass')
-	
-	
-	v_estadoCerradoTmp	=  estadoRecObjTmp.getidestado("CERRADO")
-		
-		
-	IF v_estadoCerradoTmp = v_idestado AND _SYSRECCIERRAO = 'S'
-		** El Sector origen cierra todos los sectores 
-	
-	
-	
+*!*		v_idreclamop	= p_reclamop
+*!*		v_idsector		= p_sector
+*!*		v_idestado		= p_estado
+*!*		v_retorno		= .F.
+*!*		
+*!*		estadoRecObjTmp = CREATEOBJECT('estadosrecclass')
+*!*		
+*!*		
+*!*		v_estadoCerradoTmp	=  estadoRecObjTmp.getidestado("CERRADO")
 
-		vconeccionM = abreycierracon(0,_SYSSCHEMA)
+*!*			MESSAGEBOX(1113)
+*!*			
+*!*			
+*!*		IF v_estadoCerradoTmp = v_idestado AND _SYSRECCIERRAO = 'S'
+*!*			** El Sector origen cierra todos los sectores 
+*!*		
+*!*			MESSAGEBOX(1112)
+*!*		
+*!*		
 
-		
-		sqlmatriz(1)=" select * from reclamosec "
-		sqlmatriz(2)=" where idrecseco = "+ALLTRIM(STR(v_idsector)) +" and idreclamop = "+ALLTRIM(STR(v_idreclamop))
-		
-		
-		verror=sqlrun(vconeccionM,"reclamosec_sql")
-		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un Error al buscar los sectores del reclamo",0+48+0,"Error")
-		    		
-			** me desconecto
-			=abreycierracon(vconeccionM,"")
-			
-		    RETURN .F.
-		ENDIF 	
-			v_huboError	= 0
-		
-		SELECT reclamosec_sql
-		
-		v_cantReg	= RECCOUNT()
-		
-		SELECT reclamosec_sql
-		GO TOP 
-		
-		DO WHILE NOT EOF()
-		
-			v_idsectorD	= reclamosec_sql.idrecsecd
-		
-			v_idultEstadoRecTmp	= estadoReclamoPorSector(v_idreclamop, v_idsectorD, 'I')
-	
-			
-			IF v_idultEstadoRecTmp = v_estadoCerradoTmp
-				** Si está en estado cerrado -> No cambio el estado
-			ELSE
-			
-				** Cierro el reclamo para el sector
-				v_retTmp = cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
-		
-				IF v_retTmp = .F.
-					v_huboError = v_huboError  + 1
-					
-					MESSAGEBOX("Hubo un problema al intentar cambiar de estado el reclamo ID: "+ALLTRIM(STR(v_idreclamop)),0+48+256,"Error al cambiar de estado")
-				ENDIF 
-			ENDIF 
-		
-			SELECT reclamosec_sql
-			SKIP 1
-		
-		ENDDO 
-		
-		IF v_cantReg = v_huboError
-			v_retorno = .F.
-		ELSE
-			v_retorno = .T.		
-		ENDIF  
-	ELSE
-		v_retorno	= cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
-	
-	ENDIF 		
-	
-	
-		
+*!*			vconeccionM = abreycierracon(0,_SYSSCHEMA)
 
-	RETURN v_retorno
-ENDFUNC 
+*!*			
+*!*			sqlmatriz(1)=" select * from reclamosec "
+*!*			sqlmatriz(2)=" where idrecseco = "+ALLTRIM(STR(v_idsector)) +" and idreclamop = "+ALLTRIM(STR(v_idreclamop))
+*!*			
+*!*			
+*!*			verror=sqlrun(vconeccionM,"reclamosec_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error al buscar los sectores del reclamo",0+48+0,"Error")
+*!*			    		
+*!*				** me desconecto
+*!*				=abreycierracon(vconeccionM,"")
+*!*				
+*!*			    RETURN .F.
+*!*			ENDIF 	
+*!*				v_huboError	= 0
+*!*			
+*!*			SELECT reclamosec_sql
+*!*			
+*!*			v_cantReg	= RECCOUNT()
+*!*			
+*!*			SELECT reclamosec_sql
+*!*			GO TOP 
+*!*			
+*!*			DO WHILE NOT EOF()
+*!*			
+*!*				v_idsectorD	= reclamosec_sql.idrecsecd
+*!*			
+*!*				v_idultEstadoRecTmp	= estadoReclamoPorSector(v_idreclamop, v_idsectorD, 'I')
+*!*		
+*!*				
+*!*				IF v_idultEstadoRecTmp = v_estadoCerradoTmp
+*!*					** Si está en estado cerrado -> No cambio el estado
+*!*				ELSE
+*!*				
+*!*					** Cierro el reclamo para el sector
+*!*					v_retTmp = cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
+*!*			
+*!*					IF v_retTmp = .F.
+*!*						v_huboError = v_huboError  + 1
+*!*						
+*!*						MESSAGEBOX("Hubo un problema al intentar cambiar de estado el reclamo ID: "+ALLTRIM(STR(v_idreclamop)),0+48+256,"Error al cambiar de estado")
+*!*					ENDIF 
+*!*				ENDIF 
+*!*			
+*!*				SELECT reclamosec_sql
+*!*				SKIP 1
+*!*			
+*!*			ENDDO 
+*!*			
+*!*			IF v_cantReg = v_huboError
+*!*				v_retorno = .F.
+*!*			ELSE
+*!*				v_retorno = .T.		
+*!*			ENDIF 
+*!*			 
+*!*		ELSE
+*!*		
+*!*			MESSAGEBOX(1111)
+*!*			v_retorno	= cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
+*!*		
+*!*		ENDIF 		
+*!*		
+*!*		
+*!*			
+
+*!*		RETURN v_retorno
+*!*	ENDFUNC 
 
 
 
@@ -11742,8 +11754,6 @@ FUNCTION cambiaAEstado
 		** El Sector origen cierra todos los sectores 
 	
 	
-	
-	
 		vconeccionM = abreycierracon(0,_SYSSCHEMA)
 
 		
@@ -11804,8 +11814,6 @@ FUNCTION cambiaAEstado
 		v_retorno	= cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
 	
 	ENDIF 		
-	
-	
 		
 
 	RETURN v_retorno
@@ -27499,113 +27507,6 @@ PARAMETERS p_idcomproba,p_desde,p_hasta
 
 	
 	
-*!*		
-*!*				v_fecha      = CTOD( SUBSTR(percep.fecha,7,2)+"/"+SUBSTR(percep.fecha,5,2)+"/"+SUBSTR(percep.fecha,1,4) )				
-*!*						v_compro     = "RE   0001-"+STRTRAN(STR(percep.numero,9,0)," ","0")				
-*!*						v_alicuota   = percep.alicuota
-*!*						v_montoimpo  = percep.sujaperc
-*!*						v_basecalc   = percep.sujaperc
-*!*						v_percepcion = percep.impperc
-*!*						v_cuit       = percep.cuit
-*!*						v_nombre     = percep.nomb_fanta
-*!*						v_inscrip    = ALLTRIM(STRTRAN(percep.nroinscrip2,'-',''))
-*!*						v_domicilio  = percep.domi_fanta
-*!*						v_cp         = percep.cp_fanta
-*!*						
-*!*						SELECT localidad
-*!*						GO TOP 
-*!*						LOCATE FOR localidad = percep.loc_fanta
-*!*						IF FOUND() THEN 
-*!*							v_localidad = ALLTRIM(localidad.nombre)
-*!*						ELSE
-*!*							v_localidad = ''
-*!*						ENDIF 
-*!*						
-*!*						SELECT provincias
-*!*						GO top
-*!*						LOCATE FOR provincia = percep.prov_fanta
-*!*						IF FOUND() THEN 
-*!*							v_Provincia  = ALLTRIM(provincias.nombre)
-*!*						ELSE 
-*!*							v_Provincia  = ''
-*!*						ENDIF 
-*!*						v_iva       = percep.iva
-*!*						v_i_iva_g   = 0
-*!*						v_imp_total = percep.imp_total
-*!*						
-*!*						* grabo en el Archivo Temporal para Listado
-*!*						INSERT INTO TmpReten (fecha,compro,alicuota,montoimpo,basecalc, percepcion,cuit,nombre,inscrip,;
-*!*						                       domicilio,cp,localidad,Provincia,iva,i_iva_g,imp_total);
-*!*							VALUES (v_fecha,v_compro,v_alicuota,v_montoimpo,v_basecalc,v_percepcion,v_cuit,v_nombre,v_inscrip,;
-*!*							        v_domicilio,v_cp,v_localidad,v_Provincia,v_iva,v_i_iva_g,v_imp_total)		
-*!*		
-
-
-
-*!*					SELECT TmpReten
-*!*					SET ORDER TO fecha
-*!*					GO TOP 
-*!*					IF EOF() AND RECNO()=1
-*!*						MESSAGEBOX("No Existen Retenciones de GANANCIAS con los parámetros de búsqueda ingresados",0+48+0,"Aviso del Sistema")
-*!*						RETURN 
-*!*					ENDIF 
-
-*!*					ZAP IN RetenAfip
-
-*!*					SELECT TmpReten
-*!*					SET ORDER TO fecha
-*!*					GO TOP 
-*!*					DO WHILE NOT EOF()
-*!*						V_CodComp    = '06'
-*!*						V_FecComp    = DTOC(TmpReten.fecha)
-*!*						V_NroComp    = strtran(STR(VAL(SUBSTR(TmpReten.compro,11,9)),16)," ","0")
-*!*						V_ImpComp    = strtran(strtran(str(TmpReten.imp_total,16,2),'.',',')," ","0")
-*!*						V_CodImp     = '0217'
-*!*						V_Regimen    = '078'
-*!*						V_Operacion  = '1'
-*!*						V_BaseCalc   = strtran(strtran(str(TmpReten.basecalc,14,2),'.',',')," ","0")
-*!*						V_Fecha      = DTOC(TmpReten.fecha)
-*!*						V_CodCondi   = '01'
-*!*					    V_CodSujSus  = '0'
-*!*					    V_Monto      = strtran(strtran(str(TmpReten.percepcion,14,2),'.',',')," ","0")
-*!*					    V_PorceExcl  = '000,00'
-*!*					    V_FecBoletin = '          '
-*!*					    V_Tipoiden   = '80'
-*!*					    V_Identi     = strtran(TmpReten.cuit,"-","")+space(9)
-*!*					    V_NroCertOri = '00000000000000'
-*!*					    V_denoorde   = space(30)
-*!*					    V_acrecenta  = '0'
-*!*					    V_cuitpaisre = space(11)
-*!*					    V_cuitorde   = space(11)
-*!*							
-*!*						IF TmpReten.percepcion > 0 THEN 
-*!*							* grabo en el Archivo Temporal para SIAP
-*!*							INSERT INTO RetenAfip(CodComp,FecComp,NroComp,ImpComp,CodImp,Regimen,Operacion,BaseCalc,Fecha,CodCondi,CodSujSus,;
-*!*							                      Monto,PorceExcl,FecBoletin,Tipoiden,Identi,NroCertOri,denoorde,acrecenta,cuitpaisre,cuitorde);
-*!*							            VALUES (V_CodComp,V_FecComp,V_NroComp,V_ImpComp,V_CodImp,V_Regimen,V_Operacion,V_BaseCalc,V_Fecha,V_CodCondi,;
-*!*							                    V_CodSujSus,V_Monto,V_PorceExcl,V_FecBoletin,V_Tipoiden,V_Identi,V_NroCertOri,V_denoorde,V_acrecenta,;
-*!*							                    V_cuitpaisre,V_cuitorde)
-*!*						ELSE 
-*!*							MESSAGEBOX("El comprobante "+ALLTRIM(TmpPercep.compro)+" de fecha "+v_fecharet+ CHR(13)+;
-*!*							           "del cliente "+ALLTRIM(TmpPercep.nombre)+" tiene una retencion menor que cero."+ CHR(13)+;
-*!*							           "Este comprobante no será incorporado al archivo de importación. Deberá ingresarse manualmente.",0+48+0,"ERROR")
-*!*						ENDIF 
-*!*							
-*!*						SELECT TmpReten
-*!*						SKIP 1 	
-*!*					ENDDO 
-
-*!*					SET DEFAULT TO C:\
-*!*					v_archivo=PUTFILE('Guardar Archivo para SIAP','Retencion_GANANCIAS','TxT')
-*!*					IF EMPTY(v_archivo) THEN 
-*!*						MESSAGEBOX("NO SE HA ELEGIDO Ningún Nombre para Guardar el Archivo de Importación.",0+48+0,"Aviso del Sistema")
-*!*					ELSE
-*!*						SELECT RetenAfip
-*!*						GO TOP 
-*!*						COPY TO (v_archivo) sdf
-*!*						MESSAGEBOX("El Archivo de Importación se ha Generado con Éxito.",0+64+0,"Aviso del Sistema")
-*!*					ENDIF 
-*!*					SET DEFAULT TO &MIESTACION	
 
 	RETURN v_retorno
 ENDFUNC 
@@ -33027,83 +32928,6 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 
 				ENDCASE
 			
-				
-				
-				
-				
-					
-				
-			
-			
-			
-*!*					* Generacion del comprobante de anulacion para recibos y ordenes de pago
-*!*					* Este comprobante anula el recibo u orden de pago con un contra-movimiento
-*!*					IF ALLTRIM(v_aetabla) = 'recibos' OR ALLTRIM(v_aetabla) = 'pagosprov' THEN 
-*!*						v_anular = AnularRP(grillaComp.idcomproba,grillaComp.idregistro,grillaComp.entidad)
-*!*						IF !v_anular THEN 
-*!*							RETURN 0
-*!*						ENDIF 
-*!*					ENDIF 
-
-*!*					
-*!*					IF ALLTRIM(v_aetabla) = 'transferencias'   THEN 
-*!*					
-*!*						 vnewTransfe = AnularTransfe(grillaComp.idregistro)
-*!*					
-*!*					ENDIF 
-
-*!*			
-*!*					IF ALLTRIM(v_aetabla) = 'remitos'   THEN 
-*!*						 v_anularRe = AnularRemitos(grillaComp.idregistro)
-*!*						
-*!*					ENDIF 
-*!*					
-
-*!*					IF ALLTRIM(v_aetabla) = 'costop'   THEN 
-*!*					
-*!*						IF grillaComp.idasiento > 0 THEN 
-*!*							v_eliasiento = EliminaAsientoC(grillaComp.idasiento)
-*!*							IF v_eliasiento <> 0 THEN 
-*!*								MESSAGEBOX("El comprobante no se puede anular porque el Asiento Asociado pertenece a otro Ejercicio.",0+48+0,"Anulación de Comprobante")
-*!*								RETURN 0
-*!*							ENDIF 
-*!*						ENDIF 						
-*!*					ENDIF 
-*!*					
-*!*					
-*!*					IF ALLTRIM(v_aetabla) = 'cajaie' THEN 
-*!*					
-*!*						v_idregAnul = anularCajaIE(grillaComp.idregistro)
-*!*						
-*!*						IF v_idregAnul <= 0
-*!*						
-*!*							MESSAGEBOX("El comprobante no se pudo anular",0+48+0,"Error al anular el comprobante")
-*!*							RETURN 0 
-*!*						
-*!*						ENDIF 
-*!*						
-*!*					ELSE
-*!*						
-*!*						**************************************************************************	
-*!*					
-*!*						IF !(ALLTRIM(v_aetabla) = 'transferencias') THEN 
-*!*					
-*!*							v_tab 	= ALLTRIM(v_aetabla)
-*!*							
-*!*						
-*!*							v_nomId	= obtenerCampoIndice(v_aetabla,.F.)
-*!*					
-*!*							v_anulado = registrarEstado(v_tab ,v_nomId,p_idregistro,'I',"ANULADO")
-*!*		
-*!*							IF v_anulado = .T.
-*!*								v_retorno = 2
-*!*							ELSE
-*!*								v_retorno  = 0
-*!*							ENDIF 
-*!*							
-*!*						ENDIF 
-*!*					ENDIF 
-				
 			
 			ENDIF 
 	
@@ -33165,33 +32989,3 @@ ENDFUNC
 
 
 
-
-*!*	FUNCTION obtenerSectorComp 
-*!*	PARAMETERS p_idcomproba, p_idregistro
-*!*	*#/----------------------------------------
-*!*	* Función para obtener el sector del comprobante pasado como parámetro. El comprobante puede estar asociado directamente a un sector o indirectamente, en el caso de
-*!*	*  por ejemplo un remito, que tiene una cumplimentación donde la cumplimentación está asociada al remito.
-*!*	* Parametros : p_idcomproba	= ID del comprobante 
-*!*	*              p_idregistro = ID del regustro
-*!*	* RETURN: Retorno ID del sector, 0 en caso de no pertenecer a algún sector, -1 en caso de error
-*!*	*#/----------------------------------------
-
-*!*			
-*!*		v_retorno = 0
-*!*		
-*!*		*** Me conecto a la base de datos
-*!*		vconeccionO=abreycierracon(0,_SYSSCHEMA)
-
-
-
-*!*		*** me desconecto	
-*!*			=abreycierracon(vconeccionO,"")
-*!*		
-
-*!*		
-
-
-
-
-
-*!*	ENDFUNC 
