@@ -7746,7 +7746,7 @@ GO  TOP
 			
 			** Busco la entidad de la  NP **
 			
-			SELECT entidad, nombre, apellido,cuit from entidades_sql WHERE entidad = a_entidad INTO CURSOR entidadNP
+			SELECT entidad, nombre, apellido,cuit from entidades_sql WHERE entidad = a_entidad  INTO CURSOR entidadNP
 			
 			SELECT entidadNP
 			GO TOP 
@@ -7778,7 +7778,7 @@ GO  TOP
 			
 			** Busco la etiqueta de la NP **
 			
-			SELECT idetiqueta, etiqueta, descrip, orden, habilitado FROM etiquetasnp_sql INTO CURSOR etiquetanp
+			SELECT idetiqueta, etiqueta, descrip, orden, habilitado FROM etiquetasnp_sql WHERE ALLTRIM(etiqueta) = ALLTRIM(a_etiqueta) INTO CURSOR etiquetanp
 			
 			SELECT etiquetanp
 			GO TOP 
@@ -7913,7 +7913,7 @@ GO  TOP
 					a_cantidad	= npdet.cantidad
 					v_unidad 	= npdet.unidad
 					v_unidatio	= 0.00								
-					v_observa	= ""
+					v_observa	= ALLTRIM(STR(npdet.idot))
 					a_cantfc 	= npdet.cantfc 
 					
 					

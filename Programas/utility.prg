@@ -7845,7 +7845,14 @@ PARAMETERS p_idremito, p_ubicacion
 			IF chars <= 0 THEN 
 				MESSAGEBOX("NO se pudo escribir 'Renglón 3 de Obserb.....' en el archivo "+v_NombreArchi,0+48+0,"Error")
 			ENDIF 
-			chars=FPUTS(H,alltrim(TmpRemi.pieremito4) )
+			
+			v_pieremito4 = alltrim(TmpRemi.pieremito4)
+			IF EMPTY(v_pieremito4) = .T.
+				v_pieremito4 = "LAPSO MAXIMO PARA EFECTUAR RECLAMOS 72HS DE RECIBIDO EL MATERIAL"
+			
+			ENDIF 
+			
+			chars=FPUTS(H,alltrim(v_pieremito4))
 			IF chars <= 0 THEN 
 				MESSAGEBOX("NO se pudo escribir 'Renglón 4 de Obserb.....' en el archivo "+v_NombreArchi,0+48+0,"Error")
 			ENDIF 
@@ -31910,7 +31917,7 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 *	True: si no se produjeron errores, False en otro caso
 *#/----------------------------------------
 
-	
+		
 	IF ALLTRIM(TYPE('_SYSCOMPTRAZAS')) = 'U' or EMPTY(ALLTRIM(_SYSCOMPTRAZAS)) =.T.
 		RETURN .T.
 	ENDIF 
@@ -31920,22 +31927,23 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 	v_idcompTraza = 0
 	v_idoperaTraza = 0
 	v_encontro = .F.
+
 	IF v_tamarr > 0
 		
 		i = 1
 		
-		DO WHILE i <= v_tamarr OR v_encontro = .F.
-
+		DO WHILE i <= v_tamarr and v_encontro = .F.
+	
 			v_compop = arrcomptrazas(i)
 			
 			v_tamct = ALINES(arrct,ALLTRIM(v_compop),",")
-		
+			
 			IF v_tamct = 2
 			
 				v_idcomparr = arrct(1)
 				v_operaarr  = arrct(2)
 				
-						
+				
 				IF VAL(v_idcomparr) == p_idcomproba
 				
 					v_idcompTraza = VAL(v_idcomparr) 
@@ -31951,7 +31959,7 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 			i = i+1
 
 		ENDDO
-	
+		
 		IF v_encontro = .T.
 			
 			** Si llego hasta acá es porque encontró la operación del comprobante para la traza. 
@@ -31966,9 +31974,7 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 			v_trazaiv = ""
 			
 			DO FORM ingresarvalor WITH  v_tituloiv,v_descripiv,v_tiporetiv,v_valoriv TO v_trazaiv
-			
-			MESSAGEBOX(v_trazaiv)
-			
+				
 			IF EMPTY(ALLTRIM(v_trazaiv))=.F.
 				v_idtraza = ALLTRIM(v_trazaiv)
 			ELSE
@@ -31994,6 +32000,7 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 				sqlmatriz(2)=""
 			ENDCASE 	
 				
+			
 			IF !EMPTY(ALLTRIM(sqlmatriz(1))) THEN 
 							
 					verror=sqlrun(vconeccionF,"detacomp_sql")
@@ -32007,11 +32014,9 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 						
 					SELECT detacomp_sql
 					GO top
-					
+				
 					DO WHILE NOT EOF()
-					
-						
-						
+																
 						v_idtie	= 0
 						v_articulo = detacomp_sql.articulo
 						v_cantidad = (detacomp_sql.cantidad)*v_operaTraza 
@@ -32024,10 +32029,8 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 						p_tabla     = 'trazaie'
 						p_matriz    = 'lamatriz'
 
-
 						p_conexion  = vconeccionE	
 
-						
 						DIMENSION lamatriz(8,2)
 						
 						lamatriz(1,1)='idtie'
@@ -32047,8 +32050,7 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 						lamatriz(8,1)='registroi'
 						lamatriz(8,2)=alltrim(STR(v_registroi))
 						
-						
-						
+												
 						IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
 						    MESSAGEBOX("Ha Ocurrido un Error al registrar el movimiento de traza",0+48+0,"Error")
 						    * me desconecto	
