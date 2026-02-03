@@ -15749,6 +15749,500 @@ RETURN
 ENDFUNC 
 
 
+FUNCTION IMPRIMIRETIQUETACUMP
+PARAMETERS P_IDCUMP
+*#/----------------------------------------
+*- Impresión de Etiquetas de cumplimentación, recibe como parametro el idcump
+*- PARAMETROS: P_IDCUMP: Id de la cumplimentación
+*- Retorno: True o False si se imprimió o no correctamente
+
+*#/----------------------------------------
+
+	IF p_idcump <= 0
+		
+		MESSAGEBOX("El ID de cumplimentación no es válido",0+16+256,"Error al imprimir la etiqueta")
+		RETURN .F.
+	ENDIF 
+	
+	
+
+	sino=MESSAGEBOX("¿Desea Imprimir las Etiquetas de la Pesada?",4+32+0,"Aviso del Sistema")
+		IF sino=6 
+	
+			
+	
+			vconeccion = abreycierracon(0,_SYSSCHEMA)
+						
+			sqlmatriz(1)=" SELECT p.idcump as idpesadap, p.numero as pesadap, p.fecha, '00:00:00' as hora,0.00 as pesotoreal, p.paquetes as cant_eti,p.idcomproba, h.idcumph as idpesadah,h.idot, "
+			sqlmatriz(2)=" 0 as idotprodu, 0 as idproduh, h.cantidad, h.cantidaduf, 1 as nropaquete, p.paquetes as cantpaq, ifnull(t.idtraza,'0000000') as idtraza,c.comprobante "
+			sqlmatriz(3)=" from cumplimentap p left join cumplimentah h on p.idcump = h.idcump left join  comprobantes c on p.idcomproba = c.idcomproba left join trazaie t on t.tabla = 'cumplimentah' and t.campo = 'idcumph' and h.idcumph = t.registroi "
+			sqlmatriz(4)=" where p.idcump = "+ALLTRIM(STR(P_IDCUMP))
+			
+			
+					
+*!*				sqlmatriz(1)="SELECT pesadap.idpesadap, pesadap.fecha, pesadap.hora, pesadap.pesotoreal, pesadap.cant_eti, "
+*!*				sqlmatriz(2)="   pesadah.idpesadah, pesadah.idot, pesadah.idotprodu, pesadah.idproduh, pesadah.idproduh, pesadah.cantidad, pesadah.pesoreal, pesadah.nropaquete, pesadah.cantpaq "
+*!*				sqlmatriz(3)="   FROM pesadap "
+*!*				sqlmatriz(4)="   LEFT JOIN pesadah ON pesadap.idpesadap=pesadah.idpesadap "
+*!*				sqlmatriz(5)="   WHERE pesadap.idpesadap="+ALLTRIM(STR(P_UNROPESADA))
+			verror=sqlrun(vconeccion,"ImpreEti_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la Búsqueda de Datos para Imprimir las Etiquetas ",0+48+0,"Error")
+			ENDIF 
+			
+			SELECT * FROM ImpreEti_sql INTO TABLE ImpreEti
+			
+			
+			ALTER table ImpreEti alter COLUMN cantidaduf Y
+			ALTER table ImpreEti alter COLUMN pesotoreal Y
+			ALTER table impreEti alter COLUMN cantidad I
+			
+			
+			
+			SELECT ImpreEti
+			GO top
+			IF EOF() AND RECNO()=1
+				MESSAGEBOX("No Existen Datos de Etiquetas para Imprimir la Pesada ",0+48+0,"Aviso del Sistema")
+				RETURN 
+			ELSE
+			
+			
+			
+			SET ENGINEBEHAVIOR 70
+			
+				SELECT SUM(cantidaduf) as total, idpesadap FROM impreEti GROUP BY idpesadap INTO table totImpreEti
+				
+			SET ENGINEBEHAVIOR 90
+			
+				
+				SELECT total, idpesadap FROM totImpreEti WHERE idpesadap = P_idcump INTO table totimpreetia
+				
+				
+				v_totalPes = 0.00
+				
+				SELECT totimpreetia
+				GO TOP 
+				IF NOT EOF()
+				
+					v_totalPes = totimpreetia.total
+					v_pesadapA = totimpreetia.idpesadap
+					select ImpreEti
+					GO TOP 
+					
+					replace ALL pesotoreal WITH v_totalPes FOR idpesadap = v_pesadapA
+						
+				ELSE
+					v_totalPes = 0.00
+				ENDIF 
+		
+				
+				eti_ot = impreeti.idot
+				
+							
+			
+			
+				SELECT ImpreEti
+				GO top
+				DO WHILE NOT EOF()
+*!*						IF Es_OtProdu = .t.
+*!*							ThisForm.eti_ot=ImpreEti.idproduh			
+*!*							sqlmatriz(1)=" SELECT * FROM otproduh WHERE idproduh="+ALLTRIM(STR(ThisForm.eti_ot))
+*!*						ELSE
+
+						eti_ot=ImpreEti.idot			
+*!*							sqlmatriz(1)=" select * from ot o left join np n on o.idnp = n.idnp WHERE o.idot="+ALLTRIM(STR(eti_ot))		
+						sqlmatriz(1)=" select o.*, n.*, ifnull(d.valor,'') as nrooc, e.etiqueta "
+						sqlmatriz(2)=" from ot o left join np n on o.idnp = n.idnp left join reldatosextra r on r.tabla = 'np' and n.idnp = r.idregistro "
+						sqlmatriz(3)=" left join datosextra d on r.iddatosex = d.iddatosex and propiedad = 'OC' left join etiquetanp e on n.idetiqueta = e.idetiqueta "
+						sqlmatriz(4)=" WHERE o.idot="+ALLTRIM(STR(eti_ot))		
+*!*						ENDIF 
+					verror=sqlrun(vconeccion,"OtEti")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la Búsqueda de Datos de la OT "+ALLTRIM(STR(eti_ot))+" para Imprimir las Etiquetas ",0+48+0,"Error")
+					ENDIF 
+					SELECT Oteti
+					SELECT ImpreEti
+*!*						IF Es_OtProdu = .t.
+*!*							thisform.eti_idp = ImpreEti.idpesadap
+*!*							thisform.eti_pesoto = ImpreEti.pesotoreal
+*!*							ThisForm.eti_id = ImpreEti.idpesadah
+*!*							ThisForm.eti_paquete=ALLTRIM(STR(ImpreEti.nropaquete))
+*!*							ThisForm.eti_cantpaq=ALLTRIM(STR(ImpreEti.cantpaq))
+*!*							ThisForm.eti_hora=ImpreEti.hora
+*!*							ThisForm.eti_cantidad=ImpreEti.cantidad
+*!*							ThisForm.eti_fecha=SUBSTR(ImpreEti.fecha,7,2)+"/"+SUBSTR(ImpreEti.fecha,5,2)+"/"+SUBSTR(ImpreEti.fecha,1,4)
+*!*							ThisForm.eti_kilos=ImpreEti.pesoreal
+*!*							ThisForm.eti_np="0000-"+STRTRAN(STR(ImpreEti.idprod,8,0)," ","0")
+*!*							ThisForm.eti_cliente="Barnaba y Cia. STOCK"
+*!*							ThisForm.eti_servicio=""
+*!*							ThisForm.eti_color=""
+*!*							v_artip=Oteti.idartproce
+*!*							v_definida=Oteti.definida
+*!*							ThisForm.nrooc    = oteti.nrooc
+*!*							ThisForm.etiqueta = oteti.etiqueta
+*!*							
+*!*						ELSE
+ 
+						eti_idp = ImpreEti.pesadap	
+						eti_idcomproba =ImpreEti.idcomproba
+						eti_pesoto = ImpreEti.pesotoreal
+						eti_id = ImpreEti.idpesadah
+						eti_paquete=ALLTRIM(STR(ImpreEti.nropaquete))
+						eti_cantpaq=ALLTRIM(STR(ImpreEti.cantpaq))
+						eti_hora=ImpreEti.hora
+						eti_cantidad=ImpreEti.cantidad
+						eti_fecha=SUBSTR(ImpreEti.fecha,7,2)+"/"+SUBSTR(ImpreEti.fecha,5,2)+"/"+SUBSTR(ImpreEti.fecha,1,4)
+						eti_kilos=ImpreEti.pesotoreal
+						eti_np=oteti.puntov+"-"+STRTRAN(STR(oteti.numero,8,0)," ","0")
+						eti_cliente=ALLTRIM(STR(oteti.entidad))+" - "+oteti.nombre
+						eti_servicio=""
+						eti_color=""
+						v_codigoart=Oteti.articulo
+						v_definida="S"
+						v_nrooc    = oteti.nrooc
+						v_etiqueta = oteti.etiqueta
+						v_traza 	= impreeti.idtraza
+*!*							v_comprobante = impreEti.comprobante
+
+						
+						comproObj 	= CREATEOBJECT('comprobantesclass')
+						
+						v_idtipoCompCPRE   = comproObj.getIdComprobante("CUMP. NP PRENSA")
+						v_idtipoCompCDIS   = comproObj.getIdComprobante("CUMP. NP DISTRIBUCION")
+						v_idtipoCompCPIN   = comproObj.getIdComprobante("CUMP. NP PINTURA")
+
+
+
+*!*						ENDIF 
+
+
+
+					
+						cantidad_etiquetas = ImpreEti.cant_eti
+					
+					
+						* busco en la base de maestros
+						* me conecto a la base de datos maestros
+				
+						*vconecmae= abreycierracon(0,_SYSSCHEMA)
+
+						
+						sqlmatriz(1)="SELECT *  FROM articulos P "
+						sqlmatriz(2)="  WHERE P.articulo='"+ALLTRIM(v_codigoart)+"'"
+						verror=sqlrun(vconeccion,"artp")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Artículo a Procesar.",0+48+0,"Error")
+						    eti_articulo=" *** No Definido *** "
+						    eti_codfact=""
+						ENDIF 
+					   
+					
+						IF USED("artp")
+							SELECT artp
+							GO TOP
+							IF EOF() AND RECNO()=1
+								* VACIA =>  Error: El Artículo de la Ot de Producción NO está Definido
+								eti_articulo=" *** Error: El Artículo de la Ot de Producción NO está Definido *** "
+								eti_codfact=""
+							ELSE
+								* Existe => Art. Definido, controlo que el articulo seleccionado sea del mismo subtipo que la ot 
+								eti_articulo=artp.detalle							
+								eti_codfact=ALLTRIM(artp.articulo)
+							ENDIF 
+							USE IN artp
+						ENDIF 						
+				
+					
+					SELECT ImpreEti
+					
+*!*						IF Es_OtProdu = .t.
+*!*							* Imprime en Matriz de Punto
+*!*	*						
+*!*							* Imprime en Térmica
+*!*							v_eti_idp    = thisform.eti_idp 
+*!*							v_eti_pesoto = thisform.eti_pesoto 
+*!*							v_eti_cantid = ThisForm.eti_cantidad
+*!*							v_eti_client = ThisForm.eti_cliente
+*!*							v_eti_codfac = ThisForm.eti_codfact
+*!*							v_eti_fecha  = ThisForm.eti_fecha
+*!*							v_eti_hora   = ThisForm.eti_hora
+*!*							v_eti_id     = ThisForm.eti_id
+*!*							v_eti_np     = ThisForm.eti_np
+*!*							v_eti_ot     = ThisForm.eti_ot
+*!*							v_eti_articu = ThisForm.eti_articulo
+*!*							v_eti_servic = ThisForm.eti_servicio
+*!*							v_eti_color  = ThisForm.eti_color
+*!*							v_eti_kilos  = ThisForm.eti_kilos
+*!*							v_eti_paquet = ThisForm.eti_paquete
+*!*							v_eti_cantpaq= thisform.eti_cantpaq 
+*!*							v_eti_nrooc  = ThisForm.nrooc 
+*!*							v_eti_etiqueta = thisform.etiqueta 
+*!*							v_eti_idtra		= thisform.textidTraza.Value
+*!*							i=1
+*!*							v_archivo = ALLTRIM(miestacion)+"\OP"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,2)," ","0")+".dbf"
+*!*							v_alias   ="OP"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,2)," ","0")
+*!*							CREATE TABLE &v_archivo FREE (eti_idp i,eti_kilosp y, eti_cantid i,eti_client c(100),eti_codfac c(30), ;
+*!*								eti_fecha c(10),eti_hora c(8),eti_id i,eti_np c(30),eti_ot i, eti_articu c(100), ;
+*!*								eti_servic c(100), eti_color c(80), eti_kilos y, eti_paquet C(10),eti_cantp c(10), eti_nrooc c(20), eti_etique c(20), eti_idtra C(8))
+*!*							INSERT INTO &v_alias (eti_idp,v_eti_pesoto,eti_cantid,eti_client,eti_codfac,eti_fecha,eti_hora,eti_id, ;
+*!*									eti_np,eti_ot,eti_articu,eti_servic,eti_color,eti_kilos,eti_paquet,eti_cantp,eti_nrooc,eti_etique,eti_idtra) ;
+*!*								VALUES (v_eti_idp,v_eti_cantid,v_eti_client,v_eti_codfac,v_eti_fecha,v_eti_hora,v_eti_id, ;
+*!*									v_eti_np,v_eti_ot,v_eti_articu,v_eti_servic,v_eti_color,v_eti_kilos,v_eti_paquet,v_eti_cantpaq, v_eti_nrooc, v_eti_etiqueta, v_eti_idtra)
+*!*							USE IN &v_alias
+*!*								
+*!*							eje="COPY FILE "+ALLTRIM(v_archivo)+" TO "+ALLTRIM(PATHPRINTERETIZ)+"\ordprod\"+ALLTRIM(v_alias)+".dbf"
+*!*							&eje
+*!*						    
+*!*						   
+*!*						ELSE
+					
+*												
+						* Imprime en Térmica
+						v_eti_idp    = eti_idp 
+						v_eti_pesoto = eti_pesoto
+						v_eti_cantid = eti_cantidad
+						v_eti_client = eti_cliente
+						v_eti_codfac = eti_codfact
+						v_eti_fecha  = eti_fecha
+						v_eti_hora   = eti_hora
+						v_eti_id     = eti_id
+						v_eti_np     = eti_np
+						v_eti_ot     = eti_ot
+						v_eti_articu = eti_articulo
+						v_eti_servic = eti_servicio
+						v_eti_color  = eti_color
+						v_eti_kilos  = eti_kilos
+						v_eti_paquet = eti_paquete
+						v_eti_nrooc  = v_nrooc 
+						v_eti_etiqueta = v_etiqueta 
+						*v_cantidad_etiquetas = thisform.cantidad_etiquetas
+						v_cantidad_total = eti_paquete
+						v_eti_idtra		= v_traza 
+					
+						**** diferenciar sección de distribución con las demas
+				
+						
+						DO CASE
+						CASE eti_idcomproba  = v_idtipoCompCDIS 
+						
+								
+							v_eti_idp    = eti_idp 
+							v_eti_pesoto = eti_pesoto 
+			
+							v_eti_client = eti_cliente
+						
+							v_eti_fecha  = eti_fecha
+							v_eti_hora   = eti_hora
+						
+							v_eti_np     = eti_np
+							v_cantidad_total = cantidad_total
+				
+							v_oc_np		= ALLTRIM(nrooc)
+						
+						
+						
+						
+							v_cantidad_etiquetas = cantidad_etiquetas
+							
+								IF v_cantidad_etiquetas <= 0
+								
+									v_cantidad_etiquetas = 1
+								ENDIF 
+							
+							
+							
+							
+								i=1
+								v_archivo = ALLTRIM(_SYSESTACION)+"\PE"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,3)," ","0")+".dbf"
+								v_alias   ="PE"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,3)," ","0")
+
+								v_hasta = v_cantidad_etiquetas 
+								
+								FOR i = 1 TO v_hasta
+									v_eti_paquet = ALLTRIM(STR(i))
+									CREATE TABLE &v_archivo FREE (eti_idp i, eti_kilosp y, eti_cantot i,eti_client c(100), ;
+										eti_fecha c(10),eti_hora c(8), eti_np c(30), ;
+										eti_paquet C(10), eti_cant i, oc_np C(15))
+									INSERT INTO &v_alias (eti_idp, eti_kilosp, eti_cantot,eti_client, eti_fecha,eti_hora,eti_np,eti_paquet, eti_cant, oc_np) ;
+										VALUES (v_eti_idp,v_eti_pesoto, v_cantidad_total,v_eti_client,v_eti_fecha,v_eti_hora, v_eti_np,;
+											v_eti_paquet,v_cantidad_etiquetas, v_oc_np)
+									USE IN &v_alias
+																			
+									eje="COPY FILE "+ALLTRIM(v_archivo)+" TO "+ALLTRIM(_SYSUBIETIQUETAS)+"\Distribucion\"+ALLTRIM(v_alias)+"_"+STRTRAN(STR(i,3)," ","0")+".dbf"
+									&eje
+								ENDFOR 
+						CASE eti_idcomproba  = v_idtipoCompCPIN
+							v_eti_idp    = eti_idp 
+							v_eti_pesoto = eti_pesoto 
+			
+							v_eti_client = eti_cliente
+						
+							v_eti_fecha  = eti_fecha
+							v_eti_hora   = eti_hora
+						
+							v_eti_np     = eti_np
+							v_cantidad_total = cantidad_total
+				
+							v_oc_np		= ALLTRIM(nrooc)
+						
+						
+						
+						
+							v_cantidad_etiquetas = cantidad_etiquetas
+							
+								IF v_cantidad_etiquetas <= 0
+								
+									v_cantidad_etiquetas = 1
+								ENDIF 
+							
+							
+							
+							
+								i=1
+								v_archivo = ALLTRIM(_SYSESTACION)+"\PE"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,3)," ","0")+".dbf"
+								v_alias   ="PE"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,3)," ","0")
+
+								v_hasta = v_cantidad_etiquetas 
+								
+								FOR i = 1 TO v_hasta
+									v_eti_paquet = ALLTRIM(STR(i))
+									CREATE TABLE &v_archivo FREE (eti_idp i, eti_kilosp y, eti_cantot i,eti_client c(100), ;
+										eti_fecha c(10),eti_hora c(8), eti_np c(30), ;
+										eti_paquet C(10), eti_cant i, oc_np C(15))
+									INSERT INTO &v_alias (eti_idp, eti_kilosp, eti_cantot,eti_client, eti_fecha,eti_hora,eti_np,eti_paquet, eti_cant, oc_np) ;
+										VALUES (v_eti_idp,v_eti_pesoto, v_cantidad_total,v_eti_client,v_eti_fecha,v_eti_hora, v_eti_np,;
+											v_eti_paquet,v_cantidad_etiquetas, v_oc_np)
+									USE IN &v_alias
+																			
+									eje="COPY FILE "+ALLTRIM(v_archivo)+" TO "+ALLTRIM(_SYSUBIETIQUETAS)+"\Distribucion\"+ALLTRIM(v_alias)+"_"+STRTRAN(STR(i,3)," ","0")+".dbf"
+									&eje
+								ENDFOR 
+						CASE eti_idcomproba  = v_idtipoCompCPRE
+							
+							IF ImpreEti.cantpaq <= 0 then
+								v_eti_cantpaq="1"
+							ELSE
+								v_eti_cantpaq= eti_cantpaq
+							ENDIF 
+							
+							i=1
+							v_archivo = ALLTRIM(_SYSESTACION)+"\PE"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,3)," ","0")+".dbf"
+																										
+							v_alias   ="PE"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,3)," ","0")
+
+							IF ImpreEti.cantpaq <= 0 then
+								v_hasta = 1
+							ELSE
+								v_hasta = ImpreEti.cantpaq
+							ENDIF 
+							
+							FOR i = 1 TO v_hasta
+								v_eti_paquet = ALLTRIM(STR(i))
+								CREATE TABLE &v_archivo FREE (eti_idp i, eti_kilosp y, eti_cantid i,eti_client c(100),eti_codfac c(30), ;
+									eti_fecha c(10),eti_hora c(8),eti_id i,eti_np c(30),eti_ot i, eti_articu c(100), ;
+									eti_servic c(100), eti_color c(80), eti_kilos y, eti_paquet C(10), eti_cantp c(10),eti_nrooc c(20), eti_etique c(20),eti_idtra C(8) )
+								INSERT INTO &v_alias (eti_idp,eti_kilosp, eti_cantid,eti_client,eti_codfac,eti_fecha,eti_hora,eti_id, ;
+										eti_np,eti_ot,eti_articu,eti_servic,eti_color,eti_kilos,eti_paquet,eti_cantp,eti_nrooc,eti_etique,eti_idtra) ;
+									VALUES (v_eti_idp,v_eti_pesoto, v_eti_cantid,v_eti_client,v_eti_codfac,v_eti_fecha,v_eti_hora,v_eti_id, ;
+										v_eti_np,v_eti_ot,v_eti_articu,v_eti_servic,v_eti_color,v_eti_kilos,v_eti_paquet,v_eti_cantpaq,v_eti_nrooc,v_eti_etiqueta,v_eti_idtra )
+								USE IN &v_alias
+								
+																		
+								eje="COPY FILE "+ALLTRIM(v_archivo)+" TO "+ALLTRIM(_SYSUBIETIQUETAS)+"\Perfiles\"+ALLTRIM(v_alias)+"_"+STRTRAN(STR(i,3)," ","0")+".dbf"
+
+								&eje
+							ENDFOR 
+									
+						OTHERWISE
+
+						ENDCASE
+						
+													
+						
+					
+*!*						ENDIF 
+					
+					
+					USE IN OtEti
+					
+					SELECT ImpreEti
+					SKIP 1
+				ENDDO
+				
+				
+						* me desconecto	
+						=abreycierracon(vconeccion,"") 
+							
+					
+				
+*!*						IF thisform.tiponp = "DISTRIBUCION" OR thisform.tiponp = "PINTURA"
+*!*						
+*!*						
+*!*									
+*!*							v_eti_idp    = thisform.eti_idp 
+*!*							v_eti_pesoto = thisform.eti_pesoto 
+*!*			
+*!*							v_eti_client = ThisForm.eti_cliente
+*!*						
+*!*							v_eti_fecha  = ThisForm.eti_fecha
+*!*							v_eti_hora   = ThisForm.eti_hora
+*!*						
+*!*							v_eti_np     = ThisForm.eti_np
+*!*							v_cantidad_total = thisform.cantidad_total
+*!*				
+*!*							v_oc_np		= ALLTRIM(ThisForm.nrooc)
+*!*						
+*!*						
+*!*						
+*!*						
+*!*							v_cantidad_etiquetas = thisform.cantidad_etiquetas
+*!*							
+*!*								IF v_cantidad_etiquetas <= 0
+*!*								
+*!*									v_cantidad_etiquetas = 1
+*!*								ENDIF 
+*!*							
+*!*							
+*!*							
+*!*							
+*!*								i=1
+*!*								v_archivo = ALLTRIM(miestacion)+"\PE"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,3)," ","0")+".dbf"
+*!*								v_alias   ="PE"+STRTRAN(STR(v_eti_id,7)," ","0")+STRTRAN(STR(i,3)," ","0")
+
+*!*								v_hasta = v_cantidad_etiquetas 
+*!*								
+*!*								FOR i = 1 TO v_hasta
+*!*									v_eti_paquet = ALLTRIM(STR(i))
+*!*									CREATE TABLE &v_archivo FREE (eti_idp i, eti_kilosp y, eti_cantot i,eti_client c(100), ;
+*!*										eti_fecha c(10),eti_hora c(8), eti_np c(30), ;
+*!*										eti_paquet C(10), eti_cant i, oc_np C(15))
+*!*									INSERT INTO &v_alias (eti_idp, eti_kilosp, eti_cantot,eti_client, eti_fecha,eti_hora,eti_np,eti_paquet, eti_cant, oc_np) ;
+*!*										VALUES (v_eti_idp,v_eti_pesoto, v_cantidad_total,v_eti_client,v_eti_fecha,v_eti_hora, v_eti_np,;
+*!*											v_eti_paquet,v_cantidad_etiquetas, v_oc_np)
+*!*									USE IN &v_alias
+*!*																			
+*!*									eje="COPY FILE "+ALLTRIM(v_archivo)+" TO "+ALLTRIM(PATHPRINTERETIZ)+"\Distribucion\"+ALLTRIM(v_alias)+"_"+STRTRAN(STR(i,3)," ","0")+".dbf"
+*!*									&eje
+*!*								ENDFOR 
+*!*							
+*!*							
+*!*							
+*!*							
+*!*						ENDIF 
+						 		
+			ENDIF 
+			USE IN ImpreEti
+		ENDIF
+		
+
+
+
+
+
+
+
+ENDFUNC
+
 
 
 
@@ -31922,7 +32416,6 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 		RETURN .T.
 	ENDIF 
 	
-	
 	v_tamarr = ALINES(arrcomptrazas,ALLTRIM(_SYSCOMPTRAZAS),";")
 	v_idcompTraza = 0
 	v_idoperaTraza = 0
@@ -31965,7 +32458,7 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 			** Si llego hasta acá es porque encontró la operación del comprobante para la traza. 
 			*** Entonces: 
 			**** Busco para el comprobante, el detalle, si es pesada -> pesadah para obtner las cantidades y los articulos y los agrego a la tabla trazaie
-			
+		
 			v_tituloiv = "INGRESAR TRAZA"
 			v_descripiv = "TRAZA"
 			v_tiporetiv = "C"
@@ -31984,15 +32477,13 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 				v_campoh = ""
 				v_registroh = ""
 
-
-			
 			DO CASE  
 			CASE lower(p_nomTabla) == 'cumplimentap'
 				sqlmatriz(1)=" select h.articulo, h.cantidad, p.fecha,h.idcumph as registroi from cumplimentap p left join cumplimentah h on p.idcump = h.idcump "
 				sqlmatriz(2)=" where p."+ALLTRIM(p_nomCampo)+" = "+ALLTRIM(STR(p_indice))
 				
 				v_tablah = "cumplimentah"
-				v_campoh = "iducumph"
+				v_campoh = "idcumph"
 				
 			
 			OTHERWISE
@@ -32000,7 +32491,6 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 				sqlmatriz(2)=""
 			ENDCASE 	
 				
-			
 			IF !EMPTY(ALLTRIM(sqlmatriz(1))) THEN 
 							
 					verror=sqlrun(vconeccionF,"detacomp_sql")
@@ -32069,19 +32559,18 @@ PARAMETERS p_idcomproba,p_nomTabla,p_nomCampo,p_indice
 						=abreycierracon(vconeccionE,"") 
 																
 				ENDIF 
-					
-			
+	
 		ELSE	
-			MESSAGEBOX("No se pudo obtener el comprobante indicado en la variable: '_SYSCOMPTRAZAS'",0+16+256,"Error al registrar la traza")
-				
-			RETURN .F.
+*!*				MESSAGEBOX("No se pudo obtener el comprobante indicado en la variable: '_SYSCOMPTRAZAS'",0+16+256,"Error al registrar la traza")
+*!*					
+*!*				RETURN .F.
 		ENDIF 
 	
 	
 	ELSE
-		MESSAGEBOX("No se pudo obtener los comprobantes de la variable: '_SYSCOMPTRAZAS'",0+16+256,"Error al registrar la traza")
+*!*			MESSAGEBOX("No se pudo obtener los comprobantes de la variable: '_SYSCOMPTRAZAS'",0+16+256,"Error al registrar la traza")
 			
-		RETURN .F.
+		RETURN .T.
 	ENDIF 
 
 	RETURN .T.
