@@ -2467,11 +2467,30 @@ PARAMETERS p_idimportap, p_archivo, p_func
 				v_maximoArtf = IIF(ISNULL(maxarticulosf.maxi)=.T.,0,maxarticulosf.maxi)
 				v_idartf = v_maximoArtf 
 				
-			ENDIF 			
+			ENDIF 	
+			
+			
+			
+				*** Calculo el Máximo de articulospro ***
+				sqlmatriz(1)="Select MAX(idartpro) as maxi from articulospro "
+				verror=sqlrun(vconeccion,"maxarticulopro")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo código de Articulos & Proveedores ",0+48+0,"Error")
+				    RETURN -9
+				ELSE
+					v_maximoArtPro = IIF(ISNULL(maxarticulopro.maxi)=.T.,0,maxarticulopro.maxi)
+					v_idartpro = v_maximoArtPro 
+				ENDIF 
+
+
+			
+			
+			
+			
+					
 		ENDIF 
 	
 	
-		v_idartpro = 0
 		*v_idlistah = v_maximoListah 
 		v_fechaAct = ALLTRIM(DTOS(DATE()))
 
