@@ -10784,7 +10784,7 @@ PARAMETERS p_reclamop, p_sector, p_estado
 			v_fechaStr		= ALLTRIM(TTOC(DATETIME()))
 			v_usuario		= _SYSUSUARIO
 			v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
-			v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
+			v_novedad	= "("+ALLTRIM(v_fechaStr)+") [Sector: "+ALLTRIM(v_sectorRec)+"]  EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)
 			
 			sqlmatriz(1)=" insert into recnovedad (idrecnov, idreclamop, fecha, novedades, usuario, timestamp) "
 			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"',CURRENT_TIMESTAMP)"
@@ -11695,7 +11695,7 @@ FUNCTION cambiaEstadoRec
 			
 			v_nrumerostr	= alltrim(strtran(str(v_numerorec,8,0),' ' ,'0'))
 			
-			v_novedad	= "("+ALLTRIM(v_fechaStr)+") EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)+" [SECTOR "+ALLTRIM(v_sectorRec)+"]"
+			v_novedad	= "("+ALLTRIM(v_fechaStr)+") [Sector: "+ALLTRIM(v_sectorRec)+"]  EL RECLAMO "+ALLTRIM(v_nrumerostr)+" CAMBIÓ AL ESTADO "+ALLTRIM(v_estado)
 					
 			sqlmatriz(1)=" insert into recnovedad (idrecnov, idreclamop, fecha, novedades, usuario, timestamp) "
 			sqlmatriz(2)= " values ("+ALLTRIM(STR(v_idrecnov))+","+ALLTRIM(STR(v_idreclamop))+",'"+ALLTRIM(v_fecha)+"','"+ALLTRIM(v_novedad)+"','"+ALLTRIM(v_usuario)+"',CURRENT_TIMESTAMP)"
@@ -11818,6 +11818,7 @@ FUNCTION cambiaAEstado
 			v_retorno = .T.		
 		ENDIF  
 	ELSE
+	
 		v_retorno	= cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
 	
 	ENDIF 		
@@ -33044,7 +33045,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 
 	v_anulaElimina 	= "I"
 	v_aetabla 		= ""
-	v_retorno = 0
+	v_anretorno = 0
 
 	IF TYPE('p_anulaElimina') = 'C'
 		v_anulaElimina = ALLTRIM(p_anulaElimina)
@@ -33094,6 +33095,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 	v_aenomindice = obtenerCampoIndice(v_aetabla)
 
 	v_tipoInd = TYPE('p_idregistro')
+
 
 
 	IF TYPE('_SYSVALANULAR') = 'N'
@@ -33247,7 +33249,6 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 			 	CASE v_estador = v_estadoAnulado
 		 			MESSAGEBOX("El comprobante ya esta Anulado.",0+48+0,"Anulación de Comprobante")
 		 			v_eliminarComp = .F.
-					RETURN 
 		 		CASE v_estador = v_estadoRechazado
 					v_eliminarComp = .T.
 		 		CASE v_estador = v_estadoPendiente
@@ -33306,7 +33307,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 					
 					IF v_ret THEN 
 *						MESSAGEBOX("Se ha eliminado el registro correctamente",0+64+0,"Registro eliminado")
-						v_retorno = 1
+						v_anretorno = 1
 					ENDIF 
 				CASE ALLTRIM(v_aetabla) == 'pagares'
 
@@ -33334,7 +33335,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 				v_ret = eliminarRegistros(v_aetabla ,v_aenomindice ,p_idregistro)
 					
 					IF v_ret THEN 
-						v_retorno = 1
+						v_anretorno = 1
 					ENDIF 
 
 			ENDCASE
@@ -33362,17 +33363,25 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 					CASE ALLTRIM(v_aetabla) = 'recibos' OR ALLTRIM(v_aetabla) = 'pagosprov'
 						* Generacion del comprobante de anulacion para recibos y ordenes de pago
 						* Este comprobante anula el recibo u orden de pago con un contra-movimiento
+						
 						v_anular = AnularRP(grillaComp.idcomproba,grillaComp.idregistro,grillaComp.entidad)
 						IF !v_anular THEN 
 							RETURN 0
 						ENDIF 
+						v_idcomp= grillaComp.idregistro
+						v_tab 	= ALLTRIM(v_aetabla)
+						v_nomId	= ALLTRIM(v_aenomindice)
+						registrarEstado(v_tab ,v_nomId,v_idcomp,'I',"ANULADO")
+						v_anretorno = 2
+
 					
 					CASE ALLTRIM(v_aetabla) = 'transferencias'
  						vnewTransfe = AnularTransfe(grillaComp.idregistro)
- 						
+ 						v_anretorno = 2
+						
  					CASE ALLTRIM(v_aetabla) = 'remitos'
  						v_anularRe = AnularRemitos(grillaComp.idregistro)
- 					
+						v_anretorno = 2				
  					
  					CASE ALLTRIM(v_aetabla) = 'costop' 
  						IF grillaComp.idasiento > 0 THEN 
@@ -33381,6 +33390,8 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 								MESSAGEBOX("El comprobante no se puede anular porque el Asiento Asociado pertenece a otro Ejercicio.",0+48+0,"Anulación de Comprobante")
 								RETURN 0
 							ENDIF 
+						ELSE 
+							v_anretorno = 2
 						ENDIF 		
 					
 					CASE ALLTRIM(v_aetabla) = 'cajaie'
@@ -33390,13 +33401,14 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 						
 							MESSAGEBOX("El comprobante no se pudo anular",0+48+0,"Error al anular el comprobante")
 							RETURN 0 
-						
+						ELSE 
+							v_anretorno = 2
 						ENDIF 
 					
 					CASE ALLTRIM(v_aetabla) = 'np'
 						v_anularNp = AnularNP(grillaComp.idregistro)
  						IF v_anularNP =.T.
- 							v_retorno = 2
+ 							v_anretorno = 2
  						ENDIF 
 						
 					OTHERWISE
@@ -33410,23 +33422,23 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 							v_anulado = registrarEstado(v_tab ,v_nomId,p_idregistro,'I',"ANULADO")
 		
 							IF v_anulado = .T.
-								v_retorno = 2
+								v_anretorno = 2
 							ELSE
-								v_retorno  = 0
+								v_anretorno  = 0
 							ENDIF 
 						
 						ENDIF 
 
 				ENDCASE
-			
-			
+				
+				
 			ENDIF 
 	
 		ENDIF 
 
 	ENDIF 
 	
-	RETURN v_retorno
+	RETURN v_anretorno
 	
 ENDFUNC 
 
@@ -33478,5 +33490,26 @@ RETURN v_retorno
 ENDFUNC 
 
 
+FUNCTION FRGBCOLOR
+PARAMETERS p_color
+*#/----------------------------------------
+* Función para obtener un color en rgb a partir de la variable de sistema _SYSRGBCOLOR
+* Parametros : p_color	= indice de la posicion el color en la variable , separada por ; 
+* RETURN: Retorna el valor del color , valor numerico , si no existe retorna el valor del blanco
+*#/----------------------------------------	
+	vcolor = RGB(255,255,255)
+	
+	IF TYPE('_SYSRGBCOLOR') ='C' THEN 
+
+		vcan_colores=alines( arraycolores, _SYSRGBCOLOR, ";")
+		IF vcan_colores > 0  AND p_color > 0 AND p_color <= vcan_colores THEN 
+			vcolor = &arraycolores(p_color )
+		ENDIF 
+		RELEASE arraycolores
+	
+	ENDIF 
+
+	RETURN vcolor
+ENDFUNC 
 
 

@@ -130,6 +130,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 		RETURN var_retorno 
 	ENDIF 
 
+	v_fechaemite = &vfactulotes_sql..fechaemite
 
 	*/*************
 	* Busco los comprobantes y puntos de ventas que se utilizaran segun el servicio y la condicion de IVA 
@@ -214,7 +215,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 	sqlmatriz(3)=" left join entidadesh h on h.identidadh = f.identidadh "
 	sqlmatriz(4)=" left join entidadesdc a on a.identidadd = f.identidadd "
 	sqlmatriz(5)=" where f.facturar = 'S' and h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
-	sqlmatriz(6)=" group by f.identidadd "
+	sqlmatriz(6)=" and ( ( f.vigedesde='' or f.vigehasta='' ) or ( f.vigedesde<>'' and f.vigehasta <> '' and ( '"+ALLTRIM(v_fechaemite)+"' between f.vigedesde and f.vigehasta ) ) )"
+	sqlmatriz(7)=" group by f.identidadd "
 
 	verror=sqlrun(vconeFacturar,"entidadesdf_sql"+vartmp)
 	IF verror=.f.  
@@ -1400,7 +1402,11 @@ PARAMETERS pcon_idperiodo
 	var_minidr	   = cantidadre_sql.minidr
 
 
-	sqlmatriz(1)=" create temporary table estatmpt as ( select ( idfactura + ( "+STR(idestadosreg_ini )+" - "+STR(var_minidr)+" )) as idestadosreg, 'facturas' as tabla,  'idfactura' as campo, "
+	IF idestadosreg_ini = 1 THEN 
+		sqlmatriz(1)=" create temporary table estatmpt as ( select ( 0 ) as idestadosreg, 'facturas' as tabla,  'idfactura' as campo, "
+	ELSE 
+		sqlmatriz(1)=" create temporary table estatmpt as ( select ( idfactura + ( "+STR(idestadosreg_ini )+" - "+STR(var_minidr)+" )) as idestadosreg, 'facturas' as tabla,  'idfactura' as campo, "
+	ENDIF 
 	sqlmatriz(2)=" idfactura as id, "+STR(v_idestador)+" as idestador, 'I' as tipo, '"+DTOS(DATE())+TIME()+"' as fecha "
 	sqlmatriz(3)=" from factutmpt ) "
 	verror=sqlrun(vcone,"estatmp_sql")
@@ -1508,7 +1514,7 @@ PARAMETERS pcon_idperiodo
 	USE IN estador_sql
 	USE IN cantidadre_sql
 
-
+	vretorno = 1
 	RETURN vretorno
 
 ENDFUNC 	
