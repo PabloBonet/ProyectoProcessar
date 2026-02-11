@@ -2228,7 +2228,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 
 			sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,ifnull(fe.idfe,0) as idfe, ifnull(fe.resultado,'') as resultado, ifnull(fe.observa,'') as observafe, ifnull(fe.errores,'') as errores, c.*,v.*,ifnull(fe.numerofe,0) as numFac,c.detalle as detIVA, "
 			sqlmatriz(2)=" v.nombre as nomVend,ca.puntov, ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, l.nombre as nomLoc, p.nombre as nomProv, "
-			sqlmatriz(3)=" com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
+			sqlmatriz(3)=" com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, ifnull(e.entidad,0) as entaso, ifnull(e.apellido,'') as apeaso, ifnull(e.nombre,'') as nomaso, ifnull(e.compania,'') as compaaso, "
  			sqlmatriz(4)=" group_concat(ifnull(k.ida,0)) as idremitoh ,group_concat(ifnull(r.idremito,0)) as idremito, group_concat(ifnull(r.numero,0)) as numerorem,group_concat(ifnull(r.tipo,'')) as tiporem, group_concat(ifnull(co.comprobante,'')) as comprem, "
 *!*	 			sqlmatriz(5)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat('R ',concat(ifnull(cast(pf.puntov as int),''),'-',ifnull(r.numero,0))) as remiaso, a.linea "
  			sqlmatriz(5)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat(concat('R ',ifnull(pf.puntov,''),'-',ifnull(r.numero,0))) as remiaso, a.linea "
@@ -2241,7 +2241,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(12)=	" left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
 			sqlmatriz(13)=" left join facturasfe fe on f.idfactura = fe.idfactura and fe.resultado = 'A' left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
 	 		sqlmatriz(14)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(15)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(15)=" left join servicios se on se.servicio = f.servicio left join entidades e on r.entidadaso = e.entidad "
  			sqlmatriz(16)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" group by d.idfacturah order by fe.idfe desc  " &&+  " and fe.resultado = 'A'"
 			
 			verror=sqlrun(vconeccionF,"fac_det_sql_aux")
@@ -2295,7 +2295,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 *!*				sqlmatriz(14)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))
 
 			sqlmatriz(1)=" Select f.*,d.*, d.descuento as descitem,c.*,v.*,f.numero as numFac, c.detalle as detIVA,ca.puntov,ifnull(ti.detalle,'CONTADO') as tipoopera, tc.idafipcom, pv.electronica as electro, af.codigo as tipcomAFIP, "
-			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, "
+			sqlmatriz(2)=" l.nombre as nomLoc, p.nombre as nomProv,com.comprobante as nomcomp, ifnull(se.detalle,'    ') as nservicio, ifnull(e.entidad,0) as entaso, ifnull(e.apellido,'') as apeaso, ifnull(e.nombre,'') as nomaso, ifnull(e.compania,'') as compaaso, "
 			sqlmatriz(3)=" group_concat(ifnull(k.ida,0)) as idremitoh ,group_concat(ifnull(r.idremito,0)) as idremito, group_concat(ifnull(r.numero,0)) as numerorem,group_concat(ifnull(r.tipo,'')) as tiporem, group_concat(ifnull(co.comprobante,'')) as comprem, "
 *!*	 			sqlmatriz(4)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat(concat('R ',ifnull(cast(pf.puntov as int),''),'-',ifnull(r.numero,0))) as remiaso, a.linea "
  			sqlmatriz(4)=" group_concat(ifnull(co.abrevia,'')) as abreviarem,group_concat(ifnull(pf.puntov,'')) as puntovre, group_concat(concat('R ',ifnull(pf.puntov,''),'-',ifnull(r.numero,0))) as remiaso, a.linea "
@@ -2309,7 +2309,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(11)= " left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
 			sqlmatriz(12)=" left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
 			sqlmatriz(13)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(14)=" left join servicios se on se.servicio = f.servicio "
+			sqlmatriz(14)=" left join servicios se on se.servicio = f.servicio left join entidades e on r.entidadaso = e.entidad "
 			sqlmatriz(15)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))+ " group by d.idfacturah "
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
@@ -11818,7 +11818,6 @@ FUNCTION cambiaAEstado
 			v_retorno = .T.		
 		ENDIF  
 	ELSE
-	
 		v_retorno	= cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
 	
 	ENDIF 		
@@ -32627,7 +32626,7 @@ PARAMETERS pa_codigonoti,pa_detalleregi, pa_detalleag, pa_repite, p_conn
 		SELECT sysalertas_sql
 		GO TOP 
 		IF !EOF() THEN 
-			pa_detalleag = ALLTRIM(sysalertas_sql.tipoalerta)+': '+ALLTRIM(pa_detalleag)+' '+ALLTRIM(sysalertas_sql.detalle)
+			pa_detalleag = ALLTRIM(sysalertas_sql.tipoalerta)+': '+ALLTRIM(pa_detalleag)+' '+ALLTRIM(sysalertas_sql.detalle)+' [ '+ALLTRIM(_SYSHOST)+' '+ALLTRIM(_SYSIP)+' '+ALLTRIM(_SYSUSUARIO)+' '+TTOC(DATETIME())+' ]'
 			pa_detalleregi= ALLTRIM(pa_detalleregi)+' '+ALLTRIM(sysalertas_sql.alerta)+' [ '+ALLTRIM(sysalertas_sql.codigo)+' ]'
 		ENDIF 
 		USE IN sysalertas_sql
@@ -33017,8 +33016,6 @@ ENDFUNC
 *!*		RETURN v_retorno
 
 *!*	ENDFUNC 
-
-
 FUNCTION AnularEliminarComprobante
 PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 *#/----------------------------------------
@@ -33249,6 +33246,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 			 	CASE v_estador = v_estadoAnulado
 		 			MESSAGEBOX("El comprobante ya esta Anulado.",0+48+0,"Anulación de Comprobante")
 		 			v_eliminarComp = .F.
+			
 		 		CASE v_estador = v_estadoRechazado
 					v_eliminarComp = .T.
 		 		CASE v_estador = v_estadoPendiente
@@ -33511,5 +33509,10 @@ PARAMETERS p_color
 
 	RETURN vcolor
 ENDFUNC 
+
+
+
+
+
 
 
