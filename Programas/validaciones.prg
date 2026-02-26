@@ -144,6 +144,25 @@ PARAMETERS pa_fecha
 RETURN 
 
 
+FUNCTION EVCertVencido
+PARAMETERS pa_fecha
+*#/----------------------------------------
+* Funcion de Control de Vencimiento del Certificado de Facturacion Electrónica
+* Si la diferencia entre la Fecha de Vencimiento del Certificado y el dia de hoy es menor a 20 dias
+* Inserta un Evento de Agenda para informar que Debe Actualizarce el Certificado
+*#/----------------------------------------
+	IF !EMPTY(ALLTRIM(_SYSVENCECERT))  && La variable está vacia -> la validación no se hace
+		v_fechaCER = cftofc(_SYSVENCECERT)
+		v_cantidaddias = ABS( pa_fecha - v_fechaCER )
+		IF v_cantidaddias <= ( 20 ) THEN && cantidad de dias menor a 20 para el vencimiento del certificado de afip
+			vaa = FNotificaAgenda("A0002","","")
+		ENDIF 			
+	ENDIF 
+	RETURN .t. 
+RETURN 
+
+
+
 
 
 FUNCTION puedeAnular
@@ -519,13 +538,7 @@ PARAMETERS p_tabla, p_campo, p_idregistro,p_tipoInd
 				SKIP 1
 			ENDDO
 		
-		
-		
-		
-		
-		
-		
-			
+	
 			
 			
 		ELSE

@@ -8175,7 +8175,12 @@ IF EMPTY(ALLTRIM(v_tablaDatos)) = .T. AND v_idcomproba > 0 AND EMPTY(ALLTRIM(v_n
 				sqlmatriz(1)=" Select articulo, cantidad, 1 as deposito, f.fecha "
 				sqlmatriz(2)=" from remitosh d left join remitos f on d.idremito = f.idremito "
 				sqlmatriz(3)=" where d."+ALLTRIM(v_nombreCampo)+ " = " +ALLTRIM(STR(v_idregistro))
+
 				
+			CASE ALLTRIM(v_tablaAsociada) == "ajustestockp"
+				sqlmatriz(1)=" Select articulo, cantidad, 1 as deposito, f.fecha "
+				sqlmatriz(2)=" from ajustestockh d left join ajustestockp f on d.idajuste = f.idajuste "
+				sqlmatriz(3)=" where d."+ALLTRIM(v_nombreCampo)+ " = " +ALLTRIM(STR(v_idregistro))
 
 			OTHERWISE
 
@@ -8218,8 +8223,8 @@ IF EMPTY(ALLTRIM(v_tablaDatos)) = .T. AND v_idcomproba > 0 AND EMPTY(ALLTRIM(v_n
 ENDIF 
 
 
-	SELECT &v_tablaDatos
-	GO TOP 
+SELECT &v_tablaDatos
+GO TOP 
 
 	
 	
@@ -8288,7 +8293,11 @@ IF v_idregistro	> 0
 	SELECT comprobante_sql
 	GO TOP 
 	v_entidad	= Comprobante_sql.entidad
-	v_nombre	= ALLTRIM(Comprobante_sql.apellido)+" "+ALLTRIM(Comprobante_sql.nombre)
+	IF ALLTRIM(v_tabla) == 'ajustestockp'
+		v_nombre	= ALLTRIM(Comprobante_sql.nombre)
+	ELSE
+		v_nombre	= ALLTRIM(Comprobante_sql.apellido)+" "+ALLTRIM(Comprobante_sql.nombre)
+	ENDIF 
 	v_puntov	= comprobante_sql.puntov
 	v_numComp	= comprobante_sql.numero
 *!*		v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
@@ -8517,10 +8526,16 @@ ENDIF
 	RETURN .T.
 ENDFUNC 
 
+
+
+
+
+
 FUNCTION AjusteCompuestos
-PARAMETERS p_idtipomov, p_tablaDatos
+PARAMETERS pa_idtipomov, pa_idcomproba, pa_nombreCampo, pa_idregistro, pa_tablaDatos
 *#/----------------------------------------
 **** FUNCIÓN PARA GENERAR AJUSTES DE UN COMPROBANTE
+** El movimiento recibido como parametro siempre corresponde al movimiento del articulo compuesto RESPECTO DEL STOCK 
 ** PARAMETROS: 	P_idtipomov: ID de la tabla tipomstock (Indica el tipo de ajuste a realizar)
 ***				P_TablaDatos: Tabla con los articulos a los que se le hará el ajuste, tiene el siguiente formato: [articulo C(50),cantidad Y,deposito I, fecha C(8)], 
 ***							  La tabla puede tener articulos compuestos o no, la función los filtra y realiza el ajuste solo de los compuestos.
@@ -8528,563 +8543,172 @@ PARAMETERS p_idtipomov, p_tablaDatos
 **RETORNO:		1: realizó los ajustes correctamente, 0: se ejecutó sin errores pero no realizó ajustes, -1: hubo errores
 *#/----------------------------------------
 
-	v_idtipomov		= p_idtipomov
-	v_tablaDatos	= p_tablaDatos
+	va_idtipomov	= pa_idtipomov
+	va_tablaDatos	= pa_tablaDatos
+	va_idcomproba   = pa_idcomproba
+	va_nombreCampo  = pa_nombreCampo
+	va_idregistro   = pa_idregistro 
 
 	IF TYPE('_SYSTIPOAJUPRO') = "C"
-		v_tamajuie = ALINES(ajuie,_SYSTIPOAJUPRO)
+		v_tamajuie = ALINES(ajuie,_SYSTIPOAJUPRO,';')
 		
 		IF v_tamajuie = 2
-			** Obtengo el tipo moviemiento de ingreso y egreso
+			** Obtengo el tipo movimiento de ingreso y egreso
 			v_ing = VAL(ajuie[1])
 			v_egr = VAL(ajuie[2])
+			v_ingegr = 0
 			
-			
-			IF v_Idtipomov = v_ing
+			IF va_Idtipomov = v_ing  OR va_Idtipomov = v_egr THEN && el movimiento coincide con Armado o Desarmado
+
+
+					IF !USED(va_tablaDatos) THEN 
+						USE &va_tablaDatos IN 0 
+					ENDIF 
+			 
 				** Si el movimiento de ingreso coincide con el de la variable -> voy a realizar el ajuste, sino salgo
 				
 					vconeccionC=abreycierracon(0,_SYSSCHEMA)	
 						
-						*** Busco que los moviemientos sean de ingreso y egreso respectivamente
-						sqlmatriz(1)=" Select * from tipomstock "
-						verror=sqlrun(vconeccionC,"movimientos_sql")
-						IF verror=.f.  
-						    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los movimientos",0+48+0,"Error")
-						    =abreycierracon(vconeccionC,"")
-						    RETURN -1
-						ENDIF
-						 =abreycierracon(vconeccionC,"")
+					*** Busco que los moviemientos sean de ingreso y egreso respectivamente
+					sqlmatriz(1)=" Select * from tipomstock "
+					verror=sqlrun(vconeccionC,"movimientos_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los movimientos",0+48+0,"Error")
+					    =abreycierracon(vconeccionC,"")
+					    RETURN -1
+					ENDIF
+				    =abreycierracon(vconeccionC,"")
 						
-						SELECT movimientos_sql
-						GO TOP 
+					SELECT movimientos_sql
+					GO TOP 
+					IF EOF()
+						MESSAGEBOX("No hay tipos de movimientos de stock cargados",0+16+256,"Error")
+						USE IN movimientos_sql
+					    =abreycierracon(vconeccionC,"")
+						RETURN -1
+					ENDIF 
 						
-						IF EOF()
-							MESSAGEBOX("No hay tipos de movimientos de stock cargados",0+16+256,"Error")
-							RETURN -1
+					SELECT * FROM movimientos_sql WHERE idtipomov = v_ing OR idtipomov = v_egr INTO CURSOR movINg
+						
+					SELECT movIng
+					GO TOP  
+					v_cantidadmov= RECCOUNT()
+					
+					IF ( v_cantidadmov = 2 ) THEN 
+						
+						LOCATE FOR idtipomov = va_idtipomov
+						
+						IF movIng.ie = 'I' THEN && El movimiento es de Ingreso , y coincide con el parametro de Armado debe hacerce un Egreso de los componentes.
+							v_ingegr = v_egr
+						ELSE
+						   
+						   IF movIng.ie = 'E' THEN && El movimiento es de Egreso , y coincide con el parametro de Desarmado debe hacerce un Ingreso de los los componentes.
+						   		v_ingegr = v_ing
+						   ELSE
+						   		v_ingegr = 0
+						   ENDIF 
+						   
 						ENDIF 
 						
+						IF v_ingegr = 0 THEN  &&& Si llego aca con esta variable mayor que 0 entonces hago el ajuste segun el tipo de la variable v_ingegr	
+							USE IN movimientos_sql
+							USE IN movINg
+						    =abreycierracon(vconeccionC,"")
+							RETURN -1	
+						ENDIF 
+					
+					
+					ELSE
+						USE IN movimientos_sql
+						USE IN movINg
+					    =abreycierracon(vconeccionC,"")
+						RETURN -1	
+					ENDIF 
+					
 						
-						SELECT * FROM movimientos_sql WHERE idtipomov = v_ing INTO CURSOR movINg
+					USE IN movimientos_sql
+					USE IN movINg
 						
-						SELECT movIng
-						GO TOP  
+					** Si llegué hasta acá los parametros de ing y egr están bien.
+					CREATE TABLE ajustescomp FREE (articulo C(50),cantidad Y,deposito I, fecha C(8))
+						
+					
+					** Obtengo todos los articulos con componentes de la base de datos
+					sqlmatriz(1)=" Select * from articuloscmp "
+					verror=sqlrun(vconeccionC,"articuloscmp_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los articulos compuestos",0+48+0,"Error")
+					    =abreycierracon(vconeccionC,"")
+					    RETURN -1
+					ENDIF
+						
+					=abreycierracon(vconeccionC,"")	
+						
+					SELECT articuloscmp_sql
+					GO TOP 
+					IF EOF()
+						USE IN articuloscmp_sql
+					    =abreycierracon(vconeccionC,"")
+					    RETURN -1
+					ENDIF 
+							
+					SELECT &va_tablaDatos
+					GO TOP 
+					DO WHILE NOT EOF()
+							
+						** Por cada articulo en la tabla de ajustes, veo si tienen componentes. Si tienen componentes los cargo en la tabla temporal para despues hacer los ajustes
+							
+						v_articulo = &va_tablaDatos..articulo
+						v_cantidad = &va_tablaDatos..cantidad
+						v_deposito = &va_tablaDatos..deposito
+						v_fecha    = DTOS(DATE())
+						
+						** Traigo solo los componentes para ajustar siempre y cuando sean articulos , no ajusto aqui materiales	
+						SELECT articuloc as articulo , cantidad, 100 as deposito, '        ' as fecha FROM articuloscmp_sql WHERE ALLTRIM(articulo) == ALLTRIM(v_articulo) AND idmate = 0 INTO TABLE  articomponentes
+							
+						SELECT articomponentes
+						GO TOP 
 						IF NOT EOF()
-						
-							v_ie = movIng.ie
-							IF v_ie <> "I"
-								MESSAGEBOX("El tipo de movimiento pasado como parámetro debe ser de Ingreso",0+16+256,"Error")
-								RETURN -1
-							ENDIF 
-							
-							SELECT * FROM movimientos_sql WHERE idtipomov = v_egr INTO CURSOR movEgr
-							
-							SELECT movEgr
-							GO TOP 
-							IF NOT EOF()
-								v_ie = movIng.ie
-								IF v_ie <> "E"
-									MESSAGEBOX("Variable _SYSTIPOAJUPRO mal configurada, el segundo parámetro debe ser de Egreso",0+16+256,"Error")
-									RETURN -1
-								ENDIF 
-							ELSE
-							
-								MESSAGEBOX("Variable _SYSTIPOAJUPRO mal configurada, el segundo parámetro debe ser de Egreso",0+16+256,"Error")
-								RETURN -1
-							
-							ENDIF 
-							
-							
-						else
-						
-							
-							MESSAGEBOX("Variable _SYSTIPOAJUPRO mal configurada, el segundo parámetro debe ser de Egreso",0+16+256,"Error")
-							RETURN -1
-					
+							replace ALL cantidad WITH cantidad * v_cantidad, deposito WITH v_deposito, fecha WITH v_fecha
+							SELECT ajustescomp 
+							APPEND FROM articomponentes	
 						ENDIF 
 						
-						
-						** Si llegué hasta acá los parametros de ing y egr están bien.
-						
-						CREATE TABLE ajustescomp FREE (articulo C(50),cantidad Y,deposito I, fecha C(8))
-						
-						* Creo la conexión
-						vconeccionC=abreycierracon(0,_SYSSCHEMA)	
-					
-						** Obtengo todos los articulos con componentes de la base de datos
-						sqlmatriz(1)=" Select * from articuloscmp "
-						verror=sqlrun(vconeccionC,"articuloscmp_sql")
-						IF verror=.f.  
-						    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los articulos compuestos",0+48+0,"Error")
-						    =abreycierracon(vconeccionC,"")
-						    RETURN -1
-						ENDIF
-						
-						=abreycierracon(vconeccionC,"")	
-						
-						SELECT articuloscmp_sql
-						GO TOP 
-						IF EOF()
-							RETURN 0						
-						ENDIF 
-							
-						
-						SELECT &v_tablaDatos
-						GO TOP 
-						DO WHILE NOT EOF()
-							
-							** Por cada articulo en la tabla de ajustes, veo si tienen componentes. Si tienen componentes los cargo en la tabla temporal para despues hacer los ajustes
-							
-							v_articulo = &v_tablaDatos..articulo
-							v_cantidad = &v_tablaDatos..cantidad
-							v_deposito = &v_tablaDatos..deposito
-							v_fecha    = DTOS(DATE())
-							
-							
-							SELECT articuloc, cantidad, 0 as deposito, '        ' as fecha FROM articuloscmp_sql WHERE articulo = ALLTRIM(v_articulo) INTO CURSOR articomponentes
-							
-							
-							SELECT articomponentes
-							GO TOP 
-							IF NOT EOF()
-								SELECT articomponentes
-								GO TOP 
-								replace ALL cantidad WITH cantidad * v_cantidad, deposito WITH v_deposito, fecha WITH v_fecha
-								
-													
-								
-								
-								SELECT articomponentes
-								GO TOP 
-								
-								SELECT ajustescomp 
-								APPEND FROM articomponentes	
-							ENDIF 
+						SELECT &va_tablaDatos
+						SKIP 1
+					ENDDO
+					USE IN articuloscmp_sql
+					USE IN articomponentes
+					USE IN &va_tabladatos
 						
 						
-							SELECT &v_tablaDatos
-							SKIP 1
+					** AQUI DEBO REALIZAR EL AJUSTE 
+					SELECT ajustescomp 
+					GO TOP 
+					IF EOF()
+						USE IN ajustescomp 
+						RETURN 0
+					ENDIF 
 
-						ENDDO
-			
-						
-				
+					v_resp = AjusteComprobante(v_ingegr, va_idcomproba, va_nombreCampo, va_idregistro,"ajustescomp")
+					IF v_resp =.F.
+						MESSAGEBOX("Hubo un error al generar el ajuste de Componentes ",0+48+0,"Error al realizar el ajuste")
+					ENDIF 
+
+					USE IN ajustescomp 
+					RETURN 1
 			ELSE
 				RETURN 0
 			ENDIF 
 		ELSE
-			RETURN -1
-					
+			RETURN 0			
 		ENDIF 
-		
-		
 	ELSE
 		*** Si la variable no existe, no realizo el ajuste
 		RETURN 0
 	ENDIF 
 	
 	
-	** Realizo los ajustes de los componentes **
-	MESSAGEBOX("ajustescomp")
-	SELECT ajustescomp 
-	GO TOP 
-	BROWSE 
-	IF EOF()
-		RETURN 0
-	ENDIF 
-	
-	
-	
-	
-	** Grabo la cabecera **
-	
-	
-	
-	
-	** Grabo el detalle **
-	SELECT ajustescomp 
-	GO TOP 
-	
-	DO WHILE NOT EOF()
-	
-	
-	
-		SELECT ajustescomp 
-		SKIP 1
-
-	ENDDO
-	
-	
-	
-	
-*!*		**** Busco el comprobante asociado ***
-*!*		vconeccionA=abreycierracon(0,_SYSSCHEMA)	
-		
-		
-
-
-*!*		*!*		**** Busco el comprobante asociado ***
-
-*!*			*** Busco los comprobantes y sus respectivos puntos de venta 
-*!*			sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla, t.pventa, "
-*!*			sqlmatriz(2)=" t.puntov from comprobantes c left join compactiv t on c.idcomproba = t.idcomproba "
-*!*			verror=sqlrun(vconeccionA,"Comprobantes_sql")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de comprobantes ",0+48+0,"Error")
-*!*			    =abreycierracon(vconeccionA,"")
-*!*			    RETURN .F.
-*!*			ENDIF
-*!*			
-*!*			
-
-*!*		IF EMPTY(ALLTRIM(v_tablaDatos)) = .T. AND v_idcomproba > 0 AND EMPTY(ALLTRIM(v_nombreCampo)) = .F. AND v_idregistro > 0
-*!*		*** Si la tabla de datos está vacia y tengo los otros campos, busco en la base de datos los articulos para ese comprobante, antes de hacer los ajustes **
-*!*			v_tablaDatos = "tmpDatos"
-*!*			SELECT comprobantes_sql
-*!*			GO TOP 
-*!*			IF NOT EOF()
-*!*			
-*!*				v_tablaAsociada = comprobantes_sql.tabla
-*!*			
-*!*			
-*!*				DO CASE
-*!*					CASE ALLTRIM(v_tablaAsociada) == "facturas"
-*!*						
-*!*						sqlmatriz(1)=" Select d.articulo, d.cantidad, 1 as deposito, f.fecha "
-*!*						sqlmatriz(2)=" from detafactu d left join facturas f on d.idfactura = f.idfactura "
-*!*						sqlmatriz(3)=" where d."+ALLTRIM(v_nombreCampo)+ " = " +ALLTRIM(STR(v_idregistro))
-*!*						
-
-*!*						
-*!*					CASE ALLTRIM(v_tablaAsociada) == "remitos"
-*!*						sqlmatriz(1)=" Select articulo, cantidad, 1 as deposito "
-*!*						sqlmatriz(2)=" remitosh d left join remitos f on d.idremito = f.idremito "
-*!*						sqlmatriz(3)=" where d."+ALLTRIM(v_nombreCampo)+ " = " +ALLTRIM(STR(v_idregistro))
-*!*						
-
-*!*					OTHERWISE
-
-*!*				ENDCASE
-*!*				
-*!*				
-*!*				verror=sqlrun(vconeccionA,"detallecomp_sqla")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del detalle del comprobante ",0+48+0,"Error")
-*!*				    =abreycierracon(vconeccionA,"")
-*!*				    RETURN .F.
-*!*				ENDIF
-
-*!*				SELECT * FROM detallecomp_sqla INTO TABLE detallecomp_sql
-*!*						
-*!*				ALTER table detallecomp_sql alter COLUMN deposito I
-*!*				
-*!*				
-*!*				
-*!*					v_sent = " CREATE TABLE " +ALLTRIM(v_tablaDatos) +" FREE (articulo C(50), cantidad Y, deposito I, fecha c(8)) "
-*!*					
-*!*					&v_sent
-*!*					SELECT &v_tablaDatos
-*!*					INDEX on articulo TAG articulo
-*!*				
-*!*				
-*!*				
-*!*				SELECT detallecomp_sql
-*!*				GO TOP 
-*!*				
-*!*				IF NOT EOF()
-*!*					INSERT INTO &v_tablaDatos SELECT * FROM detallecomp_sql
-*!*				
-*!*				ENDIF 
-*!*						
-
-
-*!*			ENDIF 
-*!*			
-*!*		ENDIF 
-
-*!*			SELECT &v_tablaDatos
-*!*			GO TOP 
-
-*!*			
-*!*			
-*!*		SELECT &v_tablaDatos
-*!*		ALTER table &v_tablaDatos ADD COLUMN ajustar c(1)
-*!*		GO TOP 
-
-*!*		DO WHILE !EOF()
-*!*			sqlmatriz(1)=" Select * from articulos where TRIM(articulo) = '"+ALLTRIM(&v_tablaDatos..articulo)+"' and  ctrlstock = 'S'"
-*!*			verror=sqlrun(vconeccionA,"ajustar_sql")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de Articulos ",0+48+0,"Error")
-*!*			    =abreycierracon(vconeccionA,"")
-*!*			    RETURN .F.
-*!*			ENDIF
-*!*			SELECT ajustar_sql
-*!*			GO TOP 
-*!*			IF EOF() THEN 
-*!*				v_ajustar = 'N'
-*!*			ELSE
-*!*				v_ajustar = 'S'
-*!*			ENDIF 
-*!*			USE 
-*!*			SELECT &v_tablaDatos
-*!*			replace ajustar WITH v_ajustar	
-*!*			SKIP 
-*!*		ENDDO 
-*!*		DELETE FOR ajustar = 'N'
-*!*		PACK
-*!*		IF RECCOUNT() = 0 THEN 
-*!*			=abreycierracon(vconeccionA,"")
-*!*			RETURN .T.
-*!*		ENDIF 
-
-*!*		SELECT &v_tablaDatos
-*!*		GO TOP 
-
-
-
-*!*		IF v_idregistro	> 0
-
-*!*			SELECT * FROM comprobantes_sql WHERE idcomproba = v_idcomproba INTO TABLE compSelecc
-*!*			
-*!*			SELECT compSelecc
-*!*			GO TOP 
-*!*			
-*!*			v_tabla			= compSelecc.tabla
-*!*			v_nombreComp	= compSelecc.nomcomp
-*!*			
-*!*			*** Busco el comprobante asociado
-*!*			sqlmatriz(1)=" select * from "+ALLTRIM(v_tabla)+" c left join compactiv cp on c.idcomproba = cp.idcomproba and c.pventa = cp.pventa "
-*!*			sqlmatriz(2)=" where c."+ALLTRIM(v_nombreCampo)+" = "+ALLTRIM(STR(v_idregistro))
-
-*!*			verror=sqlrun(vconeccionA,"Comprobante_sql")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del comprobante asociado ",0+48+0,"Error")
-*!*			     =abreycierracon(vconeccionA,"")
-*!*			    RETURN .F.
-*!*			ENDIF
-*!*			
-
-*!*			
-*!*			SELECT comprobante_sql
-*!*			GO TOP 
-*!*			v_entidad	= Comprobante_sql.entidad
-*!*			v_nombre	= ALLTRIM(Comprobante_sql.apellido)+" "+ALLTRIM(Comprobante_sql.nombre)
-*!*			v_puntov	= comprobante_sql.puntov
-*!*			v_numComp	= comprobante_sql.numero
-
-
-*!*			*** Busco el comprobante de ajuste para el punto de venta asociado al comprobante
-*!*			v_pventaC	= comprobante_sql.pventa
-
-*!*		ELSE 	
-*!*			v_pventaC	= INT(VAL(SUBSTR(_SYSCIERRESTA,3,2)))
-
-*!*			v_entidad	= INT(VAL(SUBSTR(_SYSCIERRESTA,9)))
-*!*			
-*!*			*** Busco la Entidad o Nombre de Empresa asociado
-*!*			sqlmatriz(1)=" select * from entidades "
-*!*			sqlmatriz(2)=" where entidad = "+ALLTRIM(STR(v_entidad))
-
-*!*			verror=sqlrun(vconeccionA,"entidad_sel")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  Entidad para Ajuste ",0+48+0,"Error")
-*!*			     =abreycierracon(vconeccionA,"")
-*!*			    RETURN .F.
-*!*			ENDIF
-*!*			SELECT entidad_sel
-*!*			GO TOP 
-*!*			IF !EOF() THEN 
-*!*				v_nombre	= ALLTRIM(entidad_sel.apellido) +" "+ ALLTRIM(entidad_sel.nombre) +" "+ ALLTRIM(entidad_sel.compania)
-*!*			ELSE 
-*!*				v_nombre	= "CIERRE DE STOCK Y PUESTA A 0 "		
-*!*			ENDIF 
-*!*			USE IN entidad_sel
-*!*			
-*!*			v_puntov	= 0
-*!*			v_numComp	= 0
-*!*			v_observa1	= "Cierre de Stock al "+SUBSTR(&v_tablaDatos..fecha,7,2)+"/"+SUBSTR(&v_tablaDatos..fecha,5,2)+"/"+SUBSTR(&v_tablaDatos..fecha,1,4)
-
-*!*		ENDIF 
-
-*!*			SELECT * FROM comprobantes_Sql WHERE tabla = 'ajustestockp' AND pventa	= v_pventaC INTO TABLE compAjusteAso
-*!*			
-*!*			SELECT compAjusteAso 
-*!*			GO TOP 
-
-*!*			v_pventaA	 = compAjusteAso.pventa
-*!*			v_idcomprobaA= compAjusteAso.idcomproba
-*!*			v_puntoVA	 = compAjusteAso.puntov
-
-*!*			IF v_idregistro > 0 THEN 
-*!*				v_observa1	= "Comprobante asociado: "+ALLTRIM(v_nombreComp)+" "+ALLTRIM(v_puntoVA)+" - "+ ALLTRIM(STRTRAN(STR(v_numComp,8,0)," ","0"))
-*!*			ENDIF 
-
-
-*!*			v_idajuste 	 = maxnumeroidx("idajuste","I","ajustestockp",1)
-*!*			
-*!*			v_numero 	 = maxnumerocom(v_idcomprobaA, v_pventaA,1)
-*!*			
-*!*			v_fecha		 = &v_tablaDatos..fecha
-
-*!*			
-
-*!*			DIMENSION lamatriz1(14,2)
-
-*!*			lamatriz1(1,1)='idajuste'
-*!*			lamatriz1(1,2)= ALLTRIM(STR(v_idajuste))
-*!*			lamatriz1(2,1)='puntov'
-*!*			lamatriz1(2,2)= "'"+ALLTRIM(v_puntoVA)+"'"
-*!*			lamatriz1(3,1)='numero'
-*!*			lamatriz1(3,2)= ALLTRIM(STR(v_numero))
-*!*			lamatriz1(4,1)='fecha'
-*!*			lamatriz1(4,2)="'"+ALLTRIM(v_fecha)+"'"
-*!*			lamatriz1(5,1)='entidad'
-*!*			lamatriz1(5,2)=ALLTRIM(STR(v_entidad))
-*!*			lamatriz1(6,1)='nombre'
-*!*			lamatriz1(6,2)="'"+ALLTRIM(v_nombre)+"'"
-*!*			lamatriz1(7,1)='responsable'
-*!*			lamatriz1(7,2)="'"+ALLTRIM(_SYSUSUARIO)+"'"
-*!*			lamatriz1(8,1)='observa1'
-*!*			lamatriz1(8,2)="'"+v_observa1+"'"
-*!*			lamatriz1(9,1)='observa2'
-*!*			lamatriz1(9,2)="''"
-*!*			lamatriz1(10,1)='observa3'
-*!*			lamatriz1(10,2)="''"
-*!*			lamatriz1(11,1)='observa4'
-*!*			lamatriz1(11,2)="''"
-*!*			lamatriz1(12,1)='idtipomov'
-*!*			lamatriz1(12,2)=ALLTRIM(STR(v_idtipomov))
-*!*			lamatriz1(13,1)='idcomproba'
-*!*			lamatriz1(13,2)= ALLTRIM(STR(v_idcomprobaA))
-*!*			lamatriz1(14,1)='pventa'
-*!*			lamatriz1(14,2)=ALLTRIM(STR(v_pventaA))
-
-
-*!*			p_tipoope     = 'I'
-*!*			p_condicion   = ''
-*!*			v_titulo      = " EL ALTA "
-*!*			p_tabla     = 'ajustestockp'
-*!*			p_matriz    = 'lamatriz1'
-*!*			p_conexion  = vconeccionA
-*!*			IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajuste)),0+48+0,"Error")
-*!*			    =abreycierracon(vconeccionA,"")
-*!*				    RETURN .F.
-*!*			ENDIF  
-
-
-
-
-*!*			*** INSERTO DETALLE ***			
-
-
-*!*			sqlmatriz(1)=" Select * from tipomstock where idtipomov = "+ALLTRIM(STR(v_idtipomov))
-*!*			verror=sqlrun(vconeccionA,"tipomstock_sql")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de tipo de movimiento de stock ",0+48+0,"Error")
-*!*				   
-*!*			ENDIF
-
-*!*			v_descmovStock	= tipomstock_sql.descmov
-*!*				
-*!*			
-*!*			SELECT &v_tablaDatos
-*!*			GO TOP 
-
-*!*			IF NOT EOF()
-*!*				
-*!*				*** Busco el comprobante asociado
-*!*				sqlmatriz(1)=" select * from articulos "
-*!*					
-*!*				verror=sqlrun(vconeccionA,"articulos_sql")
-*!*				IF verror=.f.  
-*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de articulos ",0+48+0,"Error")
-*!*				     =abreycierracon(vconeccionA,"")
-*!*				    RETURN .F.
-*!*				ENDIF
-
-
-*!*				SELECT articulos_sql
-*!*				GO TOP 
-*!*				
-*!*				IF NOT EOF()
-*!*					SELECT t.*,a.detalle FROM &v_tablaDatos t LEFT JOIN articulos_sql a ON ALLTRIM(t.articulo) == ALLTRIM(a.articulo) ;
-*!*					INTO TABLE articulosDatos WHERE !ISNULL(a.detalle) 
-*!*					
-*!*					v_primerEti = 0
-*!*					v_ultimaEti = 0
-*!*					SELECT articulosDatos
-*!*					GO TOP 
-
-*!*					DO WHILE NOT EOF()
-*!*						IF !EMPTY(articulosDatos.articulo) AND articulosDatos.cantidad > 0 THEN 
-*!*							p_tipoope     = 'I'
-*!*							p_condicion   = ''
-*!*							v_titulo      = " EL ALTA "
-*!*							
-*!*							DIMENSION lamatriz2(11,2)
-*!*							
-*!*							v_idajusteh = maxnumeroidx("idajusteh","I","ajustestockh",1)
-*!*							
-*!*							lamatriz2(1,1)='idajuste'
-*!*							lamatriz2(1,2)=ALLTRIM(STR(v_idajuste))
-*!*							lamatriz2(2,1)='articulo'
-*!*							lamatriz2(2,2)="'"+ALLTRIM(articulosDatos.articulo)+"'"
-*!*							lamatriz2(3,1)='detalle'
-*!*							lamatriz2(3,2)="'"+alltrim(articulosDatos.detalle)+"'"
-*!*							lamatriz2(4,1)='idtipomov'
-*!*							lamatriz2(4,2)=alltrim(STR(v_idtipomov))
-*!*							lamatriz2(5,1)='descmov'
-*!*							lamatriz2(5,2)="'"+alltrim(v_descmovStock)+"'"
-*!*							lamatriz2(6,1)='cantidad'
-*!*							lamatriz2(6,2)=alltrim(STR(articulosDatos.cantidad,10,2))
-*!*							lamatriz2(7,1)='idajusteh'
-*!*							lamatriz2(7,2)=ALLTRIM(STR(v_idajusteh))	
-*!*							lamatriz2(8,1)='neto'
-*!*							lamatriz2(8,2)="0"
-*!*							lamatriz2(9,1)='total'
-*!*							lamatriz2(9,2)="0"
-*!*							lamatriz2(10,1)='deposito'
-*!*							lamatriz2(10,2)= ALLTRIM(STR(articulosDatos.deposito))
-*!*							lamatriz2(11,1)='fecha'
-*!*							lamatriz2(11,2)="'"+ALLTRIM(v_fecha)+"'"
-*!*							
-*!*							p_tabla     = 'ajustestockh'
-*!*							p_matriz    = 'lamatriz2'
-*!*							p_conexion  = vconeccionA
-*!*							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
-*!*							    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajusteh )),0+48+0,"Error")
-*!*							ELSE
-*!*							
-*!*							
-*!*							ENDIF						
-*!*							
-*!*						ENDIF
-
-*!*						SELECT articulosDatos
-*!*						SKIP 1
-*!*					ENDDO	
-*!*					
-
-*!*					** REGISTRO EL VINCULO ENTRE EL AJUSTE Y EL COMPROBANTE RECIBIDO
-*!*					IF v_idcomproba > 0 AND v_idregistro > 0  AND  v_idcomprobaA > 0 AND v_idajuste  > 0 THEN 
-*!*						=ABLinkCompro(v_idcomproba ,v_idregistro ,v_idcomprobaA ,v_idajuste,'+')
-*!*					ENDIF 
-
-*!*							
-*!*				ELSE
-*!*			    	=abreycierracon(vconeccionA,"")
-*!*					RETURN .F.
-*!*				ENDIF 
-*!*			ELSE
-*!*		    	=abreycierracon(vconeccionA,"")	
-*!*				RETURN .F.
-*!*				
-*!*			ENDIF 
-*!*			
-
-*!*		   	=abreycierracon(vconeccionA,"")
-*!*			RETURN .T.
 ENDFUNC 
 
 
@@ -20135,6 +19759,8 @@ PARAMETERS  para_aliasrnl
 ** Caga a la Agenda del dia de hoy si hay Eventos Pendientes de la Web
  v_web = EVProductosWeb ( DATE() )
 
+ v_cert = EVCertVencido ( DATE())
+
 *** FIN DE CARGA DE EVENTOS ***************************************
 *******************************************************************
 
@@ -20142,7 +19768,7 @@ p_aliasretorno  = ""
 
 	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 		
-	sqlmatriz(1)= " SELECT idagenda, tabla, idregistro, tipo, detallereg, fecha FROM agendadeta "
+	sqlmatriz(1)= " SELECT idagenda, tabla, idregistro, tipo, detallereg, fecha, detalle FROM agendadeta "
 	sqlmatriz(2)= " where calendario = 'S' and  ( ( ( fagendad <='"+DTOS(DATE())+"' and fagendad<>'' ) and  (fagendah >= '"+DTOS(DATE())+"' or fagendah = '') and ( TRIM(usuario) = '"+ALLTRIM(_SYSUSUARIO)+"' OR infotodos = 'S' ) ) "
 	sqlmatriz(3)= "   or  (fagendad <> '' and fagendah <> '' and repetir = 'S' and mid(fagendad,7,2)<='"+SUBSTR(DTOS(DATE()),7,2)+"' and mid(fagendah,7,2)>='"+SUBSTR(DTOS(DATE()),7,2)+"'  AND ( TRIM(usuario) = '"+ALLTRIM(_SYSUSUARIO)+"' OR infotodos = 'S' ) ) ) "
 	
@@ -20153,19 +19779,32 @@ p_aliasretorno  = ""
 	ENDIF
 	=abreycierracon(vconeccionM ,"")	
 
+	SELECT * FROM fagendad_sql INTO TABLE fagendadsql 
+
 	SELECT fagendad_sql
+	USE 
+	SELECT fagendadsql 
+	ALTER table fagendadsql alter COLUMN idagenda i
+	ALTER table fagendadsql alter COLUMN idregistro i
+	ALTER table fagendadsql alter COLUMN detallereg c (200)
+	ALTER table fagendadsql alter COLUMN detalle c (200)
+	ALTER table fagendadsql alter COLUMN tabla c (50)
+	ALTER table fagendadsql alter COLUMN tipo c (10)
+	ALTER table fagendadsql alter COLUMN fecha c (8)
+
 	GO TOP 
 	
 	IF EOF()
-		USE IN fagendad_sql
+		USE IN fagendadsql 
 		RETURN p_aliasretorno  
 	ENDIF
 
+
 	
-	SELECT idagenda, tabla, idregistro, tipo, 'Agenda: '+SUBSTR(fecha,7,2)+'/'+SUBSTR(fecha,5,2)+'/'+SUBSTR(fecha,1,4)+' - '+ALLTRIM(detallereg) as detallereg FROM fagendad_sql	INTO TABLE &para_aliasrnl 
+	SELECT idagenda, 'agendadeta' as tabla, idregistro, tipo, SUBSTR(('Agenda: '+SUBSTR(fecha,7,2)+'/'+SUBSTR(fecha,5,2)+'/'+SUBSTR(fecha,1,4)+' - '+ALLTRIM(detallereg)+' '+ALLTRIM(detalle)+SPACE(200)),1,200) as detallereg FROM fagendadsql 	INTO TABLE &para_aliasrnl 
 		
-	SELECT fagendad_sql
-	USE IN fagendad_sql
+	SELECT fagendadsql 
+	USE IN fagendadsql 
 	p_aliasretorno  = para_aliasrnl
 	RETURN para_aliasrnl
 ENDFUNC 
@@ -32626,7 +32265,7 @@ PARAMETERS pa_codigonoti,pa_detalleregi, pa_detalleag, pa_repite, p_conn
 		SELECT sysalertas_sql
 		GO TOP 
 		IF !EOF() THEN 
-			pa_detalleag = ALLTRIM(sysalertas_sql.tipoalerta)+': '+ALLTRIM(pa_detalleag)+' '+ALLTRIM(sysalertas_sql.detalle)+' [ '+ALLTRIM(_SYSHOST)+' '+ALLTRIM(_SYSIP)+' '+ALLTRIM(_SYSUSUARIO)+' '+TTOC(DATETIME())+' ]'
+			pa_detalleag = ALLTRIM(sysalertas_sql.tipoalerta)+': '+ALLTRIM(pa_detalleag)+' '+ALLTRIM(sysalertas_sql.detalle)+CHR(13)+CHR(13)+'[ '+ALLTRIM(_SYSHOST)+' '+ALLTRIM(_SYSIP)+' '+ALLTRIM(_SYSUSUARIO)+' '+TTOC(DATETIME())+' ]'
 			pa_detalleregi= ALLTRIM(pa_detalleregi)+' '+ALLTRIM(sysalertas_sql.alerta)+' [ '+ALLTRIM(sysalertas_sql.codigo)+' ]'
 		ENDIF 
 		USE IN sysalertas_sql
@@ -33272,6 +32911,8 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 
 	IF v_eliminarComp = .T. &&Elimina el comprobante de la Base de Datos
 *!*			sino=MESSAGEBOX("¿Confirma la ELIMINACIÓN del Comprobante Nro:"+CHR(13)+CHR(13)+alltrim(v_numero),4+32+256,"Confirmar")
+		v_idcomp= p_idregistro
+
 		sino=MESSAGEBOX("¿Confirma la ELIMINACIÓN del comprobante?",4+32+256,"Confirmar")
 		IF sino<> 6 THEN 
 			* no hago nada
