@@ -2375,6 +2375,11 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del lote",0+48+0,"Error")
 			ENDIF
 			
+		
+		
+		
+		
+		
 
 		IF v_esElectronica  = .T.
 
@@ -2420,7 +2425,10 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			ALTER table factu ADD COLUMN compAso M
 *!*				ALTER table factu ADD COLUMN remiaso C(100)
 			ALTER table factu alter COLUMN numerorem c(100)
-
+*!*				ALTER table factu ADD COLUMN nommon C(200)
+*!*				ALTER table factu ADD COLUMN moneda I
+*!*				ALTER table factu ADD COLUMN simbolo C(10)
+*!*				ALTER table factu ADD COLUMN cotizacion N(13,2)
 
 
 	
@@ -2429,6 +2437,12 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 		SELECT factu
 		v_totalFactura = factu.total
 		v_totalEnLetras = enletras(v_totalFactura)
+	
+	
+	
+	
+	
+	
 	
 	
 	** Agrego comprobantes asociados **
@@ -2479,8 +2493,46 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 		
 	** AGREGO OBSERVACIONES FIJAS EN EL COMPROBANTE SEGÚN CONDICIONES EN LA TABLA observacond  y el total en letras *
 	
+		
+		*** Busco Cotización del Dolar ***
+			*sqlmatriz(1)=" Select * from monedas where nombre = 'DOLAR' "
+			SELECT factu
+			v_FechaFactura = factu.fecha
+			
+			sqlmatriz(1)=" select m.simbolo, h.* from monedash h left join monedas m on h.moneda = m.moneda "
+			sqlmatriz(2)=" where  h.nombre = 'DOLAR' and h.fechacot in ( select max(fechacot) from monedash where fechacot <= '"+ALLTRIM(v_FechaFactura)+"' and nombre = 'DOLAR') "
+
+
+
+
+			verror=sqlrun(vconeccionF,"cotizacion_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la cotización de la moneda",0+48+0,"Error")
+			ENDIF
+		
+		
+		
+		
+	
 			ALTER table factu ADD COLUMN obsfijo C(250)
 			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.F.)
+			
+			
+			SELECT cotizacion_sql
+			GO TOP 
+			
+			IF NOT EOF()
+			
+				v_nombremon = cotizacion_sql.nombre
+				v_cotizacion = cotizacion_sql.cotizacion
+				v_simbolo	= cotizacion_sql.simbolo
+				SELECT factu
+				v_importeTotMon = factu.total
+				v_importeMon = v_importeTotMon / v_cotizacion 
+		
+			
+				v_observaFijo = v_observaFijo + "El importe facturado equivale a "+ALLTRIM(v_simbolo)+" "+ALLTRIM(STR(v_importeMon,13,2)) +" calculadosa un valor de "+ALLTRIM(STR(v_cotizacion,13,2)) +" $/"+ALLTRIM(v_simbolo)+", que corresponde a la cotización BNA de dólar Divisa tipo vendedor, del día anterior a la facturación"
+			ENDIF 
 			SELECT factu 
 			GO TOP 
 			replace ALL obsfijo WITH v_observaFijo, apeynom WITH ALLTRIM(ALLTRIM(apellido)+" "+ALLTRIM(nombre)), totalletra WITH ALLTRIM(v_totalEnLetras), compAso WITH ALLTRIM(v_comproAso)
@@ -23999,7 +24051,7 @@ v_importeTot = 0.00
 	****************************************************************
 
  	DO FORM selectretenciones WITH v_importeTot ,p_nomTabRes TO v_retorno 
-
+	
  	DO CASE
  	CASE  v_retorno > 0.00
  	
@@ -24020,8 +24072,8 @@ v_importeTot = 0.00
  ELSE
  	RETURN -1
  ENDIF 
-
- 
+MESSAGEBOX("Retorno")
+ MESSAGEBOX(v_retorno)
  
 RETURN v_retorno
 
@@ -24079,12 +24131,16 @@ ENDIF
 			
 			
 		v_idretenr = &p_nomTablaRet..idreten
-		
+		MESSAGEBOX("v_idretenr")
+		MESSAGEBOX(v_idretenr )
 		IF v_idretenr = 0
 	
 
 			v_pventar = &p_nomTablaRet..pventa
 			v_idcomprobar =  comproObjtmp.getidcomprobante("RETENCION")
+			
+			MESSAGEBOX("v_idcomprobar")
+			MESSAGEBOX(v_idcomprobar)
 			
 		SELECT &p_nomTablaRet
 			v_regis = RECNO()
@@ -33150,6 +33206,82 @@ PARAMETERS p_color
 
 	RETURN vcolor
 ENDFUNC 
+
+
+
+FUNCTION ObtieneGruposPorMiembro
+PARAMETERS p_tabla,p_campo,p_registro
+*#/----------------------------------------
+* Función para obtener el listado de grupos al que pertenece un miembro
+* Parametros : 	p_tabla: Tabla asociada al miembro. 
+*				p_campo: campo clave asociado al miembro
+*				p_registro: id del miembro para la tabla.
+* RETURN: Retorna una cadena de texto con la lista de IDGRUPO, separada por ','. En caso de no pertenecer a un grupo retorna una cadena vacia
+*#/----------------------------------------	
+
+	v_listaGrupos = "" 
+	
+	** Valido la tabla **
+	IF EMPTY(ALLTRIM(p_tabla)) = .T.
+		RETURN ""
+	ENDIF 
+
+	** Valido el campo **
+	IF EMPTY(ALLTRIM(p_campo)) = .T.
+		RETURN ""
+	ENDIF 
+	
+	** Valido el registro **
+	IF TYPE('p_registro') = 'C'
+		IF EMPTY(ALLTRIM(p_registro)) = .T.
+			RETURN ""
+		ENDIF 	
+	ELSE
+		IF TYPE('p_registro') = 'N'
+		
+			IF p_registo > 0
+				p_registro = VAL(p_registro)
+			ELSE
+				RETURN ""
+			ENDIF 	
+		ELSE
+			RETURN ""
+		ENDIF 
+	ENDIF 
+	
+		
+	
+	*** Me conecto a la base de datos
+	vconeccionO=abreycierracon(0,_SYSSCHEMA)
+
+	sqlmatriz(1)= " select ifnull(group_concat(g.idgrupo),'') as idgrupos "
+	sqlmatriz(2)= " from grupos g left join tipogrupos t on t.idtipogrupo = g.idtipogrupo "
+	sqlmatriz(3)= " left join grupoobjeto go on go.idgrupo = g.idgrupo "
+	sqlmatriz(4)= " where t.tabla ='"+ALLTRIM(p_tabla)+"' and t.campo = '"+ALLTRIM(p_campo)+"' and go.idmiembro = '"+ALLTRIM(p_registro)+"' "
+	sqlmatriz(5)= " order by g.idtipogrupo, g.idgrupo "
+
+	verror=sqlrun(vconeccionO,"grupos_sql")
+
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los grupos",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionO,"")
+	    RETURN  v_listaGrupos
+	ENDIF 
+		*** me desconecto	
+		=abreycierracon(vconeccionO,"")
+	
+	SELECT grupos_sql
+	IF NOT EOF()
+	
+		v_listaGrupos = grupos_sql.idgrupos
+		
+	ENDIF 
+
+	RETURN v_listaGrupos
+
+ENDFUNC 
+
 
 
 

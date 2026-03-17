@@ -1,4 +1,87 @@
 
+FUNCTION DIVIMPORTERET
+PARAMETERS p_idimpuret
+*#/****************************
+*** FUNCIÓN PARA RETORNAR EL DIVISOR DEL IMPORTE PARA EL CALCULO DE RETENCIONES ***
+****************************************************************
+** PARÁMETROS: 	p_idimpuret: id impuesto de retención
+*
+* La función recibe el ID del impuesto y retorna el divisor correspondiente para la retención (Ej: si se quiere obtener el neto, generalmente el divisor es 1.21)
+****************************************************************
+** RETORNO: Retorna el divisor. 0, en caso de error
+*#/****************************
+	v_retornor = 0.0000
+
+	IF TYPE('p_idimpuret') == 'N'
+	
+		sqlmatriz(1)= " SELECT idimpuret,divimporte "
+		sqlmatriz(2)= "  from impuretencion "
+		sqlmatriz(3)= " WHERE idimpuret = "+ALLTRIM(STR(p_idimpuret))
+
+	 	
+		verror=sqlrun(varconexionF,"impuret_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la búsqueda del importe divisor",0+16+0,"")
+		    RETURN 0.0000
+		ENDIF 
+		
+		
+		SELECT impuret_sql
+		GO TOP 
+		
+		IF NOT eof()
+			v_retornor = impuret_sql.divimporte
+		ELSE
+			v_retornor = 0.0000
+		ENDIF 
+	
+	ENDIF 
+
+	RETURN v_retornor 
+ENDFUNC 
+
+
+FUNCTION DIVIMPORTEPER
+PARAMETERS p_idimpuper
+*#/****************************
+*** FUNCIÓN PARA RETORNAR EL DIVISOR DEL IMPORTE PARA EL CALCULO DE PERCEPCIONES ***
+****************************************************************
+** PARÁMETROS: 	p_idimpuper: id impuesto de percepción
+*
+* La función recibe el ID del impuesto y retorna el divisor correspondiente para la percepción (Ej: si se quiere obtener el neto, generalmente el divisor es 1.21)
+****************************************************************
+** RETORNO: Retorna el divisor. 0, en caso de error
+*#/****************************
+	v_retornop = 0.0000
+
+	IF TYPE('p_idimpuret') == 'N'
+	
+		sqlmatriz(1)= " SELECT idimpuper,divimporte "
+		sqlmatriz(2)= "  from impupercepcion "
+		sqlmatriz(3)= " WHERE idimpuper = "+ALLTRIM(STR(p_idimpuper))
+
+	 	
+		verror=sqlrun(varconexionF,"impuper_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la búsqueda del importe divisor",0+16+0,"")
+		    RETURN 0.0000
+		ENDIF 
+		
+		
+		SELECT impuper_sql
+		GO TOP 
+		
+		IF NOT eof()
+			v_retornop = impuper_sql.divimporte
+		ELSE
+			v_retornop = 0.0000
+		ENDIF 
+	
+	ENDIF 
+
+	RETURN v_retornop 
+ENDFUNC 
+
 
 FUNCTION RET_GANANCIAS_IFN
 PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
@@ -16,10 +99,15 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 ** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
 *#/****************************
 
-	v_divisorParaNeto = 1.21
+*!*		v_divisorParaNeto = 1.21
+	v_divisorParaNeto = DIVIMPORTERET(p_idimpuret)
+	
+	IF v_divisorParaNeto = 0
+		MESSAGEBOX("NO se pudo obtener el divisor para el monto de retención. Divisor: 0.00. [impuretencion.divimporte]",0+16+256,"Error al calcular el monto de retención")
+		RETURN .F.
 
-	***** DIVIDO EL IMPORTE POR 1.21 PARA OBTENER EL NETO ****
-
+	ENDIF 
+	
 	P_importe = P_importe /v_divisorParaNeto
 	
 	******
@@ -81,7 +169,6 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 	
 
 
-
 ******************************************************************************************
 **** BUSCO PAGOS SIN RETENCIONES Y RETENCIONES REALIZADAS DE PAGOS ANTERIORES EN EL MES PASADO COMO PARÁMETRO ****
 ******************************************************************************************
@@ -89,30 +176,21 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 ****
 *** Retenciones realizadas en el mes pasado como parámetro ***
 ****
-
-	
-*!*	sqlmatriz(1)= " SELECT p.entidad, ifnull(r.idimpuret, 0) as idimpuret, SUM(p.importe) as pagosmes, ifnull(sum(r.importe),0.00) as impret   FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
-*!*	sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
-*!*	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  R.idimpuret = "+ALLTRIM(STR(P_idimpuret)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad,r.idimpuret "
-  
+ 
   	sqlmatriz(1)= " SELECT p.entidad, ifnull(i.idimpuret, 0) as idimpuret, SUM(p.importe) as pagosmes, ifnull(sum(r.importe),0.00) as impret, i.regimen   FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
 	sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join impuretencionh i on r.idreten = i.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
-*	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  i.idimpuret = "+ALLTRIM(STR(P_idimpuret)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad,i.idimpuret "
 	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  i.regimen = "+ALLTRIM(STR(P_regimen)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad "
-
  	
 	verror=sqlrun(varconexionF,"totpagosRet0")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias (0)",0+16+0,"")
 	    RETURN .F.
 	ENDIF 
-	
-					
+						
 	SELECT * FROM totpagosRet0 INTO TABLE totpagosRet
 					
 	ALTER table totpagosret alter COLUMN idimpuret I
 	ALTER table totpagosret alter COLUMN impret Y
-	
 	
 	ZAP IN totpagos
 	SELECT totpagosRet
@@ -124,34 +202,11 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 		INSERT INTO totpagos (entidad,pagosmes) VALUES (v_cod_socio,v_pagosmes)
 
 	ELSE && Se realizaron retenciones en el mes
-	
-	
+		
 		SELECT entidad, (pagosmes/v_divisorParaNeto) as pagosmes FROM totpagosRet INTO TABLE  totpagos
 		
-*!*				v_cod_socio = totpagosRet.entidad
-*!*				v_pagosmes  = totpagosRet.pagosmes
-*!*				
-*!*				v_pagosmes  = v_pagosmes  / v_divisorParaNeto
-*!*				MESSAGEBOX(v_pagosmes)
-*!*				** En caso de que haya retenciones actualizo **
-*!*				SELECT totpagos 
-*!*				replace pagosmes WITH pagosmes + v_pagosmes ADDITIVE FOR entidad = v_cod_socio
-*!*				
-*!*				
-*!*	*!*			DO WHILE NOT EOF()
-*!*	*!*				v_cod_socio = totpagosRet.entidad
-*!*	*!*				v_pagosmes  = totpagosRet.pagosmes
-*!*	*!*				
-*!*	*!*				v_pagosmes  = v_pagosmes  / v_divisorParaNeto
-*!*	*!*				
-*!*	*!*				INSERT INTO totpagos (entidad,pagosmes) VALUES (v_cod_socio,v_pagosmes)
-*!*	*!*				
-*!*	*!*				SELECT totpagosRet
-*!*	*!*				SKIP 1
-*!*	*!*			ENDDO 
-*!*			
 	ENDIF 
-*	USE IN totpagos0 
+
 
 ****
 *** Busco en la tabla linkcompro los comprobantes de pagos a proveedores que no tengan asociadas retenciones ***
@@ -162,7 +217,6 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 	sqlmatriz(3) = "    WHERE p.fecha between "+v_desde+" and "+v_hasta+" and "
 	sqlmatriz(4) = "    	     p.entidad = "+ALLTRIM(STR(p_entidad)) +" and u.idestador != " +ALLTRIM(STR(v_estadoAnulado))
 	sqlmatriz(5) = "    group BY p.entidad having isnull(i.idimpuret) "			
-
 
 	verror=sqlrun(varconexionF,"totpagos0")
 	IF verror=.f.  
@@ -185,9 +239,7 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 			** En caso de que haya retenciones actualizo **
 			SELECT totpagos 
 			replace pagosmes WITH pagosmes + v_pagosmes ADDITIVE FOR entidad = v_cod_socio
-			
-			
-			*INSERT INTO totpagos (entidad,pagosmes) VALUES (p_entidad,v_pagosmes)
+
 		ENDIF 
 		
 		SELECT totpagos0
@@ -251,10 +303,9 @@ SELECT totpagos
 ****
 	
 	SELECT totpagosRet 
-	*	SELECT entidad, impret as retenmes FROM totpagosRet WHERE idimpuret = p_idimpuret INTO TABLE totreten0
+
 	SELECT entidad, impret as retenmes FROM totpagosRet WHERE regimen = p_regimen  INTO TABLE totreten0
-	
-		
+			
 	ZAP IN totreten
 	SELECT totreten0
 	GO TOP 
@@ -267,25 +318,12 @@ SELECT totpagos
 		ELSE 
 		
 		SELECT entidad,retenmes FROM totreten0 INTO TABLE totreten 
-*!*			
-*!*				v_cod_socio = totreten0.entidad
-*!*				v_retensmes  = totreten0.retenmes
-*!*									
-*!*				** En caso de que haya retenciones actualizo **
-*!*				SELECT totreten
-*!*				replace retenmes WITH retenmes + v_retensmes ADDITIVE FOR entidad = v_cod_socio
-*!*	*!*				
-*!*	*!*			
-*!*	*!*			
 
-*!*	*!*				v_retenmes   = totreten0.retenmes 
-*!*	*!*				INSERT INTO totreten (entidad ,retenmes) VALUES (p_entidad,v_retenmes)
 		ENDIF 		
 		SELECT totreten0
 		SKIP 1
 	ENDDO  
-	
-		
+			
 	v_razonAplicar = 0.00
 	SELECT impureten
 	GO TOP 
@@ -418,11 +456,9 @@ SELECT totpagos
 			ELSE && No tengo que retener			
 			
 			ENDIF 
-		
-	
+			
 	ELSE
-	
-	
+		
 	ENDIF 
 			
 	USE IN totreten0
@@ -436,10 +472,7 @@ SELECT totpagos
 
 	RETURN .T.
 	
-
 ENDFUNC 
-
-
 
 
 
@@ -493,6 +526,9 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 	
 	
 	IF v_enconvenio = 'S' && Si está en convenio busco en las escalas según el campo razonin de la tabla impuretencion
+	
+		v_pago_total_retener = P_importe
+
 
 		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonin = a.codigo "
@@ -500,9 +536,19 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 
 		****  SI está en convenio se calcula sobre el total bruto ****
 		
-		v_pago_total_retener = P_importe
-
+	
 	ELSE && Si no está en convenio busco en las escalas según el campo razonnin de la tabla impuretencion
+
+
+
+		v_divisorParaNeto = DIVIMPORTERET(p_idimpuret)
+		
+		IF v_divisorParaNeto = 0
+			MESSAGEBOX("NO se pudo obtener el divisor para el monto de retención. Divisor: 0.00. [impuretencion.divimporte]",0+16+256,"Error al calcular el monto de retención")
+			RETURN .F.
+
+		ENDIF 
+		
 
 		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimponn as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonnin = a.codigo "
@@ -510,7 +556,8 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes
 
 		
 		****  Si NO está en convenio se calcula sobre el neto ****
-		v_pago_total_retener = P_importe / 1.21
+		*v_pago_total_retener = P_importe / 1.21
+		v_pago_total_retener = p_importe / v_divisorParaNeto 
 		
 	ENDIF 
 
@@ -602,7 +649,7 @@ ENDFUNC
 FUNCTION RET_IIBB_STAFE_IFN
 PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 *#/****************************
-*** FUNCIÓN PARA EL CALCULO DEL MONTO A RETENER DE IIBB ARBA***
+*** FUNCIÓN PARA EL CALCULO DEL MONTO A RETENER DE IIBB STAFE***
 ****************************************************************
 ** PARÁMETROS: 	P_idimpuret: id impuesto de retención
 *				P_importe: Importe Total, del cuál se va a calcular la retención. 
@@ -615,7 +662,6 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 
 
 ****** El calculo será sobre el importe neto
-
 
 	* Abro una conexion con la base de datos 
 	varconexionF = abreycierracon(0,_SYSSCHEMA)
@@ -653,24 +699,39 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 	
 	
 	IF v_enconvenio = 'S' && Si está en convenio busco en las escalas según el campo razonin de la tabla impuretencion
-
+		****  SI está en convenio se calcula sobre el total bruto ****
+		
+		v_pago_total_retener = P_importe 
+	
+	
 		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
-
-		****  SI está en convenio se calcula sobre el total bruto ****
-		
-		v_pago_total_retener = P_importe /1.21
+				
 
 	ELSE && Si no está en convenio busco en las escalas según el campo razonnin de la tabla impuretencion
 
-		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimponn as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
+
+		
+		v_divisorParaNeto = DIVIMPORTERET(p_idimpuret)
+		
+		IF v_divisorParaNeto = 0
+			MESSAGEBOX("NO se pudo obtener el divisor para el monto de retención. Divisor: 0.00. [impuretencion.divimporte]",0+16+256,"Error al calcular el monto de retención")
+			RETURN .F.
+
+		ENDIF 
+		
+			
+		v_pago_total_retener = P_importe /v_divisorParaNeto 
+		
+
+		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimponn as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret, i.divimporte "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonnin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
 		
 		****  Si NO está en convenio se calcula sobre el neto ****
-		v_pago_total_retener = P_importe /1.21
+*!*			v_pago_total_retener = P_importe /1.21
 
 		
 	ENDIF 
@@ -680,7 +741,7 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 	    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias(2)",0+16+0,"")
 	    RETURN .F.
 	ENDIF 	
-	
+
 					
 	*******************
 	**** 1- Calculo las retenciones para el monto sujeto a retener
@@ -692,6 +753,7 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 			
 			v_aretener = v_pago_total_retener - v_baseImponible
 			
+					
 			IF v_aretener  > 0 && Tengo que retener
 				
 				SELECT * FROM impureten where v_aretener >= valmin and (v_aretener < valmax or valmax = -1) INTO TABLE retenciongan
@@ -701,7 +763,7 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 				v_valmin = retenciongan.valmin
 
 				v_retener = v_aretener - v_valmin
-
+		
 				v_razon = retenciongan.razon
 
 				v_valfijo = retenciongan.valfijo
@@ -720,8 +782,9 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 				
 				IF v_retencion < v_minRet
 					&& La retención a aplicar es menor que el minimo a retener para el concepto. No se aplican retenciones
+			
 				ELSE
-
+			
 ****
 *** Guardo en la tabla los datos para la retención
 ****			
@@ -813,24 +876,47 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 	
 	
 	IF v_enconvenio = 'S' && Si está en convenio busco en las escalas según el campo razonin de la tabla impuretencion
+		
+		****  SI está en convenio se calcula sobre el total bruto ****
+		v_divisorParaNeto = DIVIMPORTERET(p_idimpuret)
+		IF v_divisorParaNeto = 0
+			MESSAGEBOX("NO se pudo obtener el divisor para el monto de retención. Divisor: 0.00. [impuretencion.divimporte]",0+16+256,"Error al calcular el monto de retención")
+			RETURN .F.
 
+		ENDIF 
+		
+		
+		v_pago_total_retener = P_importe /v_divisorParaNeto 
+		
+		
 		sqlmatriz(1) = "SELECT i.idimpuret, i.detalle, i.baseimpon as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
-		****  SI está en convenio se calcula sobre el total bruto ****
-		
-		v_pago_total_retener = P_importe /1.21
+	
 
 	ELSE && Si no está en convenio busco en las escalas según el campo razonnin de la tabla impuretencion
+
+
+		v_divisorParaNeto = DIVIMPORTERET(p_idimpuret)
+			
+		IF v_divisorParaNeto = 0
+			MESSAGEBOX("NO se pudo obtener el divisor para el monto de retención. Divisor: 0.00. [impuretencion.divimporte]",0+16+256,"Error al calcular el monto de retención")
+			RETURN .F.
+
+		ENDIF 
+		
+		v_pago_total_retener = P_importe /v_divisorParaNeto 
+		
+
 
 		sqlmatriz(1) = " SELECT i.idimpuret, i.detalle, i.baseimponn as baseimpon,i.idtipopago, i.funcion, a.idafipesc, a.codigo,a.descrip as descescala, a.valmin, a.valmax, a.valfijo,a.razon,a.minret "
 		sqlmatriz(2) = "  FROM impuretencion i left join  afipescalas a on i.razonnin = a.codigo "
 		sqlmatriz(3) = "  where i.idimpuret   = "+ALLTRIM(STR(p_idimpuret))	
 
 		
-		****  Si NO está en convenio se calcula sobre el neto ****
-		v_pago_total_retener = P_importe /1.21
+*!*			****  Si NO está en convenio se calcula sobre el neto ****
+*!*			v_pago_total_retener = P_importe /1.21
 
 		
 	ENDIF 
@@ -1119,6 +1205,205 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 		v_operacion = 'PERCEPCION IIBB ARBA'
 *!*			INSERT INTO &p_nomTabRes (entidad,idimpuper,impAPer,baseimpo,razon, idtipopago, descrip,totpagodia, totperdia, sujaper,tabart,campoart,codiArt, operacion) ;
 *!*								 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpon,v_razon, v_idtipopago, v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc,v_tablaIB,v_campoart, v_codigoREC,v_operacion  ) ;
+
+			INSERT INTO &p_nomTabRes (entidad,idimpuper,impAPer,baseimpo,razon,  descrip,totpagodia, totperdia, sujaper,tabart,campoart,codiArt, operacion) ;
+							 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpon,v_razon,  v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc,v_tablaIB,v_campoart, v_codigoREC,v_operacion  ) ;
+
+
+		endif 
+	RETURN .T.
+ENDFUNC 
+
+
+
+
+
+
+
+
+
+
+
+FUNCTION PER_IIBB_STAFE_IFN
+*#/****************************
+*** FUNCIÓN PARA EL CALCULO DEL MONTO A PERCIBIR DE IIBB STAFE***
+****************************************************************
+** PARÁMETROS: 	p_idimpuper: ID del impuesto a percibir
+*				p_entidad: Entidad a la cual se le va a calcular la percepción
+*				p_fecha: Fecha del comprobante
+*				p_neto: monto neto del comprobante
+*				p_importeIva: monto del iva del comprobante
+*				p_tipo: Tipo de comprobante (Pudiendo ser 'A' | 'B' | 'C' )
+*				p_nomTabRes: Nombre de la tabla donde se va a entregar el resultado, la cual inclura: idimpuper,netoTotal,importeAPercibir,totpagosmes,totPercepmes )
+* La función recibe los parametros indicados y en función de eso y las tablas de retenciones calcula cuanto debe retenerse para la entidad y el importe dado
+****************************************************************
+** RETORNO: Retorna el importe a percibir, el total de percepciones al mes y total de pagos. True si terminó correctamente, False en otro caso
+*#/****************************
+PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nomTabRes
+	
+	
+	
+***********************
+** ALGORITMO CALCULO **
+***********************
+** 1 - Obtengo montos de facturación del dia (subtotal e iva)  y  le sumo el monto de la factura que estoy haciendo
+**		¿Tengo que discriminar si es comprobante A del resto? porqe veo que en el calculo de facturacion diaria, si es A tomo solo el neto y sino tomo el total
+** 2 - Obtengo las percepciones de IIBB ya realizadas 
+**		Las percepciones realizadas van a estar en la tabla detfactu como un concepto (Concepto PERCEPCION IIBB STAFE)
+**		Con el idimpuper obtengo el concepto asociado (Agregar concepto a la tabla impupercepcion)
+** 3 - Obtengo los datos del impuesto que voy a aplicar
+** 4 - Calculo el impuesto y guardo los datos en una tabla temporal para retornar
+	
+	r_percep = 0
+	v_sentenciaCrea1 = "CREATE TABLE "+ALLTRIM(p_nomTabRes)+" FREE (entidad I,idimpuper I,impAPer Y,baseimpo Y,razon Y,  descrip C(250),totpagodia Y, totperdia Y, sujaper Y,tabart C(100),campoart C(100),codiArt C(50), operacion C(100))"
+
+	&v_sentenciaCrea1 
+
+
+	CREATE TABLE totfact FREE (entidad i, factdiario y)
+	CREATE TABLE totperc FREE (entidad i, percdiario y)
+
+	* Abro una conexion con la base de datos Facturación
+	varconexionF = abreycierracon(0,_SYSSCHEMA)
+	
+*******************
+**** 1- Obtengo los montos de facturación del día y le sumo el monto de la factura que estoy haciendo
+*******************
+	
+	sqlmatriz(1) = " SELECT sum(f.subtotal * t.opera) as subtotal, sum(d.importe * t.opera) as iva , t.opera, c.tipo  "
+	sqlmatriz(2) = "    FROM facturas f LEFT JOIN comprobantes c ON c.idcomproba=f.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro  "
+	sqlmatriz(3) = "    left join facturasimp d on f.idfactura = d.idfactura left join impuestos i on d.impuesto = i.impuesto "
+	sqlmatriz(4) = "    WHERE f.fecha = '"+ALLTRIM(p_fecha)+"' and f.entidad = "+ALLTRIM(STR(p_entidad))+" and i.abrevia = 'IVA' and t.opera > 0"
+
+	sqlmatriz(5) = "    group by c.tipo ORDER BY f.entidad"	
+
+	verror=sqlrun(varconexionF,"totfact1")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Facturas",0+16+0,"")
+	    RETURN .F.
+	ENDIF 
+	
+	SELECT totfact1
+	GO TOP 
+	IF EOF() AND RECNO()=1 THEN 
+		v_factdiario = 0
+	ELSE 
+		v_factdiario = totfact1.subtotal
+	ENDIF 
+
+
+*********************************************************	
+	** ¿Está bien esta diferenciación? **
+*********************************************************
+
+
+	IF p_tipo = "A" THEN 
+		v_factdiario = v_factdiario + p_neto
+	ELSE
+		v_factdiario = v_factdiario + totfact1.iva + p_neto + P_importeiva
+	ENDIF 
+	USE IN totfact1
+
+	INSERT INTO totfact(entidad,factdiario) VALUES(p_entidad,v_factdiario)
+
+
+*******************
+**** 2 - Obtengo las percepciones de IIBB ya realizadas
+*******************
+
+		oeObjIIBB	= CREATEOBJECT('oeclass')	
+		v_codTabIB	    =  oeObjIIBB.getCodigoOp('PERCEPCION IIBB STAFE') && Obtengo: CODIGO_TABLA. El caracter '_' es el de separación
+		v_nPosR 		= AT('_',v_codTabIB) &&Retorna la posición donde aparece el caracter de separacion utilizado (_)
+		v_codigoREC	    = SUBSTR(v_codTabIB,1,v_nPosR-1) && Retorna el código
+		v_tablaIB		= SUBSTR(v_codTabIB,v_nPosR+1)	&& Retorna el resto de la cadena, que corresponde a la tabla
+		RELEASE oeObjIIBB
+
+	
+		sqlmatriz(1) = " SELECT sum(d.total) as impperc, sum(if(f.tipo = 'A',f.neto,if(f.tipo='B' or f.tipo = 'C',f.total,0))) as sujaperc "
+		sqlmatriz(2) = " FROM facturas f left join detafactu d on f.idfactura = d.idfactura "
+		sqlmatriz(3) = " where f.fecha = '"+ALLTRIM(p_fecha)+"' and d.articulo = '"+ALLTRIM(v_codigoREC)+"' and f.entidad = "+ALLTRIM(STR(p_entidad))
+
+	verror=sqlrun(varconexionF,"totperc0")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Percepciones de IB",0+16+0,"")
+	    RETURN .F.
+	ENDIF 
+	
+	s_sujaperc   = 0
+	ZAP IN totperc 
+	SELECT totperc0
+	GO TOP 
+	IF EOF() AND RECNO()=1 THEN 
+		v_percdiario = 0
+		s_sujaperc   = 0
+	ELSE
+		IF ISNULL(totperc0.impperc)
+			v_percdiario = 0
+			s_sujaperc   = 0
+		ELSE
+			v_percdiario = totperc0.impperc
+			s_sujaperc   = totperc0.sujaperc
+		ENDIF 
+	ENDIF 
+	
+	INSERT INTO totperc (entidad,percdiario) VALUES (p_entidad,v_percdiario)
+	USE IN totperc0
+	
+	
+*******************
+**** 3 - Obtengo los datos del impuesto que voy a aplicar
+*******************
+
+	sqlmatriz(1) = " SELECT * FROM entidadper e left join impupercepcion p on e.idimpuper = p.idimpuper "
+	sqlmatriz(2) = "  where e.entidad   = "+ALLTRIM(STR(p_entidad)) + " and e.idimpuper   = "+ALLTRIM(STR(p_idimpuper))
+
+	verror=sqlrun(varconexionF,"datperc")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BUSQUEDA de Percepciones de IB",0+16+0,"")
+	    RETURN .F.
+	ENDIF 
+		
+		
+	SELECT datperc
+	GO TOP 
+	
+	v_razon      = datperc.razon
+	v_pnombre    = datperc.detalle
+	v_baseimpon  = datperc.baseimpon
+
+	* cierro la conexion
+	= abreycierracon(varconexionF,"")
+	
+*******************
+**** 4 - Calculo el impuesto y guardo los datos en una tabla temporal para retornar
+*******************
+	
+	IF ((v_factdiario-v_percdiario) - v_baseimpon) => 0 THEN 
+		r_percep = ( (v_factdiario-v_percdiario) * (v_razon /100) ) - v_percdiario
+		IF r_percep < 0 THEN 
+			r_percep = 0
+		ENDIF 
+	ELSE
+		r_percep = 0
+	ENDIF 
+	
+	IF r_percep > 0
+	    g_totaldia   = v_factdiario
+	    g_percepdia  = v_percdiario + r_percep
+		g_sujaperc   = (v_factdiario-v_percdiario) - s_sujaperc
+	    g_impperc    = r_percep
+		v_campoArt   = ""
+		
+		DO CASE
+			CASE ALLTRIM(v_tablaIB) = "articulos"
+				v_campoart = "articulo"
+			CASE ALLTRIM(v_tablaIB) = "conceptoser"
+				v_campoart = "idconcepto"
+			OTHERWISE
+				v_campoart = "articulo"
+		ENDCASE
+		
+		v_operacion = 'PERCEPCION IIBB STAFE'
 
 			INSERT INTO &p_nomTabRes (entidad,idimpuper,impAPer,baseimpo,razon,  descrip,totpagodia, totperdia, sujaper,tabart,campoart,codiArt, operacion) ;
 							 VALUES (v_entidad,v_idimpuper,g_impperc,v_baseimpon,v_razon,  v_pnombre ,v_factdiario, g_percepdia  , g_sujaperc,v_tablaIB,v_campoart, v_codigoREC,v_operacion  ) ;
@@ -1432,6 +1717,12 @@ IF EMPTY(ALLTRIM(p_archivo)) = .T.
 ENDIF 
 
 
+v_sn = MESSAGEBOX("¿Confirma la actualización de las Retenciones?",4+32+256,"Actualizar Retenciones")
+
+IF v_sn <> 6
+
+	RETURN 0
+ENDIF 
 
 
 * Abro una conexion con la base de datos 
@@ -1439,7 +1730,7 @@ ENDIF
 	
 	
 	
-	sqlmatriz(1)= " SELECT e.*,r.identret,r.idimpuret,i.funcion "
+	sqlmatriz(1)= " SELECT e.*,ifnull(r.identret,0) as identret,r.idimpuret,i.funcion "
 	sqlmatriz(2)= " from entidades e left join entidadret r on e.entidad = r.entidad left join impuretencion i on r.idimpuret = i.idimpuret "
 	sqlmatriz(3)= " where i.funcion = '"+ALLTRIM(p_funcion)+"' or isnull(i.funcion) group by e.entidad,i.funcion "
 
@@ -1463,6 +1754,8 @@ ENDIF
 	* cierro la conexion
 	= abreycierracon(varconexionF,"")
 	SELECT * FROM entidadesretaux INTO TABLE entidadesret
+	
+	ALTER table entidadesret alter COLUMN identret I
 	SELECT entidadesret 
 	GO TOP 
 	
@@ -1689,8 +1982,484 @@ CASE ALLTRIM(p_funcion) == 'RET_IIBB_ARBA_IFN'
 		ENDIF 
 		
 		
+CASE ALLTRIM(p_funcion) == 'RET_IIBB_STAFE_IFN'
+
+	p_archivo = alltrim(p_archivo)
+	
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			RETURN -1
+		ENDIF
 		
 		
+		*** Cargo el archivo en una tabla ***
+		
+		
+		if file("padronIIBBSTAFEtmp.dbf") THEN
+			if used("padronIIBBSTAFEtmp") then
+				sele padronIIBBSTAFEtmp
+				use
+			endif
+			DELETE FILE padronIIBBSTAFEtmp.dbf
+		ENDIF
+			
+
+*		CREATE TABLE padronIIBBSTAFEtmp FREE ( regimen c(1) , fechapub c(8), fechades c(8), fechahas c(8), cuit C(11), tipocont C(1), estado C(1), cambio C(1), alicuota N(10,2), grupo C(2) )
+
+		**** La fecha viene con formato: DDMMAAAA
+		
+		CREATE TABLE padronRIIBBSTAFEtmp FREE ( fechapub c(8), fechades c(8), fechahas c(8), cuit C(11), tipocont C(1), estado C(1), cambio C(1), alicuotape N(10,2),alicuotare N(10,2), grupope C(2),grupore C(2), razonsoc C(60) )
+		SELE padronRIIBBSTAFEtmp 
+
+		
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+		SELECT padronRIIBBSTAFEtmp 
+
+		GO TOP 
+		IF EOF() THEN 
+			USE 
+			RETURN 0
+		ENDIF 
+		
+		
+				
+				
+		
+		SELECT padronRIIBBSTAFEtmp 
+
+		ALTER table padronRIIBBSTAFEtmp ADD COLUMN fechapubd D		
+		ALTER table padronRIIBBSTAFEtmp ADD COLUMN fechadesd D
+		ALTER table padronRIIBBSTAFEtmp ADD COLUMN fechahasd D
+
+		SELECT padronRIIBBSTAFEtmp
+		GO TOP 
+		replace ALL fechapubd WITH DATE(VAL(SUBSTR(fechapub,5,4)),VAL(SUBSTR(fechapub,3,2)),VAL(SUBSTR(fechapub,1,2))), ;
+		fechadesd WITH DATE(VAL(SUBSTR(fechades,5,4)),VAL(SUBSTR(fechades,3,2)),VAL(SUBSTR(fechades,1,2))), ;
+		fechahasd WITH DATE(VAL(SUBSTR(fechahas,5,4)),VAL(SUBSTR(fechahas,3,2)),VAL(SUBSTR(fechahas,1,2)))
+		
+		SELECT padronRIIBBSTAFEtmp
+		GO TOP 
+		
+*		SELECT * FROM entidadesret e LEFT JOIN padronRIIBBSTAFEtmp p  ON e.cuit = p.cuit HAVING  regimen = 'R' INTO TABLE padronIIBBSTAFE
+		SELECT * FROM entidadesret e LEFT JOIN padronRIIBBSTAFEtmp p  ON e.cuit = p.cuit  INTO TABLE padronRIIBBSTAFE
+		
+		SELECT padronRIIBBSTAFE
+		GO top
+		
+		
+					
+		
+		** Filtro las entidades para dar de baja de retención **
+		
+		SELECT * FROM padronRIIBBSTAFE WHERE identret > 0 AND funcion = p_funcion AND (estado = 'B' OR alicuotare = 0.00 ) INTO TABLE padronRIIBBSTAFEbaja
+		
+		SELECT * FROM padronRIIBBSTAFE WHERE identret > 0 AND funcion = p_funcion AND estado <> 'B' AND alicuotare > 0 AND cambio = 'S' INTO TABLE padronRIIBBSTAFEactu
+			
+		SELECT * FROM padronRIIBBSTAFE WHERE (identret = 0 OR ISNULL(identret) = .T.) AND estado <> 'B' AND alicuotare > 0 INTO TABLE padronRIIBBSTAFEalta
+				
+		SELECT padronRIIBBSTAFEbaja
+		GO TOP 	
+		
+		SELECT padronRIIBBSTAFEactu
+		GO TOP 	
+				
+		
+		** Sin convenio multilateral **
+		SELECT p.*,i.idimpuret as idimpret FROM padronRIIBBSTAFEalta p LEFT JOIN impuretencion i ON p.tipocont <> 'C' AND p.alicuotare = i.alin  INTO TABLE insRIIBBSTAFEcon
+		
+		
+		** Con convenio multilateral **
+		SELECT p.*,i.idimpuret as idimpret FROM padronRIIBBSTAFEalta p LEFT JOIN impuretencion i ON p.tipocont = 'C' AND p.alicuotare = i.alnin  INTO TABLE insRIIBBSTAFEsC
+		
+		
+		
+		SELECT * FROM insRIIBBSTAFEcon WHERE ISNULL(idimpret) = .F. UNION select * FROM insRIIBBSTAFEsC WHERE ISNULL(idimpret) = .F. INTO TABLE insRIIBBSTAFE
+		
+		MESSAGEBOX("insRIIBBSTAFE")
+		
+		SELECT insRIIBBSTAFE
+		GO TOP 
+				
+		
+		v_regprocesados = 0
+		SELECT insRIIBBSTAFE
+		GO TOP 	
+
+		IF NOT EOF()
+		
+			** Cargo los registros en entidadret **
+		
+			* Abro una conexion con la base de datos 
+			varconexionF = abreycierracon(0,_SYSSCHEMA)
+			DIMENSION lamatriz(4,2)
+			
+			SELECT insRIIBBSTAFE
+			GO TOP 
+			DO WHILE NOT EOF()
+			
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+				
+				SELECT insRIIBBSTAFE
+				v_identret = 0
+				v_entidad = insRIIBBSTAFE.entidad
+				v_idimpuret = insRIIBBSTAFE.idimpret
+				v_enconvenio = IIF(insRIIBBSTAFE.tipocont ='C','S','N')
+								
+				lamatriz(1,1) = 'identret'
+				lamatriz(1,2) = ALLTRIM(STR(v_identret))
+				lamatriz(2,1) = 'entidad'
+				lamatriz(2,2) = ALLTRIM(STR(v_entidad))
+				lamatriz(3,1) = 'idimpuret'
+				lamatriz(3,2) = ALLTRIM(STR(v_idimpuret))
+				lamatriz(4,1) = 'enconvenio'
+				lamatriz(4,2) = "'"+ALLTRIM(v_enconvenio)+"'"
+
+				p_tabla     = 'entidadret'
+				p_matriz    = 'lamatriz'
+				p_conexion  = varconexionF 
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error al registrar la retención para la entidad "+ALLTRIM(STR(v_entidad)),0+48+0,"Error")
+				ENDIF 
+				v_regprocesados = v_regprocesados  + 1
+				
+				SELECT insRIIBBSTAFE
+				SKIP 1
+			ENDDO 
+						
+				* cierro la conexion
+				= abreycierracon(varconexionF,"")
+		
+		ENDIF 
+		
+		**** ACtualizo entidades ***
+		
+		
+		SELECT p.*,i.idimpuret as idimpret FROM padronRIIBBSTAFEactu p LEFT JOIN impuretencion i ON p.alicuota = i.alin  INTO TABLE upIIBBSTAFE
+				
+				
+				
+				
+		** Sin convenio multilateral **
+		SELECT p.*,i.idimpuret as idimpret FROM padronRIIBBSTAFEactu p LEFT JOIN impuretencion i ON p.tipocont <> 'C' AND p.alicuotare = i.alin  INTO TABLE upRIIBBSTAFEcon
+		
+		
+		** Con convenio multilateral **
+		SELECT p.*,i.idimpuret as idimpret FROM padronRIIBBSTAFEactu p LEFT JOIN impuretencion i ON p.tipocont = 'C' AND p.alicuotare = i.alnin  INTO TABLE upRIIBBSTAFEsc
+		
+		
+		
+		SELECT * FROM upRIIBBSTAFEcon WHERE ISNULL(idimpret) = .F. UNION select * FROM upRIIBBSTAFEsc WHERE ISNULL(idimpret) = .F. INTO TABLE upRIIBBSTAFE
+				
+				
+				
+				
+				
+				
+		SELECT upRIIBBSTAFE
+		GO TOP 	
+
+		IF NOT EOF()
+		
+			** Cargo los registros en entidadret **
+			
+			* Abro una conexion con la base de datos 
+			varconexionF = abreycierracon(0,_SYSSCHEMA)
+			DIMENSION lamatriz(4,2)
+			
+			SELECT upRIIBBSTAFE
+			GO TOP 
+			DO WHILE NOT EOF()
+				v_identret = upRIIBBSTAFE.identret
+				
+				p_tipoope     = 'U'
+				p_condicion   = " identret = "+ALLTRIM(STR(v_identret))
+				v_titulo      = " LA MODIFICACIÓN "
+				
+				SELECT upRIIBBSTAFE
+				
+				v_entidad = upRIIBBSTAFE.entidad
+				v_idimpuret = upRIIBBSTAFE.idimpret
+				v_enconvenio = IIF(upRIIBBSTAFE.tipocont ='C','S','N')
+								
+				lamatriz(1,1) = 'identret'
+				lamatriz(1,2) = ALLTRIM(STR(v_identret))
+				lamatriz(2,1) = 'entidad'
+				lamatriz(2,2) = ALLTRIM(STR(v_entidad))
+				lamatriz(3,1) = 'idimpuret'
+				lamatriz(3,2) = ALLTRIM(STR(v_idimpuret))
+				lamatriz(4,1) = 'enconvenio'
+				lamatriz(4,2) = "'"+ALLTRIM(v_enconvenio)+"'"
+				
+				p_tabla     = 'entidadret'
+				p_matriz    = 'lamatriz'
+				p_conexion  = varconexionF 
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error al registrar la retención para la entidad "+ALLTRIM(STR(v_entidad)),0+48+0,"Error")
+				ENDIF 
+				v_regprocesados = v_regprocesados  + 1
+				
+				SELECT upRIIBBSTAFE
+				SKIP 1
+			ENDDO 
+			
+		ENDIF 	
+									
+			**** Elimino las entidades ***
+							
+		SELECT padronRIIBBSTAFEbaja
+		GO TOP 	
+
+		IF NOT EOF()
+		
+			** Cargo los registros en entidadret **
+		
+			* Abro una conexion con la base de datos 
+			varconexionF = abreycierracon(0,_SYSSCHEMA)
+							
+			
+			SELECT padronRIIBBSTAFEbaja
+			GO TOP 
+			DO WHILE NOT EOF()
+				v_identret = padronRIIBBSTAFEbaja.identret
+								
+				sqlmatriz(1)= " DELETE FROM entidadret where identret = "+ALLTRIM(STR(v_identret))
+							
+				verror=sqlrun(varconexionF ,"eliminoretent")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la eliminación de retenciones ",0+16+0,"")
+				    RETURN -1
+				ENDIF 
+					
+				v_regprocesados = v_regprocesados  + 1
+				
+				SELECT padronRIIBBSTAFEbaja
+				SKIP 1
+			ENDDO 
+					
+			
+				* cierro la conexion
+				= abreycierracon(varconexionF,"")
+
+		ENDIF 		
+		
+		
+		
+*!*		p_archivo = alltrim(p_archivo)
+*!*		
+*!*			if !file(p_archivo) THEN
+*!*				=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+*!*				RETURN -1
+*!*			ENDIF
+*!*			
+*!*			
+*!*			*** Cargo el archivo en una tabla ***
+*!*			
+*!*			
+*!*			if file("padronIIBBSTAFEtmp.dbf") THEN
+*!*				if used("padronIIBBSTAFEtmp") then
+*!*					sele padronIIBBSTAFEtmp
+*!*					use
+*!*				endif
+*!*				DELETE FILE padronIIBBSTAFEtmp.dbf
+*!*			ENDIF
+*!*				
+
+*!*			CREATE TABLE padronIIBBSTAFEtmp FREE ( regimen c(1) , fechapub c(8), fechades c(8), fechahas c(8), cuit C(11), tipocont C(1), estado C(1), cambio C(1), alicuota N(10,2), grupo C(2) )
+*!*			SELE padronIIBBSTAFEtmp
+
+*!*	 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+*!*			&eje
+*!*			SELECT padronIIBBSTAFEtmp
+
+*!*			GO TOP 
+*!*			IF EOF() THEN 
+*!*				USE 
+*!*				RETURN 0
+*!*			ENDIF 
+*!*			
+*!*			SELECT padronIIBBSTAFEtmp
+
+*!*			ALTER table padronIIBBSTAFEtmp ADD COLUMN fechapubd D		
+*!*			ALTER table padronIIBBSTAFEtmp ADD COLUMN fechadesd D
+*!*			ALTER table padronIIBBSTAFEtmp ADD COLUMN fechahasd D
+
+*!*			SELECT padronIIBBSTAFEtmp
+*!*			GO TOP 
+*!*			replace ALL fechapubd WITH DATE(VAL(SUBSTR(fechapub,5,4)),VAL(SUBSTR(fechapub,3,2)),VAL(SUBSTR(fechapub,1,2))), ;
+*!*			fechadesd WITH DATE(VAL(SUBSTR(fechades,5,4)),VAL(SUBSTR(fechades,3,2)),VAL(SUBSTR(fechades,1,2))), ;
+*!*			fechahasd WITH DATE(VAL(SUBSTR(fechahas,5,4)),VAL(SUBSTR(fechahas,3,2)),VAL(SUBSTR(fechahas,1,2)))
+*!*			
+*!*			SELECT padronIIBBSTAFEtmp
+*!*			GO TOP 
+*!*			
+*!*			SELECT * FROM entidadesret e LEFT JOIN padronIIBBSTAFEtmp p  ON e.cuit = p.cuit HAVING  regimen = 'R' INTO TABLE padronIIBBSTAFE
+*!*			
+*!*			SELECT padronIIBBSTAFE
+*!*			GO top
+*!*			
+*!*			** Filtro las entidades para dar de baja de retención **
+*!*			
+*!*			SELECT * FROM padronIIBBSTAFE WHERE identret > 0 AND funcion = p_funcion AND (estado = 'B' OR ISNULL(regimen) = .T. OR alicuota = 0.00 ) INTO TABLE padronIIBBSTAFEbaja
+*!*			
+*!*			SELECT * FROM padronIIBBSTAFE WHERE identret > 0 AND funcion = p_funcion AND estado <> 'B' AND alicuota > 0  INTO TABLE padronIIBBSTAFEactu
+*!*				
+*!*			SELECT * FROM padronIIBBSTAFE WHERE ((identret = 0 AND funcion = p_funcion) OR ISNULL(identret) = .T.) AND estado <> 'B' AND alicuota > 0 INTO TABLE padronIIBBSTAFEalta
+*!*					
+*!*			SELECT padronIIBBSTAFEbaja
+*!*			GO TOP 	
+*!*			
+*!*			SELECT padronIIBBSTAFEactu
+*!*			GO TOP 	
+*!*					
+*!*			SELECT p.*,i.idimpuret as idimpret FROM padronIIBBSTAFEalta p LEFT JOIN impuretencion i ON p.alicuota = i.alin  INTO TABLE insIIBBSTAFE
+*!*			
+*!*			v_regprocesados = 0
+*!*			SELECT insIIBBSTAFE
+*!*			GO TOP 	
+
+*!*			IF NOT EOF()
+*!*			
+*!*				** Cargo los registros en entidadret **
+*!*			
+*!*				* Abro una conexion con la base de datos 
+*!*				varconexionF = abreycierracon(0,_SYSSCHEMA)
+*!*				DIMENSION lamatriz(4,2)
+*!*				
+*!*				SELECT insIIBBSTAFE
+*!*				GO TOP 
+*!*				DO WHILE NOT EOF()
+*!*				
+*!*					p_tipoope     = 'I'
+*!*					p_condicion   = ''
+*!*					v_titulo      = " EL ALTA "
+*!*					
+*!*					SELECT insIIBBSTAFE
+*!*					v_identret = 0
+*!*					v_entidad = insIIBBSTAFE.entidad
+*!*					v_idimpuret = insIIBBSTAFE.idimpret
+*!*					v_enconvenio = IIF(insIIBBSTAFE.tipocont ='C','S','N')
+*!*									
+*!*					lamatriz(1,1) = 'identret'
+*!*					lamatriz(1,2) = ALLTRIM(STR(v_identret))
+*!*					lamatriz(2,1) = 'entidad'
+*!*					lamatriz(2,2) = ALLTRIM(STR(v_entidad))
+*!*					lamatriz(3,1) = 'idimpuret'
+*!*					lamatriz(3,2) = ALLTRIM(STR(v_idimpuret))
+*!*					lamatriz(4,1) = 'enconvenio'
+*!*					lamatriz(4,2) = "'"+ALLTRIM(v_enconvenio)+"'"
+
+*!*					p_tabla     = 'entidadret'
+*!*					p_matriz    = 'lamatriz'
+*!*					p_conexion  = varconexionF 
+*!*					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*					    MESSAGEBOX("Ha Ocurrido un Error al registrar la retención para la entidad "+ALLTRIM(STR(v_entidad)),0+48+0,"Error")
+*!*					ENDIF 
+*!*					v_regprocesados = v_regprocesados  + 1
+*!*					
+*!*					SELECT insIIBBSTAFE
+*!*					SKIP 1
+*!*				ENDDO 
+*!*							
+*!*					* cierro la conexion
+*!*					= abreycierracon(varconexionF,"")
+*!*			
+*!*			ENDIF 
+*!*			
+*!*			**** ACtualizo entidades ***
+*!*			
+*!*			
+*!*			SELECT p.*,i.idimpuret as idimpret FROM padronIIBBSTAFEactu p LEFT JOIN impuretencion i ON p.alicuota = i.alin  INTO TABLE upIIBBSTAFE
+*!*					
+*!*			SELECT upIIBBSTAFE
+*!*			GO TOP 	
+
+*!*			IF NOT EOF()
+*!*			
+*!*				** Cargo los registros en entidadret **
+*!*				
+*!*				* Abro una conexion con la base de datos 
+*!*				varconexionF = abreycierracon(0,_SYSSCHEMA)
+*!*				DIMENSION lamatriz(4,2)
+*!*				
+*!*				SELECT upIIBBSTAFE
+*!*				GO TOP 
+*!*				DO WHILE NOT EOF()
+*!*					v_identret = upIIBBSTAFE.identret
+*!*					
+*!*					p_tipoope     = 'U'
+*!*					p_condicion   = " identret = "+ALLTRIM(STR(v_identret))
+*!*					v_titulo      = " LA MODIFICACIÓN "
+*!*					
+*!*					SELECT upIIBBSTAFE
+*!*					
+*!*					v_entidad = upIIBBSTAFE.entidad
+*!*					v_idimpuret = upIIBBSTAFE.idimpret
+*!*					v_enconvenio = IIF(upIIBBSTAFE.tipocont ='C','S','N')
+*!*									
+*!*					lamatriz(1,1) = 'identret'
+*!*					lamatriz(1,2) = ALLTRIM(STR(v_identret))
+*!*					lamatriz(2,1) = 'entidad'
+*!*					lamatriz(2,2) = ALLTRIM(STR(v_entidad))
+*!*					lamatriz(3,1) = 'idimpuret'
+*!*					lamatriz(3,2) = ALLTRIM(STR(v_idimpuret))
+*!*					lamatriz(4,1) = 'enconvenio'
+*!*					lamatriz(4,2) = "'"+ALLTRIM(v_enconvenio)+"'"
+*!*					
+*!*					p_tabla     = 'entidadret'
+*!*					p_matriz    = 'lamatriz'
+*!*					p_conexion  = varconexionF 
+*!*					IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+*!*					    MESSAGEBOX("Ha Ocurrido un Error al registrar la retención para la entidad "+ALLTRIM(STR(v_entidad)),0+48+0,"Error")
+*!*					ENDIF 
+*!*					v_regprocesados = v_regprocesados  + 1
+*!*					
+*!*					SELECT upIIBBSTAFE
+*!*					SKIP 1
+*!*				ENDDO 
+*!*				
+*!*			ENDIF 	
+*!*										
+*!*				**** Elimino las entidades ***
+*!*								
+*!*			SELECT padronIIBBSTAFEbaja
+*!*			GO TOP 	
+
+*!*			IF NOT EOF()
+*!*			
+*!*				** Cargo los registros en entidadret **
+*!*			
+*!*				* Abro una conexion con la base de datos 
+*!*				varconexionF = abreycierracon(0,_SYSSCHEMA)
+*!*								
+*!*				
+*!*				SELECT padronIIBBSTAFEbaja
+*!*				GO TOP 
+*!*				DO WHILE NOT EOF()
+*!*					v_identret = padronIIBBSTAFEbaja.identret
+*!*									
+*!*					sqlmatriz(1)= " DELETE FROM entidadret where identret = "+ALLTRIM(STR(v_identret))
+*!*								
+*!*					verror=sqlrun(varconexionF ,"eliminoretent")
+*!*					IF verror=.f.  
+*!*					    MESSAGEBOX("Ha Ocurrido un Error en la eliminación de retenciones ",0+16+0,"")
+*!*					    RETURN -1
+*!*					ENDIF 
+*!*						
+*!*					v_regprocesados = v_regprocesados  + 1
+*!*					
+*!*					SELECT padronIIBBSTAFEbaja
+*!*					SKIP 1
+*!*				ENDDO 
+*!*						
+*!*				
+*!*					* cierro la conexion
+*!*					= abreycierracon(varconexionF,"")
+
+*!*			ENDIF 		
+*!*			
 OTHERWISE
 
 ENDCASE
@@ -1736,10 +2505,19 @@ IF EMPTY(ALLTRIM(p_archivo)) = .T.
 ENDIF 
 
 
+v_sn = MESSAGEBOX("¿Confirma la actualización de las Percepciones?",4+32+256,"Actualizar Percepciones")
+
+
+IF v_sn <> 6
+
+	RETURN 0
+ENDIF 
+
+
 * Abro una conexion con la base de datos 
 	varconexionF = abreycierracon(0,_SYSSCHEMA)
 		
-	sqlmatriz(1)= " SELECT e.*,r.identper,r.idimpuper,i.funcion "
+	sqlmatriz(1)= " SELECT e.*,ifnull(r.identper,0) as identper,r.idimpuper,i.funcion "
 	sqlmatriz(2)= " from entidades e left join entidadper r on e.entidad = r.entidad left join impupercepcion i on r.idimpuper = i.idimpuper "
 	sqlmatriz(3)= " where i.funcion = '"+ALLTRIM(p_funcion)+"' or isnull(i.funcion) group by e.entidad,i.funcion "
 
@@ -1762,6 +2540,9 @@ ENDIF
 	* cierro la conexion
 	= abreycierracon(varconexionF,"")
 	SELECT * FROM entidadesperaux INTO TABLE entidadesper
+	
+	ALTER table entidadesper alter COLUMN identper I
+	
 	SELECT entidadesper
 	GO TOP 
 	
@@ -1983,7 +2764,226 @@ CASE ALLTRIM(p_funcion) == 'PER_IIBB_ARBA_IFN'
 
 		ENDIF 
 					
+CASE ALLTRIM(p_funcion) == 'PER_IIBB_STAFE_IFN'
+	p_archivo = alltrim(p_archivo)
+	
+		if !file(p_archivo) THEN
+			=messagebox("El Archivo: "+p_archivo+" No se Encuentra,"+CHR(13)+" o la Ruta de Acceso no es Válida",16,"Error de Búsqueda")
+			RETURN -1
+		ENDIF
+				
+		*** Cargo el archivo en una tabla ***
+				
+		if file("padronPIIBBSTAFEtmp.dbf") THEN
+			if used("padronPIIBBSTAFEtmp") then
+				sele padronPIIBBSTAFEtmp
+				use
+			endif
+			DELETE FILE padronPIIBBSTAFEtmp.dbf
+		ENDIF
+			
+*		CREATE TABLE padronPIIBBSTAFEtmp FREE ( regimen c(1) , fechapub c(8), fechades c(8), fechahas c(8), cuit C(11), tipocont C(1), estado C(1), cambio C(1), alicuota N(10,2), grupo C(2) )
+
+		**** La fecha viene con formato: DDMMAAAA
 		
+		CREATE TABLE padronPIIBBSTAFEtmp FREE ( fechapub c(8), fechades c(8), fechahas c(8), cuit C(11), tipocont C(1), estado C(1), cambio C(1), alicuotape N(10,2),alicuotare N(10,2), grupope C(2),grupore C(2), razonsoc C(60) )
+		SELE padronPIIBBSTAFEtmp
+
+ 		eje = "APPEND FROM "+p_archivo+" DELIMITED WITH CHARACTER ';'"
+		&eje
+		
+		SELECT padronPIIBBSTAFEtmp
+
+		GO TOP 
+		IF EOF() THEN 
+			USE 
+			RETURN 0
+		ENDIF 
+		
+		SELECT padronPIIBBSTAFEtmp
+
+		ALTER table padronPIIBBSTAFEtmp ADD COLUMN fechapubd D		
+		ALTER table padronPIIBBSTAFEtmp ADD COLUMN fechadesd D
+		ALTER table padronPIIBBSTAFEtmp ADD COLUMN fechahasd D
+
+		SELECT padronPIIBBSTAFEtmp
+		GO TOP 
+
+		replace ALL fechapubd WITH DATE(VAL(SUBSTR(fechapub,5,4)),VAL(SUBSTR(fechapub,3,2)),VAL(SUBSTR(fechapub,1,2))), ;
+		fechadesd WITH DATE(VAL(SUBSTR(fechades,5,4)),VAL(SUBSTR(fechades,3,2)),VAL(SUBSTR(fechades,1,2))), ;
+		fechahasd WITH DATE(VAL(SUBSTR(fechahas,5,4)),VAL(SUBSTR(fechahas,3,2)),VAL(SUBSTR(fechahas,1,2)))
+			
+		SELECT padronPIIBBSTAFEtmp
+		GO TOP 
+		
+*		SELECT * FROM entidadesper e LEFT JOIN padronPIIBBSTAFEtmp p  ON e.cuit = p.cuit HAVING  regimen = 'P' INTO TABLE padronPIIBBSTAFE
+		SELECT * FROM entidadesper e LEFT JOIN padronPIIBBSTAFEtmp p  ON e.cuit = p.cuit INTO TABLE padronPIIBBSTAFE
+		
+		SELECT padronPIIBBSTAFE
+		GO top
+		
+		** Filtro las entidades para dar de baja de retención **
+		
+		SELECT * FROM padronPIIBBSTAFE WHERE identper > 0 AND funcion = p_funcion AND (estado = 'B' OR alicuotape = 0.00 ) INTO TABLE padronPIIBBSTAFEbaja
+		
+		SELECT * FROM padronPIIBBSTAFE WHERE identper > 0 AND funcion = p_funcion AND estado <> 'B' AND alicuotape > 0 AND cambio = 'S'  INTO TABLE padronPIIBBSTAFEactu  && Agregue lo de cambio = 'S'
+*		SELECT * FROM padronPIIBBSTAFE WHERE identper > 0 AND funcion = p_funcion AND estado <> 'B' AND alicuotape > 0  INTO TABLE padronPIIBBSTAFEactu  && Agregue lo de cambio = 'S'
+			
+		*SELECT * FROM padronPIIBBSTAFE WHERE ((identper  = 0 AND funcion = p_funcion) OR ISNULL(identper) = .T.) AND estado <> 'B' AND alicuotape > 0 INTO TABLE padronPIIBBSTAFEalta
+		SELECT * FROM padronPIIBBSTAFE WHERE (identper  = 0  OR ISNULL(identper) = .T.) AND estado <> 'B' AND alicuotape > 0 INTO TABLE padronPIIBBSTAFEalta
+				
+		SELECT padronPIIBBSTAFEbaja
+		GO TOP 	
+		
+		SELECT padronPIIBBSTAFEactu
+		GO TOP 	
+				
+		SELECT p.*,i.idimpuper as idimpper FROM padronPIIBBSTAFEalta p LEFT JOIN impupercepcion i ON p.alicuotape = i.razon  INTO TABLE insPIIBBSTAFE
+
+		
+		v_regprocesados = 0
+		SELECT insPIIBBSTAFE
+		GO TOP 	
+
+		IF NOT EOF()
+		
+			** Cargo los registros en entidadper **
+		
+			* Abro una conexion con la base de datos 
+			varconexionF = abreycierracon(0,_SYSSCHEMA)
+			DIMENSION lamatriz(4,2)
+			
+			SELECT insPIIBBSTAFE
+			GO TOP 
+			DO WHILE NOT EOF()
+			
+				p_tipoope     = 'I'
+				p_condicion   = ''
+				v_titulo      = " EL ALTA "
+				
+				SELECT insPIIBBSTAFE
+				v_identper = 0
+				v_entidad = insPIIBBSTAFE.entidad
+				v_idimpuper = insPIIBBSTAFE.idimpper
+				v_enconvenio = IIF(insPIIBBSTAFE.tipocont ='C','S','N') && CONVENIO MULTILATERAL (C) O LOCAL (D)
+								
+				lamatriz(1,1) = 'identper'
+				lamatriz(1,2) = ALLTRIM(STR(v_identper))
+				lamatriz(2,1) = 'entidad'
+				lamatriz(2,2) = ALLTRIM(STR(v_entidad))
+				lamatriz(3,1) = 'idimpuper'
+				lamatriz(3,2) = ALLTRIM(STR(v_idimpuper))
+				lamatriz(4,1) = 'enconvenio'
+				lamatriz(4,2) = "'"+ALLTRIM(v_enconvenio)+"'"
+
+				p_tabla     = 'entidadper'
+				p_matriz    = 'lamatriz'
+				p_conexion  = varconexionF 
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error al registrar la retención para la entidad "+ALLTRIM(STR(v_entidad)),0+48+0,"Error")
+				ENDIF 
+				v_regprocesados = v_regprocesados  + 1
+				
+				SELECT insPIIBBSTAFE
+				SKIP 1
+			ENDDO 
+						
+				* cierro la conexion
+				= abreycierracon(varconexionF,"")
+		
+		ENDIF 
+			
+		**** ACtualizo entidades ***
+				
+		SELECT p.*,i.idimpuper as idimpper FROM padronPIIBBSTAFEactu p LEFT JOIN impupercepcion i ON p.alicuotape = i.razon  INTO TABLE upPIIBBSTAFE
+				
+		SELECT upPIIBBSTAFE
+		GO TOP 	
+
+		IF NOT EOF()
+		
+			** Cargo los registros en entidadret **
+			
+			* Abro una conexion con la base de datos 
+			varconexionF = abreycierracon(0,_SYSSCHEMA)
+			DIMENSION lamatriz(4,2)
+			
+			SELECT upPIIBBSTAFE
+			GO TOP 
+			DO WHILE NOT EOF()
+				v_identper = upPIIBBSTAFE.identper
+				
+				p_tipoope     = 'U'
+				p_condicion   = " identper = "+ALLTRIM(STR(v_identper))
+				v_titulo      = " LA MODIFICACIÓN "
+				
+				SELECT upPIIBBSTAFE
+				
+				v_entidad = upPIIBBSTAFE.entidad
+				v_idimpuper = upPIIBBSTAFE.idimpper
+				v_enconvenio = IIF(upIIBBSTAFE.tipocont ='C','S','N')
+								
+				lamatriz(1,1) = 'identper'
+				lamatriz(1,2) = ALLTRIM(STR(v_identper))
+				lamatriz(2,1) = 'entidad'
+				lamatriz(2,2) = ALLTRIM(STR(v_entidad))
+				lamatriz(3,1) = 'idimpuper'
+				lamatriz(3,2) = ALLTRIM(STR(v_idimpuper))
+				lamatriz(4,1) = 'enconvenio'
+				lamatriz(4,2) = "'"+ALLTRIM(v_enconvenio)+"'"
+				
+				p_tabla     = 'entidadper'
+				p_matriz    = 'lamatriz'
+				p_conexion  = varconexionF 
+				IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+				    MESSAGEBOX("Ha Ocurrido un Error al registrar la percepción para la entidad "+ALLTRIM(STR(v_entidad)),0+48+0,"Error")
+				ENDIF 
+				v_regprocesados = v_regprocesados  + 1
+				
+				SELECT upPIIBBSTAFE
+				SKIP 1
+			ENDDO 
+			
+		ENDIF 	
+						
+			**** Elimino las entidades ***
+							
+		SELECT padronPIIBBSTAFEbaja
+		GO TOP 	
+
+		IF NOT EOF()
+		
+			** Cargo los registros en entidadret **
+		
+			* Abro una conexion con la base de datos 
+			varconexionF = abreycierracon(0,_SYSSCHEMA)
+			
+			SELECT padronPIIBBSTAFEbaja
+			GO TOP 
+			DO WHILE NOT EOF()
+				v_identper = padronPIIBBSTAFEbaja.identper
+								
+				sqlmatriz(1)= " DELETE FROM entidadper where identper = "+ALLTRIM(STR(v_identper))
+							
+				verror=sqlrun(varconexionF ,"eliminopercep")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la eliminación de percepciones ",0+16+0,"")
+				    RETURN -1
+				ENDIF 
+					
+				v_regprocesados = v_regprocesados  + 1
+				
+				SELECT padronPIIBBSTAFEbaja
+				SKIP 1
+			ENDDO 
+
+				* cierro la conexion
+				= abreycierracon(varconexionF,"")
+
+		ENDIF 
+		
+		
+				
 OTHERWISE
 
 ENDCASE
