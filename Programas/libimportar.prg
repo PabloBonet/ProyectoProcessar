@@ -7553,7 +7553,7 @@ FUNCTION CargaNPPerfiles
 			ENDIF	
 			
 			
-			sqlmatriz(1)=" delete from from estadosreg where tabla = 'np' or tabla = 'ot' "
+			sqlmatriz(1)=" delete from estadosreg where tabla = 'np' or tabla = 'ot' "
 			
 			verror=sqlrun(vconeccionF,"der")
 			IF verror=.f.  
