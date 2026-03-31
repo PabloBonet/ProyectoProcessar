@@ -14453,6 +14453,261 @@ PARAMETERS  pan_idregistro
 ENDFUNC 
 
 
+FUNCTION AnularOT
+PARAMETERS  p_tablaOts
+*#/----------------------------------------
+*/* Anular Ordenes de Trabajo. 
+* Anula una o mas OTs cumpliendo los items pendientes como cumplimentación de anulación
+* PARAMETROS
+* p_tablaOts	: Tabla con las OTs a anular y el sector, si el sector es 0 (cero) se anula para todos
+*#/----------------------------------------
+
+	IF !(TYPE("p_tablaOts")="C") THEN 
+		RETURN .F.
+	ENDIF
+
+
+	
+	SELECT * from &p_tablaOts WHERE idsector > 0 INTO TABLE anularotsector
+	
+	SELECT * from &p_tablaOts WHERE idsector = 0 INTO TABLE anularotsectores
+		
+		
+	vconeccionAn = abreycierracon(0,_SYSSCHEMA)
+	
+			
+		
+	* Busco los pendientes de la OT por sector para anular.
+	
+	sqlmatriz(1)=" SELECT o.*,a.detalle "
+	sqlmatriz(2)=" FROM otsectorpendiente o left join ot t on o.idot = t.idot left join articulos a on t.articulo = a.articulo "
+	sqlmatriz(3)=" where o.cantpend >0 order by idsector "
+	
+	verror=sqlrun(vconeccionAn ,"pendientesot")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la Tabla de comprobantes ",0+48+0,"Error")
+		=abreycierracon(vconeccionAn ,"")	
+	    RETURN .F.  
+	ENDIF	 
+
+
+	SELECT p.* FROM anularotsector a LEFT JOIN pendientesot p ON a.idot = p.idot AND a.idsector = p.idsector ;
+	union ;
+	SELECT p.* FROM anularotsectores a LEFT JOIN pendientesot p ON a.idot = p.idot ;
+	INTO TABLE pendot
+
+
+	SELECT pendot
+	GO TOP
+
+	IF NOT EOF() THEN 
+			
+		sino = MESSAGEBOX("¿Confirma la generación del comprobante de Anulación? ",4+32," Anular Comprobante ")
+
+		IF sino = 6
+	
+			** Grabo la Cumplimentación de Anulación de OTs **
+			
+			IF TYPE("_SYSCOMPANUOT") <> "C"
+				MESSAGEBOX("Variable de anulación de NP '_SYSCOMPANUOT' NO definida",0+16+256,"Anular Comprobante")
+				RETURN .F.
+			ENDIF 
+					
+			v_cantC =ALINES(compsec,ALLTRIM(_SYSCOMPANUOT),";")
+			
+			IF v_cantC <= 0 
+				=abreycierracon(vconeccionAn ,"")	
+				RETURN .f. 
+			ENDIF 
+			
+			SELECT pendot
+			GO TOP 
+			
+			
+			FOR indicep = 1 TO v_cantC
+			
+				** Por cada uno de los sectores, voy a cargar el comprobante de cumplimentación
+				v_comprosec = compsec[indicep]
+				
+				
+				IF EMPTY(ALLTRIM(v_comprosec)) = .T.
+					=abreycierracon(vconeccionAn ,"")	
+					RETURN .f. 
+				ENDIF 
+			
+			
+				v_cantCom =ALINES(compro,ALLTRIM(v_comprosec),",")
+			
+				IF v_cantcom = 3
+				
+					v_idsector = VAL(compro[1])
+					v_idcompro = VAL(compro[2])
+					v_pventa = VAL(compro[3])
+					
+																
+					IF v_idsector > 0 AND v_idcompro > 0
+					
+						SELECT * FROM pendot WHERE idsector = v_idsector into TABLE pendotsec
+								
+						SELECT pendotsec												
+						GO TOP 
+												
+						IF NOT EOF()
+						
+							p_tipoope     = 'I'
+							p_condicion   = ''
+							v_titulo      = " EL ALTA "
+
+
+							v_idcump		= 0
+							v_idcomproba	= v_idcompro
+							v_idclascomp  	= 0
+							v_fecha 		= DATE()
+							v_observa1		= "CUMP. DE ANULACIÓN AUTOMÁTICA, ANULA PENDIENTES DE OT DEL SECTOR: ["+alltrim(STR(v_idsector))+"]"
+							v_observa2		= ""
+							v_observa3		= ""
+							v_observa4		= ""
+							v_numero 		= maxnumerocom(v_idcomproba,v_pventa,1) 
+				
+							DIMENSION lamatriz1(11,2)
+
+							lamatriz1(1,1)='idcump'
+							lamatriz1(1,2)= ALLTRIM(STR(v_idcump))
+							lamatriz1(2,1)='idcomproba'
+							lamatriz1(2,2)= ALLTRIM(STR(v_idcomproba))
+							lamatriz1(3,1)='pventa'
+							lamatriz1(3,2)= ALLTRIM(STR(v_pventa))
+							lamatriz1(4,1)='fecha'
+							lamatriz1(4,2)="'"+cftofc(v_fecha)+"'"
+							lamatriz1(5,1)='responsab'
+							lamatriz1(5,2)="'"+ALLTRIM(_SYSUSUARIO)+"'"
+							lamatriz1(6,1)='observa1'
+							lamatriz1(6,2)="'"+ALLTRIM(v_observa1)+"'"
+							lamatriz1(7,1)='observa2'
+							lamatriz1(7,2)="'"+ALLTRIM(v_observa2)+"'"
+							lamatriz1(8,1)='observa3'
+							lamatriz1(8,2)="'"+ALLTRIM(v_observa3)+"'"
+							lamatriz1(9,1)='observa4'
+							lamatriz1(9,2)="'"+alltrim(v_observa4)+"'"
+							lamatriz1(10,1)='numero'
+							lamatriz1(10,2)=alltrim(STR(v_numero))
+							lamatriz1(11,1)='idclascomp'
+							lamatriz1(11,2)=alltrim(STR(v_idclascomp))
+
+							p_tabla     = 'cumplimentap'
+							p_matriz    = 'lamatriz1'
+							p_conexion  = vconeccionAn 
+							IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+							    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajuste)),0+48+0,"Error")
+							ENDIF  
+				
+							sqlmatriz(1)=" select last_insert_id() as maxid "
+							verror=sqlrun(vconeccionAn,"ultimoId")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+								=abreycierracon(vconeccionF,"")	
+							    RETURN .F.
+							ENDIF 
+							
+							SELECT ultimoId
+							GO TOP 
+							
+							v_idcompro_Ultimo = VAL(ultimoId.maxid)
+							USE IN ultimoId
+
+							v_idcump= v_idcompro_Ultimo
+					
+						
+							*** ELIMINO DETALLE PARA NO TENER PROBLEMAS DE ACTUALIZACION ***
+							sqlmatriz(1)="DELETE FROM cumplimentah WHERE idcump = " + ALLTRIM(STR(v_idcump))
+							verror=sqlrun(vconeccionAn ,"control1")
+							
+							
+							*** INSERTO DETALLE ***			
+							SELECT pendotsec
+							GO TOP
+				
+							DO WHILE NOT EOF()
+							
+								v_articulo = pendotsec.articulo 
+								v_cantacump = pendotsec.cantpend
+							
+								IF !EMPTY(v_articulo) AND  v_cantacump > 0 THEN 
+									p_tipoope     = 'I'
+									p_condicion   = ''
+									v_titulo      = " EL ALTA "
+									
+									v_idcumph 	= 0
+									v_detalle 	= pendotsec.detalle
+									v_cantfacum = pendotsec.cantufpend
+									v_idot		= pendotsec.idot
+									
+									DIMENSION lamatriz2(7,2)
+									
+									lamatriz2(1,1)='idcumph'
+									lamatriz2(1,2)=ALLTRIM(STR(v_idcumph))
+									lamatriz2(2,1)='idcump'
+									lamatriz2(2,2)=ALLTRIM(STR(v_idcump))
+									lamatriz2(3,1)='articulo'
+									lamatriz2(3,2)="'"+ALLTRIM(v_articulo)+"'"
+									lamatriz2(4,1)='detalle'
+									lamatriz2(4,2)="'"+alltrim(v_detalle)+"'"
+									lamatriz2(5,1)='cantidad'
+									lamatriz2(5,2)=alltrim(STR(v_cantacump,10,2))
+									lamatriz2(6,1)='cantidaduf'
+									lamatriz2(6,2)=alltrim(STR(v_cantfacum,10,2))
+									lamatriz2(7,1)='idot'
+									lamatriz2(7,2)=alltrim(STR(v_idot))
+									
+									p_tabla     = 'cumplimentah'
+									p_matriz    = 'lamatriz2'
+									p_conexion  = vconeccionAn 
+									IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+									    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_idajusteh )),0+48+0,"Error")
+									ELSE
+									
+							 
+									ENDIF						
+									
+								ENDIF
+
+								SELECT pendotsec
+								SKIP 1
+							ENDDO	
+				
+							registrarEstado("cumplimentap","idcump",v_idcump,'I',"AUTORIZADO")
+			
+							registrarTraza(v_idcomproba,"cumplimentap","idcump",v_idcump)
+										
+						ENDIF 
+						
+					ENDIF 
+					
+				ENDIF 
+
+			ENDFOR
+								
+			=abreycierracon(vconeccionAn ,"")	
+			RETURN .t. 
+				
+		ELSE
+			=abreycierracon(vconeccionAn ,"")	
+			RETURN .f.
+		ENDIF 
+
+	ELSE 
+		=abreycierracon(vconeccionAn ,"")	
+		RETURN .f. 
+	ENDIF 
+
+ENDFUNC 
+
+
+
+
+
+
+
 FUNCTION ContrAsiento
 PARAMETERS pca_idasiento,pca_DH, pca_tablaOri, pca_idOri, pca_tablaDes, pca_idDes
 *#/----------------------------------------
