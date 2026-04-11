@@ -33321,7 +33321,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 						v_idcomp= grillaComp.idregistro
 						v_tab 	= ALLTRIM(v_aetabla)
 						v_nomId	= ALLTRIM(v_aenomindice)
-						registrarEstado(v_tab ,v_nomId,v_idcomp,'I',"ANULADO")
+*!*							registrarEstado(v_tab ,v_nomId,v_idcomp,'I',"ANULADO")
 						v_anretorno = 2
 
 					
@@ -33361,8 +33361,28 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
  							v_anretorno = 2
  						ENDIF 
 						
-					OTHERWISE
-						IF !(ALLTRIM(v_aetabla) = 'transferencias') THEN 
+*!*						OTHERWISE
+*!*							IF !(ALLTRIM(v_aetabla) = 'transferencias') THEN 
+*!*					
+*!*								v_tab 	= ALLTRIM(v_aetabla)
+*!*								
+*!*							
+*!*								v_nomId	= obtenerCampoIndice(v_aetabla,.F.)
+*!*						
+*!*								v_anulado = registrarEstado(v_tab ,v_nomId,p_idregistro,'I',"ANULADO")
+*!*			
+*!*								IF v_anulado = .T.
+*!*									v_anretorno = 2
+*!*								ELSE
+*!*									v_anretorno  = 0
+*!*								ENDIF 
+*!*							
+*!*							ENDIF 
+
+				ENDCASE
+				
+					IF v_anretorno  = 2
+						IF !(ALLTRIM(v_aetabla) = 'transferencias') AND !(ALLTRIM(v_aetabla) = 'cajaie') THEN 
 				
 							v_tab 	= ALLTRIM(v_aetabla)
 							
@@ -33378,9 +33398,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 							ENDIF 
 						
 						ENDIF 
-
-				ENDCASE
-				
+					ENDIF 
 				
 			ENDIF 
 	
