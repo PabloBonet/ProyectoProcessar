@@ -14454,12 +14454,13 @@ ENDFUNC
 
 
 FUNCTION AnularOT
-PARAMETERS  p_tablaOts
+PARAMETERS  p_tablaOts, p_sinConfirmar
 *#/----------------------------------------
 */* Anular Ordenes de Trabajo. 
 * Anula una o mas OTs cumpliendo los items pendientes como cumplimentación de anulación
 * PARAMETROS
 * p_tablaOts	: Tabla con las OTs a anular y el sector, si el sector es 0 (cero) se anula para todos
+* p_sinConfirmar: Parámetro opcional, si es FALSE: Pide confirmación; si es TRUE: No pide confirmación
 *#/----------------------------------------
 
 	IF !(TYPE("p_tablaOts")="C") THEN 
@@ -14501,8 +14502,12 @@ PARAMETERS  p_tablaOts
 	GO TOP
 
 	IF NOT EOF() THEN 
-			
-		sino = MESSAGEBOX("¿Confirma la generación del comprobante de Anulación? ",4+32," Anular Comprobante ")
+		IF p_sinConfirmar = .T.
+			sino = 6
+		ELSE
+			sino = MESSAGEBOX("¿Confirma la generación del comprobante de Anulación? ",4+32," Anular Comprobante ")
+		ENDIF 
+		
 
 		IF sino = 6
 	
@@ -33381,24 +33386,24 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 
 				ENDCASE
 				
-					IF v_anretorno  = 2
-						IF !(ALLTRIM(v_aetabla) = 'transferencias') AND !(ALLTRIM(v_aetabla) = 'cajaie') THEN 
-				
-							v_tab 	= ALLTRIM(v_aetabla)
-							
-						
-							v_nomId	= obtenerCampoIndice(v_aetabla,.F.)
-					
-							v_anulado = registrarEstado(v_tab ,v_nomId,p_idregistro,'I',"ANULADO")
+				IF !(ALLTRIM(v_aetabla) = 'cajaie') AND !(ALLTRIM(v_aetabla) = 'transferencias') THEN 
 		
-							IF v_anulado = .T.
-								v_anretorno = 2
-							ELSE
-								v_anretorno  = 0
-							ENDIF 
+					IF v_anretorno = 2 
+						v_tab 	= ALLTRIM(v_aetabla)
 						
+					
+						v_nomId	= obtenerCampoIndice(v_aetabla,.F.)
+				
+						v_anulado = registrarEstado(v_tab ,v_nomId,p_idregistro,'I',"ANULADO")
+
+						IF v_anulado = .T.
+							v_anretorno = 2
+						ELSE
+							v_anretorno  = 0
 						ENDIF 
 					ENDIF 
+				
+				ENDIF 
 				
 			ENDIF 
 	
