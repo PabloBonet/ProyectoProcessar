@@ -160,7 +160,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 	*/
 	sqlmatriz(1)=" Select e.idperiodoe, h.*, a.codafip "
 	sqlmatriz(2)=" from factulotese e left join entidadesh h on h.identidadh = e.identidadh "
-	sqlmatriz(3)=" left join afiptipodocu a on a.idafiptipod = h.tipodoc "
+*!*		sqlmatriz(3)=" left join afiptipodocu a on a.idafiptipod = h.tipodoc "
+	sqlmatriz(3)=" left join afiptipodocu a on a.idafiptipod = h.idafiptipod "
 	sqlmatriz(4)=" where h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	verror=sqlrun(vconeFacturar,"entidadeshf_sql"+vartmp)
 	IF verror=.f.  
@@ -430,6 +431,15 @@ PARAMETERS par_idperiodo, par_ordenfa
 					replace articulo WITH &vconceptoser..concepto, detalle  WITH IIF(ALLTRIM(fijardeta)='S',detalle,&vconceptoser..detalle) , unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
 						nrocuota  WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
 						netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd, cantidad WITH ( cantidad * imp_cantidad )
+						
+					IF idcuotasd > 0 THEN 
+						UPDATE &ventidadesdf SET detalle = ALLTRIM(detalle)+' - Cta. '+ALLTRIM(STR(nrocuota))+'/'+ALLTRIM(STR(cantcuotas)) ,unitario=netocuota, cantidad=1 && WHERE idcuotasd > 0					
+					ENDIF 	
+					
+					IF  idcuotasd = 0 and cacuotas > 0 THEN 
+						UPDATE &ventidadesdf SET unitario=0, cantidad=0 && WHERE idcuotasd = 0 AND cacuotas > 0
+					ENDIF 
+					
 					
 				ELSE 
 *!*						replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
@@ -448,9 +458,9 @@ PARAMETERS par_idperiodo, par_ordenfa
 
 	SELECT &ventidadesdf
 	GO TOP 
-	UPDATE &ventidadesdf SET detalle = ALLTRIM(detalle)+' - Cta. '+ALLTRIM(STR(nrocuota))+'/'+ALLTRIM(STR(cantcuotas)) ,unitario=netocuota, cantidad=1 WHERE idcuotasd > 0
+*!*		UPDATE &ventidadesdf SET detalle = ALLTRIM(detalle)+' - Cta. '+ALLTRIM(STR(nrocuota))+'/'+ALLTRIM(STR(cantcuotas)) ,unitario=netocuota, cantidad=1 WHERE idcuotasd > 0
 	** aqui elimino todos los que tienen cuotas pero no tienen idcuotasd 
-	UPDATE &ventidadesdf SET unitario=0, cantidad=0 WHERE idcuotasd = 0 AND cacuotas > 0
+*!*		UPDATE &ventidadesdf SET unitario=0, cantidad=0 WHERE idcuotasd = 0 AND cacuotas > 0
 	****
 	UPDATE &ventidadesdf SET neto=unitario * cantidad 
 	
@@ -518,7 +528,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	SELECT h.* , h.identidadh as idfactura, h.identidadh as idcomproba, h.identidadh as pventa, h.identidadh as numero, 'X' as tipo,   ;
 			&vfactulotes_sql..fechaemite as fecha, &vfactulotes_sql..idperiodo as idperiodo, &vfactulotes_sql..fechavenc1 as fechavenc1, ;
 			&vfactulotes_sql..fechavenc2 as fechavenc2, &vfactulotes_sql..fechavenc3 as fechavenc3,&vfactulotes_sql..proxvenc as proxvenc, ;
-			&vfactulotes_sql..cesp as cespcae, &vfactulotes_sql..cespvence as caevence, &vfactulotes_sql..interesd as interesd, ; 
+			&vfactulotes_sql..cesp as cespcae, &vfactulotes_sql..cespvence as caevence, &vfactulotes_sql..interesd as interesd,&vfactulotes_sql..idclascomp as idclascomp, ; 
 			1 as idtipopera, SUM(d.neto) as neto, SUM(d.neto) as subtotal, 0 as descuento, 0 as recargo, SUM(d.total) as total, ;
 			SUM(d.impuestos) as totalimpu, 'N' as operexenta, 'N' as anulado, STRTRAN(IIF(ISNULL(s.observa1),SPACE(254),s.observa1),',','') as observa1, "" as observa2, "" as observa3, "" as observa4 ;
 		FROM &vdetafactutmp d LEFT JOIN &ventidadeshf_sql h ON h.identidadh = d.identidadh LEFT JOIN &vgruposepeliof_sql s ON s.identidadh = h.identidadh ;
@@ -702,7 +712,7 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 	SELECT &pfacturas
 
 	GO TOP 
-	DIMENSION lamatriz1(56,2)
+	DIMENSION lamatriz1(57,2)
 
 
 	DO WHILE !EOF() 
@@ -821,6 +831,8 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		lamatriz1(55,2)= ALLTRIM(STR(&pfacturas..interesd,13,2))
 		lamatriz1(56,1)='idtipocli'
 		lamatriz1(56,2)= ALLTRIM(STR(&pfacturas..idtipocli))
+		lamatriz1(57,1)='idclascomp'
+		lamatriz1(57,2)= ALLTRIM(STR(&pfacturas..idclascomp))
 
 		p_tabla     = 'facturastmp'
 		p_matriz    = 'lamatriz1'
@@ -1280,12 +1292,12 @@ PARAMETERS pcon_idperiodo
 	sqlmatriz(2)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
 	sqlmatriz(3)=" stock, idtipoopera, neto, subtotal, descuento, recargo, total, totalimpu, operexenta, anulado, observa1, observa2, "
 	sqlmatriz(4)=" observa3, observa4, idperiodo, ruta1, folio1, ruta2, folio2, fechavenc1, fechavenc2, fechavenc3, proxvenc, confirmada, "
-	sqlmatriz(5)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd, idtipocli )"
+	sqlmatriz(5)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd, idtipocli,idclascomp )"
 	sqlmatriz(6)=" select idfactura, idcomproba, pventa, numero, tipo, fecha, entidad, servicio, cuenta, apellido, "
 	sqlmatriz(7)=" nombre, direccion, localidad, iva, cuit, tipodoc, dni, telefono, cp, fax, email, transporte, nomtransp, direntrega, "
 	sqlmatriz(8)=" stock, idtipoopera, neto, subtotal, descuento, recargo, total, totalimpu, operexenta, anulado, observa1, observa2, "
 	sqlmatriz(9)=" observa3, observa4, idperiodo, ruta1, folio1, ruta2, folio2, fechavenc1, fechavenc2, fechavenc3, proxvenc, confirmada, "
-	sqlmatriz(10)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd, idtipocli from factutmpt  "
+	sqlmatriz(10)=" astoconta, deudacta, cespcae, caecespven, vendedor, identidadh, interesd, idtipocli,idclascomp from factutmpt  "
 	verror=sqlrun(vcone,"selfcpt_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
