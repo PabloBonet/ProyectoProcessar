@@ -861,9 +861,9 @@ ALTER TABLE `compactiv` ADD INDEX `idcomproba`(`idcomproba`), ADD INDEX `pventa`
 ALTER TABLE `remitos` MODIFY COLUMN `cai` CHAR(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT ' ',
  MODIFY COLUMN `caiven` CHAR(8) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT ' ';
 
+--20260416--
 
-
-DROP TABLE IF EXISTS ``tipoctamail`;
+DROP TABLE IF EXISTS `tipoctamail`;
 CREATE TABLE  `tipoctamail` (
   `idtipocm` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `nombre` char(100) NOT NULL,
@@ -882,3 +882,52 @@ CREATE TABLE `cajaiecc` (
 )
 ENGINE = InnoDB;
 
+CREATE TABLE `entcompmail` (
+  `idecm` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `entidad` INTEGER UNSIGNED NOT NULL,
+  `idtipocompro` INTEGER UNSIGNED NOT NULL,
+  PRIMARY KEY (`idecm`),
+  INDEX `entidad`(`entidad`),
+  INDEX `idtipocompro`(`idtipocompro`)
+)
+ENGINE = InnoDB;
+
+
+CREATE TABLE  `estadosmail` (
+  `idestadomail` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `estado` char(25) NOT NULL,
+  PRIMARY KEY (`idestadomail`)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE `entcompmail` (
+  `idecm` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `entidad` INTEGER UNSIGNED NOT NULL,
+  `idcomproba` INTEGER UNSIGNED NOT NULL,
+  PRIMARY KEY (`idecm`),
+  INDEX `entidad`(`entidad`),
+  INDEX `idcomproba`(`idcomproba`)
+)
+ENGINE = InnoDB;
+
+
+
+
+
+CREATE TABLE `compemail` (
+  `idcompemail` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `idcomproba` INTEGER UNSIGNED NOT NULL,
+  `idregistro` INTEGER UNSIGNED NOT NULL,
+  `idestadomail` INTEGER UNSIGNED NOT NULL,
+  `entidad` INTEGER UNSIGNED NOT NULL,
+  `comprobantes` CHAR(100) NOT NULL,
+  `email` CHAR(100) NOT NULL,
+  `observa` CHAR(250) NOT NULL,
+  `timestamp` TIMESTAMP NOT NULL,
+  PRIMARY KEY (`idcompemail`),
+  INDEX `idcomproba`(`idcomproba`),
+  INDEX `idregistro`(`idregistro`),
+  INDEX `idestadomail`(`idestadomail`),
+  INDEX `entidad`(`entidad`)
+)
+ENGINE = InnoDB;
