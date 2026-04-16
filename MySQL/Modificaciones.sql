@@ -863,3 +863,22 @@ ALTER TABLE `remitos` MODIFY COLUMN `cai` CHAR(100) CHARACTER SET latin1 COLLATE
 
 
 
+DROP TABLE IF EXISTS ``tipoctamail`;
+CREATE TABLE  `tipoctamail` (
+  `idtipocm` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nombre` char(100) NOT NULL,
+  PRIMARY KEY (`idtipocm`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+
+
+ALTER TABLE `correoconf` ADD COLUMN `idtipocm` int(10) unsigned  NOT NULL DEFAULT 1 AFTER `smtpusessl`;
+
+
+CREATE TABLE `cajaiecc` (
+  `idcajaiecc` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `idcentroc` INTEGER UNSIGNED NOT NULL,
+  `razon` DOUBLE(13,2) NOT NULL,
+  PRIMARY KEY (`idcajaiecc`)
+)
+ENGINE = InnoDB;
+
