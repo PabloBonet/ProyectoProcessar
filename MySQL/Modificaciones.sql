@@ -882,52 +882,60 @@ CREATE TABLE `cajaiecc` (
 )
 ENGINE = InnoDB;
 
-CREATE TABLE `entcompmail` (
-  `idecm` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+
+CREATE TABLE `maillog` (
+  `idmaillog` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `idmailestado` INTEGER UNSIGNED NOT NULL,
+  `idmailfn` INTEGER UNSIGNED NOT NULL,
   `entidad` INTEGER UNSIGNED NOT NULL,
-  `idtipocompro` INTEGER UNSIGNED NOT NULL,
-  PRIMARY KEY (`idecm`),
-  INDEX `entidad`(`entidad`),
-  INDEX `idtipocompro`(`idtipocompro`)
+  `detalle` CHAR(100) NOT NULL,
+  `email` CHAR(100) NOT NULL,
+  `observa` CHAR(250) NOT NULL,
+  `timestamp` DATETIME NOT NULL,
+  PRIMARY KEY (`idmaillog`),
+  INDEX `idmailestado`(`idmailestado`),
+  INDEX `idmailfn`(`idmailfn`),
+  INDEX `entidad`(`entidad`)
 )
 ENGINE = InnoDB;
 
 
-CREATE TABLE  `estadosmail` (
-  `idestadomail` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `estado` char(25) NOT NULL,
-  PRIMARY KEY (`idestadomail`)
-) ENGINE=InnoDB;
+CREATE TABLE  `mailestado` (
+  `idmailestado` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `estado` char(50) NOT NULL,
+  PRIMARY KEY (`idmailestado`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
-CREATE TABLE `entcompmail` (
-  `idecm` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  `entidad` INTEGER UNSIGNED NOT NULL,
+CREATE TABLE `mailcomp` (
+  `idmailcomp` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   `idcomproba` INTEGER UNSIGNED NOT NULL,
-  PRIMARY KEY (`idecm`),
-  INDEX `entidad`(`entidad`),
+  `idregistro` INTEGER UNSIGNED NOT NULL,
+  PRIMARY KEY (`idmailcomp`),
   INDEX `idcomproba`(`idcomproba`)
 )
 ENGINE = InnoDB;
 
 
-
-
-
-CREATE TABLE `compemail` (
-  `idcompemail` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  `idcomproba` INTEGER UNSIGNED NOT NULL,
-  `idregistro` INTEGER UNSIGNED NOT NULL,
-  `idestadomail` INTEGER UNSIGNED NOT NULL,
-  `entidad` INTEGER UNSIGNED NOT NULL,
-  `comprobantes` CHAR(100) NOT NULL,
-  `email` CHAR(100) NOT NULL,
-  `observa` CHAR(250) NOT NULL,
-  `timestamp` TIMESTAMP NOT NULL,
-  PRIMARY KEY (`idcompemail`),
-  INDEX `idcomproba`(`idcomproba`),
-  INDEX `idregistro`(`idregistro`),
-  INDEX `idestadomail`(`idestadomail`),
-  INDEX `entidad`(`entidad`)
+CREATE TABLE `mailfuncion` (
+  `idmailfn` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `funcion` CHAR(50) NOT NULL,
+  `descip` CHAR(250) NOT NULL,
+  PRIMARY KEY (`idmailfn`)
 )
 ENGINE = InnoDB;
+
+
+CREATE TABLE `mailentcomp` (
+  `idmentcomp` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `idcomproba` INTEGER UNSIGNED NOT NULL,
+  `entidad` INTEGER UNSIGNED NOT NULL,
+  `idfnmail` INTEGER UNSIGNED NOT NULL,
+  PRIMARY KEY (`idmentcomp`),
+  INDEX `idcomproba`(`idcomproba`),
+  INDEX `entidad`(`entidad`),
+  INDEX `idfnmail`(`idfnmail`)
+)
+ENGINE = InnoDB;
+
+
