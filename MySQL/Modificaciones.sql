@@ -907,15 +907,6 @@ CREATE TABLE  `mailestado` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
-CREATE TABLE `mailcomp` (
-  `idmailcomp` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  `idcomproba` INTEGER UNSIGNED NOT NULL,
-  `idregistro` INTEGER UNSIGNED NOT NULL,
-  PRIMARY KEY (`idmailcomp`),
-  INDEX `idcomproba`(`idcomproba`)
-)
-ENGINE = InnoDB;
-
 
 CREATE TABLE `mailfuncion` (
   `idmailfn` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -937,5 +928,16 @@ CREATE TABLE `mailentcomp` (
   INDEX `idfnmail`(`idfnmail`)
 )
 ENGINE = InnoDB;
+
+CREATE TABLE  `mailcomp` (
+  `idmailcomp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idmaillog` int(10) unsigned NOT NULL,
+  `idcomproba` int(10) unsigned NOT NULL,
+  `idregistro` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idmailcomp`),
+  KEY `idcomproba` (`idcomproba`),
+  KEY `idmaillog` (`idmaillog`),
+  KEY `idregistro` (`idregistro`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
