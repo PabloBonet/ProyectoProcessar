@@ -2197,7 +2197,10 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 * PARAMETROS: P_IDFACTURA, P_ESELECTRONICA,pEnviarImpresora,pArchivo
 *#/----------------------------------------
 
-
+	MESSAGEBOX(p_idFactura)
+	MESSAGEBOX(p_esElectronica)
+	MESSAGEBOX(pEnviarImpresora)
+	MESSAGEBOX(pArchivo)
 	v_idfactura 	= p_idFactura
 	v_esElectronica = p_esElectronica 
 	v_idperiodo		= 0
@@ -2749,10 +2752,12 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			endif
 			
 			=abreycierracon(vconeccionF,"")
-				
+				MESSAGEBOX("A1")
 			IF v_buscasaldo = .T.
+			MESSAGEBOX("A2")
 				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes;hissaldo","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc;hissaldorc",v_idcomproba,.F.,pEnviarImpresora,pArchivo
 			ELSE
+			MESSAGEBOX("A3")
 				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc",v_idcomproba,.F.,pEnviarImpresora,pArchivo
 			ENDIF 
 
@@ -14225,6 +14230,34 @@ PARAMETERS  pan_idregistro
 	
 		
 		USE IN ultimoestado
+	
+	* Busco si tiene cumplido alguna OT. Si se cumplió almenos una sea parcial o total, la NP no se puede anular.
+	
+		
+	sqlmatriz(1)=" SELECT o.idsector,o.idot,o.articulo,o.cantcump,a.detalle "
+	sqlmatriz(2)=" FROM otsectorpendiente o left join ot t on o.idot = t.idot left join articulos a on t.articulo = a.articulo left join np n on t.idnp = n.idnp "
+	sqlmatriz(3)=" where t.idnp = " + ALLTRIM(STR(pan_idregistro))+" and o.cantcump > 0 order by idsector "
+		
+		
+	
+	verror=sqlrun(vconeccionAn ,"cumpnp")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda de la Tabla de comprobantes ",0+48+0,"Error")
+		=abreycierracon(vconeccionAn ,"")	
+	    RETURN .F.  
+	ENDIF	 
+	
+	SELECT cumpnp
+	GO TOP 
+	
+	IF NOT EOF()
+	
+		 MESSAGEBOX("La NP tiene OTs cumplidas de forma parcial o total. No se puede anular, anule las OTs de forma individual ",0+48+0,"Anular NP")
+		=abreycierracon(vconeccionAn ,"")	
+	    RETURN .F.  
+			
+	ENDIF 
+			
 				
 		
 	* Busco los pendientes de la NP por sector para anular.
@@ -33567,3 +33600,291 @@ ENDFUNC
 
 
 
+FUNCTION ENVIOCOMPROBANTES
+*#/****************************
+*** FUNCIÓN AUTOMATIZAR EL ENVIO DE COMRPOBANTES***
+** 	La función va a usar la variable '_SYSENVCORREOS' para realizar el envio de correos correspondiente. _SYSENVCORREOS = [IP|HOST];[ubicacion];[dias]; [temporizador]
+**	 La variable va a tener la siguiente información: IP o NOMBRE del host que va a correr el proceso de envió de correos, la ubicación de los pdf temporales, 
+**												      cantidad de días para atrás que se va a buscar comprobantes, la fecha de ultima actualización
+**	Si se corresponde al HOST que va a enviar, va a buscar en la tabla 'mailentcomp' los comprobantes correspondientes para enviar por correo, siempre y cuando no estén enviados.
+**		Si están enviados, lo ignora
+**		Si no está enviado va a enviar y cargar en la tabla 'maillog' y en la tabla 'mailcomp' el estado del envio
+**  RETORNO: Retorna True si el proceso no dio error, False en caso de un error.
+*#/****************************
+MESSAGEBOX("ENVIOCOMPROBANTES")
+	IF type('_SYSENVCORREOS') <> 'C'
+
+		MESSAGEBOX("La variable _SYSENVCORREOS NO está configurada, debe configurar la variable para el envío automático de correos",0+16+256)
+		RETURN .F.
+	ENDIF 
+
+	v_cantconf = ALINES(sysenvcorreos,_SYSENVCORREOS,1,";")	
+
+	
+	IF v_cantconf <> 4
+	
+		MESSAGEBOX("La variable _SYSENVCORREOS NO está configurada correctamente, debe tener 4 parámetros",0+16+256)
+		RETURN .F.
+	ENDIF 
+	
+	
+	v_IPHost = sysenvcorreos[1]
+	v_ubicacionPDF = sysenvcorreos[2]
+	v_diasBusquedastr = sysenvcorreos[3]
+	
+	
+	*** Valido parametro de IP/HOST ***
+	
+	IF TYPE('v_IPHost') <> 'C'
+		MESSAGEBOX("La variable _SYSENVCORREOS NO está configurada correctamente, Revisar parámetro: IP|HOST ",0+16+256)
+		RETURN .F.
+		
+	ENDIF 
+	
+	IF AT(".",v_IPHost,3) > 0  and AT(".",v_IPHost,4) = 0 && Si la variable tiene 3 puntos -> dirección IP
+		IF ALLTRIM(_sysip) <> ALLTRIM(v_IPHost)
+
+			RETURN .T. && NO se corresponde a la pc de actualización
+		ENDIF 
+	ELSE
+		IF ALLTRIM(v_IPHost) == ALLTRIM(_syshost)
+			RETURN .T. && NO se corresponde a la pc de actualización
+		ENDIF 
+	ENDIF 
+
+
+
+	*** Valido parametro de Ubicación de PDF ***
+	
+	IF TYPE('v_ubicacionPDF') <> 'C'
+		MESSAGEBOX("La variable _SYSENVCORREOS NO está configurada correctamente, Revisar parámetro: UBICACION-PDF ",0+16+256)
+		RETURN .F.
+	ENDIF 
+	
+		
+	*** Valido parámetro de dias de busqueda ***
+
+	IF TYPE('v_diasBusquedastr') <> 'C'
+		MESSAGEBOX("La variable _SYSENVCORREOS NO está configurada correctamente, Revisar parámetro: DIAS-BUSQUEDA ",0+16+256)
+		RETURN .F.
+	ENDIF 
+		
+	** Fecha limite para busqueda de correos.
+	v_diasBusqueda = VAL(v_diasBusquedastr)
+	
+	v_fechamail = DTOS(DATE() - v_diasBusqueda)
+
+	******************
+	*** Busco las entidades y tipo de comprobantes comprobantes que se van a enviar ***
+	******************
+	* me conecto a la base de datos
+	vconeccionC=abreycierracon(0,_SYSSCHEMA)
+	*select m.entidad,m.idcomproba,  c.tabla from mailentcomp m left join mailfuncion f on m.idfnmail = f.idmailfn and f.funcion = 'ENVIOCOMPROBANTES' left join comprobantes c on m.idcomproba = c.idcomproba order by tabla 
+*	select c.tabla from mailentcomp m left join mailfuncion f on m.idfnmail = f.idmailfn and f.funcion = 'ENVIOCOMPROBANTES' left join comprobantes c on m.idcomproba = c.idcomproba group by tabla 
+
+	sqlmatriz(1)=" select c.tabla from mailentcomp m left join mailfuncion f on m.idfnmail = f.idmailfn and f.funcion = 'ENVIOCOMPROBANTES' left join comprobantes c on m.idcomproba = c.idcomproba group by tabla "
+	verror=sqlrun(vconeccionC,"compAgrumail_Sql")
+
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar ",0+48+0,"Error")
+	*** me desconecto	
+		=abreycierracon(vconeccionC,"")
+	    RETURN  .F.
+	ENDIF 
+	
+	*** me desconecto	
+	=abreycierracon(vconeccionC,"")
+			
+	******************
+	*** Para cada tipo de comprobante, filtro por dias y por enviado o no ***
+	******************
+
+*!*		IF USED('mailcomprobantes')	= .T.
+*!*		
+*!*			ZAP IN mailcomprobante
+*!*		ENDIF 
+		
+		
+		CREATE TABLE mailcomprobantes FREE (idregistro I, idcomproba I, electro C(1), entidad I, tabla c(50))
+
+		
+	SELECT compAgrumail_Sql
+	GO top
+	DO WHILE NOT EOF()
+	
+		
+		v_tablamail = ALLTRIM(compAgrumail_Sql.tabla)
+		v_nomindmail = ALLTRIM(obtenerCampoIndice(v_tablamail))
+		** select * from (select f.*, f.idfactura as idregistro from (select m.entidad,m.idcomproba,  c.tabla from mailentcomp m left join mailfuncion f on m.idfnmail = f.idmailfn and f.funcion = 'ENVIOCOMPROBANTES';
+		left join comprobantes c on m.idcomproba = c.idcomproba) as tmp left join facturas f on tmp.idcomproba = f.idcomproba and tmp.entidad = f.entidad ;
+		left join ultimoestado u on f.idfactura = u.id and u.tabla = 'facturas'   where f. fecha > '20200101' and (u.idestador = 1 or u.idestador = 4)) as t ;
+		left join mailcomp m on t.idcomproba = m.idcomproba and t.idregistro = m.idregistro left join maillog l on m.idmaillog = l.idmaillog left join mailestado e on l.idmailestado = e.idmailestado where isnull(l.idmaillog)  = true or e.estado <> 'ENVIADO'
+		
+		* me conecto a la base de datos
+		vconeccionC=abreycierracon(0,_SYSSCHEMA)
+			
+	
+		sqlmatriz(1)=" select t.idregistro, t.idcomproba, v.electronica as electro, t.entidad  from (select f.*, f."+v_nomindmail+" as idregistro from (select m.entidad,m.idcomproba,c.tabla from mailentcomp m left join mailfuncion f on m.idfnmail = f.idmailfn and f.funcion = 'ENVIOCOMPROBANTES' "
+		sqlmatriz(2)=" left join comprobantes c on m.idcomproba = c.idcomproba) as tmp  left join "+v_tablamail+" f on tmp.idcomproba = f.idcomproba and tmp.entidad = f.entidad "
+		sqlmatriz(3)=" left join ultimoestado u on f."+v_nomindmail+"= u.id and u.tabla = '"+v_tablamail+"' where f. fecha > '"+ALLTRIM(v_fechamail)+"' and (u.idestador = 1 or u.idestador = 4)) as t left join puntosventa v on t.pventa = v.pventa "
+		sqlmatriz(4)=" left join mailcomp m on t.idcomproba = m.idcomproba and t.idregistro = m.idregistro left join maillog l on m.idmaillog = l.idmaillog left join mailestado e on l.idmailestado = e.idmailestado where isnull(l.idmaillog)  = true or e.estado <> 'ENVIADO' "
+
+		verror=sqlrun(vconeccionC,"compromail_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar ",0+48+0,"Error")
+		*** me desconecto	
+			=abreycierracon(vconeccionC,"")
+		    RETURN  .F.
+		ENDIF 
+		
+		*** me desconecto	
+			=abreycierracon(vconeccionC,"")
+
+	
+	
+	SELECT * FROM compromail_sql  INTO TABLE compromail
+	
+	ALTER table compromail  alter COLUMN idregistro I
+	ALTER table compromail  alter COLUMN idcomproba I
+	ALTER table compromail  alter COLUMN electro C(1)
+	ALTER table compromail  alter COLUMN entidad I
+	ALTER table compromail  ADD COLUMN tabla C(50)
+	SELECT compromail
+	GO TOP 
+	replace ALL tabla WITH  ALLTRIM(v_tablamail)
+	
+	
+		SELECT mailcomprobantes
+		APPEND FROM compromail 
+		
+
+
+		
+		
+*!*			
+*!*			
+*!*			v_pathpdfs  = v_ubicacionPDF  
+*!*			SET DEFAULT TO &_SYSESTACION	 
+
+*!*			IF EMPTY(v_pathpdfs) THEN 
+*!*				MESSAGEBOX("La variable _SYSENVCORREOS NO está configurada correctamente, Revisar parámetro: UBICACION-PDF ",0+16+256)
+*!*				RETURN .F. 	 	
+*!*			ELSE
+*!*				v_pathpdfs = v_pathpdfs+"PDF_"+DTOS(DATE())+STRTRAN(TIME(),':','')
+*!*			ENDIF 
+
+*!*		
+*!*			SELECT mailcomprobantes
+*!*			
+*!*			
+*!*			v_ordenimpre1 = ""
+*!*			v_ordenimpre2 = ""
+*!*			vcdx = INT(VAL(SYS(21)))
+*!*			IF vcdx > 0 THEN 
+*!*				v_ordenimpre1 = SYS(14,vcdx,"mailcomprobantes")
+*!*			ENDIF 
+*!*			IF !EMPTY(v_ordenimpre1) THEN 
+*!*				v_ordenimpre1 = ", "+v_ordenimpre1+" as ordenimp " 
+*!*				v_ordenimpre2 = "order by ordenimp "
+*!*			ENDIF 
+*!*		 
+*!*			SET ENGINEBEHAVIOR 70
+*!*			SELECT * &v_ordenimpre1  FROM mailcomprobantes INTO TABLE  mailcomprobantespdf  &v_ordenimpre2 
+*!*			SET ENGINEBEHAVIOR 90
+*!*			SELECT mailcomprobantespdf 
+*!*			USE 
+*!*			
+*!*			IF !DIRECTORY(v_pathpdfs) then
+*!*				MKDIR(v_pathpdfs)
+*!*			ENDIF
+*!*			
+*!*		 	=ImprimirLoteFactura("mailcomprobantespdf",v_pathpdfs,.F.)
+*!*			
+*!*			SELECT mailcomprobantes
+*!*				
+*!*		
+	
+		SELECT compAgrumail_Sql
+		SKIP 1
+	ENDDO
+	
+	SELECT mailcomprobantes
+	GO TOP 
+	BROWSE 
+	
+	
+	
+	v_ret =	generarcomprobantes("mailcomprobantes",v_ubicacionPDF )
+	
+	
+	IF v_ret = .F.
+
+		MESSAGEBOX("Error al generar los comprobantes",0+16+256,"Generar comprobantes")
+		RETURN .F.
+			
+	ENDIF 
+	
+	
+	
+	
+	RETURN .T.
+	
+
+
+
+ENDFUNC
+
+
+FUNCTION generarcomprobantes
+PARAMETERS p_tablaCompro, p_ubicacion
+*#/****************************
+*** FUNCIÓN PARA GENERAR COMRPOBANTES***
+** 	La función va a usar la variable '_SYSENVCORREOS' para realizar el envio de correos correspondiente. _SYSENVCORREOS = [IP|HOST];[ubicacion];[dias]; [temporizador]
+**	 La variable va a tener la siguiente información: IP o NOMBRE del host que va a correr el proceso de envió de correos, la ubicación de los pdf temporales, 
+**												      cantidad de días para atrás que se va a buscar comprobantes, la fecha de ultima actualización
+**	Si se corresponde al HOST que va a enviar, va a buscar en la tabla 'mailentcomp' los comprobantes correspondientes para enviar por correo, siempre y cuando no estén enviados.
+**		Si están enviados, lo ignora
+**		Si no está enviado va a enviar y cargar en la tabla 'maillog' y en la tabla 'mailcomp' el estado del envio
+**  RETORNO: Retorna True si el proceso no dio error, False en caso de un error.
+*#/****************************
+
+	IF TYPE('p_tablaCompro') <> 'C' OR TYPE('p_ubicacion') <> 'C'
+		RETURN .F.
+	ENDIF 
+	
+	
+	SELECT &p_tablaCompro
+	GO TOP 
+	
+	DO WHILE NOT EOF()
+		
+		v_idregistro = &p_tablaCompro..idregistro
+		v_idcomproba = &p_tablaCompro..idcomproba 
+		v_electro    = &p_tablaCompro..electro 
+		v_entidad 	 = &p_tablaCompro..entidad 
+		v_tablagcomp = &p_tablaCompro..tabla
+		
+		
+		DO CASE
+			CASE ALLTRIM(v_tablagcomp) == "facturas"
+			*FUNCTION imprimirFactura PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
+				imprimirFactura(v_idregistro,v_electro,3,p_ubicacion)
+*!*			CASE ALLTRIM(v_tablagcomp) == "recibos"
+*!*				imprimirRecibo(v_idregistro,v_electro,3,p_ubicacion)
+*!*			CASE ALLTRIM(v_tablagcomp) == "remitos"
+*!*				imprimirRemito(v_idregistro,v_electro,3,p_ubicacion)
+		OTHERWISE
+
+		ENDCASE
+	
+	
+		SELECT &p_tablaCompro
+		SKIP 1
+
+	ENDDO
+	
+	
+
+
+ENDFUNC 

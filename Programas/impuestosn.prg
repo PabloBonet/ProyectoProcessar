@@ -2137,7 +2137,7 @@ CASE ALLTRIM(p_funcion) == 'RET_IIBB_STAFE_IFN'
 		**** ACtualizo entidades ***
 		
 		
-		SELECT p.*,i.idimpuret as idimpret FROM padronRIIBBSTAFEactu p LEFT JOIN impuretencion i ON p.alicuota = i.alin  INTO TABLE upIIBBSTAFE
+		SELECT p.*,i.idimpuret as idimpret FROM padronRIIBBSTAFEactu p LEFT JOIN impuretencion i ON p.alicuotare = i.alin  INTO TABLE upIIBBSTAFE
 				
 				
 				
