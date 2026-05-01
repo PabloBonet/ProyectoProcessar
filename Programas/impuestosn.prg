@@ -751,11 +751,13 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 			v_baseImponible = impureten.baseimpon
 			
 			
-			v_aretener = v_pago_total_retener - v_baseImponible
+			v_retengo = v_pago_total_retener - v_baseImponible
 			
 					
-			IF v_aretener  > 0 && Tengo que retener
+			IF v_retengo  > 0 && Tengo que retener
 				
+				v_aretener = v_pago_total_retener 
+
 				SELECT * FROM impureten where v_aretener >= valmin and (v_aretener < valmax or valmax = -1) INTO TABLE retenciongan
 				
 				SELECT retenciongan

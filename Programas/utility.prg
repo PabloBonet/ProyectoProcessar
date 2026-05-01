@@ -1682,7 +1682,7 @@ LOCAL loException AS Exception
 		v_objconfigurado = objModuloAFIP.Configurado 
 		
 		IF v_objConfigurado = .F.
-		
+
 		
 			v_ubicacionCertificado = STRTRAN(ALLTRIM(_SYSSERVIDOR+"AFIP\"+ALLTRIM(_SYSNOMBRECERT)),"\","\\")
 			v_cuitSinGuiones	 	= ALLTRIM(STRTRAN(_SYSCUIT,'-',''))
@@ -1775,7 +1775,7 @@ LOCAL loException AS Exception
 
 		*** COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO **
 			v_validarComp =validarCompAutorizado(v_idcomprobante)
-			
+
 			IF v_validarComp = .F.
 				RETURN .F. 
 			ENDIF 
@@ -2197,12 +2197,10 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 * PARAMETROS: P_IDFACTURA, P_ESELECTRONICA,pEnviarImpresora,pArchivo
 *#/----------------------------------------
 
-	MESSAGEBOX(p_idFactura)
-	MESSAGEBOX(p_esElectronica)
-	MESSAGEBOX(pEnviarImpresora)
-	MESSAGEBOX(pArchivo)
+	
 	v_idfactura 	= p_idFactura
-	v_esElectronica = p_esElectronica 
+	*v_esElectronica = iif(ALLTRIM(p_esElectronica) =='S',.T.,.F.)
+	v_esElectronica = p_esElectronica
 	v_idperiodo		= 0
 	
 	IF v_idfactura > 0
@@ -2261,11 +2259,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			ALTER table fac_det_sql_au  alter COLUMN errores C(254)
 			ALTER table fac_det_sql_au  alter COLUMN numFac I
 			
-			
-			
-			
-			
-			
+						
 			v_idperiodo = fac_det_sql_au.idperiodo
 		ELSE
 *!*				
@@ -2443,11 +2437,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 	
 	
 	
-	
-	
-	
-	
-	
 	** Agrego comprobantes asociados **
 	
 		v_comproAso  = ""
@@ -2514,9 +2503,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			ENDIF
 		
 		
-		
-		
-	
+			
 			ALTER table factu ADD COLUMN obsfijo C(250)
 			v_observaFijo = obtenerObservaComp("facturas", "idfactura",v_idfactura, vconeccionF,.F.)
 			
@@ -2752,12 +2739,12 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			endif
 			
 			=abreycierracon(vconeccionF,"")
-				MESSAGEBOX("A1")
+		
 			IF v_buscasaldo = .T.
-			MESSAGEBOX("A2")
+		
 				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes;hissaldo","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc;hissaldorc",v_idcomproba,.F.,pEnviarImpresora,pArchivo
 			ELSE
-			MESSAGEBOX("A3")
+		
 				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc",v_idcomproba,.F.,pEnviarImpresora,pArchivo
 			ENDIF 
 
@@ -24365,8 +24352,7 @@ v_importeTot = 0.00
  ELSE
  	RETURN -1
  ENDIF 
-MESSAGEBOX("Retorno")
- MESSAGEBOX(v_retorno)
+
  
 RETURN v_retorno
 
@@ -30728,6 +30714,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 *#/---------------------------
 
 
+
 	IF (TYPE('pUbicacion')<>'C') OR (TYPE('pNombreArchivo')<>'C')
 		RETURN .F.
 	ENDIF 
@@ -30747,7 +30734,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 			** Si el archivo existe -> abro y busco para enviar
 		
 		IF TYPE('tmpenvio') ='U'
-			CREATE TABLE tmpenvio FREE (archivo C(250), correo c(250), cliente c(250))		
+			CREATE TABLE tmpenvio FREE (archivo C(250), correo c(250), cliente c(250),idregistro C(100), idcomproba C(100), tabla C(100))		
 		ENDIF 
 			
 		SELECT tmpenvio 
@@ -30773,12 +30760,13 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 			IF ALLTRIM(TYPE('pidtipocm'))='N'
 				** Busco los correos para el envío **
 				
+				
 				vconeccionCO = abreycierracon(0,_SYSSCHEMA)
 				
 				sqlmatriz(1)= "SELECT group_concat(usuario) as usuarios FROM correoconf where idtipocm = "+ALLTRIM(STR(pidtipocm))
-				
+	
 				verror=sqlrun(vconeccionCO,"correoconf_sql")
-				
+
 				IF verror=.f.  
 				    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de la Tabla de la configuración de correo",0+48+0,"Error")
 				ENDIF 
@@ -30798,6 +30786,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 								
 					
 				ENDIF 
+
 			ENDIF 
 
 						
@@ -30816,17 +30805,18 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 				v_archivo 	= pUbicacion+v_archivo
 				
 				v_marcaenvio = ""
-												
+			
 				
 				IF ALLTRIM(v_correo) == ALLTRIM(v_correoDes)
+
 					v_archivosEnv = v_archivosEnv +"#"+ ALLTRIM(v_archivo)
 					
 				ELSE
-				
+
 					IF EMPTY(ALLTRIM(v_correoDes)) =.F.
-						
+
 						IF v_encontroConf = .T. AND v_tamArreglo > 0
-						
+
 						
 							v_elemento = (v_indice%v_tamArreglo)+1
 							
@@ -30854,7 +30844,6 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 							
 				
 				ENDIF 
-				
 			
 				SELECT envCorreo
 				replace correo WITH v_marcaenvio+ALLTRIM(correo)
@@ -30878,9 +30867,25 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 							
 						v_usuarioEnv = usuarioscm[v_elemento]
 											
-						v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv)
+						v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv) && Retorno: 1: si es correcto; -1 si falta correo destino; -2 si no puede obtener el correo para envio; -3 si hubo un error en la configuración
+												
 						v_archivosEnv  = ""
 															
+*!*							registrarlogmail(
+						
+						DO CASE
+						CASE v_ret = 1 
+							
+						
+
+						OTHERWISE
+
+						ENDCASE
+						
+						
+						
+						
+						
 							
 					ELSE	
 						
@@ -30894,6 +30899,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 				ENDIF 
 			
 			ENDIF 
+		
 
 			*Marco el archivo con los archivos enviados 
 			SELECT envCorreo
@@ -30905,7 +30911,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 				ENDIF 
 				SELECT envCorreo
 				SKIP 
-			ENDDO 			
+			ENDDO 
+					
 			SELECT tmpenvio 
 			v_archivo_nuevo = pUbicacion+LOWER(pNombreArchivo)			
 			DELETE FILE &v_archivo_nuevo 
@@ -30914,14 +30921,13 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 			GO TOP 
 
 			DO WHILE NOT EOF() 
-				v_linea = ALLTRIM(tmpenvio.archivo)+";"+alltrim(tmpenvio.correo)+";"+ALLTRIM(tmpenvio.cliente)
+				v_linea = ALLTRIM(tmpenvio.archivo)+";"+alltrim(tmpenvio.correo)+";"+ALLTRIM(tmpenvio.cliente)+";"+ALLTRIM(tmpenvio.idregistro)+";"+ALLTRIM(tmpenvio.idcomproba)+";"+ALLTRIM(tmpenvio.tabla)
 				=fputs(p, v_linea )
 				SELECT  tmpenvio
 				SKIP 
 			ENDDO 		
 			=fclose(p)
-			
-									
+					
 		ENDIF 
 						
 			
@@ -33675,7 +33681,7 @@ MESSAGEBOX("ENVIOCOMPROBANTES")
 	v_fechamail = DTOS(DATE() - v_diasBusqueda)
 
 	******************
-	*** Busco las entidades y tipo de comprobantes comprobantes que se van a enviar ***
+	*** Busco las entidades y tipo de comprobantes que se van a enviar ***
 	******************
 	* me conecto a la base de datos
 	vconeccionC=abreycierracon(0,_SYSSCHEMA)
@@ -33705,7 +33711,7 @@ MESSAGEBOX("ENVIOCOMPROBANTES")
 *!*		ENDIF 
 		
 		
-		CREATE TABLE mailcomprobantes FREE (idregistro I, idcomproba I, electro C(1), entidad I, tabla c(50))
+		CREATE TABLE mailcomprobantes FREE (idregistro I, idcomproba I, electro C(1), entidad I, tabla c(50),nombrearc C(50),email C(150))
 
 		
 	SELECT compAgrumail_Sql
@@ -33724,10 +33730,11 @@ MESSAGEBOX("ENVIOCOMPROBANTES")
 		vconeccionC=abreycierracon(0,_SYSSCHEMA)
 			
 	
-		sqlmatriz(1)=" select t.idregistro, t.idcomproba, v.electronica as electro, t.entidad  from (select f.*, f."+v_nomindmail+" as idregistro from (select m.entidad,m.idcomproba,c.tabla from mailentcomp m left join mailfuncion f on m.idfnmail = f.idmailfn and f.funcion = 'ENVIOCOMPROBANTES' "
+		sqlmatriz(1)=" select t.idregistro, t.idcomproba, v.electronica as electro, t.entidad,t.numero,v.puntov, i.email  from (select f.*, f."+v_nomindmail+" as idregistro from (select m.entidad,m.idcomproba,c.tabla from mailentcomp m left join mailfuncion f on m.idfnmail = f.idmailfn and f.funcion = 'ENVIOCOMPROBANTES' "
 		sqlmatriz(2)=" left join comprobantes c on m.idcomproba = c.idcomproba) as tmp  left join "+v_tablamail+" f on tmp.idcomproba = f.idcomproba and tmp.entidad = f.entidad "
 		sqlmatriz(3)=" left join ultimoestado u on f."+v_nomindmail+"= u.id and u.tabla = '"+v_tablamail+"' where f. fecha > '"+ALLTRIM(v_fechamail)+"' and (u.idestador = 1 or u.idestador = 4)) as t left join puntosventa v on t.pventa = v.pventa "
-		sqlmatriz(4)=" left join mailcomp m on t.idcomproba = m.idcomproba and t.idregistro = m.idregistro left join maillog l on m.idmaillog = l.idmaillog left join mailestado e on l.idmailestado = e.idmailestado where isnull(l.idmaillog)  = true or e.estado <> 'ENVIADO' "
+		sqlmatriz(4)=" left join mailcomp m on t.idcomproba = m.idcomproba and t.idregistro = m.idregistro left join maillog l on m.idmaillog = l.idmaillog left join mailestado e on l.idmailestado = e.idmailestado left join entidades i on t.entidad = i.entidad "
+		sqlmatriz(5)=" where isnull(l.idmaillog)  = true or e.estado <> 'ENVIADO' "
 
 		verror=sqlrun(vconeccionC,"compromail_sql")
 
@@ -33743,22 +33750,23 @@ MESSAGEBOX("ENVIOCOMPROBANTES")
 
 	
 	
-	SELECT * FROM compromail_sql  INTO TABLE compromail
-	
-	ALTER table compromail  alter COLUMN idregistro I
-	ALTER table compromail  alter COLUMN idcomproba I
-	ALTER table compromail  alter COLUMN electro C(1)
-	ALTER table compromail  alter COLUMN entidad I
-	ALTER table compromail  ADD COLUMN tabla C(50)
-	SELECT compromail
+	SELECT * FROM compromail_sql  INTO TABLE compromailax
+
+	ALTER table compromailax alter COLUMN idregistro I
+	ALTER table compromailax alter COLUMN idcomproba I
+	ALTER table compromailax alter COLUMN electro C(1)
+	ALTER table compromailax alter COLUMN entidad I
+	ALTER table compromailax alter COLUMN email C(150)
+	ALTER table compromailax ADD COLUMN tabla C(50)
+	ALTER table compromailax add COLUMN nombrearc C(50)
+	SELECT compromailax
 	GO TOP 
-	replace ALL tabla WITH  ALLTRIM(v_tablamail)
-	
+	replace ALL tabla WITH  ALLTRIM(v_tablamail), nombrearc WITH ALLTRIM(puntov)+"-"++REPLICATE('0',8-LEN(ALLTRIM(STR(numero))))+ALLTRIM(STR(numero))+"_"+REPLICATE('0',10-LEN(ALLTRIM(STR(idregistro))))+ALLTRIM(STR(idregistro))+".pdf"
+
+	SELECT idregistro, idcomproba, electro, entidad, tabla,nombrearc, email FROM compromailax INTO TABLE compromail
 	
 		SELECT mailcomprobantes
 		APPEND FROM compromail 
-		
-
 
 		
 		
@@ -33811,24 +33819,24 @@ MESSAGEBOX("ENVIOCOMPROBANTES")
 	
 	SELECT mailcomprobantes
 	GO TOP 
-	BROWSE 
+		
+
 	
-	
-	
-	v_ret =	generarcomprobantes("mailcomprobantes",v_ubicacionPDF )
-	
-	
-	IF v_ret = .F.
+	v_retm =	generarcomprobantes("mailcomprobantes",v_ubicacionPDF )
+
+
+	IF EMPTY(ALLTRIM(v_retm)) = .T.
 
 		MESSAGEBOX("Error al generar los comprobantes",0+16+256,"Generar comprobantes")
 		RETURN .F.
 			
 	ENDIF 
+
+		v_retm = v_retm
+	v_r = enviarcorreoscsv(v_retm)
+
 	
-	
-	
-	
-	RETURN .T.
+	RETURN v_r
 	
 
 
@@ -33846,7 +33854,7 @@ PARAMETERS p_tablaCompro, p_ubicacion
 **	Si se corresponde al HOST que va a enviar, va a buscar en la tabla 'mailentcomp' los comprobantes correspondientes para enviar por correo, siempre y cuando no estén enviados.
 **		Si están enviados, lo ignora
 **		Si no está enviado va a enviar y cargar en la tabla 'maillog' y en la tabla 'mailcomp' el estado del envio
-**  RETORNO: Retorna True si el proceso no dio error, False en caso de un error.
+**  RETORNO: Si el proceso no dio error Retorna el archivo csv con los datos de los comprobantes, sino retorna el archivo vacio
 *#/****************************
 
 	IF TYPE('p_tablaCompro') <> 'C' OR TYPE('p_ubicacion') <> 'C'
@@ -33854,37 +33862,151 @@ PARAMETERS p_tablaCompro, p_ubicacion
 	ENDIF 
 	
 	
+		
+		
+	**** Creo el archivo para envio por email ***
+
+	v_comp_email = p_ubicacion+"\comp_email.csv"
+
+	pmail=FCREATE(v_comp_email)
+	FCLOSE(pmail)
+	
+	pmail=fopen(v_comp_email,1)
+			
+		
 	SELECT &p_tablaCompro
 	GO TOP 
 	
 	DO WHILE NOT EOF()
 		
-		v_idregistro = &p_tablaCompro..idregistro
-		v_idcomproba = &p_tablaCompro..idcomproba 
-		v_electro    = &p_tablaCompro..electro 
-		v_entidad 	 = &p_tablaCompro..entidad 
-		v_tablagcomp = &p_tablaCompro..tabla
-		
+		v_idregistrog = &p_tablaCompro..idregistro
+		v_idcomprobag = &p_tablaCompro..idcomproba 
+		v_electrog    = &p_tablaCompro..electro 
+		v_entidadg 	 = &p_tablaCompro..entidad 
+		v_tablagcompg = &p_tablaCompro..tabla
+		v_nombrearcg	 = &p_tablaCompro..nombrearc
+		v_emailg		=  &p_tablaCompro..email
 		
 		DO CASE
-			CASE ALLTRIM(v_tablagcomp) == "facturas"
+			CASE ALLTRIM(v_tablagcompg) == "facturas"
 			*FUNCTION imprimirFactura PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
-				imprimirFactura(v_idregistro,v_electro,3,p_ubicacion)
+			
+			v_comproPdfg = p_ubicacion+"\"+ALLTRIM(v_nombrearcg)
+
+			imprimirFactura(v_idregistrog, v_electrog,3,v_comproPdfg)
 *!*			CASE ALLTRIM(v_tablagcomp) == "recibos"
 *!*				imprimirRecibo(v_idregistro,v_electro,3,p_ubicacion)
 *!*			CASE ALLTRIM(v_tablagcomp) == "remitos"
 *!*				imprimirRemito(v_idregistro,v_electro,3,p_ubicacion)
 		OTHERWISE
-
+			v_comproPdfg = ""
 		ENDCASE
 	
+	
+	
+	
+	
+	
+		 
+*!*			
+*!*			SELECT lotefact_sql
+*!*			GO TOP 
+*!*			v_linea = ALLTRIM(DTOS(DATE())+TIME())+SPACE(13)+";E-Mail Asociado ;Razon Social"
+*!*			=fputs(p, v_linea )
+*!*			
+	
+*!*				v_idfactura = lotefact_sql.idfactura
+*!*				v_electroSN = lotefact_sql.electro
+*!*				v_emailh = lotefact_sql.emailh
+*!*				v_emaile = lotefact_sql.email
+*!*				v_email = ""
+*!*				v_cmnumero = ALLTRIM(lotefact_sql.tipo)+ALLTRIM(lotefact_sql.puntov)+"_"+STRTRAN(STR(lotefact_sql.numero,8),' ','0')
+*!*				v_nombree  = ALLTRIM(STR(lotefact_sql.entidad))+"-"+ALLTRIM(STR(lotefact_sql.servicio))+"-"+ALLTRIM(STR(lotefact_sql.cuenta))+" "+ALLTRIM(lotefact_sql.apellido)+" "+ALLTRIM(lotefact_sql.nombre)
+*!*				IF EMPTY(ALLTRIM(v_emailh))= .F.
+*!*					v_email = v_emailh
+*!*				ELSE
+*!*					IF EMPTY(ALLTRIM(v_emaile))= .F.
+*!*						v_email = v_emaile
+*!*					
+*!*					ENDIF 
+*!*				ENDIF 
+*!*				
+*!*				IF EMPTY(ALLTRIM(v_email))= .F. OR p_modogen = .t. THEN 
+*!*					v_electronica = IIF(v_electroSN= 'S',.T.,.F.)
+*!*					v_compPdf = p_ubicacion+v_cmnumero+"_"+REPLICATE('0',10-LEN(ALLTRIM(STR(v_idfactura))))+ALLTRIM(STR(v_idfactura))+".pdf"
+
+*!*					imprimirFactura(v_idfactura, v_electronica ,3,v_compPdf)
+*!*							
+				**Guardo en el archivo si se genero el pdf
+				IF EMPTY(ALLTRIM(v_comproPdfg)) = .F.
+				
+					IF file(v_comproPdfg) THEN
+*!*							v_linea = ALLTRIM(JUSTFNAME(v_comproPdfg))+";"+alltrim(v_emailg)+";"+ALLTRIM(STR(v_entidadg))
+							v_linea = ALLTRIM(JUSTFNAME(v_comproPdfg))+";"+alltrim(v_emailg)+";"+ALLTRIM(STR(v_entidadg))+";"+ALLTRIM(STR(v_idregistrog))+";"+ALLTRIM(STR(v_idcomprobag))+";"+ALLTRIM(v_tablagcompg)
+
+						=fputs(pmail, v_linea )
+					ENDIF
+
+				ENDIF 
+*!*				ENDIF 
+*!*				
+*!*				
+*!*				=ViewBarProgress(RECNO(),vcanregi,"Imprimiento...")
+*!*					
+*!*			
+		
+		
+		
 	
 		SELECT &p_tablaCompro
 		SKIP 1
 
 	ENDDO
 	
-	
+	FCLOSE(pmail)
 
+	RETURN v_comp_email
+
+ENDFUNC 
+
+
+FUNCTION enviarcorreoscsv
+PARAMETERS p_archivoenv
+*#/****************************
+*** FUNCIÓN PARA ENVIO DE COMPROBANTES ***
+** 	La función va usar un archivo CSV que se le va a psaar como parámetro para enviar correos con PDF que estén en los registros
+**	PARAMETERS: p_archivoenv: ubicación del archivo csv con los datos de envio
+**  RETORNO: Retorna True si el proceso no dio error, False en caso de un error.
+*#/****************************
+v_retenv = .F.
+
+	IF EMPTY(ALLTRIM(p_archivoenv)) = .T.
+		MESSAGEBOX("Debe Seleccionar el archivo que contiene los comprobantes a enviar por E-Mail ...",0+64,"Enviar PDF Por E-Mail")
+		RETURN .F.
+	ELSE 
+			v_pathpdfs = ALLTRIM(p_archivoenv)
+	ENDIF 
+
+	SET DEFAULT TO &_SYSESTACION	 
+
+
+	** Enviar Correos si existen
+	v_Ubicacion = JUSTPATH(v_pathpdfs)+"\"
+			
+	V_NombreArchivo = JUSTFNAME(v_pathpdfs)
+	V_asunto	= "No responder este e-mail. Enviamos comprobantes adjuntos. "
+	v_cuerpo	= "No responda este correo, le enviamos sus documento/s o factura/s."+CHR(13)+"Cordialmente."+CHR(13)+CHR(13)+_SYSEMPRESA+CHR(13)+;
+					_SYSDIRECCION+CHR(13)+IIF(!EMPTY(_SYSCUIT),"Cuit: "+_SYSCUIT+CHR(13),"")+IIF(!EMPTY(_SYSTELEFONO),"Tel.: "+_SYSTELEFONO+CHR(13),"")+ ;
+				 	IIF(!EMPTY(_SYSWEB),"Web : "+_SYSWEB,"")
+
+
+	
+	WAIT WINDOW "Enviando Correos...!" nowait 
+	v_retenv = enviarCorreoArchivo (v_Ubicacion, v_NombreArchivo, v_asunto, v_cuerpo,3)
+
+	WAIT CLEAR 
+	MESSAGEBOX("Proceso Finalizado!...",0+48,"Enviar E-Mails con Facturas ")
+
+RETURN v_retenv
 
 ENDFUNC 
