@@ -11,7 +11,9 @@ PARAMETERS p_idimpuret
 ** RETORNO: Retorna el divisor. 0, en caso de error
 *#/****************************
 	v_retornor = 0.0000
-
+* Abro una conexion con la base de datos 
+	varconexionF = abreycierracon(0,_SYSSCHEMA)
+	
 	IF TYPE('p_idimpuret') == 'N'
 	
 		sqlmatriz(1)= " SELECT idimpuret,divimporte "
@@ -22,6 +24,9 @@ PARAMETERS p_idimpuret
 		verror=sqlrun(varconexionF,"impuret_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la búsqueda del importe divisor",0+16+0,"")
+		    
+		* cierro la conexion
+		= abreycierracon(varconexionF,"")
 		    RETURN 0.0000
 		ENDIF 
 		
@@ -37,6 +42,11 @@ PARAMETERS p_idimpuret
 	
 	ENDIF 
 
+    
+		* cierro la conexion
+		= abreycierracon(varconexionF,"")
+		
+		
 	RETURN v_retornor 
 ENDFUNC 
 
@@ -53,7 +63,8 @@ PARAMETERS p_idimpuper
 ** RETORNO: Retorna el divisor. 0, en caso de error
 *#/****************************
 	v_retornop = 0.0000
-
+ *Abro una conexion con la base de datos 
+	varconexionF = abreycierracon(0,_SYSSCHEMA)
 	IF TYPE('p_idimpuret') == 'N'
 	
 		sqlmatriz(1)= " SELECT idimpuper,divimporte "
@@ -64,6 +75,9 @@ PARAMETERS p_idimpuper
 		verror=sqlrun(varconexionF,"impuper_sql")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la búsqueda del importe divisor",0+16+0,"")
+		        
+		* cierro la conexion
+		= abreycierracon(varconexionF,"")
 		    RETURN 0.0000
 		ENDIF 
 		
@@ -78,7 +92,8 @@ PARAMETERS p_idimpuper
 		ENDIF 
 	
 	ENDIF 
-
+* cierro la conexion
+		= abreycierracon(varconexionF,"")
 	RETURN v_retornop 
 ENDFUNC 
 
@@ -108,7 +123,11 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 
 	ENDIF 
 	
+
+	
 	P_importe = P_importe /v_divisorParaNeto
+	
+
 	
 	******
 
@@ -193,8 +212,10 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 	ALTER table totpagosret alter COLUMN impret Y
 	
 	ZAP IN totpagos
+
 	SELECT totpagosRet
 	GO TOP 
+	
 	
 	IF EOF() && Si es Fin de archivo: es porque no se realizaron retenciones en el mes, guardo el monto en Cero.
 		v_cod_socio = p_entidad
@@ -265,9 +286,12 @@ SELECT totpagos
 	ENDIF 
 		
 	v_enconvenio = 'N'
+
 	
 	SELECT entidadret
 	GO TOP 
+
+	
 	
 	IF NOT EOF()
 		SELECT entidadret
@@ -323,10 +347,12 @@ SELECT totpagos
 		SELECT totreten0
 		SKIP 1
 	ENDDO  
-			
+
 	v_razonAplicar = 0.00
 	SELECT impureten
 	GO TOP 
+	
+	
 	IF NOT EOF()
 	
 		** Obtengo la razón **
@@ -355,15 +381,17 @@ SELECT totpagos
 			ELSE
 				v_pago_total_retener = p_importe
 			ENDIF 
-			
+		
 		
 *******************
 **** 2- Calculo las retenciones para el monto sujeto a retener
 *******************
 			
 			SELECT impureten
-			
+		
 			v_baseImponible = impureten.baseimpon
+			
+		
 			
 			v_aretener = v_pago_total_retener - v_baseImponible
 			
@@ -405,7 +433,7 @@ SELECT totpagos
 
 
 				v_retencion = v_retener*(v_razon/100) + v_valfijo - v_totalRetencionesRealizadas 
-
+		
 ****
 *** Controlo que el monto a retener sea mayor al mínimo de retenciones por impuesto
 ****			
@@ -741,6 +769,58 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 	    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de ganancias(2)",0+16+0,"")
 	    RETURN .F.
 	ENDIF 	
+	
+	estadosObjr		= CREATEOBJECT('estadosclass')
+	
+	v_estadoAnulado = estadosObjr.getidestado("ANULADO")
+	
+	v_codigoRet = impureten.codigo
+	****************************************************************
+	*** BUSCO PAGOS Y RETENCIONES DEL DIA *****
+		****************************************************************
+
+		v_fechastr = DTOS(p_fecha)
+	
+		sqlmatriz(1)= " SELECT p.entidad, ifnull(i.idimpuret, 0) as idimpuret, ifnull(SUM(p.importe),0.00) as pagosdia, ifnull(sum(r.importe),0.00) as impretdia, ifnull(h.codigo,0) as codigo  "
+		sqlmatriz(2)= " FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten "
+		sqlmatriz(3)= " left join impuretencionh i on r.idreten = i.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' left join afipescalash h on i.idafipesc = h.idafipesc "
+		sqlmatriz(4)= " WHERE p.fecha = '"+ALLTRIM(v_fechastr)+"' and  r.entidad = "+ALLTRIM(STR(p_entidad))+"  and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+" and h.codigo = "+ALLTRIM(STR(v_codigoret))
+	
+	
+		verror=sqlrun(varconexionF,"totales_per")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en el cálculo de Retenciones(3)",0+16+0,"")
+		    RETURN .F.
+		ENDIF 	
+		
+	
+	
+		SELECT totales_per
+		GO TOP 
+		
+		IF NOT EOF()
+			
+			IF v_enconvenio = 'S'
+				v_totpagodia = totales_per.pagosdia
+			ELSE
+				v_totpagodia = (totales_per.pagosdia) /v_divisorParaNeto 
+			ENDIF 
+			
+			v_totRetdia	= totales_per.impretdia
+			
+		ELSE
+		
+			v_totpagodia = 0.00
+			v_totRetdia	= 0.00
+		
+		ENDIF 
+	
+	
+	
+		v_total_pagos	= v_totpagodia + v_pago_total_retener 	&& SUMO EL TOTAL DE PAGOS MAS EL PAGO ACTUAL
+	
+
+	
 
 					
 	*******************
@@ -751,12 +831,14 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 			v_baseImponible = impureten.baseimpon
 			
 			
-			v_retengo = v_pago_total_retener - v_baseImponible
+			*v_retengo = v_pago_total_retener - v_baseImponible
+			v_retengo = v_total_pagos - v_baseImponible
 			
 					
 			IF v_retengo  > 0 && Tengo que retener
 				
-				v_aretener = v_pago_total_retener 
+			*	v_aretener = v_pago_total_retener 
+			v_aretener = v_total_pagos
 
 				SELECT * FROM impureten where v_aretener >= valmin and (v_aretener < valmax or valmax = -1) INTO TABLE retenciongan
 				
@@ -770,10 +852,11 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 
 				v_valfijo = retenciongan.valfijo
 
-				v_totalRetencionesRealizadas =0.00
+				*v_totalRetencionesRealizadas =0.00
 				
-				v_retencion = v_retener*(v_razon/100) + v_valfijo
+			*	v_retencion = v_retener*(v_razon/100) + v_valfijo
 			
+				v_retencion = (v_retener*(v_razon/100) + v_valfijo) - v_totRetdia
 						
 ****
 *** Controlo que el monto a retener sea mayor al mínimo de retenciones por impuesto
@@ -802,8 +885,10 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 					v_descrip = ALLTRIM(impureten.detalle)+ " - " + ALLTRIM(impureten.descescala)
 					v_idafipesc = impureten.idafipesc
 					
-			
-					INSERT INTO &p_nombretabRes (entidad, idimpuret,impTotal,impARet,baseimpo,razon,idtipopago,descrip,sujarete, idafipesc) VALUES (v_entidad, v_idimpuret,v_impTotal,v_impARet,v_baseImponible,v_razon,v_idtipopago,v_descrip,v_aretener, v_idafipesc)
+						v_totretacu = v_totRetdia + v_retencion
+						
+					INSERT INTO &p_nombretabRes (entidad, idimpuret,impTotal,impARet,baseimpo,razon,idtipopago,descrip,totpagomes,totretmes ,sujarete, idafipesc);
+					 VALUES (v_entidad, v_idimpuret,v_impTotal,v_impARet,v_baseImponible,v_razon,v_idtipopago,v_descrip,v_total_pagos, v_totretacu ,v_aretener, v_idafipesc)
 
 				ENDIF 
 
@@ -1272,10 +1357,11 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 **** 1- Obtengo los montos de facturación del día y le sumo el monto de la factura que estoy haciendo
 *******************
 	
-	sqlmatriz(1) = " SELECT sum(f.subtotal * t.opera) as subtotal, sum(d.importe * t.opera) as iva , t.opera, c.tipo  "
+	sqlmatriz(1) = " SELECT 0 as subtotal, sum(d.importe * t.opera) as iva , t.opera, c.tipo  "
 	sqlmatriz(2) = "    FROM facturas f LEFT JOIN comprobantes c ON c.idcomproba=f.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro  "
 	sqlmatriz(3) = "    left join facturasimp d on f.idfactura = d.idfactura left join impuestos i on d.impuesto = i.impuesto "
 	sqlmatriz(4) = "    WHERE f.fecha = '"+ALLTRIM(p_fecha)+"' and f.entidad = "+ALLTRIM(STR(p_entidad))+" and i.abrevia = 'IVA' and t.opera > 0"
+*	sqlmatriz(4) = "    WHERE f.fecha = '"+ALLTRIM(p_fecha)+"' and f.entidad = "+ALLTRIM(STR(p_entidad))+" and i.abrevia = 'IVA' "
 
 	sqlmatriz(5) = "    group by c.tipo ORDER BY f.entidad"	
 
@@ -1284,6 +1370,49 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 	    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Facturas",0+16+0,"")
 	    RETURN .F.
 	ENDIF 
+	
+	
+	sqlmatriz(1) = " SELECT ifnull(sum(f.subtotal * t.opera),0.00) as subtotal, c.tipo  "
+	sqlmatriz(2) = "   FROM facturas f LEFT JOIN comprobantes c ON c.idcomproba=f.idcomproba left join tipocompro t on c.idtipocompro = t.idtipocompro "
+	sqlmatriz(4) = "    WHERE f.fecha = '"+ALLTRIM(p_fecha)+"' and f.entidad = "+ALLTRIM(STR(p_entidad))+" and t.opera > 0"
+	*sqlmatriz(4) = "    WHERE f.fecha = '"+ALLTRIM(p_fecha)+"' and f.entidad = "+ALLTRIM(STR(p_entidad))+" "
+	sqlmatriz(5) = "    group by c.tipo ORDER BY f.entidad"	
+
+	verror=sqlrun(varconexionF,"totfact1ax")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la SELECCION de Facturas",0+16+0,"")
+	    RETURN .F.
+	ENDIF 
+	
+	
+	
+	SELECT totfact1
+	GO TOP 
+	
+	DO WHILE NOT EOF()
+	
+	
+		v_tipo = totfact1.tipo
+		
+		SELECT * FROM totfact1ax WHERE tipo = v_tipo INTO CURSOR axtotfact
+		
+		SELECT axtotfact
+		IF NOT EOF()
+			v_totalfactu = axtotfact.subtotal
+			
+			SELECT totfact1 
+			replace subtotal WITH v_totalfactu 
+		
+		ENDIF 
+		
+	
+		SELECT totfact1
+		SKIP 1
+
+	ENDDO
+	
+	
+	
 	
 	SELECT totfact1
 	GO TOP 
@@ -1321,7 +1450,7 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 		RELEASE oeObjIIBB
 
 	
-		sqlmatriz(1) = " SELECT sum(d.total) as impperc, sum(if(f.tipo = 'A',f.neto,if(f.tipo='B' or f.tipo = 'C',f.total,0))) as sujaperc "
+		sqlmatriz(1) = " SELECT sum(d.total) as impperc, sum(if(f.tipo = 'A',f.neto,if(f.tipo='B' or f.tipo = 'C',f.total,0)))-sum(d.total) as sujaperc "
 		sqlmatriz(2) = " FROM facturas f left join detafactu d on f.idfactura = d.idfactura "
 		sqlmatriz(3) = " where f.fecha = '"+ALLTRIM(p_fecha)+"' and d.articulo = '"+ALLTRIM(v_codigoREC)+"' and f.entidad = "+ALLTRIM(STR(p_entidad))
 
@@ -1392,7 +1521,9 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 	IF r_percep > 0
 	    g_totaldia   = v_factdiario
 	    g_percepdia  = v_percdiario + r_percep
-		g_sujaperc   = (v_factdiario-v_percdiario) - s_sujaperc
+		*g_sujaperc   = (v_factdiario-v_percdiario) - s_sujaperc
+		g_sujaperc   = (v_factdiario-v_percdiario)
+
 	    g_impperc    = r_percep
 		v_campoArt   = ""
 		

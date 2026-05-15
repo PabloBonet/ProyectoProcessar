@@ -755,6 +755,143 @@ USE
 ENDFUNC 
 
 
+
+
+FUNCTION SetToolbarGridCol
+PARAMETERS var_GrillaCol
+*#/---------------------------
+*** Función de creación y seteo del Objeto para Manejar las columnas que se visualizan en una grilla pasada como parametro
+*** Reconfigura la barra en funcion de la grilla activa
+*#/---------------------------
+LOCAL v_nombreObjGrilla
+
+
+	IF TYPE(var_GrillaCol)='U' THEN 
+		IF TYPE("toolbarGrillaCol")='O' THEN 
+			RELEASE toolbarGrillaCol
+		ENDIF 
+		RETURN 
+	ENDIF 
+	
+	vvar_GrillaCol = &var_GrillaCol
+	v_nombreObjGrilla = NombreCompletoObjeto(vvar_GrillaCol)
+
+	eje = "var_GrillaColBase = "+ALLTRIM(v_nombreObjGrilla)+".BaseClass"
+	&eje
+
+	IF !(LOWER(var_GrillaColBase) = "grid")
+		IF TYPE("toolbarGrillaCol")='O' THEN 
+			RELEASE toolbarGrillaCol
+		ENDIF 
+		RETURN 
+	ENDIF
+
+
+	IF TYPE("toolbarGrillaCol")='O' THEN 
+		IF ALLTRIM(v_nombreObjGrilla)==ALLTRIM(toolbarGrillaCol.tag)
+			RELEASE toolbarGrillaCol
+			RETURN 
+		ENDIF 
+	ENDIF 
+
+
+	IF TYPE("toolbarGrillaCol")='O' THEN 
+		RELEASE toolbarGrillaCol
+	ENDIF 
+
+
+	PUBLIC  toolbarGrillaCol
+	toolbarGrillaCol= CREATEOBJECT('toolbarmenu')
+	*toolbarGrillaCol.dock(2)
+	toolbarGrillaCol.controlbox = .F.
+	toolbarGrillaCol.Caption = "Columnas"
+	toolbarGrillaCol.tag = v_nombreObjGrilla 
+
+	eje = " vg_top = _screen.top+10"
+	&eje
+	eje = " vg_left = _screen.left+_screen.width-toolbarGrillaCol.width-130"
+	&eje
+	toolbarGrillaCol.top = vg_top
+	toolbarGrillaCol.left = vg_left
+
+
+	eje = " vg_canticol = "+v_nombreObjGrilla+".ColumnCount"
+	&eje
+	FOR colgrid = 1 TO vg_canticol 
+
+			toolbarGrillaCol.addobject('ck'+alltrim(STR(colgrid)),'checkboxgrid')
+
+			eje = "toolbarGrillaCol."+"ck"+alltrim(STR(colgrid))+".visible = .t."
+			&eje 
+
+
+			eje = "toolbarGrillaCol."+"ck"+alltrim(STR(colgrid))+".value = "+v_nombreObjGrilla+".Column"+ALLTRIM(STR(colgrid))+".visible"
+			&eje 
+
+			vg_comando = v_nombreObjGrilla+".Column"+ALLTRIM(STR(colgrid))+".visible = toolbarGrillaCol.ck"+alltrim(STR(colgrid))+".value"
+			eje = "toolbarGrillaCol.ck"+alltrim(STR(colgrid))+".tag = '"+alltrim(vg_Comando)+"'"
+			&eje 
+
+			eje = " vg_Caption = SUBSTR("+v_nombreObjGrilla+".Column"+ALLTRIM(STR(colgrid))+".header1.Caption+SPACE(20),1,20)"
+			&eje
+		
+			eje = "toolbarGrillaCol."+"ck"+alltrim(STR(colgrid))+".caption = '"+vg_Caption+"'"
+			&eje 
+
+	ENDFOR 
+
+	toolbarGrillaCol.show 
+
+ENDFUNC 
+
+
+
+FUNCTION NombreCompletoObjeto(toObj)
+    LOCAL lcNombre, loObj
+    loObj = toObj    
+    
+*!*		IF TYPE("toolbarGrillaCol")='O' THEN 
+*!*			IF ALLTRIM(v_nombreObjGrilla)==ALLTRIM(toolbarGrillaCol.tag)
+*!*				RELEASE toolbarGrillaCol
+*!*				RETURN 
+*!*			ENDIF 
+*!*		ENDIF 
+	
+    lcNombre = LOWER(loObj.Name)    
+    DO WHILE TYPE("loObj.Parent.Name") = "C"        
+    	loObj = loObj.Parent        
+    	lcNombre = LOWER(loObj.Name) + "." + lcNombre    
+    ENDDO    
+	RETURN lcNombre
+ENDFUNC
+
+
+
+FUNCTION SetGrillaVisible (toObjGrilla)
+	LOCAL loObjGrilla 
+	
+	IF TYPE("_screen.ActiveForm")='U' THEN 
+		RETURN 
+	ENDIF 
+	loObjGrilla = &toObjGrilla
+
+	IF TYPE("toolbarGrillaCol")='O' THEN 
+		IF LOWER(ALLTRIM(toObjGrilla))==LOWER(ALLTRIM(toolbarGrillaCol.tag))
+			eje = " vg_canticol = "+ALLTRIM(toObjGrilla)+".ColumnCount"
+			&eje
+			FOR colgrid = 1 TO vg_canticol 
+				eje = ALLTRIM(toObjGrilla)+".Column"+ALLTRIM(STR(colgrid))+".visible = toolbarGrillaCol."+"ck"+alltrim(STR(colgrid))+".value  "
+				&eje 
+			ENDFOR 
+		ENDIF 
+	ENDIF 
+	
+ENDFUNC 
+
+
+
+
+
 FUNCTION copyarchivo
 	PARAMETERS p_archivo, p_pathn
 *#/----------------------------------------
@@ -1096,6 +1233,12 @@ PARAMETERS p_matriz_p , p_opcion, p_objeto, p_teclafn
 			&eje		
 		OTHERWISE 
 	ENDCASE 
+	
+	ON KEY LABEL CTRL+F4 DO SALIRMENU 
+	ON KEY LABEL ESC DO SETEO_ESC 
+	ON KEY LABEL CTRL+F11 MESSAGEBOX(_screen.ActiveForm.name)
+	ON KEY LABEL CTRL+F12  SetToolbarGridCol ( "_screen.ActiveForm.activecontrol")
+	
 	
 	RETURN retorno 
 ENDFUNC 
@@ -1557,6 +1700,90 @@ PARAMETERS p_puntoVta, p_idTipoComp
 
 ENDFUNC 
 
+FUNCTION validarFactura
+PARAMETERS p_idregistro
+*#/----------------------------------------
+* FUNCIÓN PARA VALIDAR DATOS DE LA FACTURA
+* PARAMETROS: p_idregistro
+* RETORNO: Retorna True si el comprobante está correcto, False en caso de contrario
+*#/----------------------------------------
+
+	v_retorno = .F.
+	IF TYPE('p_idregistro') = 'N'
+
+
+		
+		**** Valido los montos del detalle con la cabecera de la factura ****
+
+		vconeccion=abreycierracon(0,_SYSSCHEMA)	
+			
+		sqlmatriz(1)=" Select f.neto,f.totalimpu, f.total,  sum(d.neto) as totneto, sum(d.impuestos) as totimpuestos,  (d.total) as tot,  (f.neto - sum(d.neto)) as difneto, (f.totalimpu - sum(d.impuestos)) as difimpu, ( f.total - sum(d.total)) as diftot "
+		sqlmatriz(2)="  from facturas f left join detafactu d on f.idfactura = d.idfactura"
+		sqlmatriz(3)=" where f.idfactura = "+ ALLTRIM(STR(p_idregistro))
+
+		verror=sqlrun(vconeccion,"factuval_sql")
+		IF verror=.f.  
+			IF p_nomsg = .f. THEN 
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los montos facturados",0+48+0,"Error")
+		   	ENDIF 
+		    v_retorno = .F.
+		    RETURN v_retorno
+		ELSE
+
+			v_pventa	= 0
+			
+			
+			SELECT factuval_sql
+			GO TOP 
+			
+			IF  EOF()
+				IF p_nomsg = .f. THEN 
+				    MESSAGEBOX("No se puede obtener el detalle de la factura",0+48+0,"Error")
+			   	ENDIF 
+			    v_retorno = .F.
+			    RETURN v_retorno
+				
+			ELSE 
+				
+				
+				v_difneto = factuval_sql.difnet
+				
+				v_difneto = IIF(v_difneto < 0.00, -1 * v_difneto,v_difneto)
+				v_difimpu = factuval_sql.difimpu
+				v_difimpu = IIF(v_difimpu <0.00, -1 * v_difimpu ,v_difimpu)
+				v_diftot  = factuval_sql.diftot
+				v_diftot   = IIF(v_diftot  < 0.00, -1* v_diftot  ,v_diftot)
+				
+				IF v_difimpu <= _SYSREDONDEO AND v_difimpu <= _SYSREDONDEO AND v_diftot <= _SYSREDONDEO
+				
+					v_retorno = .T.
+				else 
+					IF p_nomsg = .f. THEN 
+					    MESSAGEBOX("No se puede obtener el detalle de la factura",0+48+0,"Error")
+				   	ENDIF 
+				    v_retorno = .F.
+				    RETURN v_retorno
+				ENDIF 
+				
+				
+			ENDIF 
+		ENDIF 
+			
+		=abreycierracon(vconeccion,"") && Cierro conección
+		RETURN .T.
+	ELSE
+		MESSAGEBOX("Parametro incorrecto en la validación del comprobante (validarFactura)",0+16+256,"Validar comprobante")
+
+		RETURN .F.
+
+	ENDIF 
+
+
+RETURN v_retorno 
+
+ENDFUNC 
+
+
 
 FUNCTION probarServicioAFIP
 PARAMETERS p_puntoVta, p_idTipoComp
@@ -1653,7 +1880,12 @@ PARAMETERS p_idregistro, p_idcomproba, p_nomsg
 	v_error = .F.
 LOCAL loException AS Exception
 
+	v_validarFactura = validarFactura(p_idregistro)
 
+	IF v_validarFactura = .F.
+		RETURN .F.
+	ENDIF 
+	
 	*** COMPRUEBO QUE EL COMPROBANTE NO ESTÉ AUTORIZADO **
 	v_validarComp =validarCompAutorizado(v_idcomprobante)
 	
@@ -1667,6 +1899,7 @@ LOCAL loException AS Exception
 	IF v_validarUltNum = .F.
 		RETURN .F. 
 	ENDIF 
+	
 	
 	TRY 
 		v_tipoObj = TYPE("objModuloAFIP")
@@ -4627,7 +4860,7 @@ PARAMETERS p_idacopio
 				v_acopmenosFac 	= v_neto
 				v_menosAcopt = v_menosAcopt + v_acopmenosFac 
 			ELSE
-				IF v_op > 0
+				IF v_op > 0 AND ALLTRIM(v_acopio) = 'S'
 					v_acopmasFac =  v_neto
 					v_masAcopt = v_masAcopt + v_acopmasFac 
 				ENDIF 
@@ -4747,7 +4980,7 @@ PARAMETERS p_idacopio
 	
 	
 			DO CASE
-				CASE v_op > 0
+				CASE v_op > 0 AND ALLTRIM(v_acopio) = 'S'
 					v_acopmasAju =  v_neto
 					v_masAcopt = v_masAcopt + v_acopmasAju 
 				CASE v_op < 0
@@ -6551,7 +6784,6 @@ FUNCTION filtragrupos
 		EJE4=""
 	ENDIF 
 
-*	SELECT &pf_tablas
 	
 	IF !EMPTY(ALLTRIM(pf_tbbuscador)) THEN	
 		EJE1 = "ATCF(ALLTRIM('"+ALLTRIM(pf_tbbuscador)+"'), busqueda) > 0 "
@@ -6559,38 +6791,60 @@ FUNCTION filtragrupos
 		EJE1= ""	
 	ENDIF 
 
-	IF !EMPTY(ALLTRIM(toolbargrupos.seleccion)) AND toolbargrupos.pageayuda.grupos.filtragrupos.value THEN	
-		EJE2 = "ATCF(ALLTRIM(busquedag), toolbargrupos.seleccion) > 0 "
-	ELSE
-		EJE2= ""	
-	ENDIF 
-	
-	IF !EMPTY(EJE1) AND !EMPTY(EJE2) THEN 
-		EJE3="SET FILTER TO "+EJE1+" AND "+EJE2
-	ELSE
-		EJE3="SET FILTER TO "+EJE1+EJE2
-	ENDIF 
-	
-	
-	IF !EMPTY(EJE1+EJE2) AND !EMPTY(EJE4) THEN 
-		EJE3 = EJE3+" AND "+EJE4
-	ELSE
-		EJE3 = EJE3+EJE4
-	ENDIF 
-
-
 	vcan_tablas=alines( arraytablas, pf_tablas, ";")
 	IF vcan_tablas > 0 THEN 
 		FOR _ifg = 1 TO vcan_tablas
 			SELECT &arraytablas(_ifg)
+			
+*****************************************************************************************			
+			
+			EJE2 = ""
+			IF !EMPTY(ALLTRIM(toolbargrupos.seleccion)) AND toolbargrupos.pageayuda.grupos.filtragrupos.value THEN	
+					
+					v_gcampotabla = ALLTRIM(arraytablas(_ifg))+".busquedag"
+					IF TYPE(v_gcampotabla) = "C" THEN 			
+						EJE2 = EJE2+" AND ATCF(ALLTRIM(busquedag), toolbargrupos.seleccion) > 0 "
+					ENDIF  
+					ivgcmpo=1
+					v_gcampotabla = ALLTRIM(arraytablas(_ifg))+'.busquedag'+ALLTRIM(STR(ivgcmpo))
+					v_gcamposolo  = 'busquedag'+ALLTRIM(STR(ivgcmpo))
+					DO WHILE ( TYPE(v_gcampotabla) = "C")
+						EJE2 = EJE2+" AND ATCF(ALLTRIM("+v_gcamposolo+"), toolbargrupos.seleccion) > 0 "
+						ivgcmpo= ivgcmpo + 1
+						v_gcampotabla = ALLTRIM(arraytablas(_ifg))+'.busquedag'+ALLTRIM(STR(ivgcmpo))
+					ENDDO 
+					
+			ENDIF 
+					
+			IF !EMPTY(EJE1) AND !EMPTY(EJE2) THEN 
+				EJE3="SET FILTER TO "+EJE1+EJE2
+			ELSE
+				IF EMPTY(EJE1)
+					EJE3="SET FILTER TO "+SUBSTR(EJE2,5)
+				ELSE
+					EJE3="SET FILTER TO "+EJE1	
+				ENDIF 
+			ENDIF 
+			
+			
+			IF !EMPTY(EJE1+EJE2) AND !EMPTY(EJE4) THEN 
+				EJE3 = EJE3+" AND "+EJE4
+			ELSE
+				EJE3 = EJE3+EJE4
+			ENDIF 
+
+				
+******************************************************************************************			
 			&EJE3 
 			GO TOP	
 		ENDFOR 
 	ENDIF 
 	RELEASE arraytablas 
-	
+
+
 	RETURN EJE3
 	
+
 ENDFUNC 
 
 
@@ -7570,27 +7824,139 @@ PARAMETERS p_idremito, p_ubicacion
 	ENDIF 
 				
 		
-	sqlmatriz(1)=" select p.idcomproba as idcomp, v.puntov as actividad, p.numero, '0001' as succliente, p.entidad as cliente, p.apellido as nomb_fanta,p.direccion as domi_fanta, c.detalle as iva, "
+*!*		sqlmatriz(1)=" select p.idcomproba as idcomp, v.puntov as actividad, p.numero, '0001' as succliente, p.entidad as cliente, p.apellido as nomb_fanta,p.direccion as domi_fanta, c.detalle as iva, "
+*!*		sqlmatriz(2)=" p.cuit, '0001' as suctranspo, p.transporte, p.nomtransp as nomtrans,p.fecha as fecharemi, if(u.idestador = 2, 'S','N') as anulado, p.direntrega as domi_entre, p.observa1 as pieremito1, "
+*!*		sqlmatriz(3)=" p.observa2 as pieremito2,p.observa3 as pieremito3,p.observa4 as pieremito4, a.apellido as nomcarpi,ifnull(l.idb,0) as idot,ifnull(l.idb,0) as nroot, '0001' as nroserie, ifnull(t.idnp,0) as nronp, "
+*!*		sqlmatriz(4)=" ifnull(n.fecha,'') as fechanp, ifnull(n.idnp,0) as idnp, 0 as propiedad, '' as nomprop, '' as codvalor, '' as nomvalor, '' as color, '' as nomcolor, h.cantidad as cantsoli, h.cantidad as cantfactu,  "
+*!*		sqlmatriz(5)=" h.cantidadfc as kgfactu, 0.00 as mt2factu, ifnull(q.etiqueta,'') as etiqueta, ifnull(d.valor,'              ') as nrooc, h.articulo, h.detalle as nomarti, '01' as tipoot, "	
+*!*		sqlmatriz(6)=" if(substr(h.articulo,1,1) = '0','04',if(substr(h.articulo,1,1) = '1' or substr(h.articulo,1,1) = '2','02','00')) as subtipo, a.entidad as codcarpi "
+*!*		sqlmatriz(7)=" from remitos p left join remitosh h on p.idremito = h.idremito "
+*!*		sqlmatriz(8)=" left join linkregistro l on tablaa = 'remitosh' and campoa = 'idremitoh' and tablab = 'ot' and campob = 'idot' and h.idremitoh = l.ida "
+*!*		sqlmatriz(9)=" left join ot t on l.idb = t.idot left join np n on t.idnp = n.idnp left join etiquetanp q on n.idetiqueta = q.idetiqueta "
+*!*		sqlmatriz(10)=" left join reldatosextra r on r.tabla = 'np' and n.idnp = r.idregistro left join datosextra d on r.iddatosex = d.iddatosex and d.propiedad = 'OC' " 
+*!*		sqlmatriz(11)=" left join puntosventa v on p.pventa = v.pventa left join entidades e on p.entidad = e.entidad left join condfiscal c on e.iva = c.iva "
+*!*		sqlmatriz(12)=" left join ultimoestado u  on u.tabla = 'remitos' and u.campo = 'idremito' and p.idremito = u.id left join entidades a on p.entidadaso = a.entidad "
+*!*		sqlmatriz(13)=" where p.idremito = "+ALLTRIM(STR(p_idremito))+" order by l.idb "
+
+
+*!*		verror=sqlrun(vconeccionF,"TmpRemiAux3")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Ha Ocurrido un Error al EXAMINAR el Archivo de Cabecera de Remitos.",0+48+0,"Error")
+*!*			=abreycierracon(vconeccionF,"")
+*!*			RETURN .F.
+*!*		ENDIF 
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		SELECT * FROM TmpRemiAux3 WHERE ALLTRIM(nrooc) <> '' INTO TABLE TmpRemiAux2
+*!*		
+*!*		SELECT TmpRemiAux2
+*!*		GO TOP 
+*!*		
+*!*		IF NOT EOF()
+*!*			SELECT * FROM TmpRemiAux2 INTO TABLE TmpRemiAux
+*!*		ELSE
+*!*			
+*!*			SELECT * FROM TmpRemiAux3  INTO TABLE TmpRemiAux
+*!*		
+*!*		ENDIF 
+*!*		
+
+
+
+sqlmatriz(1)=" select p.idcomproba as idcomp, v.puntov as actividad, p.numero, '0001' as succliente, p.entidad as cliente, p.apellido as nomb_fanta,p.direccion as domi_fanta, c.detalle as iva, "
 	sqlmatriz(2)=" p.cuit, '0001' as suctranspo, p.transporte, p.nomtransp as nomtrans,p.fecha as fecharemi, if(u.idestador = 2, 'S','N') as anulado, p.direntrega as domi_entre, p.observa1 as pieremito1, "
 	sqlmatriz(3)=" p.observa2 as pieremito2,p.observa3 as pieremito3,p.observa4 as pieremito4, a.apellido as nomcarpi,ifnull(l.idb,0) as idot,ifnull(l.idb,0) as nroot, '0001' as nroserie, ifnull(t.idnp,0) as nronp, "
 	sqlmatriz(4)=" ifnull(n.fecha,'') as fechanp, ifnull(n.idnp,0) as idnp, 0 as propiedad, '' as nomprop, '' as codvalor, '' as nomvalor, '' as color, '' as nomcolor, h.cantidad as cantsoli, h.cantidad as cantfactu,  "
-	sqlmatriz(5)=" h.cantidadfc as kgfactu, 0.00 as mt2factu, ifnull(q.etiqueta,'') as etiqueta, ifnull(d.valor,'              ') as nrooc, h.articulo, h.detalle as nomarti, '01' as tipoot, "	
-	sqlmatriz(6)=" if(substr(h.articulo,1,1) = '0','04',if(substr(h.articulo,1,1) = '1' or substr(h.articulo,1,1) = '2','02','')) as subtipo "
-	sqlmatriz(7)=" from remitos p left join remitosh h on p.idremito = h.idremito "
+	sqlmatriz(5)=" h.cantidadfc as kgfactu, 0.00 as mt2factu, ifnull(q.etiqueta,'') as etiqueta, '              ' as nrooc, h.articulo, h.detalle as nomarti, '01' as tipoot, "	
+	sqlmatriz(6)=" if(substr(h.articulo,1,1) = '0','04',if(substr(h.articulo,1,1) = '1' or substr(h.articulo,1,1) = '2' or substr(h.articulo,1,1) = '3','02','00')) as subtipo, a.entidad as codcarpi, r.unidad, af.unidadf "
+	sqlmatriz(7)=" from remitos p left join remitosh h on p.idremito = h.idremito left join articulos r on h.articulo = r.articulo left join articulosf af on r.articulo = af.articulo "
 	sqlmatriz(8)=" left join linkregistro l on tablaa = 'remitosh' and campoa = 'idremitoh' and tablab = 'ot' and campob = 'idot' and h.idremitoh = l.ida "
 	sqlmatriz(9)=" left join ot t on l.idb = t.idot left join np n on t.idnp = n.idnp left join etiquetanp q on n.idetiqueta = q.idetiqueta "
-	sqlmatriz(10)=" left join reldatosextra r on r.tabla = 'np' and n.idnp = r.idregistro left join datosextra d on r.iddatosex = d.iddatosex and d.propiedad = 'OC' " 
 	sqlmatriz(11)=" left join puntosventa v on p.pventa = v.pventa left join entidades e on p.entidad = e.entidad left join condfiscal c on e.iva = c.iva "
 	sqlmatriz(12)=" left join ultimoestado u  on u.tabla = 'remitos' and u.campo = 'idremito' and p.idremito = u.id left join entidades a on p.entidadaso = a.entidad "
 	sqlmatriz(13)=" where p.idremito = "+ALLTRIM(STR(p_idremito))+" order by l.idb "
 
 
-	verror=sqlrun(vconeccionF,"TmpRemiAux")
+	verror=sqlrun(vconeccionF,"TmpRemiAux2")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error al EXAMINAR el Archivo de Cabecera de Remitos.",0+48+0,"Error")
 		=abreycierracon(vconeccionF,"")
 		RETURN .F.
 	ENDIF 
+	
+	
+	
+	SELECT * FROM  TmpRemiAux2 INTO TABLE TmpRemiAux3
+	
+	
+	ALTER table TmpRemiAux3 alter COLUMN nrooc C(20)
+	ALTER table TmpRemiAux3 alter COLUMN idnp I
+	
+	SELECT idnp FROM TmpRemiAux3 GROUP BY idnp INTO TABLE npremi
+	
+	ALTER table npremi alter COLUMN idnp I 
+	
+	SELECT npremi
+	GO TOP 
+	
+	DO WHILE NOT EOF()
+	
+		v_idnprem = npremi.idnp
+		
+			sqlmatriz(1)="select  n.idnp, ifnull(d.valor,'              ') as nrooc  "
+		 	sqlmatriz(2) = "from np n  left join reldatosextra r on r.tabla = 'np' and n.idnp = r.idregistro left join datosextra d on r.iddatosex = d.iddatosex and d.propiedad = 'OC'  "
+			sqlmatriz(3)=" where d.valor <> ''  and n.idnp =  " +ALLTRIM(STR(v_idnprem))
+				
+		
+			verror=sqlrun(vconeccionF,"npoc_sql2")
+			v_nrooc = ""
+			
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error al traer la OC del remito.",0+48+0,"Error")
+				=abreycierracon(vconeccionF,"")
+			ELSE
+			
+				SELECT * FROM npoc_sql2 INTO TABLE npoc_sql
+				
+				
+				
+				ALTER table npoc_sql alter column nrooc C(20)
+				
+				
+				
+			
+				SELECT npoc_sql
+				GO TOP 
+				
+				IF NOT EOF()
+				
+					v_nrooc = npoc_sql.nrooc
+							
+				ENDIF 				
+				
+				
+			ENDIF 
+			
+		
+*!*				SELECT TmpRemiAux3 
+*!*				GO TOP 
+
+*!*				replace nrooc WITH ALLTRIM(v_nrooc) while idnp = v_idnprem 
+
+	 UPDATE TmpRemiAux3 SET nrooc = ALLTRIM(v_nrooc) WHERE  idnp = v_idnprem 
+	 
+	
+		SELECT npremi
+		SKIP 1
+	ENDDO
+	
+	
+	
+	SELECT * FROM TmpRemiAux3 INTO TABLE tmpremiaux
+	
+
 	
 	SELECT * from TmpRemiAux INTO TABLE tmpRemi
 
@@ -7618,7 +7984,7 @@ PARAMETERS p_idremito, p_ubicacion
 		* asignar valores 
 		I_NUMERO=alltrim(TmpRemi.actividad)+" - "+STRTRAN(STR((TmpRemi.numero),8,0)," ","0")
 		i_fecharemito= CTOD(SUBSTR(TmpRemi.fecharemi,7,2)+"/"+SUBSTR(TmpRemi.fecharemi,5,2)+"/"+SUBSTR(TmpRemi.fecharemi,1,4))
-		v_entrega = ALLTRIM(tmpRemi.domi_entre)
+		v_entrega = ALLTRIM(STR(tmpRemi.codcarpi))+"-"+ALLTRIM(tmpRemi.nomcarpi)+"-"+ALLTRIM(tmpRemi.domi_entre)
 		v_NombreArchi=_SYSESTACION+"\"+STRTRAN(STR((TmpRemi.numero),8,0)," ","0")+"-"+ALLTRIM(v_OriDup)+".TXT"	
 		
 		H=FCREATE(v_NombreArchi,0)
@@ -7744,6 +8110,11 @@ PARAMETERS p_idremito, p_ubicacion
 								v_codigo = ""
 								v_detalle 	= ALLTRIM(TmpRemi.nomarti)
 								v_codigo	= ALLTRIM(articulo)
+							OTHERWISE 
+								v_detalle=""
+								v_codigo = ""
+								v_detalle 	= ALLTRIM(TmpRemi.nomarti)
+								v_codigo	= ALLTRIM(articulo)
 						ENDCASE 
 	 			ENDCASE 
 	 			*********************************************************************************************************************************
@@ -7754,21 +8125,50 @@ PARAMETERS p_idremito, p_ubicacion
 				v_nrooc		  = IIF((!EMPTY(ALLTRIM(tmpRemi.nrooc)) and !(ALLTRIM(tmpRemi.nrooc)=='""')) ,' - O.C.:'+ALLTRIM(tmpRemi.nrooc),'')
 				v_etiqueta	  = IIF((!EMPTY(ALLTRIM(tmpRemi.etiqueta)) and !(ALLTRIM(tmpRemi.etiqueta)=='""')) ,' Etq.:'+ALLTRIM(tmpRemi.etiqueta),'')
 				v_detalle	  = v_detalle + v_nrooc + v_etiqueta + SPACE(96)
-
+				v_kilositem	  = TmpRemi.kgfactu
 				DO CASE 
+					
+					CASE TmpRemi.subtipo == "02" && Perfiles
+						IF ALLTRIM(TmpRemi.unidadf) = "KILOS"
+							v_kilositem	  = TmpRemi.kgfactu
+						ENDIF 
+						chars=FPUTS(H,v_charSn+" "+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+SUBSTR(v_detalle,1,96)+" "+STR(v_kilositem,8,2)+v_charCc )
+						
+						
 					CASE TmpRemi.subtipo == "04" && Accesorios
-						chars=FPUTS(H,v_charSn+"A"+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+SUBSTR(v_detalle,1,96)+" "+STR(TmpRemi.kgfactu,8,2)+v_charCc )
+						IF ALLTRIM(TmpRemi.unidadf) = "KILOS"
+							v_kilositem	  = TmpRemi.kgfactu
+						ELSE
+							v_kilositem	  = 0.00
+						ENDIF 
+						
+						chars=FPUTS(H,v_charSn+"A"+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+SUBSTR(v_detalle,1,96)+" "+STR(v_kilositem,8,2)+v_charCc )
+						
 					CASE TmpRemi.subtipo == "03" && PLACAS
-						chars=FPUTS(H,v_charSn+"P"+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+STR(TmpRemi.idot,6)+" "+SUBSTR(v_detalle,1,89)+" "+STR(TmpRemi.kgfactu,8,2)+v_charCc )
+						IF ALLTRIM(TmpRemi.unidadf) = "KILOS"
+							v_kilositem	  = TmpRemi.kgfactu
+						ELSE
+							v_kilositem	  = 0.00
+						ENDIF
+						
+						chars=FPUTS(H,v_charSn+"P"+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+STR(TmpRemi.idot,6)+" "+SUBSTR(v_detalle,1,89)+" "+STR(v_kilositem,8,2)+v_charCc )
+						 
 					OTHERWISE 
-						chars=FPUTS(H,v_charSn+" "+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+SUBSTR(v_detalle,1,96)+" "+STR(TmpRemi.kgfactu,8,2)+v_charCc )
+						IF ALLTRIM(TmpRemi.unidadf) = "KILOS"
+							v_kilositem	  = TmpRemi.kgfactu
+						ELSE
+							v_kilositem	  = 0.00
+						ENDIF 
+						
+						chars=FPUTS(H,v_charSn+" "+v_charCn+v_charSc+" "+SUBSTR(v_CODIGO+SPACE(15),1,15)+" "+STR(TmpRemi.CANTFACTU,5,0)+" "+SUBSTR(v_detalle,1,96)+" "+STR(v_kilositem,8,2)+v_charCc )
+						
 				ENDCASE
 				
 				IF chars <= 0 THEN 
 					MESSAGEBOX("NO se pudo escribir el Item "+STR(NRORENG,3,0)+" en el archivo "+v_NombreArchi,0+48+0,"Error")
 				ENDIF 
 				v_falta = v_falta - 1 
-				v_TotalKilos = v_TotalKilos + TmpRemi.kgfactu
+				v_TotalKilos = v_TotalKilos + v_kilositem
 						
 				SELECT TmpRemi
 				SKIP 1
@@ -11602,12 +12002,14 @@ FUNCTION CopiarClip
 * Si no recibe parametro entonces convierte a .csv (separado por comas)
 *#/----------------------------------------
 	PARAMETERS p_csv 
+
 	
 	IF !TYPE('p_csv')='C' THEN 
 		v_auxi = ALIAS()
 		
 		v_confiltro = FILTER(v_auxi)
 		v_confiltro = IIF(EMPTY(v_confiltro),""," and "+ALLTRIM(v_confiltro))
+		v_confiltro = STRTRAN(LOWER(v_confiltro),'thisform',_screen.activeform.name)
 		
 		IF !EMPTY(v_auxi) THEN 
 			IF (ALLTRIM(FIELD("sel",v_auxi))=='SEL') THEN
@@ -11634,7 +12036,31 @@ FUNCTION CopiarClip
 		ENDIF 
 	ELSE
 		v_auxi = ALIAS()
+
+		v_confiltro = FILTER(v_auxi)
+		v_confiltro = IIF(EMPTY(v_confiltro),""," and "+ALLTRIM(v_confiltro))
+		v_confiltro = STRTRAN(LOWER(v_confiltro),'thisform',_screen.activeform.name)
+
 		IF !EMPTY(v_auxi) THEN 
+
+
+
+			IF (ALLTRIM(FIELD("sel",v_auxi))=='SEL') THEN
+				IF TYPE('sel')='L' THEN 
+					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip WHERE sel = .t. &v_confiltro
+					SELECT ccopiarclip
+					IF _tally = 0  THEN 
+						SELECT * FROM &v_auxi INTO CURSOR ccopiarclip WHERE .t. = .t. &v_confiltro
+					ENDIF 
+				ELSE
+					SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  	WHERE .t. = .t.	&v_confiltro	
+				ENDIF 
+			ELSE
+				SELECT * FROM &v_auxi INTO CURSOR ccopiarclip  	WHERE .t. = .t. &v_confiltro
+			ENDIF  
+			SELECT ccopiarclip
+			v_rec = reccount()
+
 		
 			v_drv = SYS(5)+'\'
 			SET DEFAULT TO &v_drv
@@ -11674,6 +12100,9 @@ FUNCTION CopiarClip
 				APLIC.RUN(v_nuevo_csv)
 				RELEASE APLIC 
 			ENDIF 
+			USE IN ccopiarclip
+			SELECT &v_auxi
+
 			SET DEFAULT TO &_SYSESTACION	
 			SELECT &v_auxi
 		ENDIF 
@@ -24255,7 +24684,7 @@ PARAMETERS p_entidad, P_fecha, p_nomTabRes,P_importe
 *				P_importe: Importe Total, del cuál se va a calcular las retenciones. en caso de no pasar parámetro se pedirá en la pantalla
 *La función recibe los parámetros indicados y va a determinar si se va a aplicar retenciones a la entidad, y cuanto retener por cada retención
 ****************************************************************
-** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. True si terminó correctamente, False en otro caso
+** RETORNO: Retorna el importe a retener, el total de retenciones al mes y total de pagos. >0 si terminó correctamente, 0 si hubo error, -1 si no corresponde percepcion
 *#/**************************************************************
 
 
@@ -24268,11 +24697,13 @@ v_importeTot = 0.00
 
  IF ALLTRIM(_SYSAGENTERET) = 'S'
  
- 	IF TYPE('p_importe') = 'N'
+ 	IF TYPE('p_importe') = 'N' OR TYPE('p_importe') = 'Y'
  		v_importeTot = p_importe
  	ELSE
  		v_importeTot = 0.00
  	ENDIF 
+ 	
+ 	
  	****************************************************************
 	** 2- Verificar si a la entidad le corresponde retenciones. Ver en las retenciones asociadas a la entidad en la tabla: entidadret
 	****************************************************************
@@ -24410,17 +24841,14 @@ ENDIF
 			
 			
 		v_idretenr = &p_nomTablaRet..idreten
-		MESSAGEBOX("v_idretenr")
-		MESSAGEBOX(v_idretenr )
+		
 		IF v_idretenr = 0
 	
 
 			v_pventar = &p_nomTablaRet..pventa
 			v_idcomprobar =  comproObjtmp.getidcomprobante("RETENCION")
 			
-			MESSAGEBOX("v_idcomprobar")
-			MESSAGEBOX(v_idcomprobar)
-			
+		
 		SELECT &p_nomTablaRet
 			v_regis = RECNO()
 		
