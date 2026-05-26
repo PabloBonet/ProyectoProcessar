@@ -940,4 +940,19 @@ CREATE TABLE  `mailcomp` (
   KEY `idregistro` (`idregistro`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- 20260526--
+---CONTROLAR LOS ID COMPROBAS ---
+insert into mailentcomp select 0 as identcomp, 7 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 8 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 10 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 11 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 12 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 24 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 32 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 33 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 34 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 35 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 36 as idcomproba, entidad, 1 as idfnmail from entidades;
+insert into mailentcomp select 0 as identcomp, 14 as idcomproba, entidad, 1 as idfnmail from entidades;
+
 
