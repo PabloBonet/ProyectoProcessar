@@ -1521,8 +1521,9 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 	IF r_percep > 0
 	    g_totaldia   = v_factdiario
 	    g_percepdia  = v_percdiario + r_percep
-		*g_sujaperc   = (v_factdiario-v_percdiario) - s_sujaperc
-		g_sujaperc   = (v_factdiario-v_percdiario)
+		g_sujaperc   = (v_factdiario-v_percdiario) - s_sujaperc
+		
+		*g_sujaperc   = (v_factdiario-v_percdiario)
 
 	    g_impperc    = r_percep
 		v_campoArt   = ""
@@ -1850,7 +1851,7 @@ IF EMPTY(ALLTRIM(p_archivo)) = .T.
 ENDIF 
 
 
-v_sn = MESSAGEBOX("¿Confirma la actualización de las Retenciones?",4+32+256,"Actualizar Retenciones")
+v_sn = MESSAGEBOX("¿Confirma la actualización de las Retenciones? IMPORTANTE!: El archivo debe tener '.' como separador de decimal!",4+32+256,"Actualizar Retenciones")
 
 IF v_sn <> 6
 
@@ -2638,7 +2639,7 @@ IF EMPTY(ALLTRIM(p_archivo)) = .T.
 ENDIF 
 
 
-v_sn = MESSAGEBOX("¿Confirma la actualización de las Percepciones?",4+32+256,"Actualizar Percepciones")
+v_sn = MESSAGEBOX("¿Confirma la actualización de las Percepciones? IMPORTANTE!: El archivo debe tener '.' como separador de decimal!",4+32+256,"Actualizar Percepciones")
 
 
 IF v_sn <> 6
@@ -3054,8 +3055,8 @@ CASE ALLTRIM(p_funcion) == 'PER_IIBB_STAFE_IFN'
 				
 				v_entidad = upPIIBBSTAFE.entidad
 				v_idimpuper = upPIIBBSTAFE.idimpper
-				v_enconvenio = IIF(upIIBBSTAFE.tipocont ='C','S','N')
-								
+				v_enconvenio = IIF(upPIIBBSTAFE.tipocont ='C','S','N')
+								   
 				lamatriz(1,1) = 'identper'
 				lamatriz(1,2) = ALLTRIM(STR(v_identper))
 				lamatriz(2,1) = 'entidad'
