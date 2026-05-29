@@ -956,3 +956,85 @@ insert into mailentcomp select 0 as identcomp, 36 as idcomproba, entidad, 1 as i
 insert into mailentcomp select 0 as identcomp, 14 as idcomproba, entidad, 1 as idfnmail from entidades;
 
 
+
+
+--- 20260528 ---
+
+ALTER TABLE `r_artpendiente` ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idmate`(`idmate`);
+
+
+ALTER TABLE `r_articulostock` ADD INDEX `articulo`(`articulo`);
+
+
+ALTER TABLE `ajustestockh` ADD INDEX `idtipomov`(`idtipomov`);
+
+ALTER TABLE `r_artocdpendiente` ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idmate`(`idmate`);
+
+ALTER TABLE `r_bancosaldos` ADD INDEX `idtipocta`(`idtipocta`),
+ ADD INDEX `idbanco`(`idbanco`);
+
+
+ALTER TABLE `r_ccb_cajaingreso` ADD INDEX `iddetacobro`(`iddetacobro`),
+ ADD INDEX `idregistro`(`idregistro`),
+ ADD INDEX `idtipopago`(`idtipopago`),
+ ADD INDEX `pventa`(`pventa`),
+ ADD INDEX `idcomproba`(`idcomproba`),
+ ADD INDEX `entidad`(`entidad`),
+ ADD INDEX `idtipocomp`(`idtipocomp`),
+ ADD INDEX `chnumero`(`chnumero`),
+ ADD INDEX `idcupon`(`idcupon`),
+ ADD INDEX `idtarjeta`(`idtarjeta`);
+
+ALTER TABLE `r_ccb_pagosprov` ADD INDEX `iddetapago`(`iddetapago`),
+ ADD INDEX `idregistro`(`idregistro`),
+ ADD INDEX `idtipopago`(`idtipopago`),
+ ADD INDEX `pventa`(`pventa`),
+ ADD INDEX `idcomproba`(`idcomproba`),
+ ADD INDEX `numero`(`numero`),
+ ADD INDEX `entidad`(`entidad`),
+ ADD INDEX `idtipocomp`(`idtipocomp`),
+ ADD INDEX `idregiclk`(`idregiclk`),
+ ADD INDEX `idcheque`(`idcheque`),
+ ADD INDEX `chnumero`(`chnumero`),
+ ADD INDEX `idcupon`(`idcupon`);
+
+ALTER TABLE `r_ccb_recibos` ADD INDEX `iddetacobro`(`iddetacobro`),
+ ADD INDEX `idregistro`(`idregistro`),
+ ADD INDEX `idtipopago`(`idtipopago`),
+ ADD INDEX `idcomproba`(`idcomproba`),
+ ADD INDEX `pventa`(`pventa`),
+ ADD INDEX `entidad`(`entidad`),
+ ADD INDEX `idtipocomp`(`idtipocomp`),
+ ADD INDEX `idregiclk`(`idregiclk`),
+ ADD INDEX `idcheque`(`idcheque`),
+ ADD INDEX `chnumero`(`chnumero`),
+ ADD INDEX `idcupon`(`idcupon`),
+ ADD INDEX `idtarjeta`(`idtarjeta`);
+
+ALTER TABLE `r_gruposall` ADD INDEX `idmiembro`(`idmiembro`),
+ ADD INDEX `idgrupo`(`idgrupo`),
+ ADD INDEX `nombreg`(`nombreg`),
+ ADD INDEX `idtipogrup`(`idtipogrup`),
+ ADD INDEX `codarbol`(`codarbol`),
+ ADD INDEX `codpadre`(`codpadre`);
+
+ALTER TABLE `r_listaprea` ADD INDEX `idlista`(`idlista`),
+ ADD INDEX `idlistap`(`idlistap`),
+ ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `linea`(`linea`),
+ ADD INDEX `idsublinea`(`idsublinea`);
+
+ALTER TABLE `r_otpendientes` ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idmate`(`idmate`);
+
+ALTER TABLE `r_otpendientesec` ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idmate`(`idmate`);
+
+ALTER TABLE `r_recibossaldo` ADD INDEX `idcomproba`(`idcomproba`);
+
+
+
+
+
