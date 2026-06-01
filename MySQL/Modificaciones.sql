@@ -1036,5 +1036,11 @@ ALTER TABLE `r_recibossaldo` ADD INDEX `idcomproba`(`idcomproba`);
 
 
 
+ALTER TABLE `facturas` ADD INDEX `entidadaso`(`entidadaso`);
+
+
+-- 20260601 --
+ALTER TABLE `mailfuncion` ADD INDEX `funcion`(`funcion`);
+
 
 
