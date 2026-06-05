@@ -1041,6 +1041,7 @@ ALTER TABLE `facturas` ADD INDEX `entidadaso`(`entidadaso`);
 
 -- 20260601 --
 ALTER TABLE `mailfuncion` ADD INDEX `funcion`(`funcion`);
+ALTER TABLE `maillog` MODIFY COLUMN `timestamp` DATETIME NOT NULL DEFAULT current_timestamp();
 
 
 

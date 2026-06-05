@@ -6,7 +6,7 @@ FUNCTION CTRLF12
 ENDFUNC 
 
 
-FUNCTION LEECONFIG()
+FUNCTION LEECONFIG()crea
 
 	
 	v_llave = 'Processar'
@@ -12532,7 +12532,7 @@ IF vtmp_recalcular = .t. THEN
 *!*			sqlmatriz(3)=" left join r_articulostock s on s.articulo = a.articulo  left join ultimoartcosto u on a.articulo = u.articulo " 
 
 			sqlmatriz(1)=" select a.articulo,a.detalle,a.unidad,a.abrevia,a.codbarra,(a.costo*m.cotizacion) as costo,a.linea,a.idsublinea,a.ctrlstock,a.observa,a.ocultar,a.stockmin,a.desc1,a.desc2,a.desc3,a.desc4,a.desc5,a.reca1,a.moneda,a.costo as costom,a.timestamp, "
-			sqlmatriz(2)=" l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea, ifnull(f.base,1) as base, ifnull(f.unidadf, a.unidad) as unidadf "
+			sqlmatriz(2)=" l.detalle as detalinea, IFNULL(s.stocktot,0) as stocktot,IFNULL(u.fecha,'') as fechaact, ifnull(sl.sublinea,SPACE(150)) as sublinea, ifnull(f.base,1) as base, ifnull(f.unidadf, a.unidad) as unidadf, a.idtipoart "
 			sqlmatriz(3)=" from articulos a left join articulosf f on a.articulo = f.articulo left join lineas l on l.linea = a.linea left join sublineas sl on sl.idsublinea = a.idsublinea left join monedas m on a.moneda = m.moneda "
 			sqlmatriz(4)=" left join r_articulostock s on s.articulo = a.articulo  left join ultimoartcosto u on a.articulo = u.articulo "
 		verror=sqlrun(vconeccionF,fvarticulos_sql)
@@ -12583,7 +12583,7 @@ IF vtmp_recalcular = .t. THEN
 		SELECT p.idlista, SUBSTR(p.detalle+SPACE(200),1,200) as detallep, p.vigedesde, p.vigehasta, p.margen as margenp, p.condvta,  p.idlistap, p.actualiza, l.idlistah, ;  
 			a.articulo, SUBSTR(a.detalle+SPACE(200),1,200) as detalle, a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea,a.detalinea,a.idsublinea,a.sublinea, a.ctrlstock, a.ocultar, ;
 			a.stockmin,a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.reca1, a.moneda, a.costom, ;
-			a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact, p.habilita, a.base, a.unidadf ;
+			a.costo as pcosto, l.margen , a.costo as pventa , i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,l.fechaact, p.habilita, a.base, a.unidadf, a.idtipoart ;
 		 	FROM &fvlistaprecioh_sql l ;
 			LEFT JOIN &fvarticulos_sql a ON ALLTRIM(l.articulo)==ALLTRIM(a.articulo) ;
 			LEFT JOIN &fvlistapreciop_sql p  ON l.idlista = p.idlista ;
@@ -12594,7 +12594,7 @@ IF vtmp_recalcular = .t. THEN
 		SELECT 'Lista Precio Base - Costos ' as detallep, a.articulo, a.detalle, ;
 			a.unidad, a.abrevia, a.codbarra, a.costo as costoa, a.linea, a.detalinea, a.idsublinea, a.sublinea, a.ctrlstock, a.ocultar, ;
 			a.stockmin, a.stocktot, a.desc1, a.desc2, a.desc3,  a.desc4,  a.desc5, a.reca1, a.moneda,a.costom, ;
-			a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,a.fechaact, a.base, a.unidadf   ;
+			a.costo as pcosto, a.costo as pventa, i.razon as razonimpu, a.costo as impuestos, a.costo as pventatot,a.fechaact, a.base, a.unidadf, a.idtipoart   ;
 			FROM &fvarticulos_sql a ;
 			LEFT JOIN &fvarticulosimp_sql i  ON ALLTRIM(a.articulo) == ALLTRIM(i.articulo) ;
 			INTO TABLE &fvarticulos
@@ -20244,7 +20244,7 @@ PARAMETERS p_ListaP
 
 		SELECT idlista, STRTRAN(STRTRAN(detallep,',',' '),';',' ') as detallep, vigedesde, vigehasta, margenp, condvta,  idlistap, actualiza,idlistah, articulo, ;
 			STRTRAN(STRTRAN(detalle,',',' '),';',' ') as detalle, unidad, abrevia, codbarra, costoa, linea, detalinea, idsublinea, sublinea, ctrlstock, ocultar, stockmin, IIF(ISNULL(stocktot),0,stocktot) as stocktot, ;
-			desc1, desc2, desc3,  desc4, desc5, reca1, moneda,costom, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact, habilita, base, unidadf ;
+			desc1, desc2, desc3,  desc4, desc5, reca1, moneda,costom, pcosto, margen, pventa, razonimpu, impuestos, pventatot, fechaact, habilita, base, unidadf, idtipoart ;
 		from &p_ListaPA INTO TABLE p_listaPACSV
 		
 		SELECT p_listaPACSV
@@ -21482,6 +21482,9 @@ PARAMETERS cp_idcomprobao, cp_id
 *******************************************
 *#/----------------------------------------
 
+	IF TYPE('_SYSCMPASOC') = 'U'
+		RETURN ""
+	ENDIF 
 	IF EMPTY(_SYSCMPASOC) OR SUBSTR((_SYSCMPASOC+' '),1,1)='N' THEN 
 		RETURN ""
 	ENDIF 
@@ -31224,7 +31227,6 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 *#/---------------------------
 
 
-
 	IF (TYPE('pUbicacion')<>'C') OR (TYPE('pNombreArchivo')<>'C')
 		RETURN .F.
 	ENDIF 
@@ -31243,13 +31245,29 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 	
 	IF v_existeArchivo = .T.
 
+
+	
+		*** Creo el objeto para obtener los estados del correo ***
+		
+		
+		
+		estadomailObj 	= CREATEOBJECT('estadosmailclass')
+	
+
+		v_idestCorreoPENDIENTE = estadomailObj.getidestado("PENDIENTE")
+		v_idestCorreoENVIADO = estadomailObj.getidestado("ENVIADO")
+		v_idestCorreoERROR = estadomailObj.getidestado("ERROR")
+		v_idestCorreoSIN_CORREO = estadomailObj.getidestado("SIN_CORREO")
+		
+		
 			** Si el archivo existe -> abro y busco para enviar
 		
 		IF TYPE('tmpenvio') ='U'
-			CREATE TABLE tmpenvio FREE (archivo C(250), correo c(250), cliente c(250),idregistro C(100), idcomproba C(100), tabla C(100))		
+			CREATE TABLE tmpenvio FREE (archivo C(250), correo c(250), entidad c(250),idregistro C(100), idcomproba C(100), tabla C(100))		
 			
 		ENDIF 
-			
+		
+			CREATE TABLE enviotemp FREE (archivo C(250), correo c(250), entidad c(250),idregistro C(100), idcomproba C(100), tabla C(100))		
 		SELECT tmpenvio 
 	
 	
@@ -31259,14 +31277,15 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 
 
 		SELECT * FROM tmpenvio  order BY correo INTO TABLE envCorreo WHERE (!(UPPER(ALLTRIM(correo))=="E-MAIL ASOCIADO") AND !EMPTY(correo) AND !(SUBSTR(correo,1,1)=='*'))
-		MESSAGEBOX("A3")
+*!*				SELECT * FROM tmpenvio  order BY correo INTO TABLE envCorreo WHERE (!(UPPER(ALLTRIM(correo))=="E-MAIL ASOCIADO") AND  !(SUBSTR(correo,1,1)=='*'))
+
 		v_correoDes = ""
 		v_archivosEnv = ""
 		SELECT envCorreo
 		GO TOP 
 		
 		IF NOT EOF()
-				
+			
 			v_usuarioEnv = ""
 			v_encontroConf = .F.
 			v_tamArreglo = 0
@@ -31305,7 +31324,6 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 
 			ENDIF 
 
-						MESSAGEBOX("A4")
 		
 			SELECT envCorreo
 			GO TOP 
@@ -31314,14 +31332,36 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 			vcanregi = RECCOUNT()
 			=ViewBarProgress(0,vcanregi,"Consultando Comprobantes:")		
 
+			ZAP IN enviotemp 
+			
+			SELECT envCorreo
+			GO TOP 
+			
 			DO WHILE NOT EOF()
-				
+				v_idmailestado = v_idestCorreoPENDIENTE
 				v_correo 	= envCorreo.correo
 				v_archivo 	= envCorreo.archivo
+*!*					v_archivo 	= pUbicacion+v_archivo
+				
+*!*					v_idcomprobaMail= VAL(envCorreo.idcomproba)
+*!*					v_idregistroMail= VAL(envCorreo.idregistro)
+*!*					v_entidadMail	= VAL(envCorreo.entidad)
+				v_idcomprobaMails= envCorreo.idcomproba
+				v_idregistroMails= envCorreo.idregistro
+				v_entidadMails	= envCorreo.entidad
+				v_tablaMail 	= envCorreo.tabla
+				v_funcionMail 	= "ENVIOCOMPROBANTES"
+				v_detalleMail	= "ENVIO AUTOMÁTICO DE CORREOS" 
+				v_observaMail	= ALLTRIM(v_archivo)
+				
+
+				INSERT INTO enviotemp VALUES (v_archivo,v_correo ,v_entidadMails,v_idregistroMails,v_idcomprobaMails,v_tablaMail)
+				
 				v_archivo 	= pUbicacion+v_archivo
 				
 				v_marcaenvio = ""
-			
+		
+				
 				IF ALLTRIM(v_correo) == ALLTRIM(v_correoDes)
 
 					v_archivosEnv = v_archivosEnv +"#"+ ALLTRIM(v_archivo)
@@ -31331,7 +31371,6 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 					IF EMPTY(ALLTRIM(v_correoDes)) =.F.
 
 						IF v_encontroConf = .T. AND v_tamArreglo > 0
-
 						
 							v_elemento = (v_indice%v_tamArreglo)+1
 							
@@ -31341,10 +31380,50 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 							v_archivosEnv  = ""
 							v_marcaenvio = "*"
 							
+							
+							DO CASE
+								CASE v_ret = 1 
+									v_idmailestado = v_idestCorreoENVIADO
+								OTHERWISE
+									v_idmailestado = v_idestCorreoERROR	
+							ENDCASE
+						
+						
+							SELECT enviotemp 
+							GO TOP 
+							
+							
+							DO WHILE NOT EOF()
+								
+								v_idcomprobaMail= VAL(enviotemp.idcomproba)
+								v_idregistroMail= VAL(enviotemp.idregistro)
+								v_entidadMail	= VAL(enviotemp.entidad)
+								v_tablaMail 	= enviotemp.tabla
+								v_funcionMail 	= "ENVIOCOMPROBANTES"
+								v_detalleMail	= "ENVIO AUTOMÁTICO DE CORREOS" 
+								v_observaMail	= ALLTRIM(enviotemp.archivo)
+								
+							
+								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
+							
+								IF v_retReg = .F.
+									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									RETURN .f.
+								ENDIF 
+								
+								SELECT enviotemp
+								SKIP 1
+							ENDDO
+							
+							
+							ZAP IN 	enviotemp 						
+							
+							
 							v_indice = v_indice + 1 
 							
 													
-						ELSE	
+						ELSE
+						
 						
 *!*								v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
 *!*								v_archivosEnv  = ""
@@ -31352,14 +31431,68 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 
 						ENDIF 
 						
-															
+					ELSE
+					
+						** NO TIENE CORREO **
+						
+*!*							IF EMPTY(ALLTRIM(v_correo)) = .T.
+*!*								v_idmailestado = v_idestCorreoSIN_CORREO 	
+*!*								v_idcomprobaMail= VAL(enviotemp.idcomproba)
+*!*								v_idregistroMail= VAL(enviotemp.idregistro)
+*!*								v_entidadMail	= VAL(enviotemp.entidad)
+*!*								v_tablaMail 	= enviotemp.tabla
+*!*								v_funcionMail 	= "ENVIOCOMPROBANTES"
+*!*								v_detalleMail	= "ENVIO AUTOMÁTICO DE CORREOS" 
+*!*								v_observaMail	= ALLTRIM(enviotemp.archivo)
+*!*								
+*!*							
+*!*								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
+*!*							
+*!*								IF v_retReg = .F.
+*!*									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+*!*									RETURN .f.
+*!*								ENDIF 
+*!*														
+*!*							ENDIF 
+
+						IF EMPTY(ALLTRIM(v_correo)) = .T.
+					
+							SELECT enviotemp 
+							GO TOP 
+							
+							
+							DO WHILE NOT EOF()
+								v_idmailestado = v_idestCorreoSIN_CORREO
+								v_idcomprobaMail= VAL(enviotemp.idcomproba)
+								v_idregistroMail= VAL(enviotemp.idregistro)
+								v_entidadMail	= VAL(enviotemp.entidad)
+								v_tablaMail 	= enviotemp.tabla
+								v_funcionMail 	= "ENVIOCOMPROBANTES"
+								v_detalleMail	= "ENVIO AUTOMÁTICO DE CORREOS" 
+								v_observaMail	= ALLTRIM(enviotemp.archivo)
+								
+							
+								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
+							
+								IF v_retReg = .F.
+									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									RETURN .f.
+								ENDIF 
+								
+								SELECT enviotemp
+								SKIP 1
+							ENDDO
+							
+							
+							ZAP IN 	enviotemp 	
+						ENDIF 									
 					ENDIF 
 					v_correoDes= v_correo
 					v_archivosEnv = ALLTRIM(v_archivo)
-							
+					
 				
 				ENDIF 
-			
+		
 				SELECT envCorreo
 				replace correo WITH v_marcaenvio+ALLTRIM(correo)
 				=ViewBarProgress(RECNO(),vcanregi,"Consultando Comprobantes:")	
@@ -31367,54 +31500,138 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 				SKIP 1
 
 			ENDDO
-			MESSAGEBOX("A5")		
-			
+		
 			SELECT envCorreo
 			IF EOF()
 			
 				v_marcaenvio = ""
 				IF EMPTY(ALLTRIM(v_correoDes)) =.F. THEN 
-					
+				
 					IF v_encontroConf = .T. AND v_tamArreglo > 0
-						
-						
+					
 						v_elemento = (v_indice%v_tamArreglo)+1
 							
 						v_usuarioEnv = usuarioscm[v_elemento]
 										
 						v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo,v_usuarioEnv) && Retorno: 1: si es correcto; -1 si falta correo destino; -2 si no puede obtener el correo para envio; -3 si hubo un error en la configuración
-												MESSAGEBOX("A5.2")
+						
+						
 						v_archivosEnv  = ""
 															
 *!*							registrarlogmail(
 						
 						DO CASE
-						CASE v_ret = 1 
-							
-						
-
-						OTHERWISE
-
+							CASE v_ret = 1 
+								v_idmailestado = v_idestCorreoENVIADO
+							OTHERWISE
+								v_idmailestado = v_idestCorreoERROR	
 						ENDCASE
 						
-						
-						
-						
+							SELECT enviotemp 
+							GO TOP 
+							DO WHILE NOT EOF()
+								
+								v_idcomprobaMail= VAL(enviotemp .idcomproba)
+								v_idregistroMail= VAL(enviotemp .idregistro)
+								v_entidadMail	= VAL(enviotemp .entidad)
+								v_tablaMail 	= enviotemp .tabla
+								v_funcionMail 	= "ENVIOCOMPROBANTES"
+								v_detalleMail	= "ENVIO AUTOMÁTICO DE CORREOS" 
+								v_observaMail	= ALLTRIM(enviotemp.archivo)
+								
+				
+								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
+							
+								IF v_retReg = .F.
+									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									RETURN .f.
+								ENDIF 
+								
+								SELECT enviotemp
+								SKIP 1
+							ENDDO
+							
+							
+							ZAP IN 	enviotemp 						
+							
+*!*							
+*!*							
+*!*							v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
+*!*								
+*!*								IF v_retReg = .F.
+*!*									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+*!*								ENDIF 
+*!*							
+																	
 						
 							
 					ELSE	
 						
 *!*							v_ret = enviarCorreo(v_correoDes, v_archivosEnv , pasunto, pcuerpo)
 *!*							v_archivosEnv  = ""
+
+					
 							
 					ENDIF 
 					SELECT envCorreo
 					v_marcaenvio = "*"
 					replace correo WITH v_marcaenvio+ALLTRIM(correo)
+					
+				ELSE
+					** NO TIENE CORREO **
+						
+*!*							IF EMPTY(ALLTRIM(v_correo)) = .T.
+*!*								v_idmailestado = v_idestCorreoSIN_CORREO 	
+*!*								v_idcomprobaMail= VAL(enviotemp.idcomproba)
+*!*								v_idregistroMail= VAL(enviotemp.idregistro)
+*!*								v_entidadMail	= VAL(enviotemp.entidad)
+*!*								v_tablaMail 	= enviotemp.tabla
+*!*								v_funcionMail 	= "ENVIOCOMPROBANTES"
+*!*								v_detalleMail	= "ENVIO AUTOMÁTICO DE CORREOS" 
+*!*								v_observaMail	= ALLTRIM(enviotemp.archivo)
+*!*								
+*!*							
+*!*								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
+*!*							
+*!*								IF v_retReg = .F.
+*!*									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+*!*									RETURN .f.
+*!*								ENDIF 
+*!*							ENDIF 
+						IF EMPTY(ALLTRIM(v_correo)) = .T.
+					
+							SELECT enviotemp 
+							GO TOP 
+							
+							
+							DO WHILE NOT EOF()
+								v_idmailestado = v_idestCorreoSIN_CORREO
+								v_idcomprobaMail= VAL(enviotemp.idcomproba)
+								v_idregistroMail= VAL(enviotemp.idregistro)
+								v_entidadMail	= VAL(enviotemp.entidad)
+								v_tablaMail 	= enviotemp.tabla
+								v_funcionMail 	= "ENVIOCOMPROBANTES"
+								v_detalleMail	= "ENVIO AUTOMÁTICO DE CORREOS" 
+								v_observaMail	= ALLTRIM(enviotemp.archivo)
+								
+							
+								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
+							
+								IF v_retReg = .F.
+									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									RETURN .f.
+								ENDIF 
+								
+								SELECT enviotemp
+								SKIP 1
+							ENDDO
+							
+							
+							ZAP IN 	enviotemp 	
+						ENDIF 					
 				ENDIF 
 			
 			ENDIF 
-		MESSAGEBOX("A6")
 
 			*Marco el archivo con los archivos enviados 
 			SELECT envCorreo
@@ -31436,13 +31653,13 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 			GO TOP 
 
 			DO WHILE NOT EOF() 
-				v_linea = ALLTRIM(tmpenvio.archivo)+";"+alltrim(tmpenvio.correo)+";"+ALLTRIM(tmpenvio.cliente)+";"+ALLTRIM(tmpenvio.idregistro)+";"+ALLTRIM(tmpenvio.idcomproba)+";"+ALLTRIM(tmpenvio.tabla)
+				v_linea = ALLTRIM(tmpenvio.archivo)+";"+alltrim(tmpenvio.correo)+";"+ALLTRIM(tmpenvio.entidad)+";"+ALLTRIM(tmpenvio.idregistro)+";"+ALLTRIM(tmpenvio.idcomproba)+";"+ALLTRIM(tmpenvio.tabla)
 				=fputs(p, v_linea )
 				SELECT  tmpenvio
 				SKIP 
 			ENDDO 		
 			=fclose(p)
-				MESSAGEBOX("A7")	
+				
 		ENDIF 
 						
 			
@@ -31476,7 +31693,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 			x = x+1
 			
 		ENDDO
-		MESSAGEBOX("A8")
+	
 *!*			If nSubd > 0
 *!*				MESSAGEBOX(nSubd)
 *!*				FOR EACH 
@@ -31500,7 +31717,6 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 *!*				ENDFOR  
 	ENDIF
 
-MESSAGEBOX("A9")
 	RETURN .T.
 	
 ENDFUNC 
@@ -31520,8 +31736,6 @@ ENDFUNC
 *** Retorno: 1: si es correcto; -1 si falta correo destino; -2 si no puede obtener el correo para envio; -3 si hubo un error en la configuración
 *#/---------------------------
  
-
- 
 	 IF EMPTY(ALLTRIM(pcorreos)) = .T.
 	 	 	
 	 	RETURN -1
@@ -31530,7 +31744,7 @@ ENDFUNC
 	 
 	 v_correocfg	= cargaCfgCorreo(pusuarioEnv)
 	 
-	 MESSAGEBOX(v_correocfg)
+
 	LOCAL loMsg, lcFile, loErr
 
 	TRY
@@ -31549,6 +31763,7 @@ ENDFUNC
 	  
 	  ** Verifica el correo de copia del sistema para recepcion de mails enviados _SYSMAILENVIADOS
 	  v_sysmailenviados = ""
+	  
 	  IF TYPE("_SYSMAILENVIADOS")= "C" THEN 
 	  		IF AT('@',_SYSMAILENVIADOS) > 0 THEN
 		  		v_sysmailenviados = _SYSMAILENVIADOS  
@@ -31563,6 +31778,8 @@ ENDFUNC
 	    .From = v_correoEnv
 
 		.To = ALLTRIM(pcorreos)
+		
+		.bcc = ALLTRIM(v_sysmailenviados)
 	*!*	    *- Notificación de lectura
 	*!*	    .Fields("urn:schemas:mailheader:disposition-notification-to") = .From
 	*!*	    .Fields("urn:schemas:mailheader:return-receipt-to") = .From
@@ -31620,7 +31837,7 @@ ENDFUNC
 		
 		RETURN -3
 	ELSE
-		MESSAGEBOX("Correo enviado correctamente: "+ALLTRIM(pcorreos),0+64+256,"Enviar Correo",2000)
+*!*			MESSAGEBOX("Correo enviado correctamente: "+ALLTRIM(pcorreos),0+64+256,"Enviar Correo",2000)
 		
 		RETURN 1
 	ENDIF 
@@ -34160,6 +34377,13 @@ FUNCTION ENVIOCOMPROBANTES
 	
 	*** Valido parametro de IP/HOST ***
 	
+	
+	
+	
+	
+	
+	
+	
 	IF TYPE('v_IPHost') <> 'C'
 		MESSAGEBOX("La variable _SYSENVCORREOS NO está configurada correctamente, Revisar parámetro: IP|HOST ",0+16+256)
 		RETURN .F.
@@ -34172,7 +34396,7 @@ FUNCTION ENVIOCOMPROBANTES
 			RETURN .T. && NO se corresponde a la pc de actualización
 		ENDIF 
 	ELSE
-		IF ALLTRIM(v_IPHost) == ALLTRIM(_syshost)
+		IF ALLTRIM(v_IPHost) <> ALLTRIM(_syshost)
 			RETURN .T. && NO se corresponde a la pc de actualización
 		ENDIF 
 	ENDIF 
@@ -34253,7 +34477,8 @@ FUNCTION ENVIOCOMPROBANTES
 		sqlmatriz(2)=" left join comprobantes c on m.idcomproba = c.idcomproba) as tmp  left join "+v_tablamail+" f on tmp.idcomproba = f.idcomproba and tmp.entidad = f.entidad "
 		sqlmatriz(3)=" left join ultimoestado u on f."+v_nomindmail+"= u.id and u.tabla = '"+v_tablamail+"' where f. fecha > '"+ALLTRIM(v_fechamail)+"' and (u.idestador = 1 or u.idestador = 4)) as t left join puntosventa v on t.pventa = v.pventa "
 		sqlmatriz(4)=" left join mailcomp m on t.idcomproba = m.idcomproba and t.idregistro = m.idregistro left join maillog l on m.idmaillog = l.idmaillog left join mailestado e on l.idmailestado = e.idmailestado left join entidades i on t.entidad = i.entidad "
-		sqlmatriz(5)=" where isnull(l.idmaillog)  = true or e.estado <> 'ENVIADO' "
+		sqlmatriz(5)=" where isnull(l.idmaillog)  = true or e.estado = 'PENDIENTE' "
+			
 	
 	
 		verror=sqlrun(vconeccionC,"compromail_sql")
@@ -34337,15 +34562,13 @@ FUNCTION ENVIOCOMPROBANTES
 		SKIP 1
 	ENDDO
 	
-	MESSAGEBOX("mailcomprobantes")
 	SELECT mailcomprobantes
 	GO TOP 
 		
 					
 	
 	v_retm =	generarcomprobantes("mailcomprobantes",v_ubicacionPDF )
-	MESSAGEBOX(v_retm)
-
+	
 	IF EMPTY(ALLTRIM(v_retm)) = .T.
 
 		MESSAGEBOX("Error al generar los comprobantes",0+16+256,"Generar comprobantes")
@@ -34417,8 +34640,11 @@ PARAMETERS p_tablaCompro, p_ubicacion
 			v_comproPdfg = p_ubicacion+"\"+ALLTRIM(v_nombrearcg)
 
 			imprimirFactura(v_idregistrog, v_electrog,3,v_comproPdfg)
-*!*			CASE ALLTRIM(v_tablagcomp) == "recibos"
-*!*				imprimirRecibo(v_idregistro,v_electro,3,p_ubicacion)
+*!*			CASE ALLTRIM(v_tablagcompg) == "recibos"
+*!*			
+*!*				v_comproPdfg = p_ubicacion+"\"+ALLTRIM(v_nombrearcg)
+
+*!*				imprimirRecibo(v_idregistrog,v_electrog,3,v_comproPdfg)
 *!*			CASE ALLTRIM(v_tablagcomp) == "remitos"
 *!*				imprimirRemito(v_idregistro,v_electro,3,p_ubicacion)
 		OTHERWISE
@@ -34501,6 +34727,7 @@ PARAMETERS p_archivoenv
 **	PARAMETERS: p_archivoenv: ubicación del archivo csv con los datos de envio
 **  RETORNO: Retorna True si el proceso no dio error, False en caso de un error.
 *#/****************************
+
 v_retenv = .F.
 
 	IF EMPTY(ALLTRIM(p_archivoenv)) = .T.
@@ -34518,7 +34745,7 @@ v_retenv = .F.
 			
 	V_NombreArchivo = JUSTFNAME(v_pathpdfs)
 	V_asunto	= "No responder este e-mail. Enviamos comprobantes adjuntos. "
-	v_cuerpo	= "No responda este correo, le enviamos sus documento/s o factura/s."+CHR(13)+"Cordialmente."+CHR(13)+CHR(13)+_SYSEMPRESA+CHR(13)+;
+	v_cuerpo	= "No responda este correo, le enviamos sus documento/s o factura/s."+CHR(13)+"Saludos cordiales."+CHR(13)+CHR(13)+_SYSEMPRESA+CHR(13)+;
 					_SYSDIRECCION+CHR(13)+IIF(!EMPTY(_SYSCUIT),"Cuit: "+_SYSCUIT+CHR(13),"")+IIF(!EMPTY(_SYSTELEFONO),"Tel.: "+_SYSTELEFONO+CHR(13),"")+ ;
 				 	IIF(!EMPTY(_SYSWEB),"Web : "+_SYSWEB,"")
 
@@ -34526,16 +34753,290 @@ v_retenv = .F.
 	
 	WAIT WINDOW "Enviando Correos...!" nowait 
 	
-	MESSAGEBOX(v_Ubicacion)
-	MESSAGEBOX(v_NombreArchivo)
-	MESSAGEBOX(v_asunto)
-	MESSAGEBOX(v_cuerpo)
 	
 	v_retenv = enviarCorreoArchivo (v_Ubicacion, v_NombreArchivo, v_asunto, v_cuerpo,3)
 
 	WAIT CLEAR 
-	MESSAGEBOX("Proceso Finalizado!...",0+48,"Enviar E-Mails con Facturas ")
+*!*		MESSAGEBOX("Proceso Finalizado!...",0+48,"Enviar E-Mails con Facturas ")
 
 RETURN v_retenv
 
+ENDFUNC
+
+
+
+
+
+FUNCTION registrarEnvioCorreo
+PARAMETERS P_idcomprobaMail, P_idregistroMail, P_funcionMail, P_idmailestado, P_entidadMail,P_correoDes, P_detalleMail,P_observaMail
+*#/****************************
+*** FUNCIÓN PARA REGISTRAR EL ENVIO DE CORREO ***
+** 	La función va a guardar en el log de correo  y en la asociación de mail-comprobante la información asociada al envio 
+**	PARAMETERS: P_idcomprobaMail: ID del comprobante asociado en el correo
+**				P_idregistroMail: ID del registro del comprobante asociado en el correo
+**				P_funcionMail: Función de envio utilizada. Puede ser vacia
+**				P_idmailestado: ID del estado del envio de correo
+**				P_entidadMail: Entidad asociada al envio de correo 
+**				P_correoDes: Dirección de correo Destino utilizada
+**				P_detalleMail: Descripción del correo. Puede ser vacia
+**				P_observaMail: Observaciones del correo. Puede ser vacia
+**  RETORNO: Retorna True si el proceso no dio error, False en caso de un error.
+*#/****************************
+
+	v_retornoRegEnv = .F.
+
+	IF P_idcomprobaMail <= 0 OR P_idregistroMail <= 0 OR P_idmailestado <= 0 
+	
+		RETURN .F.
+	ENDIF 
+	
+
+	
+	** Abro conexion **
+	vconeccionrec=abreycierracon(0,_SYSSCHEMA)
+	
+	v_idfuncionMail = 0
+	
+	IF EMPTY(ALLTRIM(P_funcionMail)) = .F.
+		sqlmatriz(1)=" select  * from mailfuncion where funcion = '"+ALLTRIM(P_funcionMail)+"'"
+		
+
+		verror=sqlrun(vconeccionrec,"funcionmail_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la función de envio ",0+48+0,"Error")
+		*** me desconecto	
+			=abreycierracon(vconeccionrec,"")
+		    RETURN  .F.
+		ENDIF 
+		
+		
+		SELECT funcionmail_sql
+		GO TOP 
+		
+		IF NOT EOF()
+		
+			v_idfuncionMail = funcionmail_sql.idmailfn 
+			
+		ELSE
+			v_idfuncionMail = 0
+		ENDIF 
+	ELSE
+		v_idfuncionMail = 0
+	ENDIF 
+	
+	
+
+	*** Inserto en la tabla 'maillog' ***
+	
+	DIMENSION lamatrizrec1(7,2)
+
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+
+	
+	v_idmaillog = 0
+	
+		
+	lamatrizrec1(1,1)='idmaillog'
+	lamatrizrec1(1,2)=ALLTRIM(STR(v_idmaillog))
+	lamatrizrec1(2,1)='idmailestado'
+	lamatrizrec1(2,2)=ALLTRIM(STR(P_idmailestado))
+	lamatrizrec1(3,1)='idmailfn'
+	lamatrizrec1(3,2)=ALLTRIM(STR(v_idfuncionMail))
+	lamatrizrec1(4,1)='entidad'
+	lamatrizrec1(4,2)=ALLTRIM(STR(P_entidadMail))
+	lamatrizrec1(5,1)='detalle'
+	lamatrizrec1(5,2)="'"+ALLTRIM(P_detalleMail)+"'"
+	lamatrizrec1(6,1)='email' 
+	lamatrizrec1(6,2)="'"+ALLTRIM(P_correoDes)+"'"
+	lamatrizrec1(7,1)='observa'
+	lamatrizrec1(7,2)="'"+alltrim(P_observaMail)+"'"
+	
+	
+	p_tabla     = 'maillog'
+	p_matriz    = 'lamatrizrec1'
+	
+	p_conexion  = vconeccionrec
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en el registro del log de correo",0+48+0,"Error")
+	    *** me desconecto	
+		=abreycierracon(vconeccionrec,"")
+		RETURN .F.
+	ENDIF	
+	
+	
+	
+	
+	*** Obtengo el último id del log de correo ***
+	
+	sqlmatriz(1)=" select last_insert_id() as maxid "
+	verror=sqlrun(vconeccionrec,"ultId_ml")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice de log",0+48+0,"Error")
+		=abreycierracon(vconeccionrec,"")	
+	    RETURN .F.
+	ENDIF 
+	SELECT ultId_ml
+	GO TOP 
+	v_idmaillog_Ultimo = VAL(ultId_ml.maxid)
+	USE IN ultId_ml
+
+	v_idmaillog = v_idmaillog_Ultimo 
+
+	
+	
+	
+	*** Inserto en la tabla 'mailcomp' ***
+	
+	
+	
+		
+	DIMENSION lamatrizrec2(4,2)
+
+	p_tipoope     = 'I'
+	p_condicion   = ''
+	v_titulo      = " EL ALTA "
+
+	
+	v_idmailcomp = 0
+
+	
+	lamatrizrec2(1,1)='idmailcomp'
+	lamatrizrec2(1,2)=ALLTRIM(STR(v_idmaillog))
+	lamatrizrec2(2,1)='idmaillog'
+	lamatrizrec2(2,2)=ALLTRIM(STR(v_idmaillog))
+	lamatrizrec2(3,1)='idcomproba'
+	lamatrizrec2(3,2)=ALLTRIM(STR(P_idcomprobaMail))
+	lamatrizrec2(4,1)='idregistro'
+	lamatrizrec2(4,2)=ALLTRIM(STR(P_idregistroMail))
+	
+	
+	
+	p_tabla     = 'mailcomp'
+	p_matriz    = 'lamatrizrec2'
+	
+	p_conexion  = vconeccionrec
+	IF SentenciaSQL(p_tabla,p_matriz,p_tipoope,p_condicion,p_conexion) = .F.  
+	    MESSAGEBOX("Ha Ocurrido un Error en el registro de la asociación Mail-Comp",0+48+0,"Error")
+	    *** me desconecto	
+		=abreycierracon(vconeccionrec,"")
+		RETURN .F.
+	ENDIF	
+		
+		
+			
+	*** Obtengo el último id de la asociación Mail-Comp ***
+	
+	sqlmatriz(1)=" select last_insert_id() as maxid "
+	verror=sqlrun(vconeccionrec,"ultId_mc")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de la asociación Mail-Comp",0+48+0,"Error")
+		=abreycierracon(vconeccionrec,"")	
+	    RETURN .F.
+	ENDIF 
+	SELECT ultId_mc
+	GO TOP 
+	v_idmailcomp_Ultimo = VAL(ultId_mc.maxid)
+	USE IN ultId_mc
+
+	v_idmailcomp = v_idmailcomp_Ultimo 
+
+	
+	IF v_idmailcomp > 0
+	
+		** Si gravo bien -> elimino los registros anteriores para ese comprobante **
+		
+		sqlmatriz(1)=" select idmailcomp, idmaillog from mailcomp where idregistro = "+ALLTRIM(STR(P_idregistroMail))+" and idcomproba = "+ALLTRIM(STR(P_idcomprobaMail))+" and idmailcomp < "+ALLTRIM(STR(v_idmailcomp))
+		verror=sqlrun(vconeccionrec,"mailcompax_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de la asociación Mail-Comp",0+48+0,"Error")
+			=abreycierracon(vconeccionrec,"")	
+		    RETURN .F.
+		ENDIF 
+		
+		SELECT mailcompax_sql
+		GO TOP 
+		IF NOT EOF()
+		
+			sqlmatriz(1)=" delete from mailcomp where idregistro = "+ALLTRIM(STR(P_idregistroMail))+" and idcomproba = "+ALLTRIM(STR(P_idcomprobaMail))+" and idmailcomp < "+ALLTRIM(STR(v_idmailcomp))
+			verror=sqlrun(vconeccionrec,"delmailcomp_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la actualización del estado de envio de comprobante (1)",0+48+0,"Error")
+				=abreycierracon(vconeccionrec,"")	
+			    RETURN .F.
+			ENDIF 
+			
+			SELECT mailcompax_sql
+			GO TOP 
+			DO WHILE NOT EOF()
+			
+				v_idmaillogax = mailcompax_sql.idmaillog
+				
+				sqlmatriz(1)=" delete from maillog where idmaillog = "+ALLTRIM(STR(v_idmaillogax))
+				verror=sqlrun(vconeccionrec,"delmaillog_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la actualización del estado de envio de comprobante (2)",0+48+0,"Error")
+					=abreycierracon(vconeccionrec,"")	
+				    RETURN .F.
+				ENDIF 
+			
+			
+				SELECT mailcompax_sql
+				SKIP 1
+			
+
+			ENDDO
+			
+		
+		ENDIF 
+		
+	
+	
+	
+		v_retornoRegEnv = .T.
+	ELSE
+		v_retornoRegEnv = .F.
+	ENDIF 
+	
+	
+	
+	
+	*** me desconecto	
+		=abreycierracon(vconeccionrec,"")
+	
+
+
+
+RETURN v_retornoRegEnv
+
 ENDFUNC 
+
+
+
+
+*!*	FUNCTION crearregistromail
+*!*	PARAMETERS
+*!*	*#/****************************
+*!*	*** FUNCIÓN CARGAR UN REGISTRO NUEVO DE MAIL. SE VA A CREAR CON EL ESTADO PENDIENTE.  ***
+*!*	** 	La función va a guardar en el log de correo  y en la asociación de mail-comprobante un registro con estado PENDIENTE
+*!*	**  Este proceso lo va a hacer segun el parámetro p_config. p_config 
+*!*	**	PARAMETERS: P_idcomprobaMail: ID del comprobante asociado en el correo
+*!*	**				P_idregistroMail: ID del registro del comprobante asociado en el correo
+*!*	**				P_entidadMail: Entidad asociada al envio de correo 
+*!*	**				P_config: Si es True: usa la tabla de configuración 'mailentcomp' para generar el estado pendiente o no; si es False: registra el estado PENDIENTE para el comprobante pasado
+*!*	**  RETORNO: Retorna True si el proceso no dio error, False en caso de un error.
+*!*	*#/****************************
+
+*!*	v_retornoCreaReg = .F.
+
+
+
+
+*!*	RETURN v_retornoCreaReg
+
+
+
+*!*	ENDFUNC 
+*!*	 
