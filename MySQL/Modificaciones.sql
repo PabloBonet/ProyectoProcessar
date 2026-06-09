@@ -1044,4 +1044,9 @@ ALTER TABLE `mailfuncion` ADD INDEX `funcion`(`funcion`);
 ALTER TABLE `maillog` MODIFY COLUMN `timestamp` DATETIME NOT NULL DEFAULT current_timestamp();
 
 
+ALTER TABLE `linkcompro` ADD INDEX `idcomprobaa`(`idcomprobaa`),
+ ADD INDEX `idregistroa`(`idregistroa`),
+ ADD INDEX `idcomprobab`(`idcomprobab`),
+ ADD INDEX `idregistrob`(`idregistrob`);
+
 
