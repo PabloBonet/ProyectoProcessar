@@ -2475,7 +2475,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(12)=	" left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
 			sqlmatriz(13)=" left join facturasfe fe on f.idfactura = fe.idfactura and fe.resultado = 'A' left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
 	 		sqlmatriz(14)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(15)=" left join servicios se on se.servicio = f.servicio left join entidades e on r.entidadaso = e.entidad "
+			sqlmatriz(15)=" left join servicios se on se.servicio = f.servicio left join entidades e on f.entidadaso = e.entidad "
  			sqlmatriz(16)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura)) +" group by d.idfacturah order by fe.idfe desc  " &&+  " and fe.resultado = 'A'"
 			
 			verror=sqlrun(vconeccionF,"fac_det_sql_aux")
@@ -2539,7 +2539,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(11)= " left join remitos r on rh.idremito = r.idremito left join comprobantes co on r.idcomproba = co.idcomproba left join puntosventa pf on r.pventa  = pf.pventa "
 			sqlmatriz(12)=" left join condfiscal c on f.iva = c.iva left join vendedores v on f.vendedor = v.vendedor"
 			sqlmatriz(13)=" left join localidades l on f.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
-			sqlmatriz(14)=" left join servicios se on se.servicio = f.servicio left join entidades e on r.entidadaso = e.entidad "
+			sqlmatriz(14)=" left join servicios se on se.servicio = f.servicio left join entidades e on f.entidadaso = e.entidad "
 			sqlmatriz(15)=" where f.idfactura = "+ ALLTRIM(STR(v_idfactura))+ " group by d.idfacturah "
 			verror=sqlrun(vconeccionF,"fac_det_sql")
 			IF verror=.f.  
@@ -2920,13 +2920,18 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			** Si se usa impresion de facturas con codigos de barra 
 			** llamo a la dll que genera las barras en el archivo de facturas 
 			IF TYPE("_SYSUSACBAR")="C" THEN 
-				IF UPPER(_SYSUSACBAR) = "S"	THEN 
+				IF UPPER(SUBSTR(ALLTRIM(_SYSUSACBAR),1,1)) = "S"	THEN 
 					oBar = CREATEOBJECT("processardll.CodigoBarras")
 					IF TYPE("oBar") = "O" THEN 
 						SELECT factu 
 						USE IN factu 
 						v_archi_factu = _SYSESTACION+"\factu"
-						oBar.CargarBarras(v_archi_factu, _SYSCUIT )
+						IF LEN(ALLTRIM(_SYSUSACBAR)) > 1 THEN 
+							v_prefijo = SUBSTR(ALLTRIM(_SYSUSACBAR),2)
+						ELSE
+							v_prefijo = ""
+						ENDIF 
+						oBar.CargarBarras(v_archi_factu, _SYSCUIT,v_prefijo)
 						RELEASE oBar
 						USE factu IN 0 
 					ENDIF 
@@ -3451,14 +3456,177 @@ ENDFUNC
 
 ***************************************************************************************************
 
+*!*	FUNCTION imprimirRecibo
+*!*	PARAMETERS p_idRecibo
+*!*	*#/----------------------------------------
+*!*	* FUNCIÓN PARA IMPRIMIR RECIBO
+*!*	* PARAMETROS: P_IDRECIBO
+*!*	*#/----------------------------------------
+
+
+*!*		v_idrecibo = p_idrecibo
+*!*		
+*!*		IF v_idrecibo > 0
+*!*			
+*!*			vconeccionF=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+*!*			
+*!*			*** Busco los datos del recibo
+*!*						
+*!*				sqlmatriz(1)=" Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, e.cuit, dc.iddetacobro, dc.idtipopago, dc.importe as impCobrado, dc.idcuenta, tp.detalle as tipopago, cb.codcuenta, "
+*!*				sqlmatriz(2)=" TRIM(SUBSTR(concat(cb.codcuenta,' ',cb.detalle,SPACE(100)),1,100)) as detcuenta ,com.comprobante as nomcomp from recibos r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba "
+*!*				sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom " 
+*!*				sqlmatriz(4)=" left join entidades e on r.entidad = e.entidad left join detallecobros dc on r.idcomproba = dc.idcomproba and r.idrecibo = dc.idregistro "
+*!*				sqlmatriz(5)=" left join tipopagos tp on dc.idtipopago = tp.idtipopago left join cajabancos cb on dc.idcuenta = cb.idcuenta "
+*!*				sqlmatriz(6)=" where r.idrecibo = "+ ALLTRIM(STR(v_idrecibo))
+
+*!*				verror=sqlrun(vconeccionF,"recibo_sql_ua")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del recibo",0+48+0,"Error")
+*!*				ENDIF
+*!*				
+*!*			SELECT *,iddetacobro as iddetac FROM recibo_sql_ua INTO TABLE recibo_sql_u 
+*!*			ALTER table recibo_sql_u alter COLUMN tipopago C(254) 
+
+*!*			SELECT recibo_sql_u
+*!*			GO TOP 
+*!*					
+*!*			SELECT iddetac FROM recibo_sql_u WHERE ALLTRIM(tipopago) == "CUPONES" OR ALLTRIM(tipopago) == "CHEQUE" INTO TABLE detallecobrosid_sql
+*!*			
+*!*			v_iddetcobros =""
+*!*			
+*!*			SELECT detallecobrosid_sql
+*!*			GO TOP 
+*!*			
+*!*			DO WHILE NOT EOF()
+*!*			
+*!*				SELECT detallecobrosid_sql
+*!*				v_iddetcobros = v_iddetcobros + IIF(EMPTY(v_iddetcobros)=.T., "",",")+ ALLTRIM(STR(detallecobrosid_sql.iddetac))
+*!*			
+*!*				SELECT detallecobrosid_sql
+*!*				SKIP 1
+*!*			
+*!*			ENDDO 
+*!*			
+
+*!*			IF EMPTY(v_iddetcobros) = .T.
+*!*					v_iddetcobros = "false"
+*!*			ELSE
+*!*				v_iddetcobros = "c.registrocp in ("+ALLTRIM(v_iddetcobros) +")"		
+*!*			ENDIF 
+*!*			
+*!*				sqlmatriz(1)=" SELECT c.*,concat('CHEQUE Nro: ',ch.serie,' ',ch.numero,' (',b.banco,'-',b.filial,'-',b.cp,') ',b.nombre) as descrip "
+*!*	 			sqlmatriz(2)=" from  cobropagolink c left join  cheques ch on c.idregistro = ch.idcheque left join  bancos b "
+*!*	 			sqlmatriz(3)=" on ch.idbanco = b.idbanco where c.tabla = 'cheques' and c.tablacp = 'detallecobros' and "+ALLTRIM(v_iddetcobros)+" union "
+*!*	 			sqlmatriz(4)=" SELECT c.*,concat('CUPÓN Nro: ',cu.numero,' - TARJETA: ',cu.tarjeta,' - TITULAR: ',cu.titular) as descrip "
+*!*	  			sqlmatriz(5)=" from  cobropagolink c left join  cupones cu on c.idregistro = cu.idcupon where c.tabla = 'cupones' and c.tablacp = 'detallecobros' and "+ALLTRIM(v_iddetcobros)
+*!*	  			  			
+*!*				verror=sqlrun(vconeccionF,"che_cup_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del recibo",0+48+0,"Error")
+*!*				ENDIF
+*!*			
+*!*			
+*!*			SELECT che_cup_sql
+*!*			GO top
+*!*			
+*!*			
+*!*			SELECT recibo_sql_u
+*!*			GO TOP 
+*!*			
+*!*			DO WHILE NOT EOF()
+*!*				
+*!*				v_tipopago = recibo_sql_u.tipopago
+*!*				
+*!*				IF ALLTRIM(v_tipopago) == "CUPONES" OR ALLTRIM(v_tipopago) == "CHEQUE"
+*!*				
+*!*					v_idDetacobro = recibo_sql_u.iddetac 
+*!*				
+*!*					SELECT che_cup_sql 
+*!*					GO TOP 
+*!*					LOCATE FOR registrocp = v_idDetacobro 
+*!*					
+*!*					SELECT recibo_sql_u
+*!*					replace tipopago WITH che_cup_sql.descrip
+*!*				
+*!*				ENDIF 
+*!*				
+*!*			
+*!*			
+*!*				SELECT recibo_sql_u
+*!*				SKIP 1
+*!*			
+*!*			ENDDO 
+*!*			
+*!*			
+*!*			SELECT *, ALLTRIM(nombre)+' '+ALLTRIM(apellido) as apeynom FROM recibo_sql_u INTO TABLE .\recibo
+*!*					
+*!*			SELECT recibo
+*!*			
+*!*			IF NOT EOF()
+*!*			
+*!*				SELECT recibo 
+*!*				GO TOP 
+*!*				
+*!*				v_idcomproba 	= recibo.idcomproba
+*!*				*** Busco los datos de los cobros para el recibo
+*!*			
+*!*					sqlmatriz(1)=" Select c.*, f.numero,f.tipo,f.fecha,f.entidad, f.servicio, f.cuenta, f.nombre, f.apellido,f.cuit , pv.puntov,ifnull(fc.cuota,0) as cuota, ifnull(fc.cancuotas,0) as cancuotas, ifnull(s.detalle,'          ') as detaservi "
+*!*	*!*					sqlmatriz(2)=" from cobros c left join facturas f on c.idfactura = f.idfactura left join puntosventa pv on f.pventa = pv.pventa "
+*!*					sqlmatriz(2)=" from cobros c left join facturas f on c.idfactura = f.idfactura left join puntosventa pv on f.pventa = pv.pventa left join servicios s on s.servicio = f.servicio "
+*!*					sqlmatriz(3)=" left join facturascta fc on c.idcuotafc = fc.idcuotafc "
+*!*					sqlmatriz(4)=" where c.idcomproba = " +ALLTRIM(STR(v_idcomproba))+" and c.idregipago = "+ ALLTRIM(STR(v_idrecibo))
+
+*!*					verror=sqlrun(vconeccionF,"cobros_sql_u")
+*!*					IF verror=.f.  
+*!*					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de cobros relacionados al recibo ",0+48+0,"Error")
+*!*					ENDIF
+*!*				
+*!*				SELECT * FROM cobros_sql_u INTO TABLE .\cobros
+*!*				SELECT cobros
+*!*				GO TOP 
+*!*			
+*!*				ALTER table cobros alter COLUMN cuota I
+*!*				ALTER table cobros alter COLUMN cancuotas I
+*!*				ALTER table recibo ADD COLUMN strImporte C(250)
+*!*				
+*!*				SELECT recibo
+*!*				v_importe	= recibo.importe
+*!*				v_strImporte	= enletras (v_importe)
+*!*				
+*!*				SELECT recibo 
+*!*				GO TOP 
+*!*				
+*!*				replace ALL strImporte WITH v_strImporte
+*!*				
+*!*				SELECT recibo 
+*!*				GO TOP 
+*!*				v_idcomproba = recibo.idcomproba
+*!*				
+*!*				DO FORM reporteform WITH "recibo;cobros","reciborc;cobroscr",v_idcomproba
+*!*				
+*!*			ELSE
+*!*				MESSAGEBOX("Error al cargar el recibo para imprimir",0+48+0,"Error al cargar el recibo")
+*!*				RETURN 	
+*!*			ENDIF 
+*!*					
+
+*!*		ELSE
+*!*			MESSAGEBOX("NO se pudo recuperar el recibo el ID <= 0",0+16,"Error al imprimir")
+*!*			RETURN 
+
+*!*		ENDIF 
+
+*!*	ENDFUNC 
+
 FUNCTION imprimirRecibo
-PARAMETERS p_idRecibo
+PARAMETERS p_idRecibo,pEnviarImpresora,pArchivo
 *#/----------------------------------------
 * FUNCIÓN PARA IMPRIMIR RECIBO
-* PARAMETROS: P_IDRECIBO
+* PARAMETROS: P_IDRECIBO,pEnviarImpresora,pArchivo
 *#/----------------------------------------
 
-
+	
+	v_idperiodo		= 0
 	v_idrecibo = p_idrecibo
 	
 	IF v_idrecibo > 0
@@ -3597,7 +3765,7 @@ PARAMETERS p_idRecibo
 			GO TOP 
 			v_idcomproba = recibo.idcomproba
 			
-			DO FORM reporteform WITH "recibo;cobros","reciborc;cobroscr",v_idcomproba
+			DO FORM reporteform WITH "recibo;cobros","reciborc;cobroscr",v_idcomproba,.F.,pEnviarImpresora,pArchivo
 			
 		ELSE
 			MESSAGEBOX("Error al cargar el recibo para imprimir",0+48+0,"Error al cargar el recibo")
@@ -3612,8 +3780,6 @@ PARAMETERS p_idRecibo
 	ENDIF 
 
 ENDFUNC 
-
-
 
 
 FUNCTION imprimirOtMoviStock
@@ -3725,7 +3891,7 @@ PARAMETERS p_idnp
 		
 
 		sqlmatriz(1)=" Select f.*,d.*,c.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit,e.direccion, "
-		sqlmatriz(2)=" e.telefono, e.email, com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump, t.etiqueta, ifnull(s.nombre, 'SIN CLASIFICACION') as nomclasif, ifnull(ds.stocktot, 0) as stocktot "
+		sqlmatriz(2)=" e.telefono, e.email, com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump, t.etiqueta, ifnull(s.nombre, 'SIN CLASIFICACION') as nomclasif, ifnull(ds.stocktot, 0) as stocktot, g.nombre as zona, a.observa as artobserva "
 		sqlmatriz(3)=" from np f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 		sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
 		sqlmatriz(5)=" left join ot d on f.idnp = d.idnp left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva "
@@ -3733,8 +3899,9 @@ PARAMETERS p_idnp
 		sqlmatriz(7)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
 		sqlmatriz(8)=" left join etiquetanp t on f.idetiqueta = t.idetiqueta "
 		sqlmatriz(9)=" left join clasificanp s on f.idclasifnp = s.idclasifnp "
-		sqlmatriz(10)=" left join r_depostock ds on ds.articulo = d.articulo "		
-		sqlmatriz(11)=" where f.idnp = "+ ALLTRIM(STR(v_idnp))
+		sqlmatriz(10)=" left join r_depostock ds on ds.articulo = d.articulo left join articulos a on ds.articulo = a.articulo "		
+		sqlmatriz(11)=" left join grupoobjeto o on e.entidad = o.idmiembro left join grupos g on o.idgrupo = g.idgrupo left join tipogrupos i on g.idtipogrupo = i.idtipogrupo "
+		sqlmatriz(12)=" where i.tabla = 'entidades' and i.campo = 'entidad' and i.detalle = 'zonas-entidades' and f.idnp = "+ ALLTRIM(STR(v_idnp))
 			
 					
 		verror=sqlrun(vconeccionF,"np_det_sql")
@@ -4149,33 +4316,30 @@ PARAMETERS p_idtransferencia
 			    RETURN 
 			ENDIF
 									
+
+
+		*** Busco los datos de los recibos asociados a la transferencia
+		sqlmatriz(1)=" select d.*, c.importe from transferenciasd d left join detallecobros c on c.iddetacobro = d.iddetacobro "
+		sqlmatriz(2)=" where  d.idtransfe = "+ALLTRIM(STR(v_idtransfe))+" and d.estado = 1 "
+		verror=sqlrun(vconeccionF,"transfectad_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del Detalle de efectivo de la transferencia",0+48+0,"Error")
+		    RETURN 
+		ENDIF
+
+		SELECT * FROM transfectad_sql INTO TABLE transfectad
+		SELECT transfectad
+		ALTER table transfectad alter idtransfed i
+		ALTER table transfectad alter idtransfe i
+		ALTER table transfectad alter estado i
+		ALTER table transfectad alter importe n(12,2)
+		ALTER table transfectad alter detalle c(200)
+		GO TOP 
+		
 		
 		SELECT transfecta_sql
 		GO TOP 
 		
-*!*			DO WHILE NOT EOF()
-*!*				
-*!*				v_idtipopago	= IIF(ISNULL(transfecta_sql.idtipopago) = .T.,0,transfecta_sql.idtipopago)	
-*!*				
-*!*				v_tipopago		= IIF(ISNULL(transfecta_sql.tipopago) = .T.,"",transfecta_sql.tipopago)	
-*!*			
-*!*				DO CASE
-*!*					CASE ALLTRIM(v_tipoPago) == "CUPONES"
-*!*						v_tipoPago = IIF(ISNULL(transfecta_sql.desccpl) or EMPTY(transfecta_sql.desccpl),"CUPONES",transfecta_sql.desccpl)
-*!*					CASE ALLTRIM(v_tipoPago) == "CHEQUE"
-*!*						v_tipoPago =IIF(ISNULL(transfecta_sql.desccpl) or EMPTY(transfecta_sql.desccpl),"CHEQUE",transfecta_sql.desccpl)
-*!*					OTHERWISE
-*!*						
-
-*!*				ENDCASE
-*!*			*	v_importe		= IIF(ISNULL(cajamovip_sql.imported)=.T.,0,cajamovip_sql.importe)
-*!*					
-*!*				SELECT transfecta_sql
-*!*				SKIP 1
-*!*			
-*!*			ENDDO 
-*!*			
-*!*			
 				
 		SELECT * FROM transfecta_sql INTO TABLE transfecta
 				
@@ -4191,7 +4355,7 @@ PARAMETERS p_idtransferencia
 			GO TOP 
 			v_idcomproba = transfecta.idcomproba
 			
-			DO FORM reporteform WITH "transfecta","transfectacr",v_idcomproba
+			DO FORM reporteform WITH "transfecta;transfectad","transfectacr;transfectadcr",v_idcomproba
 			
 		ELSE
 			MESSAGEBOX("Error al cargar la Transferencia para imprimir",0+48+0,"Error al cargar la Transferencia")
@@ -5109,6 +5273,7 @@ PARAMETERS p_idacopio
 			v_kg		= 0.0
 			v_kgTot		= 0.0
 
+		
 									
 			INSERT INTO materialesimp values (v_idmate, v_detalle, v_unidad, v_precio, v_tipocmbio, v_moneda,v_nom_mon,v_op,v_idacopiod,v_kg,v_kgtot)
 
@@ -5121,13 +5286,18 @@ PARAMETERS p_idacopio
 		=abreycierracon(vconeccionD,"")	
 
 
-		v_saldoAcopt = v_masAcopt - v_menosAcopt 
+		v_saldoAcopt = v_masAcopt + v_menosAcopt 
 	
 			
 		SELECT comprobantesimp 
 		GO TOP 
 
 		replace ALL saldoacop WITH v_saldoAcopt, acopmast WITH v_masAcopt, acopmenost WITH v_menosAcopt 
+
+		
+		SELECT materialesimp 
+		GO TOP 
+		replace ALL kg WITH (v_saldoAcopt / (precio * tipocbio)), kgTot WITH (v_masAcopt/ (precio * tipocbio))
 
 
 
@@ -6703,6 +6873,18 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd,p_estado
 		ENDIF 
 	ENDIF 
 	v_fecha			= cftofc(DATE())+TIME()
+
+
+	***** BORRO LOS ESTADOS ANTERIORES *****
+	sqlmatriz(1)= "delete from estadosreg where tabla = '"+ALLTRIM(v_nomTabla)+"' and id = '"+ALLTRIM(v_indice)+"'"
+	verror=sqlrun(vconeccionE,"borra_ante")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en Eliminacion Estados Anteriores... ",0+48+0,"Error")
+	    RETURN 
+	ENDIF		
+	****************************************
+
+
 
 	p_tipoope     = 'I'
 	p_condicion   = ''
@@ -8600,7 +8782,6 @@ v_tablaDatos	= p_tablaDatos
 **** Busco el comprobante asociado ***
 vconeccionA=abreycierracon(0,_SYSSCHEMA)	
 	
-	
 
 
 *!*		**** Busco el comprobante asociado ***
@@ -8655,6 +8836,7 @@ IF EMPTY(ALLTRIM(v_tablaDatos)) = .T. AND v_idcomproba > 0 AND EMPTY(ALLTRIM(v_n
 
 		ENDCASE
 		
+	
 		
 		verror=sqlrun(vconeccionA,"detallecomp_sqla")
 		IF verror=.f.  
@@ -21485,9 +21667,11 @@ PARAMETERS cp_idcomprobao, cp_id
 	IF TYPE('_SYSCMPASOC') = 'U'
 		RETURN ""
 	ENDIF 
+
 	IF EMPTY(_SYSCMPASOC) OR SUBSTR((_SYSCMPASOC+' '),1,1)='N' THEN 
 		RETURN ""
 	ENDIF 
+
 	nFilas = ALINES(ArrCompro, _syscmpasoc , ";")
 	IF nFilas = 0 THEN 
 		RETURN "" 
@@ -21511,10 +21695,11 @@ PARAMETERS cp_idcomprobao, cp_id
 		ENDIF 
 	
 	ENDFOR 
-	
+
 	IF !EMPTY(v_retornacompro) THEN 
 		v_retornacompro= SUBSTR(v_retornacompro,1,LEN(v_retornacompro)-1)
 	ENDIF 
+
 	RETURN v_retornacompro 
 ENDFUNC 
 
@@ -23268,11 +23453,19 @@ PARAMETERS pIdregistro
 	
 	ENDIF 
 	
+   ** Elimino los Recibos Relacionados con la Transferencia si los tuviere
+ 	sqlmatriz(1)=" delete from transferenciasd where idtransfe = "+ALLTRIM(STR(pIdregistro))								
+	verror=sqlrun(vconeccionAn ,"transferenciasd_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la Eliminación de Comprobantes Asociados a la Transferencia ..",0+48+0,"Error")
+		=abreycierracon(vconeccionAn ,"")	
+	    RETURN -1
+	ENDIF
+  	
 	
 	**** Obtengo los comprobantes ***
 	
-	sqlmatriz(1)=" select idtipocompro as idtipocom, idcomproba from comprobantes "
-									
+	sqlmatriz(1)=" select idtipocompro as idtipocom, idcomproba from comprobantes "								
 	verror=sqlrun(vconeccionAn ,"comprobantes_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la busqueda los comprobantes",0+48+0,"Error")
@@ -32904,23 +33097,25 @@ PARAMETERS pIdremito
 		v_depositoAN	= remito_asql.deposito
 		v_fechaAN		= remito_asql.fecha
 	ENDIF 
-
+		
 	IF ALLTRIM(v_ajustastockAN)  == 'S' THEN 
 
 		IF TYPE("tipoMStockobj") = 'U' THEN 
 			tipoMStockobj = CREATEOBJECT('tipomstockclass')
 		ENDIF 
-
+		
 		v_idtipomovAN		= tipoMStockobj.getidtipomstock("INGRESO POR ANULACION")
 
 		CREATE TABLE tmpDatos FREE (articulo C(50), cantidad Y, deposito I, fecha c(8))
 		
 		SELECT remito_asql
 		GO TOP 
+		
 		DO WHILE NOT EOF()
+		
 			v_articuloAN 	= remito_asql.articulo
 			v_cantidadAN	= remito_asql.cantidad
-
+			
 			INSERT INTO tmpDatos VALUES (v_articuloAN,v_cantidadAN,v_depositoAN,v_fechaAN)
 		
 			SELECT remito_asql
@@ -32930,6 +33125,7 @@ PARAMETERS pIdremito
 		USE IN remito_asql 
 
 		v_resp = AjusteComprobante(v_idtipomovAN, v_idcomprobaAN, v_nombreCampoAN, v_idregistroAN,"tmpDatos")
+
 
 		USE IN tmpDatos
 		
@@ -33747,12 +33943,15 @@ ENDFUNC
 
 *!*	ENDFUNC 
 FUNCTION AnularEliminarComprobante
-PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
+PARAMETERS p_idcomproba,p_idregistro,p_entidad,p_idasiento,p_electro,p_anulaElimina,p_conexion
 *#/----------------------------------------
 * Función para eliminar o anular comprobantes. Se va a usar una variable para indicar el comportamiento.
 *			si la variable '_SYSVALANULAR' es 1 -> usa la tabla: 'validaanular', sino si la variable no existe o es 0 -> no usa la validación y sigue funcionando igual
 * Parametros : p_idcomproba	= ID del comprobante a anular/eliminar
 *              p_idregistro	= ID del registro a anular/eliminar
+*			   p_entidad = ID Entidad usada en el comprobante
+*			   p_idasiento = ID Asiento, si no tiene asiento = 0
+*			   p_electro = Indica si es Electrónico o no puede ser 'S' o 'N'
 *			   p_anulaElimina = 'A': indica que se quiere anular, 'E': indica que se quiere eliminar. Si no se pasa parámetro, se busca de eliminar o anular	
 *			   p_conexion	= Conexión a la base de datos, si se pasa la conexión 
 * RETURN: 0: si no se anuló/eliminó, 1: si se elimino, 2: si se anuló
@@ -33765,11 +33964,15 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 
 ** Controlo parámetros **
 
-	IF TYPE('p_idcomproba') <> 'N' or TYPE('p_idregistro') <> 'N'
-		MESSAGEBOX("Parámetros de la función 'AnularEliminarComprobante' incorrectos [1,2]",0+48+256,"Anular/Eliminar comprobates")
+	IF TYPE('p_idcomproba') <> 'N' or TYPE('p_idregistro') <> 'N' or TYPE('p_entidad') <> 'N' or TYPE('p_idasiento') <> 'N' 
+		MESSAGEBOX("Parámetros de la función 'AnularEliminarComprobante' incorrectos [1,2,3,4]",0+48+256,"Anular/Eliminar comprobates")
 		RETURN 0
 	ENDIF 
 
+	IF TYPE('p_electro') <> 'C'
+		MESSAGEBOX("Parámetros de la función 'AnularEliminarComprobante' incorrectos [5]",0+48+256,"Anular/Eliminar comprobates")
+		RETURN 0
+	ENDIF 
 	v_anulaElimina 	= "I"
 	v_aetabla 		= ""
 	v_anretorno = 0
@@ -34018,8 +34221,8 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 					* Que ya ha sido Contabilizado 
 					*
 					IF ALLTRIM(v_aetabla) == 'facturas' THEN 
-						IF grillaComp.idasiento > 0 THEN 
-							v_eliasiento = EliminaAsientoC(grillaComp.idasiento)
+						IF p_idasiento > 0 THEN 
+							v_eliasiento = EliminaAsientoC(p_idasiento)
 							IF v_eliasiento <> 0 THEN 
 								MESSAGEBOX("El comprobante no se puede anular porque el Asiento Asociado pertenece a otro Ejercicio.",0+48+0,"Anulación de Comprobante")
 								RETURN 0
@@ -34080,7 +34283,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 			RETURN 0
 		ELSE 
 			* Anular
-			v_electronico = grillaComp.electro
+			v_electronico = p_electro
 			IF v_electronico == 'S'
 				MESSAGEBOX("El comprobante no se puede anular porque es un comprobante electrónico.",0+48+0,"Anulación de Comprobante")
 				RETURN 0
@@ -34094,11 +34297,11 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 						* Generacion del comprobante de anulacion para recibos y ordenes de pago
 						* Este comprobante anula el recibo u orden de pago con un contra-movimiento
 						
-						v_anular = AnularRP(grillaComp.idcomproba,grillaComp.idregistro,grillaComp.entidad)
+						v_anular = AnularRP(p_idcomproba,p_idregistro,p_entidad)
 						IF !v_anular THEN 
 							RETURN 0
 						ENDIF 
-						v_idcomp= grillaComp.idregistro
+						v_idcomp= p_idregistro
 						v_tab 	= ALLTRIM(v_aetabla)
 						v_nomId	= ALLTRIM(v_aenomindice)
 *!*							registrarEstado(v_tab ,v_nomId,v_idcomp,'I',"ANULADO")
@@ -34106,16 +34309,16 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 
 					
 					CASE ALLTRIM(v_aetabla) = 'transferencias'
- 						vnewTransfe = AnularTransfe(grillaComp.idregistro)
+ 						vnewTransfe = AnularTransfe(p_idregistro)
  						v_anretorno = 2
 						
  					CASE ALLTRIM(v_aetabla) = 'remitos'
- 						v_anularRe = AnularRemitos(grillaComp.idregistro)
+ 						v_anularRe = AnularRemitos(p_idregistro)
 						v_anretorno = 2				
  					
  					CASE ALLTRIM(v_aetabla) = 'costop' 
- 						IF grillaComp.idasiento > 0 THEN 
-							v_eliasiento = EliminaAsientoC(grillaComp.idasiento)
+ 						IF grillaCompGR.idasiento > 0 THEN 
+							v_eliasiento = EliminaAsientoC(p_idasiento)
 							IF v_eliasiento <> 0 THEN 
 								MESSAGEBOX("El comprobante no se puede anular porque el Asiento Asociado pertenece a otro Ejercicio.",0+48+0,"Anulación de Comprobante")
 								RETURN 0
@@ -34125,7 +34328,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 						ENDIF 		
 					
 					CASE ALLTRIM(v_aetabla) = 'cajaie'
-						v_idregAnul = anularCajaIE(grillaComp.idregistro)
+						v_idregAnul = anularCajaIE(p_idregistro)
 						
 						IF v_idregAnul <= 0
 						
@@ -34136,7 +34339,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_anulaElimina,p_conexion
 						ENDIF 
 					
 					CASE ALLTRIM(v_aetabla) = 'np'
-						v_anularNp = AnularNP(grillaComp.idregistro)
+						v_anularNp = AnularNP(p_idregistro)
  						IF v_anularNP =.T.
  							v_anretorno = 2
  						ENDIF 
@@ -34640,11 +34843,11 @@ PARAMETERS p_tablaCompro, p_ubicacion
 			v_comproPdfg = p_ubicacion+"\"+ALLTRIM(v_nombrearcg)
 
 			imprimirFactura(v_idregistrog, v_electrog,3,v_comproPdfg)
-*!*			CASE ALLTRIM(v_tablagcompg) == "recibos"
-*!*			
-*!*				v_comproPdfg = p_ubicacion+"\"+ALLTRIM(v_nombrearcg)
+		CASE ALLTRIM(v_tablagcompg) == "recibos"
+		
+			v_comproPdfg = p_ubicacion+"\"+ALLTRIM(v_nombrearcg)
 
-*!*				imprimirRecibo(v_idregistrog,v_electrog,3,v_comproPdfg)
+			imprimirRecibo(v_idregistrog,3,v_comproPdfg)
 *!*			CASE ALLTRIM(v_tablagcomp) == "remitos"
 *!*				imprimirRemito(v_idregistro,v_electro,3,p_ubicacion)
 		OTHERWISE
@@ -35013,7 +35216,70 @@ RETURN v_retornoRegEnv
 
 ENDFUNC 
 
+FUNCTION actualizaGruposArtLinea
+PARAMETERS p_tipoart, p_opera, p_conexion
 
+	
+		IF TYPE('p_tipoart') = 'N'
+		
+			IF p_tipoart <= 0
+				RETURN .F.
+			ENDIF 
+		ENDIF 
+		
+	
+		*** Busco los articulos
+		sqlmatriz(1)=" select a.*, l.detalle as nomlinea from articulos a left join lineas l on a.linea = l.linea where a.idtipoart = " +ALLTRIM(STR(p_tipoart))
+
+	
+		
+		verror=sqlrun(p_conexion ,"arti_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del Grupo de la Linea... ",0+48+0,"Error")
+		    RETURN .F.  
+		ENDIF
+		
+		SELECT arti_sql
+		GO TOP 
+		IF NOT EOF()
+			vcanregi = RECCOUNT()
+			
+			=ViewBarProgress(0,vcanregi,"Agrupando...")
+		
+			SELECT arti_sql
+			GO TOP 
+			DO WHILE NOT EOF()
+				v_articulo 	= arti_sql.articulo
+				v_nomlinea 	= ALLTRIM(arti_sql.nomlinea)
+				
+						
+				v_r = GruposArtLinea(v_articulo, v_nomlinea, p_opera, p_conexion)
+				
+				
+			
+					=ViewBarProgress(RECNO(),vcanregi,"Agrupando...")
+				SELECT arti_sql
+				SKIP 1
+
+			ENDDO
+			
+			
+		ELSE
+		
+			RETURN .T.
+		
+		ENDIF 
+		
+
+
+*!*	FUNCTION GruposArtLinea
+*!*	PARAMETERS pl_articulo, pl_linea, pl_opera, pl_conexion
+ENDFUNC 
+
+
+*#/----------------------------------------
+* Incerta y Elimina Articulos en los Grupos asociados a las Lineas de los Artículos. Parametro : '+' o '-'
+*#/----------------------------------------
 
 
 *!*	FUNCTION crearregistromail
