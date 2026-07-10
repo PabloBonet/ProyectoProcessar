@@ -11,6 +11,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 *#/----------------------------------------
 	WAIT WINDOWS "Generando Facturación, Aguarde... " NOWAIT 
 
+
 	vs_db_sysbgproce = _SYSBGPROCE 
 	_SYSBBPROCE = 0 && detiene la ejecucion de procesos de Relojes en Segundo Plano
 
@@ -130,7 +131,9 @@ PARAMETERS par_idperiodo, par_ordenfa
 		RETURN var_retorno 
 	ENDIF 
 
-	v_fechaemite = &vfactulotes_sql..fechaemite
+	v_fechaemite  = &vfactulotes_sql..fechaemite
+	v_fechadl = &vfactulotes_sql..fechad
+	v_fechahl = &vfactulotes_sql..fechah
 
 	*/*************
 	* Busco los comprobantes y puntos de ventas que se utilizaran segun el servicio y la condicion de IVA 
@@ -214,7 +217,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva, ifnull(c.compuesto,'N') as compuesto, ifnull(a.idcuotasd,0) as cacuotas  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
 	sqlmatriz(2)=" left join conceptoser c on c.idconcepto = f.idconcepto "
 	sqlmatriz(3)=" left join entidadesh h on h.identidadh = f.identidadh "
-	sqlmatriz(4)=" left join entidadesdc a on a.identidadd = f.identidadd "
+	sqlmatriz(4)=" left join entidadesdc a on ( a.identidadd = f.identidadd  and a.facturar = 'S' and ( a.fechavenc between '"+ALLTRIM(v_fechadl)+"' and '"+ALLTRIM(v_fechahl)+"' ))"
 	sqlmatriz(5)=" where f.facturar = 'S' and h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	sqlmatriz(6)=" and ( ( f.vigedesde='' or f.vigehasta='' ) or ( f.vigedesde<>'' and f.vigehasta <> '' and ( '"+ALLTRIM(v_fechaemite)+"' between f.vigedesde and f.vigehasta ) ) )"
 	sqlmatriz(7)=" group by f.identidadd "
@@ -282,7 +285,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 	sqlmatriz(1)=" Select e.idperiodoe, c.* from entidadesdc c left join entidadesd d on d.identidadd = c.identidadd "
 	sqlmatriz(2)=" left join factulotese e on e.identidadh = d.identidadh "
 	sqlmatriz(3)=" where c.idfactura = 0 and c.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
-	sqlmatriz(4)=" and c.fechavenc >='"+v_fechaemite+"' order by idcuotasd desc " 
+	sqlmatriz(4)=" and c.fechavenc >='"+v_fechaemite+"' and ( c.fechavenc between '"+ALLTRIM(v_fechadl)+"' and '"+ALLTRIM(v_fechahl)+"' )  order by idcuotasd desc " 
+*!*		sqlmatriz(4)=" and c.fechavenc >='"+v_fechaemite+"' order by idcuotasd desc " 
 
 
 	verror=sqlrun(vconeFacturar,"entidadesdcf_sql"+vartmp)
@@ -297,7 +301,9 @@ PARAMETERS par_idperiodo, par_ordenfa
 	SELECT * FROM &ventidadesdcf_sql INTO TABLE &ventidadesdcf  ORDER BY identidadd GROUP BY identidadd 
 	SET ENGINEBEHAVIOR 90
 	SELECT &ventidadesdcf 
+	INDEX on idcuotasd TAG idcuotasd 
 	INDEX on identidadd TAG identidadd 
+	
 	
 
 	
@@ -305,6 +311,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	ventidadesdf = 'entidadesdf'+vartmp 
 	SELECT * FROM &ventidadesdf_sql INTO TABLE &ventidadesdf WHERE compuesto = 'N'
 	SELECT &ventidadesdf
+
 	ALTER table &ventidadesdf alter COLUMN cacuotas i
 	ALTER TABLE &ventidadesdf ALTER COLUMN detalle c(200)  
 	ALTER table &ventidadesdf ADD COLUMN nrocuota i
@@ -329,7 +336,12 @@ PARAMETERS par_idperiodo, par_ordenfa
 *!*		replace ALL detalle WITH  &vlistasprea..detalle, unidad WITH &vlistasprea..unidad ,unitario WITH IIF(ALLTRIM(fijarvalor)='S',&ventidadesdcf..unitario,&vlistasprea..pventa), 
 		replace ALL detalle WITH IIF ( ALLTRIM(fijardeta)='S', &ventidadesdcf..detalle ,&vlistasprea..detalle) , unidad WITH &vlistasprea..unidad , unitario WITH IIF(ALLTRIM(fijarvalor)='S',&ventidadesdcf..unitario,&vlistasprea..pventa), ;
 					nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
-					netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd FOR idconcepto = 0
+					netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd  FOR idconcepto = 0
+
+*** Agregado para cuotas de coneceptos 
+
+
+	SET RELATION TO && libero las relaciones para armar otra para los conceptos
 
 	
 	* Actualizo para Conceptos Facturados segun Fórmulas de Calculo = idconcepto > 0
@@ -337,28 +349,53 @@ PARAMETERS par_idperiodo, par_ordenfa
 	SELECT * FROM &vconceptoser_sql INTO TABLE &vconceptoser
 	SELECT &vconceptoser
 	INDEX on idconcepto TAG idconcepto 
+
+	
+
+	SELECT &ventidadesdcf	
+	SET ORDER TO idcuotasd 
 	
 	SELECT &ventidadesdf
 	SET RELATION TO idconcepto INTO &vconceptoser ADDITIVE 
-	replace ALL ejecucion WITH &vconceptoser..ejecucion 
+**** agregado por problemas con cuotas en facturacion 
+	SET RELATION TO cacuotas INTO &ventidadesdcf ADDITIVE 
+****	replace ALL ejecucion WITH &vconceptoser..ejecucion
+	replace ALL ejecucion WITH &vconceptoser..ejecucion , ; 
+	nrocuota WITH &ventidadesdcf..nrocuota, ;
+	netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd,  idcuotasd WITH &ventidadesdcf..idcuotasd, ;
+    nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas
+    
+	SELECT &ventidadesdcf	
+	SET ORDER TO identidadd 
+
+
+
+
 
 	** EJECUTA CALCULANDO CONCEPTOS POR NIVELES
 	FOR ieje = 0 TO 3 
 	
+
 		SELECT &ventidadesdf 
 		GO TOP 
 		v_fechaemite = &vfactulotes_sql..fechaemite
+
+
 		SCAN FOR ( &ventidadesdf..idconcepto > 0 ) AND !EOF() AND (&ventidadesdf..ejecucion = ieje) 
-			
+	
+		
 			IF  ( &vconceptoser..facturar = 'S' ) THEN 
 				imp_cantidad = 1				
 				imp_unitario = 0					
 				IF  ( &vconceptoser..vigencia = '1' ) OR  ( &vconceptoser..vigencia = '2' AND &vconceptoser..vigedesde<=v_fechaemite AND v_fechaemite <= &vconceptoser..vigehasta )  THEN 			
+
+
 					C   = &vconceptoser..cantidad
 					* Corregido para respetar si el importe está fijado
 *!*						I   = &vconceptoser..importe 
 					I   = IIF(ALLTRIM(&ventidadesdf..fijarvalor) = 'S', &ventidadesdf..unitario, &vconceptoser..importe) 				
 					Fun = &vconceptoser..funcion
+
 
 					IF !EMPTY(Fun) THEN 
 					
@@ -370,6 +407,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 								
 								vartablaauxi = ""
 								IF ieje > 0 THEN 
+
+
 									varentih = &ventidadesdf..identidadh
 									vartablaauxi = 'auxiconceptos'
 									SELECT articulo, cantidad, (unitario * cantidad) as neto from &ventidadesdf INTO cursor &vartablaauxi ;
@@ -383,6 +422,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 
 								Fun = STRTRAN(STRTRAN(STRTRAN(Fun,'(','('+ALLTRIM(STR(par_idperiodo))+','+ALLTRIM(STR(&ventidadesdf..identidadh))+','+ALLTRIM(STR(&ventidadesdf..idconcepto))+','+ALLTRIM(STR(vconeFacturar))+','+ALLTRIM(varparconceptos)+','),',,',','),',)',')')
 								IF LEN(Fun) > 254 THEN 
+
+
 									nfuncion =FModificaFuncion (Fun)
 									Fun = SUBSTR(nfuncion,3)
 									FunV= VAL(SUBSTR(nfuncion,1,2))
@@ -417,42 +458,59 @@ PARAMETERS par_idperiodo, par_ordenfa
 						ELSE
 							imp_unitario = &Fun					
 						ENDIF 
+
 						
 	****************************************************					
 					ELSE 
 						imp_unitario = 0
 					ENDIF 
 
-
 					
 									
 					SELECT &ventidadesdf
+
+					
 *!*						replace articulo WITH &vconceptoser..concepto, detalle  WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, 
 					replace articulo WITH &vconceptoser..concepto, detalle  WITH IIF(ALLTRIM(fijardeta)='S',detalle,&vconceptoser..detalle) , unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
-						nrocuota  WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
-						netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd, cantidad WITH ( cantidad * imp_cantidad )
+							cantidad WITH ( cantidad * imp_cantidad )
+*!*							nrocuota  WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
+*!*							netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd, cantidad WITH ( cantidad * imp_cantidad )
+
 						
 					IF idcuotasd > 0 THEN 
-						UPDATE &ventidadesdf SET detalle = ALLTRIM(detalle)+' - Cta. '+ALLTRIM(STR(nrocuota))+'/'+ALLTRIM(STR(cantcuotas)) ,unitario=netocuota, cantidad=1 && WHERE idcuotasd > 0					
+** Aca Corrijo para ver si factura todo 
+*!*							UPDATE &ventidadesdf SET detalle = ALLTRIM(detalle)+' - Cta. '+ALLTRIM(STR(nrocuota))+'/'+ALLTRIM(STR(cantcuotas)) ,unitario=netocuota, cantidad=1 && WHERE idcuotasd > 0					
+
+						replace detalle WITH ALLTRIM(detalle)+' - Cta. '+ALLTRIM(STR(nrocuota))+'/'+ALLTRIM(STR(cantcuotas)) ,unitario with netocuota, cantidad with 1 && WHERE idcuotasd > 0					
 					ENDIF 	
 					
 					IF  idcuotasd = 0 and cacuotas > 0 THEN 
-						UPDATE &ventidadesdf SET unitario=0, cantidad=0 && WHERE idcuotasd = 0 AND cacuotas > 0
+
+*!*							UPDATE &ventidadesdf SET unitario=0, cantidad=0 && WHERE idcuotasd = 0 AND cacuotas > 0
+							replace  unitario WITH 0, cantidad WITH 0 && WHERE idcuotasd = 0 AND cacuotas > 0
 					ENDIF 
 					
 					
 				ELSE 
 *!*						replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
+
 					replace articulo WITH &vconceptoser..concepto, detalle WITH IIF(ALLTRIM(fijardeta)='S',detalle,&vconceptoser..detalle) , unidad WITH &vconceptoser..unidad , unitario WITH 0 							
 				ENDIF 
 			ELSE 
+
+
 *!*					replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
 				replace articulo WITH &vconceptoser..concepto, detalle WITH IIF(ALLTRIM(fijardeta)='S',detalle,&vconceptoser..detalle) , unidad WITH &vconceptoser..unidad , unitario WITH 0 	
 			ENDIF 
+
+
+
 		
 		ENDSCAN 
 		
+		
 	ENDFOR 
+
 
 
 
@@ -466,11 +524,11 @@ PARAMETERS par_idperiodo, par_ordenfa
 	
 	GO TOP 
 	SET RELATION TO 
-
 		
 	**************************************************************************************
 	*/ Calculo los Impuestos a aplicar para los Detalles a Facturar 
 	*/ Uniendo detalles e impuestos en una nueva tabla 
+
 	
 	SELECT &ventidadesdf
 	ALTER TABLE &ventidadesdf ALTER	COLUMN funcion char(254)
@@ -487,6 +545,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	into table &ventidadesdif
 	SELECT &ventidadesdif 
 	UPDATE &ventidadesdif SET impuestos = ( neto * razon / 100 )
+
 
 
 
@@ -570,6 +629,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 	** Calcularlo cuando Grabo en la Tabla Temporaria
 	**thisform.tb_numero.Value = maxnumerocom(VAL(v_idcom),thisform.pventa ,1)
 
+
 	
 	SELECT &vcompiservi
 	INDEX on iva TAG iva 
@@ -620,6 +680,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 				&vbocaserviciosftmp..consextra WITH vmedidas3, &vbocaserviciosftmp..consumo WITH vmedidas4, &vbocaserviciosftmp..factorm WITH vmedidas5
 		SKIP 
 	ENDDO 
+
 
 
 
@@ -841,6 +902,8 @@ PARAMETERS pfacturas, pdetafactu, pfacturasimp,pbocaservi, pcone
 		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
 		    RETURN 
 		ENDIF  
+
+
 
 		varchi = FCAdeudadas ( 0, 0, 0, ALLTRIM(&pfacturas..fecha), &pfacturas..idfactura, "I", "tmp", vconeccionFa )
 
