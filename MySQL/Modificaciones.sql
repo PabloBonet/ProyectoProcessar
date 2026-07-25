@@ -1050,3 +1050,126 @@ ALTER TABLE `linkcompro` ADD INDEX `idcomprobaa`(`idcomprobaa`),
  ADD INDEX `idregistrob`(`idregistrob`);
 
 
+-- 20260725 --
+
+ALTER TABLE `comprobantes` ADD INDEX `idtipocompro`(`idtipocompro`),
+ ADD INDEX `tabla`(`tabla`);
+
+
+ALTER TABLE `cajarecaudah` ADD INDEX `idcajareca`(`idcajareca`);
+
+ALTER TABLE `compactiv` ADD INDEX `idcomproba`(`idcomproba`),
+ ADD INDEX `pventa`(`pventa`);
+
+
+ALTER TABLE `processar_horlit`.`entidades` ADD INDEX `localidad`(`localidad`);
+ALTER TABLE `processar_horlit`.`entidades` ADD INDEX `idtipocli`(`idtipocli`),
+ ADD INDEX `idafiptipod`(`idafiptipod`),
+ ADD INDEX `idlistadef`(`idlistadef`);
+
+
+ALTER TABLE `processar_horlit`.`localidades` ADD INDEX `provincia`(`provincia`);
+
+
+ALTER TABLE `processar_horlit`.`provincias` ADD INDEX `pais`(`pais`);
+
+ALTER TABLE `detafactu` ADD INDEX `idfactura`(`idfactura`),
+ ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idconcepto`(`idconcepto`),
+ ADD INDEX `impuesto`(`impuesto`),
+ ADD INDEX `idcuotasd`(`idcuotasd`);
+
+
+ALTER TABLE `np` ADD INDEX `vendedor`(`vendedor`),
+ ADD INDEX `transporte`(`transporte`),
+ ADD INDEX `sector`(`sector`),
+ ADD INDEX `idtiponp`(`idtiponp`),
+ ADD INDEX `pventa`(`pventa`);
+
+
+ALTER TABLE `ot` ADD INDEX `idnp`(`idnp`),
+ ADD INDEX `idtipoot`(`idtipoot`),
+ ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idmate`(`idmate`),
+ ADD INDEX `impuesto`(`impuesto`),
+ ADD INDEX `idtiponp`(`idtiponp`);
+
+
+
+ALTER TABLE `presupu` ADD INDEX `sector`(`sector`),
+ ADD INDEX `vendedor`(`vendedor`),
+ ADD INDEX `idtiponp`(`vendedor`);
+
+ALTER TABLE `presupuh` ADD INDEX `idpresupu`(`idpresupu`),
+ ADD INDEX `idtipoot`(`idtipoot`),
+ ADD INDEX `articulo`(`articulo`);
+
+
+ALTER TABLE `anularp` ADD INDEX `idcomproba`(`idcomproba`),
+ ADD INDEX `pventa`(`pventa`),
+ ADD INDEX `idrecibo`(`idrecibo`),
+ ADD INDEX `idpago`(`idpago`),
+ ADD INDEX `entidad`(`entidad`);
+
+
+ALTER TABLE `oc` ADD INDEX `pventa`(`pventa`),
+ ADD INDEX `idtiponp`(`idtiponp`);
+
+
+ALTER TABLE `ocd` ADD INDEX `idoc`(`idoc`),
+ ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idmate`(`idmate`),
+ ADD INDEX `idtiponp`(`idtiponp`);
+
+
+ALTER TABLE `recibos` ADD INDEX `pventa`(`pventa`);
+
+
+ALTER TABLE `retenciones` ADD INDEX `pventa`(`pventa`),
+ ADD INDEX `idcomproba`(`idcomproba`),
+ ADD INDEX `entidad`(`entidad`);
+
+
+ALTER TABLE `cumplimentap` ADD INDEX `idcomproba`(`idcomproba`),
+ ADD INDEX `pventa`(`pventa`);
+
+
+
+ALTER TABLE `cumplimentah` ADD INDEX `idcump`(`idcump`),
+ ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idot`(`idot`);
+
+
+
+
+ALTER TABLE `facturas` ADD INDEX `pventa`(`pventa`),
+ ADD INDEX `iva`(`iva`),
+ ADD INDEX `cuit`(`cuit`),
+ ADD INDEX `transporte`(`transporte`),
+ ADD INDEX `idtipoopera`(`idtipoopera`),
+ ADD INDEX `idclascomp`(`idclascomp`),
+ ADD INDEX `deposito`(`deposito`),
+ ADD INDEX `idtipocli`(`idtipocli`),
+ ADD INDEX `idlista`(`idlista`),
+ ADD INDEX `idfinancia`(`idfinancia`);
+
+
+ALTER TABLE `remitos` ADD INDEX `idcomproba`(`idcomproba`),
+ ADD INDEX `pventa`(`pventa`),
+ ADD INDEX `localidad`(`localidad`),
+ ADD INDEX `iva`(`iva`),
+ ADD INDEX `cuit`(`cuit`),
+ ADD INDEX `idtipoopera`(`idtipoopera`),
+ ADD INDEX `entidadaso`(`entidadaso`),
+ ADD INDEX `vendedor`(`vendedor`);
+
+
+ALTER TABLE `remitosh` ADD INDEX `idremito`(`idremito`),
+ ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idconcepto`(`idconcepto`),
+ ADD INDEX `impuesto`(`impuesto`);
+
+
+ALTER TABLE `remitos` ADD COLUMN `entidadaso` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `timestamp`;
+ALTER TABLE `facturas` ADD COLUMN `entidadaso` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `timestamp`;
+
