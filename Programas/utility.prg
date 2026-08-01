@@ -2429,7 +2429,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 * FUNCIÓN PARA IMPRIMIR UNA FACTURA (COMPROBANTES DE LA TABLA FACTURA: FACTURA, NC, ND)
 * PARAMETROS: P_IDFACTURA, P_ESELECTRONICA,pEnviarImpresora,pArchivo
 *#/----------------------------------------
-
 	
 	v_idfactura 	= p_idFactura
 	*v_esElectronica = iif(ALLTRIM(p_esElectronica) =='S',.T.,.F.)
@@ -2437,7 +2436,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 	v_idperiodo		= 0
 	
 	IF v_idfactura > 0
-		
+
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 			
 		*** Busco los datos de la factura y el detalle
@@ -2482,7 +2481,7 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
 			ENDIF
-			
+
 			SELECT * FROM fac_det_sql_aux INTO TABLE fac_det_sql_au
 			
 			ALTER table fac_det_sql_au  alter COLUMN idfe I
@@ -2563,7 +2562,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la factura",0+48+0,"Error")
 			ENDIF
 		
-
 		*** Busco los datos de las deudas asociadas a la factura 	
 			sqlmatriz(1)=" Select idfacturad, idfactura, idfcdeuda, detalle , importe  "
 			sqlmatriz(2)=" from facturasd  " 
@@ -2606,10 +2604,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			ENDIF
 			
 		
-		
-		
-		
-		
 
 		IF v_esElectronica  = .T.
 
@@ -2643,7 +2637,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 		SELECT factu
 		GO TOP 
 		IF NOT EOF()
-		
 
 
 			v_idcomproba = factu.idcomproba
@@ -2728,8 +2721,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			sqlmatriz(2)=" where  h.nombre = 'DOLAR' and h.fechacot in ( select max(fechacot) from monedash where fechacot <= '"+ALLTRIM(v_FechaFactura)+"' and nombre = 'DOLAR') "
 
 
-
-
 			verror=sqlrun(vconeccionF,"cotizacion_sql")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la cotización de la moneda",0+48+0,"Error")
@@ -2766,7 +2757,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 *!*				SELECT factu 
 *!*				GO TOP 
 *!*				replace remiaso WITH '' FOR VAL(numerorem) = 0
-
 
 	** AGREGO EL CALCULO PARA LOS RECARGOS PARA AQUELLAS FACTURAS QUE TIENEN VENCIMIENTOS 1 2 Y 3
 			ALTER table factu ADD COLUMN recargo1 n(13,2)
@@ -2916,7 +2906,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 				
 			ENDIF 
 			
-			
 			** Si se usa impresion de facturas con codigos de barra 
 			** llamo a la dll que genera las barras en el archivo de facturas 
 			IF TYPE("_SYSUSACBAR")="C" THEN 
@@ -2980,11 +2969,14 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			
 			
 			*** Agrego entidad asociada para el caso de percepciones ***
+			ALTER table factu alter COLUMN entaso I
+			
 			SELECT factu 
 			GO TOP 
 			LOCATE FOR entaso > 0
 			
 			SELECT factu
+			
 			v_entCarpintero 	= factu.ENTASO
 			v_apellidoCarpintero= factu.APEASO
 			v_nombreCarpintero 	= factu.NOMASO
@@ -2999,7 +2991,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 			SELECT factu 
 			GO TOP 
 			
-			
 			=abreycierracon(vconeccionF,"")
 		
 			IF v_buscasaldo = .T.
@@ -3010,7 +3001,6 @@ PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 				DO FORM reporteform WITH "factu;impIva;impTRIB;deuda;cuotas;bocas;flotes","facturasrc;impIVArc;impTRIBrc;deudarc;cuotasrc;bocasrc;flotesrc",v_idcomproba,.F.,pEnviarImpresora,pArchivo
 			ENDIF 
 
-			
 		ELSE
 			MESSAGEBOX("Error al cargar la factura para imprimir",0+48+0,"Error al cargar la factura")
 			
@@ -9001,8 +8991,8 @@ ENDIF
 	ENDIF 
 
 
-	v_idajuste 	 = maxnumeroidx("idajuste","I","ajustestockp",1)
-	
+	*v_idajuste 	 = maxnumeroidx("idajuste","I","ajustestockp",1)
+	v_idajuste	= 0
 	v_numero 	 = maxnumerocom(v_idcomprobaA, v_pventaA,1)
 	
 	v_fecha		 = &v_tablaDatos..fecha
@@ -9061,6 +9051,22 @@ ENDIF
 	ENDIF  
 
 
+	sqlmatriz(1)=" select last_insert_id() as maxid "
+		verror=sqlrun(vconeccionF,"ultimoIdajuste")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+			=abreycierracon(vconeccionA,"")	
+		    RETURN  .F.
+		ENDIF 
+		SELECT ultimoIdajuste
+		GO TOP 
+		v_idajuste_Ultimo = VAL(ultimoIdajuste.maxid)
+		USE IN ultimoIdajuste
+
+		v_idajuste = v_idajuste_Ultimo 
+		
+		
+
 
 
 	*** INSERTO DETALLE ***			
@@ -9114,8 +9120,8 @@ ENDIF
 					DIMENSION lamatriz2(11,2)
 					
 					*thisform.calcularmaxh
-					v_idajusteh = maxnumeroidx("idajusteh","I","ajustestockh",1)
-					
+					*v_idajusteh = maxnumeroidx("idajusteh","I","ajustestockh",1)
+					v_idajusteh = 0
 					lamatriz2(1,1)='idajuste'
 					lamatriz2(1,2)=ALLTRIM(STR(v_idajuste))
 					lamatriz2(2,1)='articulo'
@@ -35275,6 +35281,213 @@ PARAMETERS p_tipoart, p_opera, p_conexion
 *!*	FUNCTION GruposArtLinea
 *!*	PARAMETERS pl_articulo, pl_linea, pl_opera, pl_conexion
 ENDFUNC 
+
+
+
+FUNCTION validarAjusteComp
+PARAMETERS p_idtipomov, p_idcomproba,p_idregistro, p_tablaDatos
+*#/----------------------------------------
+**** FUNCIÓN PARA VALIDAR Y GENERAR AJUSTES DE UN COMPROBANTE
+** PARAMETROS: 	P_idtipomov: ID de la tabla tipomstock (Indica el tipo de ajuste a realizar, en caso que no se haya hecho)
+***				P_idcomproba: ID de la tabla comprobante (comprobante relacionado al ajuste)
+***				P_nomreCampo: Nombre del campo Indice de la tabla asociada al comprobante
+***				P_Idregistro: ID de la tabla asociada al comprobante
+***				P_TablaDatos: Tabla con los articulos a los que se le hará el ajuste, tiene el siguiente formato: [articulo C(50),cantidad Y,deposito I, fecha C(8)]
+**RETORNO:		true: si se ralizo correctamente la validación (estaba hecho o se genero un nuevo comprobante de ajuste), Falso en caso de que haya algún error
+*#/----------------------------------------
+
+
+	**** Busco el comprobante asociado ***
+	vconeccionA=abreycierracon(0,_SYSSCHEMA)	
+	
+	
+	sqlmatriz(1)=" Select c.idcomproba, c.comprobante as nomcomp, c.idtipocompro, c.tipo, c.ctacte, c.tabla, t.pventa, "
+	sqlmatriz(2)=" t.puntov from comprobantes c left join compactiv t on c.idcomproba = t.idcomproba "
+*!*		sqlmatriz(3)=" where c.idcomproba = "+ALLTRIM(STR(v_idcomproba))
+	verror=sqlrun(vconeccionA,"Comprobantes_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de comprobantes ",0+48+0,"Error")
+	    ** Cierro coneccion **
+		=abreycierracon(vconeccionA,"")
+	    RETURN .F.
+	ENDIF
+	
+
+	SELECT * FROM comprobantes_sql WHERE idcomproba = p_idcomproba INTO TABLE tabcompro_sql
+	
+	SELECT tabcompro_sql
+	GO TOP 
+	IF NOT EOF()
+		v_tabla = tabcompro_sql.tabla 
+		
+		
+		v_nombreCampo = obtenerCampoIndice(ALLTRIM(v_tabla))
+		
+		*** Busco el comprobante asociado
+		sqlmatriz(1)=" select * from "+ALLTRIM(v_tabla)+" c left join compactiv cp on c.idcomproba = cp.idcomproba and c.pventa = cp.pventa "
+		DO CASE
+		CASE ALLTRIM(v_tabla) = "facturas"
+			sqlmatriz(2) = " left join detafactu d on c.idfactura = d.idfactura "		
+		CASE ALLTRIM(v_tabla) = "remitos"
+			sqlmatriz(2) = " left join remitosh h on c.idremito = h.idremito "
+		OTHERWISE
+			sqlmatriz(2) = ""
+	
+		ENDCASE
+		sqlmatriz(3)=" where c."+ALLTRIM(v_nombreCampo)+" = "+ALLTRIM(STR(p_idregistro))
+
+		verror=sqlrun(vconeccionA,"Comprobante_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del comprobante asociado ",0+48+0,"Error")
+		     =abreycierracon(vconeccionA,"")
+		    RETURN .F.
+		ENDIF
+		
+		
+		SELECT comprobante_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			
+		
+			v_muevestock = comprobante_sql.stock
+			
+			IF v_muevestock = 'S'
+			
+				v_pventaC = comprobante_sql.pventa
+			
+				** Obtengo el comprobante de ajuste asociado
+				
+				SELECT * FROM comprobantes_Sql WHERE tabla = 'ajustestockp' AND pventa	= v_pventaC INTO TABLE compAjusteAso
+				
+				SELECT compAjusteAso 
+				GO TOP 
+
+				v_pventaA	 = compAjusteAso.pventa
+				v_idcomprobaA= compAjusteAso.idcomproba
+				v_puntoVA	 = compAjusteAso.puntov
+			
+			
+			
+			
+				** Valido que esté el comprobante de ajuste y el linkcompro
+				sqlmatriz(1)=" select * from linkcompro where idcomprobaa = "+alltrim(STR(v_idcomprobaA))+" and  idregistrob = "+ALLTRIM(STR(p_idregistro))+" and idcomprobab = "+ALLTRIM(STR(p_idcomproba))
+				sqlmatriz(2)=" union "
+				sqlmatriz(3)=" select * from linkcompro where idcomprobab = "+alltrim(STR(v_idcomprobaA))+" and  idregistroa = "+ALLTRIM(STR(p_idregistro))+" and idcomprobaa = "+ALLTRIM(STR(p_idcomproba))
+					
+				verror=sqlrun(vconeccionA,"linkcompro_sql")
+				IF verror=.f.  
+				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de link compro",0+48+0,"Error")
+				     =abreycierracon(vconeccionA,"")
+				    RETURN .F.
+				ENDIF	
+			
+				SELECT linkcompro_sql
+				GO TOP 
+				
+				IF NOT EOF()
+				
+					*** Encontró el link -> está hecho el ajuste
+					RETURN .T.
+				
+				ELSE
+					** Cierro coneccion **
+					=abreycierracon(vconeccionA,"")
+						
+					*** NO encontró el link -> Compruebo si está el ajuste y sino lo hago 
+					
+					
+					** Busco si hay algun ajuste con el numero de comprobante en la observación **
+					
+					
+					
+					
+					SELECT Comprobante_sql
+					GO TOP 
+					
+					IF NOT EOF()
+					
+						v_nomcompro = ALLTRIM(comprobante_sql.comprobante)
+						v_puntov	= ALLTRIM(comprobante_sql.puntov)
+						v_numerostr = ALLTRIM(STRTRAN(STR(comprobante_sql.numero,8,0)," ","0"))
+					
+						v_observacion =  "Comprobante asociado: "+ALLTRIM(v_nomcompro)+" "+ALLTRIM(v_puntov)+" - "+ ALLTRIM(v_numerostr)
+						
+						
+						sqlmatriz(1)=" select * from ajustestockp "
+						sqlmatriz(2)=" where observa1 = '"+v_observacion+"'"
+							
+						verror=sqlrun(vconeccionA,"ajuste_sql")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  del ajuste",0+48+0,"Error")
+						     =abreycierracon(vconeccionA,"")
+						    RETURN .F.
+						ENDIF	
+						
+						SELECT ajuste_sql
+						GO TOP 
+						
+						IF NOT EOF()
+						
+						 ** NO encontró el link y el ajuste está hecho -> genero el link registro
+					
+							v_idcompAju = ajuste_sql.idcomproba
+							v_idajuste = ajuste_sql.idajuste
+							
+							IF p_idcomproba> 0 AND p_idregistro> 0  AND  v_idcompAju > 0 AND v_idajuste  > 0 THEN 
+								=ABLinkCompro(p_idcomproba,p_idregistro,v_idcompAju,v_idajuste,'+')
+							ENDIF
+						ELSE
+						
+							** NO encontró el link y  el ajuste NO está hecho -> genero el ajuste
+							
+							v_resp = AjusteComprobante(p_idtipomov, p_idcomproba, v_nombreCampo, p_idregistro,p_tablaDatos)
+					
+							
+							RETURN v_resp								
+						
+								
+						ENDIF 
+						
+						
+					ENDIF 
+					
+						
+				ENDIF 
+			ELSE
+			
+				** No mueve stock -> OK
+				** Cierro coneccion **
+					=abreycierracon(vconeccionA,"")
+				RETURN .T.
+			ENDIF 
+			
+			
+		ELSE
+			** No puedo definir el comprobante -> Error
+			** Cierro coneccion **
+					=abreycierracon(vconeccionA,"")
+			RETURN .F.
+		
+		ENDIF 
+			
+	ELSE
+		** No puedo obtener la tabla del comprobante -> Error
+		RETURN .F.
+	
+	
+	ENDIF 
+	
+
+
+	** No retonrno por la parte correcta  -> Error
+	** Cierro coneccion **
+	=abreycierracon(vconeccionA,"")
+	RETURN .F.
+
+ENDFUNC 
+
+
 
 
 *#/----------------------------------------

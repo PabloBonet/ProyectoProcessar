@@ -1173,3 +1173,415 @@ ALTER TABLE `remitosh` ADD INDEX `idremito`(`idremito`),
 ALTER TABLE `remitos` ADD COLUMN `entidadaso` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `timestamp`;
 ALTER TABLE `facturas` ADD COLUMN `entidadaso` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `timestamp`;
 
+-- 20260727 --
+
+CREATE TABLE  `tipoarticulo` (
+  `idtipoart` int(11) NOT NULL AUTO_INCREMENT,
+  `tipoarti` char(100) DEFAULT NULL,
+  `observa` char(254) DEFAULT NULL,
+  PRIMARY KEY (`idtipoart`)
+) ENGINE=InnoDB CHARSET=utf8mb4;
+
+insert into tipoarticulo values (0,'ARTICULO','')
+
+
+ALTER TABLE `articulos` ADD COLUMN `idtipoart` INTEGER UNSIGNED NOT NULL DEFAULT 1 AFTER `timestamp`;
+
+-- AGREGAR A LA VISTA DE ARTICULOS EN HORLIT B: --
+-- ,`processar_horlit`.`articulos`.`idtipoart` AS `idtipoart`
+
+
+-- 20260728 --
+ALTER TABLE `acopiop` ADD COLUMN `numcomp` INTEGER UNSIGNED NOT NULL AFTER `numero`;
+ALTER TABLE `ajustesacopiop` ADD COLUMN `opera` INTEGER UNSIGNED NOT NULL AFTER `observa`;
+ALTER TABLE `ajustestockh` ADD INDEX `idtipomov`(`idtipomov`);
+
+ALTER TABLE `articulos` ADD INDEX `moneda`(`moneda`),
+ ADD INDEX `idtipoart`(`idtipoart`);
+
+
+CREATE TABLE  `cajaiecc` (
+  `idcajaiecc` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idcentroc` int(10) unsigned NOT NULL,
+  `razon` double(13,2) NOT NULL,
+  `idcajaie` int(10) DEFAULT NULL,
+  PRIMARY KEY (`idcajaiecc`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `clasificacomp` ADD COLUMN `tabla` CHAR(50) NOT NULL AFTER `recargo`;
+
+CREATE TABLE  `clasificanp` (
+  `idclasifnp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nombre` char(100) NOT NULL,
+  `descrip` char(250) NOT NULL,
+  PRIMARY KEY (`idclasifnp`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
+
+insert into clasificanp values (1, 'NP NORMAL', 'NP normal'),(2, 'NP ACOPIO', 'NP de acopio')
+
+
+CREATE TABLE  `clasifopera` (
+  `idclasifop` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `codigo` char(50) NOT NULL,
+  `descrip` char(250) NOT NULL,
+  PRIMARY KEY (`idclasifop`),
+  KEY `Index_2` (`codigo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE  `clasnpcomp` (
+  `idclasnpco` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idclasifnp` int(10) unsigned NOT NULL,
+  `idcompactiv` int(10) unsigned NOT NULL,
+  `idclasifop` int(10) unsigned NOT NULL,
+  `valor` char(50) NOT NULL,
+  PRIMARY KEY (`idclasnpco`),
+  KEY `Index_2` (`idclasifnp`),
+  KEY `Index_3` (`idcompactiv`),
+  KEY `Index_4` (`idclasifop`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE  `compcai` (
+  `idcompcai` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idcompactiv` int(10) unsigned NOT NULL,
+  `cai` char(100) NOT NULL,
+  `nromin` int(10) unsigned NOT NULL,
+  `nromax` int(10) unsigned NOT NULL,
+  `vtocai` char(8) NOT NULL,
+  PRIMARY KEY (`idcompcai`),
+  KEY `idcompactiv` (`idcompactiv`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+ALTER TABLE `comprobantes` ADD INDEX `comprobante`(`comprobante`);
+
+
+ALTER TABLE `correoconf` ADD COLUMN `idtipocm` INTEGER UNSIGNED NOT NULL DEFAULT 1 AFTER `smtpusessl`,
+ ADD INDEX `usuario`(`usuario`);
+
+
+CREATE TABLE  `tipoctamail` (
+  `idtipocm` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nombre` char(100) NOT NULL,
+  PRIMARY KEY (`idtipocm`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+insert into tipoctamail values (1, 'PARTICULAR'),(2, 'DIFUSION INFORMACION'),(3, 'DIFUSION FACTURACION')
+
+-- 20260730 --
+
+ALTER TABLE `cumplimentah` MODIFY COLUMN `cantidad` DOUBLE(13,2) NOT NULL,
+ MODIFY COLUMN `cantidaduf` DOUBLE(13,2) NOT NULL;
+
+ALTER TABLE `cumplimentap` ADD COLUMN `idclascomp` INTEGER UNSIGNED NOT NULL AFTER `observa4`,
+ ADD COLUMN `paquetes` INTEGER UNSIGNED NOT NULL DEFAULT 1 AFTER `idclascomp`;
+ 
+ ALTER TABLE `cumplimentap` ADD INDEX `idclascomp`(`idclascomp`);
+
+ALTER TABLE `datosextra` ADD INDEX `propiedad`(`propiedad`);
+
+ALTER TABLE `entartdes` ADD INDEX `entidad`(`entidad`),
+ ADD INDEX `articulo`(`articulo`);
+
+ALTER TABLE `entartdes` ADD COLUMN `idgrupo` INTEGER UNSIGNED NOT NULL AFTER `descmonto`,
+ ADD INDEX `idgrupo`(`idgrupo`);
+ 
+ 
+ CREATE TABLE  `entdes` (
+  `identdes` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `entidad` int(10) unsigned NOT NULL,
+  `descuento` decimal(13,2) NOT NULL,
+  `descmonto` decimal(13,2) NOT NULL,
+  PRIMARY KEY (`identdes`),
+  KEY `entidad` (`entidad`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `estadosreg` MODIFY COLUMN `idestadosreg` INTEGER UNSIGNED NOT NULL DEFAULT NULL AUTO_INCREMENT;
+
+CREATE TABLE  `etiquetanp` (
+  `idetiqueta` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `etiqueta` char(50) NOT NULL,
+  `descrip` char(250) NOT NULL,
+  `orden` char(2) NOT NULL DEFAULT '99',
+  `habilitado` int(10) unsigned NOT NULL DEFAULT '1',
+  PRIMARY KEY (`idetiqueta`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `facturas` ADD INDEX `entidadaso`(`entidadaso`);
+
+CREATE TABLE  `facturasbsertmp` (
+  `idfacbser` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idfactura` int(10) unsigned NOT NULL,
+  `bocanumero` char(50) NOT NULL,
+  `ruta1` int(10) unsigned NOT NULL,
+  `folio1` int(10) unsigned NOT NULL,
+  `ruta2` int(10) unsigned NOT NULL,
+  `folio2` int(10) unsigned NOT NULL,
+  `ubicacion` char(30) NOT NULL,
+  `direccion` char(30) NOT NULL,
+  `idtiposer` int(10) unsigned NOT NULL,
+  `consumo` double(13,2) NOT NULL,
+  `mactual` double(13,2) NOT NULL,
+  `manterior` double(13,2) NOT NULL,
+  `consextra` double(13,2) NOT NULL DEFAULT '0.00',
+  `unidadref` char(10) NOT NULL,
+  `valorref` double(13,2) NOT NULL,
+  `idcateser` int(10) unsigned NOT NULL DEFAULT '1',
+  `factorm` double(13,2) NOT NULL DEFAULT '1.00',
+  `dataextra` char(254) NOT NULL,
+  PRIMARY KEY (`idfacbser`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE  `filtrocomp` (
+  `idfiltro` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idcompa` int(10) unsigned NOT NULL,
+  `idcompb` int(10) unsigned NOT NULL,
+  `grupo` char(100) NOT NULL,
+  PRIMARY KEY (`idfiltro`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE  `impupercepcion` (
+  `idimpuper` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `detalle` char(200) NOT NULL,
+  `razon` double(10,2) NOT NULL,
+  `baseimpon` double(13,2) NOT NULL,
+  `funcion` char(100) NOT NULL,
+  `divimporte` double(12,4) NOT NULL DEFAULT '1.2100',
+  PRIMARY KEY (`idimpuper`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `impuretencion` (
+  `idimpuret` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `detalle` char(200) NOT NULL,
+  `razonin` int(10) unsigned NOT NULL,
+  `baseimpon` double(13,2) NOT NULL,
+  `idtipopago` int(10) unsigned NOT NULL,
+  `funcion` char(100) NOT NULL,
+  `razonnin` int(10) unsigned NOT NULL,
+  `baseimponn` double(13,2) NOT NULL,
+  `regimen` int(10) unsigned NOT NULL,
+  `divimporte` double(12,4) NOT NULL DEFAULT '1.2100',
+  PRIMARY KEY (`idimpuret`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+
+
+insert into impuretencion values (1, 'Reg. 19 - Intereses por op. realizadas en entidades financieras. Ley 21526 o agentes de bolsa o mercado', 1, 0.00, 5, 'RET_GANANCIAS_IFN', 2, 0.00, 19, 1.2100),
+(2, 'Reg. 21 - Intereses originados en op. no comprendidas en Reg. 19', 3, 7870.00, 5, 'RET_GANANCIAS_IFN', 4, 7870.00, 21, 1.2100),
+(3, 'Reg. 30 - Alquileres o arrendamientos de bienes muebles', 5, 11200.00, 5, 'RET_GANANCIAS_IFN', 6, 11200.00, 30, 1.2100),
+(4, 'Reg. 31 - Bienes inmuebles urbanos, incluidos los efectuados bajo la modalidad de leasing - incluye suburbanos', 7, 11200.00, 5, 'RET_GANANCIAS_IFN', 8, 11200.00, 31, 1.2100),
+(5, 'Reg. 32 - Bienes inmuebles rurales, incluidos los efectuados bajo la modalidad de leasing - incluye subrurales', 9, 11200.00, 5, 'RET_GANANCIAS_IFN', 10, 11200.00, 32, 1.2100),
+(6, 'Reg. 35 - Regalias', 11, 7870.00, 5, 'RET_GANANCIAS_IFN', 12, 0.00, 35, 1.2100),
+(7, 'Reg. 43 - Interés accionario, excedentes y retornos distribuidos entre asociados, cooperativas - excepto consumo', 13, 7870.00, 5, 'RET_GANANCIAS_IFN', 14, 0.00, 43, 1.2100),
+(8, 'Reg. 51 - Obligaciones de no hacer, o por abandono o no ejercicio de una actividad', 15, 7870.00, 5, 'RET_GANANCIAS_IFN', 16, 0.00, 51, 1.2100),
+(9, 'Reg. 78 - Enajenación de bienes muebles y bienes de cambio', 17, 224000.00, 5, 'RET_GANANCIAS_IFN', 18, 0.00, 78, 1.2100),
+(10, 'Reg. 86 - Transf. temporaria o definitiva de derechos de llave, marcas, patentes de inv., regalías, concesiones y similares', 19, 224000.00, 5, 'RET_GANANCIAS_IFN', 20, 0.00, 86, 1.2100),
+(11, 'Reg. 110 - Explotación de derechos de autor', 21, 10000.00, 5, 'RET_GANANCIAS_IFN', 22, 0.00, 110, 1.2100),
+(12, 'Reg. 94 - Locaciones de obra y/o servicios no ejecutados en rel. de dep. no mencionados en otros incisos', 23, 67170.00, 5, 'RET_GANANCIAS_IFN', 24, 67170.00, 94, 1.2100),
+(13, 'Reg. 25 - Comisiones u otras retribuciones derivadas de act. comisionista, rematador, consignatario y aux de comercio que se refiere en el articulo c del articulo 49', 25, 16830.00, 5, 'RET_GANANCIAS_IFN', 26, 0.00, 25, 1.2100),
+(14, 'Reg. 116 - Honorarios de director de SA., sidico, fiduciario, consejero de soc. coop., integrante de consejos de vigilancia y soc. admin. de SRL...', 27, 67170.00, 5, 'RET_GANANCIAS_IFN', 28, 0.00, 116, 1.2100),
+(15, 'Reg. 119 - Profesionales liberales, oficios, albacea, mandatarios, gestor de negocio', 29, 160000.00, 5, 'RET_GANANCIAS_IFN', 30, 160000.00, 119, 1.2100),
+(16, 'Reg. 124 - Corredor viajante de comercio y despachante de aduana', 31, 16830.00, 5, 'RET_GANANCIAS_IFN', 32, 0.00, 124, 1.2100),
+(17, 'Reg. 95 - Operaciones de transporte de carga nacional e internacional', 33, 67170.00, 5, 'RET_GANANCIAS_IFN', 34, 67170.00, 95, 1.2100),
+(18, 'Reg. 53 - Operaciones realizadas por intermedio de mercados de cereales a término', 35, 0.00, 5, 'RET_GANANCIAS_IFN', 36, 0.00, 53, 1.2100),
+(19, 'Reg. 55 - Distribución de películas. Transmisión de programación. Televisión via satelital', 37, 0.00, 5, 'RET_GANANCIAS_IFN', 38, 0.00, 55, 1.2100),
+(20, 'Reg. 111 - Cualquier otra cesión o locación de derechos, excepto las que correspondan a operaciones realizadas por intermedio de mercados de cereales', 39, 0.00, 5, 'RET_GANANCIAS_IFN', 40, 0.00, 111, 1.2100),
+(21, 'Reg. 112 - Benef. provenientes de los req. de los planes de seguro de retiro privados admin. lo establecido en el inciso d del art. 45 y el inciso d del art 79 excepto lo alcanzado por RG 2437', 41, 16830.00, 5, 'RET_GANANCIAS_IFN', 42, 16830.00, 112, 1.2100),
+(22, 'Reg. 113 - Rescates por desistimiento de planes de seguro de retiro referido en el inciso o, excepto que sea de aplicación lo normalizado en el art 101 de la ley de imp. a las ganancias', 43, 16830.00, 5, 'RET_GANANCIAS_IFN', 44, 16830.00, 113, 1.2100),
+(23, 'Reg. 779 - Subsidios abonados por los Est. Nacional, provinciales, municipales, en concepto de enajenación de bs muebles y bs de cambio', 45, 76140.00, 5, 'RET_GANANCIAS_IFN', 46, 0.00, 779, 1.2100),
+(24, 'Reg. 780 - Subsidios abonados por los Est. Nacional, provinciales, municipales en concepto de locaciones de obras y/o serv. no en rel de dependencia', 47, 31460.00, 5, 'RET_GANANCIAS_IFN', 48, 0.00, 780, 1.2100),
+(25, 'Ret. IIBB STAFE', 50, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 49, 650000.00, 0, 1.2100),
+(26, 'Ret. IIBB STAFE 1.50', 51, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 52, 650000.00, 0, 1.2100),
+(27, 'Ret. IIBB STAFE 0.5', 53, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 54, 650000.00, 0, 1.2100),
+(28, 'Ret. IIBB otra jurisdicción', 55, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 56, 650000.00, 0, 1.2100),
+(29, 'Ret. IIBB STAFE 0.01', 57, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 58, 650000.00, 0, 1.2100),
+(30, 'Ret. IIBB STAFE 0.05', 59, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 60, 650000.00, 0, 1.2100),
+(31, 'Ret. IIBB STAFE 0.10', 61, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 62, 650000.00, 0, 1.2100),
+(32, 'Ret. IIBB STAFE 0.20', 63, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 64, 650000.00, 0, 1.2100),
+(33, 'Ret. IIBB STAFE 0.30', 65, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 66, 650000.00, 0, 1.2100),
+(34, 'Ret. IIBB STAFE 0.35', 67, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 68, 650000.00, 0, 1.2100),
+(35, 'Ret. IIBB STAFE 0.60', 69, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 70, 650000.00, 0, 1.2100),
+(36, 'Ret. IIBB STAFE 0.70', 71, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 72, 650000.00, 0, 1.2100),
+(37, 'Ret. IIBB STAFE 0.80', 73, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 74, 650000.00, 0, 1.2100),
+(38, 'Ret. IIBB STAFE 1.00', 75, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 76, 650000.00, 0, 1.2100),
+(39, 'Ret. IIBB STAFE 1.25', 77, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 78, 650000.00, 0, 1.2100),
+(40, 'Ret. IIBB STAFE 2.00', 79, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 80, 650000.00, 0, 1.2100),
+(41, 'Ret. IIBB STAFE 2.50', 81, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 82, 650000.00, 0, 1.2100),
+(42, 'Ret. IIBB STAFE 2.75', 83, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 84, 650000.00, 0, 1.2100),
+(43, 'Ret. IIBB STAFE 3.00', 85, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 86, 650000.00, 0, 1.2100),
+(44, 'Ret. IIBB STAFE 3.50', 87, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 88, 650000.00, 0, 1.2100),
+(45, 'Ret. IIBB STAFE 4.00', 89, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 90, 650000.00, 0, 1.2100),
+(46, 'Ret. IIBB STAFE 4.50', 91, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 92, 650000.00, 0, 1.2100),
+(47, 'Ret. IIBB STAFE 5.00', 93, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 94, 650000.00, 0, 1.2100),
+(48, 'Ret. IIBB STAFE 0.40', 95, 650000.00, 5, 'RET_IIBB_STAFE_IFN', 96, 650000.00, 0, 1.2100);
+
+CREATE TABLE  `mailcomp` (
+  `idmailcomp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idmaillog` int(10) unsigned NOT NULL,
+  `idcomproba` int(10) unsigned NOT NULL,
+  `idregistro` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idmailcomp`),
+  KEY `idcomproba` (`idcomproba`),
+  KEY `idmaillog` (`idmaillog`),
+  KEY `idregistro` (`idregistro`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE  `mailentcomp` (
+  `idmentcomp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idcomproba` int(10) unsigned NOT NULL,
+  `entidad` int(10) unsigned NOT NULL,
+  `idfnmail` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idmentcomp`),
+  KEY `idcomproba` (`idcomproba`),
+  KEY `entidad` (`entidad`),
+  KEY `idfnmail` (`idfnmail`)
+) ENGINE=InnoDB AUTO_INCREMENT=105825 DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE  `mailestado` (
+  `idmailestado` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `estado` char(50) NOT NULL,
+  PRIMARY KEY (`idmailestado`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
+
+insert into mailestado values (1, 'PENDIENTE'),
+(2, 'ENVIADO'),
+(3, 'ERROR'),
+(4, 'SIN_CORREO')
+
+CREATE TABLE  `mailfuncion` (
+  `idmailfn` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `funcion` char(50) NOT NULL,
+  `descip` char(250) NOT NULL,
+  PRIMARY KEY (`idmailfn`),
+  KEY `funcion` (`funcion`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+insert into mailfuncion values (1, 'ENVIOCOMPROBANTES', 'Función de envío de compobantes')
+
+ALTER TABLE `mateacopiop` ADD COLUMN `articulo` CHAR(50) NOT NULL AFTER `unidad`,
+ ADD INDEX `articulo`(`articulo`);
+ 
+ ALTER TABLE `np` ADD COLUMN `idetiqueta` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `fechaentre`,
+ ADD COLUMN `idclasifnp` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `idetiqueta`,
+ ADD INDEX `idetiqueta`(`idetiqueta`),
+ ADD INDEX `idclasifnp`(`idclasifnp`);
+
+ALTER TABLE `otsector` ADD INDEX `idot`(`idot`),
+ ADD INDEX `idsector`(`idsector`);
+ 
+ 
+ CREATE TABLE  `percepciones` (
+  `idper` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `entidad` int(10) unsigned NOT NULL,
+  `idimpuper` int(10) unsigned NOT NULL,
+  `idfactura` int(10) unsigned NOT NULL,
+  `baseimpon` double(13,2) NOT NULL,
+  `enconvenio` char(1) NOT NULL,
+  `razon` double(10,2) NOT NULL,
+  `detalle` char(200) NOT NULL,
+  `impaper` double(12,4) NOT NULL,
+  `sujaper` double(12,4) NOT NULL,
+  `funcion` char(100) NOT NULL,
+  PRIMARY KEY (`idper`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
+
+
+ALTER TABLE `reldatosextra` ADD INDEX `iddatosex`(`iddatosex`),
+ ADD INDEX `tabla`(`tabla`),
+ ADD INDEX `idregistro`(`idregistro`),
+ ADD INDEX `idregic`(`idregic`);
+
+ALTER TABLE `remitos` ADD INDEX `entidad`(`entidad`);
+
+ALTER TABLE `remitosh` ADD INDEX `idremito`(`idremito`),
+ ADD INDEX `idconcepto`(`idconcepto`),
+ ADD INDEX `impuesto`(`impuesto`);
+
+
+ALTER TABLE `sectorcomp` ADD COLUMN `stock` CHAR(1) NOT NULL DEFAULT 'N' AFTER `idcomproba`,
+ ADD COLUMN `stockco` CHAR(1) NOT NULL DEFAULT 'N' AFTER `stock`,
+ ADD INDEX `idsector`(`idsector`),
+ ADD INDEX `idcomproba`(`idcomproba`);
+
+
+ALTER TABLE `tablasidx` ADD INDEX `tabla`(`tabla`),
+ ADD INDEX `campo`(`campo`);
+
+
+CREATE TABLE  `tipologias` (
+  `idtp` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idp` int(10) unsigned NOT NULL,
+  `codigo` char(20) NOT NULL,
+  `nombre` char(150) NOT NULL,
+  `articulo` char(20) NOT NULL,
+  `nivel` char(1) NOT NULL,
+  `cantidad` float(13,2) NOT NULL,
+  PRIMARY KEY (`idtp`)	
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `tipomstock` ADD INDEX `ie`(`ie`),
+ ADD INDEX `deposito`(`deposito`);
+
+
+CREATE TABLE  `transferenciasd` (
+  `idtransfed` int(10) NOT NULL AUTO_INCREMENT,
+  `idtransfe` int(10) DEFAULT NULL,
+  `iddetacobro` int(10) DEFAULT NULL,
+  `estado` int(10) DEFAULT NULL,
+  `detalle` char(254) DEFAULT NULL,
+  PRIMARY KEY (`idtransfed`),
+  KEY `idtransfe` (`idtransfe`),
+  KEY `iddetacobro` (`iddetacobro`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `transporte` ADD INDEX `entidad`(`entidad`);
+
+CREATE TABLE  `trazaie` (
+  `idtie` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idtraza` char(10) NOT NULL,
+  `articulo` char(50) NOT NULL,
+  `cantidad` double(13,2) NOT NULL,
+  `fecha` char(8) NOT NULL,
+  `tabla` char(50) NOT NULL,
+  `campo` char(50) NOT NULL,
+  `registroi` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idtie`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE  `validaanular` (
+  `idvalida` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idcompa` int(10) unsigned NOT NULL,
+  `idcompb` int(10) unsigned NOT NULL,
+  `noanula` int(10) unsigned NOT NULL,
+  `noelimina` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`idvalida`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
+
+
+ALTER TABLE `vendedores` ADD COLUMN `usuario` CHAR(15) NOT NULL AFTER `tipodoc`,
+ ADD INDEX `usuario`(`usuario`);
+
+-- 20260731 --
+
+----------------------
+--- IMPORTENTE!!! ---
+-- Al modificar los campos como autoincremental controlar el ultimo valor del indice --
+-----
+ALTER TABLE `ajustestockh` MODIFY COLUMN `idajusteh` INTEGER UNSIGNED NOT NULL DEFAULT NULL AUTO_INCREMENT;
+
+ALTER TABLE `ajustestockp` MODIFY COLUMN `idajuste` INTEGER UNSIGNED NOT NULL DEFAULT NULL AUTO_INCREMENT,
+ ADD INDEX `idtipomov`(`idtipomov`),
+ ADD INDEX `pventa`(`pventa`);
+
+
+ALTER TABLE `r_listaprea` ADD COLUMN `idtipoart` INTEGER UNSIGNED NOT NULL AFTER `unidadf`,
+ ADD INDEX `idlista`(`idlista`),
+ ADD INDEX `idlistap`(`idlistap`),
+ ADD INDEX `idlistah`(`idlistah`),
+ ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `linea`(`linea`),
+ ADD INDEX `idsublinea`(`idsublinea`),
+ ADD INDEX `idtipoart`(`idtipoart`);
+ 
+ 
