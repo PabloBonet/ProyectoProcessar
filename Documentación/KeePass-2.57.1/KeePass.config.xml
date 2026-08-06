@@ -9,13 +9,18 @@
 	</Meta>
 	<Application>
 		<LastUsedFile>
-			<Path>Database.kdbx</Path>
+			<Path>..\..\..\..\Users\pablo\Trabajo\Contraseñas_Processar\KeePass-2.57.1\Processar.kdbx</Path>
 			<CredProtMode>Obf</CredProtMode>
 			<CredSaveMode>NoSave</CredSaveMode>
 		</LastUsedFile>
 		<MostRecentlyUsed>
 			<MaxItemCount>12</MaxItemCount>
 			<Items>
+				<ConnectionInfo>
+					<Path>..\..\..\..\Users\pablo\Trabajo\Contraseñas_Processar\KeePass-2.57.1\Processar.kdbx</Path>
+					<CredProtMode>Obf</CredProtMode>
+					<CredSaveMode>NoSave</CredSaveMode>
+				</ConnectionInfo>
 				<ConnectionInfo>
 					<Path>Database.kdbx</Path>
 					<CredProtMode>Obf</CredProtMode>
@@ -24,7 +29,7 @@
 			</Items>
 		</MostRecentlyUsed>
 		<WorkingDirectories>
-			<Item>Database@..\KeePass-2.57.1</Item>
+			<Item>Database@..\..\..\..\Users\pablo\Trabajo\Contraseñas_Processar\KeePass-2.57.1</Item>
 			<Item>Import@..\..\..\..\Users\pablo\Downloads</Item>
 		</WorkingDirectories>
 		<Start>
@@ -40,8 +45,8 @@
 	</Application>
 	<Logging />
 	<MainWindow>
-		<X>535</X>
-		<Y>133</Y>
+		<X>338</X>
+		<Y>138</Y>
 		<Width>670</Width>
 		<Height>525</Height>
 		<SplitterHorizontalFrac>0.8333</SplitterHorizontalFrac>
@@ -135,6 +140,10 @@
 		<KeySources>
 			<Association>
 				<DatabasePath>Database.kdbx</DatabasePath>
+				<Password>true</Password>
+			</Association>
+			<Association>
+				<DatabasePath>..\..\..\..\Users\pablo\Trabajo\Contraseñas_Processar\KeePass-2.57.1\Processar.kdbx</DatabasePath>
 				<Password>true</Password>
 			</Association>
 		</KeySources>
