@@ -759,6 +759,8 @@ insert into formulariosfn values (1, 'remitos', 'remitos'),
 
 
 
+--- ACTUALIZACION HORLIT DESDE ACÁ (20260806) ---
+
 
 CREATE TABLE  `clasnpcomp` (
   `idclasnpco` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -863,12 +865,16 @@ ALTER TABLE `remitos` MODIFY COLUMN `cai` CHAR(100) CHARACTER SET latin1 COLLATE
 
 --20260416--
 
-DROP TABLE IF EXISTS `tipoctamail`;
 CREATE TABLE  `tipoctamail` (
   `idtipocm` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `nombre` char(100) NOT NULL,
   PRIMARY KEY (`idtipocm`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+
+insert into tipoctamail values (1, 'PARTICULAR'),
+(2, 'DIFUSION INFORMACION'),
+(3, 'DIFUSION FACTURACION');
+
 
 
 ALTER TABLE `correoconf` ADD COLUMN `idtipocm` int(10) unsigned  NOT NULL DEFAULT 1 AFTER `smtpusessl`;
@@ -906,6 +912,11 @@ CREATE TABLE  `mailestado` (
   PRIMARY KEY (`idmailestado`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+insert into mailestado values (1, 'PENDIENTE'),
+(2, 'ENVIADO'),
+(3, 'ERROR'),
+(4, 'SIN_CORREO');
+
 
 
 CREATE TABLE `mailfuncion` (
@@ -915,6 +926,8 @@ CREATE TABLE `mailfuncion` (
   PRIMARY KEY (`idmailfn`)
 )
 ENGINE = InnoDB;
+
+insert into mailfuncion values (1, 'ENVIOCOMPROBANTES', 'Función de envío de compobantes');
 
 
 CREATE TABLE `mailentcomp` (
@@ -1034,7 +1047,7 @@ ALTER TABLE `r_otpendientesec` ADD INDEX `articulo`(`articulo`),
 
 ALTER TABLE `r_recibossaldo` ADD INDEX `idcomproba`(`idcomproba`);
 
-
+ALTER TABLE `facturas` ADD COLUMN `entidadaso` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `idfinancia`;
 
 ALTER TABLE `facturas` ADD INDEX `entidadaso`(`entidadaso`);
 
@@ -1062,16 +1075,16 @@ ALTER TABLE `compactiv` ADD INDEX `idcomproba`(`idcomproba`),
  ADD INDEX `pventa`(`pventa`);
 
 
-ALTER TABLE `processar_horlit`.`entidades` ADD INDEX `localidad`(`localidad`);
-ALTER TABLE `processar_horlit`.`entidades` ADD INDEX `idtipocli`(`idtipocli`),
+ALTER TABLE `entidades` ADD INDEX `localidad`(`localidad`);
+ALTER TABLE `entidades` ADD INDEX `idtipocli`(`idtipocli`),
  ADD INDEX `idafiptipod`(`idafiptipod`),
  ADD INDEX `idlistadef`(`idlistadef`);
 
 
-ALTER TABLE `processar_horlit`.`localidades` ADD INDEX `provincia`(`provincia`);
+ALTER TABLE `localidades` ADD INDEX `provincia`(`provincia`);
 
 
-ALTER TABLE `processar_horlit`.`provincias` ADD INDEX `pais`(`pais`);
+ALTER TABLE `provincias` ADD INDEX `pais`(`pais`);
 
 ALTER TABLE `detafactu` ADD INDEX `idfactura`(`idfactura`),
  ADD INDEX `articulo`(`articulo`),
@@ -1341,6 +1354,57 @@ CREATE TABLE  `filtrocomp` (
   PRIMARY KEY (`idfiltro`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+insert into filtrocomp values (1, 15, 46, 'remitos_btn_cump'),
+(2, 15, 53, 'remitos_btn_cump'),
+(3, 15, 54, 'remitos_btn_cump'),
+(4, 15, 1, 'remitos_btn_comprobante'),
+(5, 15, 10, 'remitos_btn_comprobante'),
+(6, 1, 11, 'facturas_btn_comprobante'),
+(7, 7, 8, 'facturas_btn_comprobante'),
+(8, 8, 10, 'facturas_btn_comprobante'),
+(9, 8, 7, 'facturas_btn_comprobante'),
+(10, 10, 8, 'facturas_btn_comprobante'),
+(11, 11, 1, 'facturas_btn_comprobante'),
+(12, 11, 12, 'facturas_btn_comprobante'),
+(13, 12, 11, 'facturas_btn_comprobante'),
+(14, 24, 33, 'facturas_btn_comprobante'),
+(15, 32, 33, 'facturas_btn_comprobante'),
+(16, 33, 24, 'facturas_btn_comprobante'),
+(17, 33, 32, 'facturas_btn_comprobante'),
+(18, 34, 36, 'facturas_btn_comprobante'),
+(19, 35, 36, 'facturas_btn_comprobante'),
+(20, 36, 34, 'facturas_btn_comprobante'),
+(21, 36, 35, 'facturas_btn_comprobante'),
+(22, 39, 40, 'facturas_btn_comprobante'),
+(23, 40, 39, 'facturas_btn_comprobante'),
+(24, 48, 50, 'facturas_btn_comprobante'),
+(25, 49, 50, 'facturas_btn_comprobante'),
+(26, 50, 48, 'facturas_btn_comprobante'),
+(27, 50, 49, 'facturas_btn_comprobante'),
+(28, 1, 15, 'facturas_btn_remito'),
+(29, 7, 15, 'facturas_btn_remito'),
+(30, 8, 15, 'facturas_btn_remito'),
+(31, 10, 15, 'facturas_btn_remito'),
+(32, 11, 15, 'facturas_btn_remito'),
+(33, 12, 15, 'facturas_btn_remito'),
+(34, 24, 15, 'facturas_btn_remito'),
+(35, 32, 15, 'facturas_btn_remito'),
+(36, 33, 15, 'facturas_btn_remito'),
+(37, 34, 15, 'facturas_btn_remito'),
+(38, 35, 15, 'facturas_btn_remito'),
+(39, 36, 15, 'facturas_btn_remito'),
+(40, 39, 15, 'facturas_btn_remito'),
+(41, 40, 15, 'facturas_btn_remito'),
+(42, 48, 15, 'facturas_btn_remito'),
+(43, 49, 15, 'facturas_btn_remito'),
+(44, 50, 15, 'facturas_btn_remito'),
+(45, 10, 10, 'facturas_btn_comprobante'),
+(46, 1, 1, 'facturas_btn_comprobante'),
+(47, 7, 10, 'facturas_btn_comprobante'),
+(48, 12, 1, 'facturas_btn_comprobante')
+
+
 CREATE TABLE  `impupercepcion` (
   `idimpuper` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `detalle` char(200) NOT NULL,
@@ -1436,7 +1500,7 @@ CREATE TABLE  `mailentcomp` (
   KEY `idcomproba` (`idcomproba`),
   KEY `entidad` (`entidad`),
   KEY `idfnmail` (`idfnmail`)
-) ENGINE=InnoDB AUTO_INCREMENT=105825 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE  `mailestado` (
   `idmailestado` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -1585,3 +1649,8 @@ ALTER TABLE `r_listaprea` ADD COLUMN `idtipoart` INTEGER UNSIGNED NOT NULL AFTER
  ADD INDEX `idtipoart`(`idtipoart`);
  
  
+ --20260806--
+ 
+ ALTER TABLE `facturas`  ADD INDEX `numero`(`numero`);
+ALTER TABLE `remitos`  ADD INDEX `numero`(`numero`);
+
