@@ -3855,6 +3855,173 @@ PARAMETERS p_idMoviStockP
 ENDFUNC 
 
 
+*!*	FUNCTION imprimirNP
+*!*	PARAMETERS p_idnp
+*!*	*#/----------------------------------------
+*!*	* FUNCIÓN PARA IMPRIMIR UNA Nota de Pedido (COMPROBANTES DE LA TABLA NP)
+*!*	* PARAMETROS: P_IDNP
+*!*	*#/----------------------------------------
+
+
+*!*		v_idnp = p_idnp
+
+*!*		v_imprimeMonto	= 0			   
+
+*!*		IF v_idnp  > 0
+*!*			
+*!*			IF TYPE('_SYSIMPMONTONP') = 'C'
+*!*				IF _SYSIMPMONTONP = 'S'
+*!*					v_imprimeMonto	= 1		
+*!*				ENDIF 
+*!*			ENDIF 
+*!*			
+*!*			*** Busco los datos de la np y el detalle
+*!*			
+*!*			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+*!*			
+
+*!*			sqlmatriz(1)=" Select f.*,d.*,c.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit,e.direccion, "
+*!*			sqlmatriz(2)=" e.telefono, e.email, com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump, t.etiqueta, ifnull(s.nombre, 'SIN CLASIFICACION') as nomclasif, ifnull(ds.stocktot, 0) as stocktot, g.nombre as zona, a.observa as artobserva "
+*!*			sqlmatriz(3)=" from np f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
+*!*			sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
+*!*			sqlmatriz(5)=" left join ot d on f.idnp = d.idnp left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva "
+*!*			sqlmatriz(6)=" left join vendedores v on f.vendedor = v.vendedor left join r_otpendientes r on r.idot = d.idot "
+*!*			sqlmatriz(7)=" left join localidades l on e.localidad = l.localidad left join provincias p on l.provincia = p.provincia "
+*!*			sqlmatriz(8)=" left join etiquetanp t on f.idetiqueta = t.idetiqueta "
+*!*			sqlmatriz(9)=" left join clasificanp s on f.idclasifnp = s.idclasifnp "
+*!*			sqlmatriz(10)=" left join r_depostock ds on ds.articulo = d.articulo left join articulos a on ds.articulo = a.articulo "		
+*!*			sqlmatriz(11)=" left join grupoobjeto o on e.entidad = o.idmiembro left join grupos g on o.idgrupo = g.idgrupo left join tipogrupos i on g.idtipogrupo = i.idtipogrupo "
+*!*			sqlmatriz(12)=" where i.tabla = 'entidades' and i.campo = 'entidad' and i.detalle = 'zonas-entidades' and f.idnp = "+ ALLTRIM(STR(v_idnp))
+*!*				
+*!*						
+*!*			verror=sqlrun(vconeccionF,"np_det_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de la NP",0+48+0,"Error")
+*!*			ENDIF
+
+*!*			SELECT *, SPACE(200) as otvincula FROM np_det_sql INTO TABLE .\np_impr  WHERE imprimir = 'S'
+
+*!*			sqlmatriz(1)=" Select n.idot, o.fechaot, o.descriptot, p.entidad, p.nombre from otnp n left join otordentra o on o.idot = n.idot left join otpedido p on p.idpedido = o.idpedido "
+*!*			sqlmatriz(2)=" where n.idnp = "+ ALLTRIM(STR(v_idnp))
+*!*			verror=sqlrun(vconeccionF,"otvin_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+*!*			ENDIF 
+
+*!*			v_otvincula = ""
+*!*			SELECT otvin_sql
+*!*			GO TOP 
+*!*			IF !EOF() THEN 
+*!*				v_otvincula = "O.T. Nro. "+ALLTRIM(STR(otvin_sql.idot))+'  F.'+SUBSTR(otvin_sql.fechaot,7,2)+'/'+SUBSTR(otvin_sql.fechaot,5,2)+'/'+SUBSTR(otvin_sql.fechaot,1,4)+'   '+STR(otvin_sql.entidad,6)+'-'+ALLTRIM(otvin_sql.nombre)+'  - '+ALLTRIM(otvin_sql.descriptot)
+*!*			ENDIF 
+*!*			USE IN otvin_sql 
+*!*			
+*!*			
+*!*			
+*!*			
+*!*				
+*!*			SELECT np_impr
+*!*			
+*!*			IF NOT EOF()
+*!*				SELECT np_impr
+*!*				ALTER table np_impr ADD COLUMN imprMonto I
+*!*				ALTER table np_impr ADD COLUMN sectores C(200)
+*!*				v_sectores		= sectoresPorNp(v_idnp,vconeccionF)
+*!*				
+*!*				
+*!*				SELECT np_impr
+*!*				GO TOP 
+*!*				replace ALL imprMonto WITH v_imprimeMonto, otvincula WITH v_otvincula, sectores WITH ALLTRIM(v_sectores)
+*!*				
+*!*				SELECT np_impr
+*!*				GO TOP 
+*!*				
+*!*				v_idcomproba 	= np_impr.idcomproba
+*!*				v_tipoCompAfip	= ALLTRIM(np_impr.tipcomAFIP)
+*!*				v_codBarra		= ""
+*!*				v_codBarraD 	= ""
+*!*				v_electronica	= .F.
+*!*				v_cuitEmpresa	= _SYSCUIT
+*!*				v_entidad		= np_impr.entidad
+*!*				
+*!*				
+*!*				
+*!*		
+*!*				*********************************************
+*!*				** Obtengo los datos anexos a la Nota de Pedido y el cliente si los hubiere 
+*!*				** agrega los datos extra y anexos de la entidad y la nota de pedido a la impresion
+*!*				************************************************************
+*!*				*Anexo Entidades
+*!*				sqlmatriz(1)=" select concat(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor, concat(r.tabla,SPACE(15)) as tabla, ifnull(o.orden,'000') as ordenar from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+*!*				sqlmatriz(2)=" left join datosextraor o on o.tabla = 'entidades' and o.propiedad = d.propiedad "
+*!*				sqlmatriz(3)=" where d.imprimir = 'S' and r.tabla = 'entidades' and r.idregistro = "+ ALLTRIM(STR(v_entidad))
+
+*!*	*!*				sqlmatriz(1)=" select concat(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor, concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+*!*	*!*				sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'entidades' and r.idregistro = "+ ALLTRIM(STR(v_entidad))
+*!*				verror=sqlrun(vconeccionF,"entidadextra_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+*!*				ENDIF 		
+*!*				
+*!*				*Anexo NP
+*!*				sqlmatriz(1)=" select CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor , concat(r.tabla,SPACE(15)) as tabla, ifnull(o.orden,'000') as ordenar from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+*!*				sqlmatriz(2)=" left join datosextraor o on o.tabla = 'np' and o.propiedad = d.propiedad "
+*!*				sqlmatriz(3)=" where d.imprimir = 'S' and r.tabla = 'np' and r.idregistro = "+ ALLTRIM(STR(v_idnp))
+
+*!*	*!*				sqlmatriz(1)=" select CONCAT(d.propiedad,SPACE(50)) as propiedad, concat(d.valor,SPACE(200)) as valor , concat(r.tabla,SPACE(15)) as tabla from datosextra d left join reldatosextra r on d.iddatosex = r.iddatosex "
+*!*	*!*				sqlmatriz(2)=" where d.imprimir = 'S' and r.tabla = 'np' and r.idregistro = "+ ALLTRIM(STR(v_idnp))
+*!*				verror=sqlrun(vconeccionF,"npextra_sql")
+*!*				IF verror=.f.  
+*!*				    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Las OT DE Notas de Pedido ",0+48+0,"Error")
+*!*				ENDIF 		
+*!*				
+*!*				SELECT entidadextra_sql
+*!*				GO TOP 
+*!*				IF EOF() THEN 
+*!*					CREATE TABLE entidadex ( propiedad c(50), valor m , tabla c(15)) 
+*!*				ELSE
+*!*					SELECT propiedad , valor , tabla, ordenar FROM entidadextra_sql INTO TABLE .\entidadex ORDER BY ordenar, propiedad 
+*!*					ALTER table entidadex alter COLUMN valor m
+*!*				ENDIF 
+*!*				USE IN entidadextra_sql
+*!*				
+
+*!*				SELECT npextra_sql
+*!*				GO TOP 
+*!*				IF EOF() THEN 
+*!*					CREATE TABLE npex ( propiedad c(50), valor m , tabla c(15)) 
+*!*				ELSE
+*!*					SELECT propiedad , valor , tabla, ordenar FROM npextra_sql INTO TABLE .\npex ORDER BY ordenar, propiedad 
+*!*					ALTER table npex alter COLUMN valor m
+*!*				ENDIF 
+*!*				USE IN npextra_sql 
+
+
+
+*!*				DO FORM reporteform WITH "np_impr;entidadex;npex","npcr;entidadexcr;npexcr",v_idcomproba
+*!*				
+*!*				=abreycierracon(vconeccionF,"")	
+
+*!*				* Impresion de Datos Anexos si los hubiere
+*!*				=ImprimirDetalleAnexo ('np', v_idnp)
+*!*			
+*!*				
+*!*			ELSE
+*!*				MESSAGEBOX("Error al cargar la NP  para imprimir",0+48+0,"Error al cargar la NP")
+*!*				RETURN 	
+*!*			ENDIF 
+*!*			
+*!*			
+
+*!*		ELSE
+*!*			MESSAGEBOX("NO se pudo recuperar la NP ID <= 0",0+16,"Error al imprimir")
+*!*			RETURN 
+
+*!*		ENDIF 
+
+*!*	ENDFUNC 
+
+
 FUNCTION imprimirNP
 PARAMETERS p_idnp
 *#/----------------------------------------
@@ -3881,7 +4048,7 @@ PARAMETERS p_idnp
 		
 
 		sqlmatriz(1)=" Select f.*,d.*,c.*,f.numero as numNP,com.tipo as tipoCom, c.detalle as detIVA, v.nombre as nomVend,ca.puntov, tc.idafipcom, pv.electronica as electro, ifnull(af.codigo,'') as tipcomAFIP,l.nombre as nomLoc, p.nombre as nomProv,e.cuit,e.direccion, "
-		sqlmatriz(2)=" e.telefono, e.email, com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump, t.etiqueta, ifnull(s.nombre, 'SIN CLASIFICACION') as nomclasif, ifnull(ds.stocktot, 0) as stocktot, g.nombre as zona, a.observa as artobserva "
+		sqlmatriz(2)=" e.telefono, e.email, com.comprobante as nomcomp,ifnull(r.cantcump,0) as cantcump, ifnull(t.etiqueta,'      ') as etiqueta, ifnull(s.nombre, 'SIN CLASIFICACION') as nomclasif, ifnull(ds.stocktot, 0) as stocktot, g.nombre as zona, a.observa as artobserva "
 		sqlmatriz(3)=" from np f left join comprobantes com on f.idcomproba = com.idcomproba left join tipocompro tc on com.idtipocompro = tc.idtipocompro left join afipcompro af on tc.idafipcom = af.idafipcom "
 		sqlmatriz(4)=" left join compactiv ca on f.idcomproba = ca.idcomproba and f.pventa = ca.pventa left join puntosventa pv on  ca.pventa = pv.pventa  "
 		sqlmatriz(5)=" left join ot d on f.idnp = d.idnp left join entidades e on f.entidad = e.entidad left join condfiscal c on e.iva = c.iva "
@@ -3890,8 +4057,10 @@ PARAMETERS p_idnp
 		sqlmatriz(8)=" left join etiquetanp t on f.idetiqueta = t.idetiqueta "
 		sqlmatriz(9)=" left join clasificanp s on f.idclasifnp = s.idclasifnp "
 		sqlmatriz(10)=" left join r_depostock ds on ds.articulo = d.articulo left join articulos a on ds.articulo = a.articulo "		
-		sqlmatriz(11)=" left join grupoobjeto o on e.entidad = o.idmiembro left join grupos g on o.idgrupo = g.idgrupo left join tipogrupos i on g.idtipogrupo = i.idtipogrupo "
-		sqlmatriz(12)=" where i.tabla = 'entidades' and i.campo = 'entidad' and i.detalle = 'zonas-entidades' and f.idnp = "+ ALLTRIM(STR(v_idnp))
+		sqlmatriz(11)=" left join grupoobjeto o on e.entidad = o.idmiembro left join grupos g on o.idgrupo = g.idgrupo left join tipogrupos i ON ( g.idtipogrupo = i.idtipogrupo and i.tabla = 'entidades' and i.campo = 'entidad' and i.detalle = 'zonas-entidades' )"
+		sqlmatriz(12)=" where  f.idnp = "+ ALLTRIM(STR(v_idnp))+" group by d.idot"
+*!*			sqlmatriz(11)=" left join grupoobjeto o on e.entidad = o.idmiembro left join grupos g on o.idgrupo = g.idgrupo left join tipogrupos i on g.idtipogrupo = i.idtipogrupo "
+*!*			sqlmatriz(12)=" where i.tabla = 'entidades' and i.campo = 'entidad' and i.detalle = 'zonas-entidades' and f.idnp = "+ ALLTRIM(STR(v_idnp))
 			
 					
 		verror=sqlrun(vconeccionF,"np_det_sql")
@@ -3900,6 +4069,8 @@ PARAMETERS p_idnp
 		ENDIF
 
 		SELECT *, SPACE(200) as otvincula FROM np_det_sql INTO TABLE .\np_impr  WHERE imprimir = 'S'
+
+
 
 		sqlmatriz(1)=" Select n.idot, o.fechaot, o.descriptot, p.entidad, p.nombre from otnp n left join otordentra o on o.idot = n.idot left join otpedido p on p.idpedido = o.idpedido "
 		sqlmatriz(2)=" where n.idnp = "+ ALLTRIM(STR(v_idnp))
@@ -4380,9 +4551,9 @@ PARAMETERS p_idcajaie, P_opera_comp
 		*** Busco los datos del cajaie
 					
 
-			sqlmatriz(1)= " Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, d.idtipopago,d.importe as importetp, tp.detalle as tipopago, "
-			sqlmatriz(2)= " com.comprobante as nomcomp, cpl.descrip as desccpl,cb.codcuenta, cb.detalle as detcuenta from cajaie r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba  "
-			sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom  "
+			sqlmatriz(1)= " Select r.*, pv.puntov, com.tipo, a.codigo as tipcomafip, d.idtipopago,d.importe as importetp, tp.detalle as tipopago, com.comprobante as nomcomp, cpl.descrip as desccpl,cb.codcuenta, cb.detalle as detcuenta,"
+			sqlmatriz(2)= " ifnull(cl.descrip,'                    ') as clasicomp  from cajaie r left join puntosventa pv on r.pventa = pv.pventa left join comprobantes com on r.idcomproba = com.idcomproba  "
+			sqlmatriz(3)=" left join tipocompro t on com.idtipocompro = t.idtipocompro left join afipcompro a on t.idafipcom = a.idafipcom left join clasificacomp cl on cl.idclascomp = r.idclascomp "
 			
 			IF v_opera_comp < 0
 				sqlmatriz(4) = " left join detallepagos d on r.idcajaie = d.idregistro  left join tipopagos tp on d.idtipopago = tp.idtipopago left join cajabancos cb on d.idcuenta = cb.idcuenta "
@@ -9052,7 +9223,7 @@ ENDIF
 
 
 	sqlmatriz(1)=" select last_insert_id() as maxid "
-		verror=sqlrun(vconeccionF,"ultimoIdajuste")
+		verror=sqlrun(vconeccionA,"ultimoIdajuste")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
 			=abreycierracon(vconeccionA,"")	
@@ -11106,105 +11277,6 @@ ENDFUNC
 
 
 
-*!*	FUNCTION cambiaAEstado
-*!*		PARAMETERS p_reclamop, p_sector, p_estado
-*!*	*#/----------------------------------------
-*!*	* Cambia los estados del reclamo según el sector y los sectores asociados al reclamo si está habilitada la opción
-*!*	* Retorna: True o False, según se cambió o no el estado
-*!*	*#/----------------------------------------
-
-*!*		v_idreclamop	= p_reclamop
-*!*		v_idsector		= p_sector
-*!*		v_idestado		= p_estado
-*!*		v_retorno		= .F.
-*!*		
-*!*		estadoRecObjTmp = CREATEOBJECT('estadosrecclass')
-*!*		
-*!*		
-*!*		v_estadoCerradoTmp	=  estadoRecObjTmp.getidestado("CERRADO")
-
-*!*			MESSAGEBOX(1113)
-*!*			
-*!*			
-*!*		IF v_estadoCerradoTmp = v_idestado AND _SYSRECCIERRAO = 'S'
-*!*			** El Sector origen cierra todos los sectores 
-*!*		
-*!*			MESSAGEBOX(1112)
-*!*		
-*!*		
-
-*!*			vconeccionM = abreycierracon(0,_SYSSCHEMA)
-
-*!*			
-*!*			sqlmatriz(1)=" select * from reclamosec "
-*!*			sqlmatriz(2)=" where idrecseco = "+ALLTRIM(STR(v_idsector)) +" and idreclamop = "+ALLTRIM(STR(v_idreclamop))
-*!*			
-*!*			
-*!*			verror=sqlrun(vconeccionM,"reclamosec_sql")
-*!*			IF verror=.f.  
-*!*			    MESSAGEBOX("Ha Ocurrido un Error al buscar los sectores del reclamo",0+48+0,"Error")
-*!*			    		
-*!*				** me desconecto
-*!*				=abreycierracon(vconeccionM,"")
-*!*				
-*!*			    RETURN .F.
-*!*			ENDIF 	
-*!*				v_huboError	= 0
-*!*			
-*!*			SELECT reclamosec_sql
-*!*			
-*!*			v_cantReg	= RECCOUNT()
-*!*			
-*!*			SELECT reclamosec_sql
-*!*			GO TOP 
-*!*			
-*!*			DO WHILE NOT EOF()
-*!*			
-*!*				v_idsectorD	= reclamosec_sql.idrecsecd
-*!*			
-*!*				v_idultEstadoRecTmp	= estadoReclamoPorSector(v_idreclamop, v_idsectorD, 'I')
-*!*		
-*!*				
-*!*				IF v_idultEstadoRecTmp = v_estadoCerradoTmp
-*!*					** Si está en estado cerrado -> No cambio el estado
-*!*				ELSE
-*!*				
-*!*					** Cierro el reclamo para el sector
-*!*					v_retTmp = cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
-*!*			
-*!*					IF v_retTmp = .F.
-*!*						v_huboError = v_huboError  + 1
-*!*						
-*!*						MESSAGEBOX("Hubo un problema al intentar cambiar de estado el reclamo ID: "+ALLTRIM(STR(v_idreclamop)),0+48+256,"Error al cambiar de estado")
-*!*					ENDIF 
-*!*				ENDIF 
-*!*			
-*!*				SELECT reclamosec_sql
-*!*				SKIP 1
-*!*			
-*!*			ENDDO 
-*!*			
-*!*			IF v_cantReg = v_huboError
-*!*				v_retorno = .F.
-*!*			ELSE
-*!*				v_retorno = .T.		
-*!*			ENDIF 
-*!*			 
-*!*		ELSE
-*!*		
-*!*			MESSAGEBOX(1111)
-*!*			v_retorno	= cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
-*!*		
-*!*		ENDIF 		
-*!*		
-*!*		
-*!*			
-
-*!*		RETURN v_retorno
-*!*	ENDFUNC 
-
-
-
 
 
 FUNCTION IncerAstoContable
@@ -12037,40 +12109,47 @@ FUNCTION cambiaAEstado
 	
 	
 	v_estadoCerradoTmp	=  estadoRecObjTmp.getidestado("CERRADO")
-		
+
+
 		
 	IF v_estadoCerradoTmp = v_idestado AND _SYSRECCIERRAO = 'S'
 		** El Sector origen cierra todos los sectores 
 	
-	
-		vconeccionM = abreycierracon(0,_SYSSCHEMA)
+ 
+											
 
 		
-		sqlmatriz(1)=" select * from reclamosec "
-		sqlmatriz(2)=" where idrecseco = "+ALLTRIM(STR(v_idsector)) +" and idreclamop = "+ALLTRIM(STR(v_idreclamop))
+										   
+																											  
 		
+		vconeccionSe = abreycierracon(0,_SYSSCHEMA)
+
 		
-		verror=sqlrun(vconeccionM,"reclamosec_sql")
+		sqlmatriz(1)=" select * from reclamosec where  idreclamop = "+ALLTRIM(STR(v_idreclamop))
+*!*			sqlmatriz(2)=" where idrecseco = "+ALLTRIM(STR(v_idsector)) +" and idreclamop = "+ALLTRIM(STR(v_idreclamop))
+
+		verror=sqlrun(vconeccionSe,"reclamosector_sql0")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error al buscar los sectores del reclamo",0+48+0,"Error")
-		    		
+		
 			** me desconecto
-			=abreycierracon(vconeccionM,"")
-			
+			=abreycierracon(vconeccionSe,"")
+   
 		    RETURN .F.
 		ENDIF 	
-			v_huboError	= 0
+		v_huboError	= 0
 		
-		SELECT reclamosec_sql
+		SELECT reclamosector_sql0
 		
 		v_cantReg	= RECCOUNT()
 		
-		SELECT reclamosec_sql
+		SELECT reclamosector_sql0
 		GO TOP 
+
 		
 		DO WHILE NOT EOF()
 		
-			v_idsectorD	= reclamosec_sql.idrecsecd
+			v_idsectorD	= reclamosector_sql0.idrecsecd
 		
 			v_idultEstadoRecTmp	= estadoReclamoPorSector(v_idreclamop, v_idsectorD, 'I')
 	
@@ -12080,7 +12159,7 @@ FUNCTION cambiaAEstado
 			ELSE
 			
 				** Cierro el reclamo para el sector
-				v_retTmp = cambiaEstadoRec(v_idreclamop, v_idsector, v_idestado)
+				v_retTmp = cambiaEstadoRec(v_idreclamop, v_idsectorD, v_idestado)
 		
 				IF v_retTmp = .F.
 					v_huboError = v_huboError  + 1
@@ -12089,10 +12168,11 @@ FUNCTION cambiaAEstado
 				ENDIF 
 			ENDIF 
 		
-			SELECT reclamosec_sql
+			SELECT reclamosector_sql0
 			SKIP 1
 		
 		ENDDO 
+		USE IN reclamosector_sql0 
 		
 		IF v_cantReg = v_huboError
 			v_retorno = .F.
@@ -12565,10 +12645,11 @@ v_idrecsec	= getSecUsu(p_usuario)
 
 	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 		
-	sqlmatriz(1)=" SELECT r.idrecnol, r.idrecsec, p.*,t.tipo, r.leido "
+	sqlmatriz(1)=" SELECT r.idrecnol, r.idrecsec, p.*,t.tipo, r.leido, ue.idrecest, ue.estado "
 	sqlmatriz(2)=" FROM recnoleido r  " 
 	sqlmatriz(3)=" left join reclamop p on r.idreclamop = p.idreclamop  left join rectipo t on p.idrectipo = t.idrectipo "
-	sqlmatriz(4)=" WHERE  r.leido = 0 and r.idrecsec = "+ALLTRIM(STR(v_idrecsec))
+	sqlmatriz(4)=" left join recultestr ue on ue.idreclamop = r.idreclamop and ue.idrecsec = r.idrecsec "
+	sqlmatriz(5)=" WHERE  r.leido = 0  and ue.estado <> 'CERRADO' and r.idrecsec = "+ALLTRIM(STR(v_idrecsec))
 
   
 	verror=sqlrun(vconeccionM ,"recnoleido_sql")
@@ -12585,8 +12666,8 @@ v_idrecsec	= getSecUsu(p_usuario)
 		RETURN p_aliasretorno  
 	ENDIF
 
-	
-	*	SELECT idrecnol,idrecsec, idreclamop, idrectipo,tipo,numero, entidad, fecha, observac, descrip FROM recnoleido_sql	INTO TABLE &v_nomtabla 
+ 
+																																			 
 		SELECT idrecnol,idrecsec, idreclamop, idrectipo,tipo,numero, entidad, fecha, observac, descrip FROM recnoleido_sql	INTO TABLE recnoleidos 
 		
 		SELECT recnoleido_sql
@@ -14357,22 +14438,25 @@ PARAMETERS pan_idcomproba, pan_idregistro, par_entidadrp
 			v_tablaPor = 'recibos'
 			v_tablaor = 'detallecobros'	
 			v_idtablaor = "iddetacobro"
+			v_idtablaPor= "idrecibo"
 		ENDIF 
 		IF tablarp.tabla = 'pagosprov' THEN
 			v_tablaPor= 'pagosprov' 		
 			v_tablaor = 'detallepagos'	
 			v_idtablaor = "iddetapago"
-		ENDIF 
+			v_idtablaPor= "idpago"
+	ENDIF 
 
 		IF EMPTY(v_tablaor) THEN 
 			=abreycierracon(vconeccionAn ,"")	
 			RETURN .f.
 		ENDIF 
 		* Obtengo el detalle de cobros o de pagos a anular
-		sqlmatriz(1)=" select t.*, h.idcajareca, h.fecha, h.hora, tp.idtipocompro from "+v_tablaor+" t left join cajarecaudah h on t.idcomproba = h.idcomproba and t.idregistro = h.idregicomp "
+		sqlmatriz(1)=" select t.*, h.idcajareca, h.fecha, h.hora, tp.idtipocompro, cm.fecha as fechaor from "+v_tablaor+" t left join cajarecaudah h on t.idcomproba = h.idcomproba and t.idregistro = h.idregicomp "
 		sqlmatriz(2)=" left join comprobantes cp on cp.idcomproba   = t.idcomproba "
 		sqlmatriz(3)=" left join tipocompro   tp on tp.idtipocompro = cp.idtipocompro "
-		sqlmatriz(4)=" where t.idcomproba = "+ALLTRIM(STR(pan_idcomproba))+" and t.idregistro = "+ALLTRIM(STR(pan_idregistro))
+		sqlmatriz(4)=" left join "+ALLTRIM(v_tablaPor)+" cm on cm."+ALLTRIM(v_idtablaPor)+"  = t.idregistro "
+		sqlmatriz(5)=" where t.idcomproba = "+ALLTRIM(STR(pan_idcomproba))+" and t.idregistro = "+ALLTRIM(STR(pan_idregistro))
 		verror=sqlrun(vconeccionAn ,"detalle")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la busqueda del detalle de cobros ",0+48+0,"Error")
@@ -14409,6 +14493,15 @@ PARAMETERS pan_idcomproba, pan_idregistro, par_entidadrp
 				v_anularp_pventa 	 = v_pventarp
 				v_anularp_numero 	 = maxnumerocom(v_anularp_idcomproba ,v_anularp_pventa ,1)
 				v_fecha = cftofc(DATE())
+				
+				IF TYPE("_SYSFECHANULARP")='C' THEN 
+					IF ALLTRIM(UPPER(_SYSFECHANULARP)) == "COMPROBANTE ORIGINAL"
+						SELECT detalle
+						GO TOP 
+						v_fecha = ALLTRIM(detalle.fechaor)
+					ENDIF 
+				ENDIF 
+				
 				v_anularp_importe = v_importeAn
 				v_detallecp			= ""
 				v_anularp_idrecibo = 0
@@ -14795,9 +14888,6 @@ PARAMETERS pan_idcomproba, pan_idregistro, par_entidadrp
 	ENDIF 
 
 ENDFUNC 
-
-
-
 FUNCTION AnularNP
 PARAMETERS  pan_idregistro
 *#/----------------------------------------
@@ -26293,6 +26383,7 @@ PARAMETERS p_tablaccb,p_idregistroccb,p_idcuentaccb
 
 r_Retorno = .F.
 
+WAIT WINDOWS "Recalculando Saldos Bancarios... Aguarde " NOWAIT 																
 
 vconeccionF=abreycierracon(0,_SYSSCHEMA)
 v_r_CtaCteBancos = "r_ccb_"
@@ -27028,12 +27119,14 @@ IF TYPE('p_tablaccb') = 'C' AND TYPE('p_idregistroccb') = 'N'
 		
 		ENDIF 
 		
+		WAIT CLEAR 	   
 		RETURN v_ret 
 		
 	ENDIF 
-
+		WAIT CLEAR 
 
 ELSE
+		WAIT CLEAR 	   
 	
 	RETURN .T.
 
