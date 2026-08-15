@@ -1653,4 +1653,66 @@ ALTER TABLE `r_listaprea` ADD COLUMN `idtipoart` INTEGER UNSIGNED NOT NULL AFTER
  
  ALTER TABLE `facturas`  ADD INDEX `numero`(`numero`);
 ALTER TABLE `remitos`  ADD INDEX `numero`(`numero`);
+ALTER TABLE `articulosimp`  ADD INDEX `articulo`(`articulo`),ADD INDEX `impuesto`(`impuesto`)
+ALTER TABLE `planillacajacomp`  ADD INDEX `idplanillacaja`(`idplanillacaja`),ADD INDEX `idregistro`(`idregistro`),ADD INDEX `tabla`(`tabla`),ADD INDEX `fecha`(`fecha`);
+ALTER TABLE `planillacartera`  ADD INDEX `idplanillacaja`(`idplanillacaja`),ADD INDEX `idregistro`(`idregistro`),ADD INDEX `tabla`(`tabla`);
+
+
+--20260815--
+ALTER TABLE `ajustesacopiop` MODIFY COLUMN `idajusteap` INTEGER UNSIGNED NOT NULL DEFAULT NULL AUTO_INCREMENT;
+
+ALTER TABLE `articulospro` ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `entidad`(`entidad`),
+ ADD INDEX `codigop`(`codigop`);
+
+ALTER TABLE `cajaie` ADD COLUMN `idclascomp` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `timestamp`,
+ ADD INDEX `pventa`(`pventa`);
+ 
+ ALTER TABLE `cajaiecc` ADD INDEX `idcajaie`(`idcajaie`),
+ ADD INDEX `idcentroc`(`idcentroc`);
+
+ALTER TABLE `cajarecaudah` ADD INDEX `usuario`(`usuario`);
+ALTER TABLE `cbasociadas` ADD COLUMN `cobromax` DOUBLE(13,2) NOT NULL DEFAULT 0.00 AFTER `subcodid`;
+ALTER TABLE `cbasociadas` ADD COLUMN `ecobromax` CHAR(10) NOT NULL AFTER `edescripen`;
+ALTER TABLE `cbcobrador` ADD COLUMN `idcajabco` INTEGER UNSIGNED NOT NULL AFTER `subcodid`,
+ ADD COLUMN `cobromax` DOUBLE(13,2) NOT NULL DEFAULT 0.00 AFTER `idcajabco`,
+ ADD COLUMN `funcionfiltro` CHAR(100) NOT NULL DEFAULT ' ' AFTER `cobromax`;
+ ALTER TABLE `grupoobjeto` ADD INDEX `idgrupo`(`idgrupo`),
+ ADD INDEX `idmiembro`(`idmiembro`);
+ALTER TABLE `r_ocdpendientes` ADD INDEX `articulo`(`articulo`),
+ ADD INDEX `idmate`(`idmate`);
+ALTER TABLE `r_artpendiente` ADD INDEX `articulo`(`articulo`);
+ALTER TABLE `r_artpendiente` ADD INDEX `idmate`(`idmate`);
+
+ALTER TABLE `r_ccb_cajaegreso` ADD COLUMN `idclascomp` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `timestamp`;
+ALTER TABLE `r_ccb_cajaingreso` ADD COLUMN `idclascomp` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `timestamp`;
+
+ALTER TABLE `r_gruposall` ADD INDEX `codarbol`(`codarbol`),
+ ADD INDEX `codpadre`(`codpadre`),
+ ADD INDEX `idgrupo`(`idgrupo`),
+ ADD INDEX `idmiembro`(`idmiembro`),
+ ADD INDEX `idtipogrup`(`idtipogrup`),
+ ADD INDEX `nombreag`(`nombreg`);
+ 
+ ALTER TABLE `r_ultimoestado` ADD INDEX `tipo`(`tipo`);
+ ALTER TABLE `comprotipo` MODIFY COLUMN `comprotipo` CHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;
+
+CREATE TABLE  `tipoitemtran` (
+  `idtipoitra` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nombre` char(50) NOT NULL,
+  `descrip` char(250) NOT NULL,
+  PRIMARY KEY (`idtipoitra`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+
+ALTER TABLE `recibos` ADD INDEX `numero`(`numero`);
+
+ALTER TABLE `vinculocomp` ADD INDEX `idcomproba`(`idcomproba`),
+ ADD INDEX `pventa`(`pventa`),
+ ADD INDEX `entidad`(`entidad`),
+ ADD INDEX `idcomprobav`(`idcomprobav`),
+ ADD INDEX `idregistov`(`idregistrov`),
+ ADD INDEX `idfactuv`(`idfactuv`),
+ ADD INDEX `comproa`(`comproa`),
+ ADD INDEX `comprob`(`comprob`);
+
 
