@@ -7882,30 +7882,42 @@ ENDFUNC
 ***********************************************
 
 FUNCTION imprimirRemito
-PARAMETERS p_idremito, p_esElectronica
+PARAMETERS p_idremito, p_esNuevo
 *#/----------------------------------------
 * FUNCIÓN PARA IMPRIMIR UN REMITO
-* PARAMETROS: P_IDREMITO, P_ESELECTRONICA
+* PARAMETROS: P_IDREMITO, p_esNuevo
 *#/----------------------------------------
 
 
 	v_idremito = p_idremito
-	v_esElectronica = p_esElectronica 
+	v_esNuevo = p_esNuevo
 
 	IF v_idremito > 0
 	
 	
 			** Veo si mando el remito a pdf o genero un txt ***
 			
+			
 			IF TYPE('_SYSUBIREMITOMAT') = 'C'
 				
 				IF EMPTY(ALLTRIM(_SYSUBIREMITOMAT)) = .F.
 					
-					p_ubicacion = ALLTRIM(_SYSUBIREMITOMAT)
+					v_cantitem = ALINES(ubiremitosmat,_SYSUBIREMITOMAT,";")
+		
+					IF v_cantitem > 0
+						p_ubicacion = ALLTRIM(ubiremitosmat[1])
+						
+						v_valUsu = AT(_SYSUSUARIO, ALLTRIM(_SYSUBIREMITOMAT))
 					
-					v_ret = imprimirRemitoMatricial(p_idremito, p_ubicacion)
-									
-					RETURN 
+						IF v_valUsu > 0 OR v_esNuevo 
+							
+							v_ret = imprimirRemitoMatricial(p_idremito, p_ubicacion)
+										
+							RETURN 
+						ENDIF 
+					ENDIF 
+
+					
 					
 				ENDIF 
 								
@@ -10889,8 +10901,12 @@ PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 	ELSE	
 		v_campoidxg = ""
 		v_tipoidxg  = ""
-		FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
-				
+		
+		v_cantitem = ALEN(toolbargrupos.arraygrupos,1)
+		
+*		FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
+		
+		FOR i = 1 TO v_cantitem 	
 			IF toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idgrupo")) = val(alltrim(pg_valor1)) AND toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tiporeg")) = "G" THEN 
 				v_campoidxg = toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("campo"))
 				v_tipoidxg  = toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tipoc"))
@@ -10905,9 +10921,9 @@ PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 					
 			&eje
 			v_idmiembrog = IIF(ALLTRIM(v_tipoidxg)='I',ALLTRIM(STR(v_idmiembroa)),ALLTRIM(v_idmiembroa))
-			
-			FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
-						
+			v_cantitem = ALEN(toolbargrupos.arraygrupos,1)
+			*FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
+			FOR i = 1 TO v_cantitem 			
 				IF  toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tabla"))= alltrim(pg_tablag) AND ;
 					toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idgrupo"))= val(alltrim(pg_valor1)) AND ;
 					ALLTRIM(toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idmiembro")))== ALLTRIM(v_idmiembrog) AND ;					
