@@ -1720,7 +1720,7 @@ PARAMETERS p_idregistro
 		sqlmatriz(1)=" Select f.neto,f.totalimpu, f.total,  sum(d.neto) as totneto, sum(d.impuestos) as totimpuestos,  (d.total) as tot,  (f.neto - sum(d.neto)) as difneto, (f.totalimpu - sum(d.impuestos)) as difimpu, ( f.total - sum(d.total)) as diftot "
 		sqlmatriz(2)="  from facturas f left join detafactu d on f.idfactura = d.idfactura"
 		sqlmatriz(3)=" where f.idfactura = "+ ALLTRIM(STR(p_idregistro))
-
+	
 		verror=sqlrun(vconeccion,"factuval_sql")
 		IF verror=.f.  
 			IF p_nomsg = .f. THEN 
