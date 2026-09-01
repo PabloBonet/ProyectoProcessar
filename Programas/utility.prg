@@ -11436,6 +11436,11 @@ PARAMETERS par_asiento
 	
 	
 	=abreycierracon(vconeccionp,"")	
+	
+	**  AGREGADO PARA GUARDAR DETALLE DEL COMPROBANTE ASOCIADO
+	v_detallecom = fdescribecompro(ALLTRIM(tmpasientoin.tabla),"",tmpasientoin.registro)
+	
+	
 	RETURN v_idasiento
 	 
 ENDFUNC 
@@ -14188,6 +14193,10 @@ FUNCTION ContabilizaManual
 				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" ",0+48+0,"Error")
 				ENDIF						
 				RELEASE lamatrizR 
+
+				** AGREGADO PARA GUARDAR DETALLE DEL COMPROBANTE **
+				v_detallecom = fdescribecompro(pcont_tabla,v_nomIndice,pcont_id)		
+
 			ENDIF 
 		ENDIF 
 
@@ -15663,6 +15672,8 @@ PARAMETERS pca_idasiento,pca_DH, pca_tablaOri, pca_idOri, pca_tablaDes, pca_idDe
 				    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo,0+48+0,"Error")
 				ENDIF						
 			RELEASE lamatriz
+				** AGREGADO PARA CARGAR DETALLE DEL COMPROBANTE ASIENTO ***
+				v_detallecom = fdescribecompro(pca_tablaDes,"",pca_idDes)		
 			
 		ENDIF 
 		
