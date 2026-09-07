@@ -214,13 +214,15 @@ PARAMETERS par_idperiodo, par_ordenfa
 	*/*************
 	* Obtengo el detalle de todos los conceptos o detalles que debo facturar cargado a las entidades Seleccionadas
 	*/ - sin los conceptos compuestos 
-	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva, ifnull(c.compuesto,'N') as compuesto, ifnull(a.idcuotasd,0) as cacuotas  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
+	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva, ifnull(c.compuesto,'N') as compuesto, ifnull(a.idcuotasd,0) as cacuotas, ifnull(b.cantcuotas,0) as cacuotast  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
 	sqlmatriz(2)=" left join conceptoser c on c.idconcepto = f.idconcepto "
 	sqlmatriz(3)=" left join entidadesh h on h.identidadh = f.identidadh "
-	sqlmatriz(4)=" left join entidadesdc a on ( a.identidadd = f.identidadd  and a.facturar = 'S' and ( a.fechavenc between '"+ALLTRIM(v_fechadl)+"' and '"+ALLTRIM(v_fechahl)+"' ))"
-	sqlmatriz(5)=" where f.facturar = 'S' and h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
-	sqlmatriz(6)=" and ( ( f.vigedesde='' or f.vigehasta='' ) or ( f.vigedesde<>'' and f.vigehasta <> '' and ( '"+ALLTRIM(v_fechaemite)+"' between f.vigedesde and f.vigehasta ) ) )"
-	sqlmatriz(7)=" group by f.identidadd "
+	sqlmatriz(4)=" left join entidadesdc a on ( a.identidadd = f.identidadd  and a.facturar = 'S' and a.idfactura = 0 and ( a.fechavenc between '"+ALLTRIM(v_fechadl)+"' and '"+ALLTRIM(v_fechahl)+"' ))"
+	sqlmatriz(5)=" left join entidadesdc b on ( b.identidadd = f.identidadd ) "
+	sqlmatriz(6)=" where f.facturar = 'S' and h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
+	sqlmatriz(7)=" and ( ( f.vigedesde='' or f.vigehasta='' ) or ( f.vigedesde<>'' and f.vigehasta <> '' and ( '"+ALLTRIM(v_fechaemite)+"' between f.vigedesde and f.vigehasta ) ) )"
+	sqlmatriz(8)=" and not ( ifnull(a.idcuotasd,0) = 0 and ifnull(b.cantcuotas,0) >0 ) "
+	sqlmatriz(9)=" group by f.identidadd "
 
 	verror=sqlrun(vconeFacturar,"entidadesdf_sql"+vartmp)
 	IF verror=.f.  
@@ -334,7 +336,10 @@ PARAMETERS par_idperiodo, par_ordenfa
 
 	* Corregido para mantener el valor si fijarvalor es = 'S'
 *!*		replace ALL detalle WITH  &vlistasprea..detalle, unidad WITH &vlistasprea..unidad ,unitario WITH IIF(ALLTRIM(fijarvalor)='S',&ventidadesdcf..unitario,&vlistasprea..pventa), 
-		replace ALL detalle WITH IIF ( ALLTRIM(fijardeta)='S', &ventidadesdcf..detalle ,&vlistasprea..detalle) , unidad WITH &vlistasprea..unidad , unitario WITH IIF(ALLTRIM(fijarvalor)='S',&ventidadesdcf..unitario,&vlistasprea..pventa), ;
+
+*!*					unitario WITH IIF(ALLTRIM(fijarvalor)='S', &ventidadesdcf..unitario,&vlistasprea..pventa)
+		replace ALL detalle WITH IIF ( ALLTRIM(fijardeta)='S', &ventidadesdcf..detalle ,&vlistasprea..detalle) , unidad WITH &vlistasprea..unidad , ;
+					unitario WITH IIF(ALLTRIM(fijarvalor)='S', &ventidadesdcf..neto,&vlistasprea..pventa), ;
 					nrocuota WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
 					netocuota WITH &ventidadesdcf..neto, idcuotasd WITH &ventidadesdcf..idcuotasd  FOR idconcepto = 0
 
@@ -393,6 +398,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 					C   = &vconceptoser..cantidad
 					* Corregido para respetar si el importe está fijado
 *!*						I   = &vconceptoser..importe 
+
 					I   = IIF(ALLTRIM(&ventidadesdf..fijarvalor) = 'S', &ventidadesdf..unitario, &vconceptoser..importe) 				
 					Fun = &vconceptoser..funcion
 
@@ -407,6 +413,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 								
 								vartablaauxi = ""
 								IF ieje > 0 THEN 
+
 
 
 									varentih = &ventidadesdf..identidadh
@@ -471,6 +478,7 @@ PARAMETERS par_idperiodo, par_ordenfa
 
 					
 *!*						replace articulo WITH &vconceptoser..concepto, detalle  WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, 
+
 					replace articulo WITH &vconceptoser..concepto, detalle  WITH IIF(ALLTRIM(fijardeta)='S',detalle,&vconceptoser..detalle) , unidad WITH &vconceptoser..unidad , unitario WITH imp_unitario, ;
 							cantidad WITH ( cantidad * imp_cantidad )
 *!*							nrocuota  WITH &ventidadesdcf..nrocuota, cantcuotas WITH &ventidadesdcf..cantcuotas, ;
@@ -481,12 +489,15 @@ PARAMETERS par_idperiodo, par_ordenfa
 ** Aca Corrijo para ver si factura todo 
 *!*							UPDATE &ventidadesdf SET detalle = ALLTRIM(detalle)+' - Cta. '+ALLTRIM(STR(nrocuota))+'/'+ALLTRIM(STR(cantcuotas)) ,unitario=netocuota, cantidad=1 && WHERE idcuotasd > 0					
 
+
 						replace detalle WITH ALLTRIM(detalle)+' - Cta. '+ALLTRIM(STR(nrocuota))+'/'+ALLTRIM(STR(cantcuotas)) ,unitario with netocuota, cantidad with 1 && WHERE idcuotasd > 0					
 					ENDIF 	
 					
 					IF  idcuotasd = 0 and cacuotas > 0 THEN 
 
 *!*							UPDATE &ventidadesdf SET unitario=0, cantidad=0 && WHERE idcuotasd = 0 AND cacuotas > 0
+
+
 							replace  unitario WITH 0, cantidad WITH 0 && WHERE idcuotasd = 0 AND cacuotas > 0
 					ENDIF 
 					
@@ -494,9 +505,11 @@ PARAMETERS par_idperiodo, par_ordenfa
 				ELSE 
 *!*						replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 							
 
+
 					replace articulo WITH &vconceptoser..concepto, detalle WITH IIF(ALLTRIM(fijardeta)='S',detalle,&vconceptoser..detalle) , unidad WITH &vconceptoser..unidad , unitario WITH 0 							
 				ENDIF 
 			ELSE 
+
 
 
 *!*					replace articulo WITH &vconceptoser..concepto, detalle WITH &vconceptoser..detalle, unidad WITH &vconceptoser..unidad , unitario WITH 0 	
@@ -1493,7 +1506,7 @@ PARAMETERS pcon_idperiodo
 	
 
 	sqlmatriz(1)=" insert into estadosreg ( idestadosreg, tabla, campo, id, idestador, tipo, fecha ) "
-	sqlmatriz(2)=" select idestadosreg, tabla, campo, id, idestador, tipo, fecha from estatmpt "
+	sqlmatriz(2)=" select 0, tabla, campo, id, idestador, tipo, fecha from estatmpt "
 	verror=sqlrun(vcone,"estadosreg_sql")
 	IF verror=.f.  
 	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Facturas Temporarias del Período a Facturar ",0+48+0,"Error")
@@ -1580,7 +1593,7 @@ PARAMETERS pcon_idperiodo
 	* Calculo los valores para incertar los idregistros en facturacion 
 	idfactura_fin 	 = maxnumeroidx("idfactura","I","facturas",var_cantidadfc) 
 	idfacturah_fin 	 = maxnumeroidx("idfacturah","I","detafactu",var_cantidaddh ) 
-	idestadosreg_fin = maxnumeroidx("idestadosreg","I","estadosreg",var_cantidadre ) 
+*!*		idestadosreg_fin = maxnumeroidx("idestadosreg","I","estadosreg",var_cantidadre ) 
 
 	USE IN cantidadfc_sql
 	USE IN cantidaddh_sql
