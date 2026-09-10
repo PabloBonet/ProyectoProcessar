@@ -2358,10 +2358,11 @@ ELSE
 		p=fopen(v_comp_email,1)
 		SELECT lotefact_sql
 		GO TOP 
-		v_linea = ALLTRIM(DTOS(DATE())+TIME())+SPACE(13)+";E-Mail Asociado ;Razon Social"
+		v_linea = ALLTRIM(DTOS(DATE())+TIME())+SPACE(13)+";E-Mail Asociado ;Razon Social;Entidad;IDregistro;Tabla"
 		=fputs(p, v_linea )
 		
 		DO WHILE NOT EOF() 
+			v_entidadfc = lotefact_sql.entidad
 			v_idfactura = lotefact_sql.idfactura
 			v_electroSN = lotefact_sql.electro
 			v_emailh = lotefact_sql.emailh
@@ -2387,7 +2388,7 @@ ELSE
 				**Guardo en el archivo si se genero el pdf
 				
 				IF file(v_compPdf) THEN
-					v_linea = ALLTRIM(JUSTFNAME(v_compPdf))+";"+alltrim(v_email)+";"+ALLTRIM(v_nombree)
+					v_linea = ALLTRIM(JUSTFNAME(v_compPdf))+";"+alltrim(v_email)+";"+ALLTRIM(v_nombree)+";"+ALLTRIM(STR(v_entidadfc))+";"+ALLTRIM(STR(v_idfactura))+";facturas"
 					=fputs(p, v_linea )
 				ENDIF
 			
@@ -2409,19 +2410,12 @@ ELSE
 ENDIF 
 
 
-
-
-
-
-
-
 *!*	FUNCTION imprimirFactura
 *!*	PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
 
 
 
 ENDFUNC  
-
 
 FUNCTION imprimirFactura
 PARAMETERS p_idFactura, p_esElectronica,pEnviarImpresora,pArchivo
@@ -10902,12 +10896,10 @@ PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 	ELSE	
 		v_campoidxg = ""
 		v_tipoidxg  = ""
-		
-		v_cantitem = ALEN(toolbargrupos.arraygrupos,1)
-		
-*		FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
-		
-		FOR i = 1 TO v_cantitem 	
+		v_cantiregi = ALEN(toolbargrupos.arraygrupos,1)
+*!*			FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
+		FOR i = 1 TO v_cantiregi 
+				
 			IF toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idgrupo")) = val(alltrim(pg_valor1)) AND toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tiporeg")) = "G" THEN 
 				v_campoidxg = toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("campo"))
 				v_tipoidxg  = toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tipoc"))
@@ -10922,9 +10914,10 @@ PARAMETERS pg_valor, pg_tablag, pg_campog, pg_tipog, pg_valor1, pg_vconeccion
 					
 			&eje
 			v_idmiembrog = IIF(ALLTRIM(v_tipoidxg)='I',ALLTRIM(STR(v_idmiembroa)),ALLTRIM(v_idmiembroa))
-			v_cantitem = ALEN(toolbargrupos.arraygrupos,1)
-			*FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
-			FOR i = 1 TO v_cantitem 			
+			v_cantiregi = ALEN(toolbargrupos.arraygrupos,1)
+*!*				FOR i = 1 TO toolbargrupos.pageAyuda.grupos.GruposTree.Nodes.Count 
+			FOR i = 1 TO v_cantiregi  
+						
 				IF  toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("tabla"))= alltrim(pg_tablag) AND ;
 					toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idgrupo"))= val(alltrim(pg_valor1)) AND ;
 					ALLTRIM(toolbargrupos.arraygrupos(i,toolbargrupos.arraynombrecol("idmiembro")))== ALLTRIM(v_idmiembrog) AND ;					
@@ -31835,7 +31828,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
 							
 								IF v_retReg = .F.
-									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									*MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
 									RETURN .f.
 								ENDIF 
 								
@@ -31903,7 +31896,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
 							
 								IF v_retReg = .F.
-									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									*MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
 									RETURN .f.
 								ENDIF 
 								
@@ -31971,7 +31964,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
 							
 								IF v_retReg = .F.
-									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									*MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
 									RETURN .f.
 								ENDIF 
 								
@@ -32046,7 +32039,7 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 								v_retReg = registrarEnvioCorreo(v_idcomprobaMail,v_idregistroMail,v_funcionMail,v_idmailestado, v_entidadMail,v_correoDes, v_detalleMail,v_observaMail)
 							
 								IF v_retReg = .F.
-									MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									*MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
 									RETURN .f.
 								ENDIF 
 								
@@ -35227,13 +35220,16 @@ PARAMETERS P_idcomprobaMail, P_idregistroMail, P_funcionMail, P_idmailestado, P_
 **  RETORNO: Retorna True si el proceso no dio error, False en caso de un error.
 *#/****************************
 
+
+
+
 	v_retornoRegEnv = .F.
 
 *!*		IF P_idcomprobaMail <= 0 OR P_idregistroMail <= 0 OR P_idmailestado <= 0 
 *!*		
 *!*			RETURN .F.
 *!*		ENDIF 
-*!*		
+	
 
 	
 	** Abro conexion **
@@ -35269,9 +35265,9 @@ PARAMETERS P_idcomprobaMail, P_idregistroMail, P_funcionMail, P_idmailestado, P_
 		v_idfuncionMail = 0
 	ENDIF 
 	
-	IF v_idfuncionMail = 0
-	
-		IF P_idcomprobaMail <= 0 and P_idregistroMail <= 0 and P_idmailestado <= 0 
+	IF v_idfuncionMail = 0 THEN 
+
+		IF P_idcomprobaMail <= 0 and P_idregistroMail <= 0 THEN 
 		
 			RETURN .T.
 		ENDIF 
@@ -35282,10 +35278,6 @@ PARAMETERS P_idcomprobaMail, P_idregistroMail, P_funcionMail, P_idmailestado, P_
 			RETURN .F.
 		ENDIF 
 	ENDIF 
-	
-	
-
-	
 
 	*** Inserto en la tabla 'maillog' ***
 	
