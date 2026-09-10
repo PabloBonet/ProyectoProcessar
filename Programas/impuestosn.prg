@@ -197,7 +197,7 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 ****
  
   	sqlmatriz(1)= " SELECT p.entidad, ifnull(i.idimpuret, 0) as idimpuret, SUM(p.importe) as pagosmes, ifnull(sum(r.importe),0.00) as impret, i.regimen   FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
-	sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join impuretencionh i on r.idreten = i.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
+	sqlmatriz(2)= "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join impuretencionh i on r.idreten = i.idreten left join r_ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
 	sqlmatriz(3)= " WHERE p.fecha between "+ALLTRIM(v_desde)+" and "+ALLTRIM(v_hasta)+"  and  r.entidad = "+ALLTRIM(STR(p_entidad))+" AND  i.regimen = "+ALLTRIM(STR(P_regimen)) +" and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+"   group BY p.entidad "
  	
 	verror=sqlrun(varconexionF,"totpagosRet0")
@@ -234,7 +234,7 @@ PARAMETERS P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 ****
 
 	sqlmatriz(1) = " SELECT p.entidad, SUM(p.importe) as pagosmes, i.idimpuret FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa "
-	sqlmatriz(2) = "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join impuretencionh i on r.idreten = i.idreten  left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
+	sqlmatriz(2) = "  left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten left join impuretencionh i on r.idreten = i.idreten  left join r_ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' "
 	sqlmatriz(3) = "    WHERE p.fecha between "+v_desde+" and "+v_hasta+" and "
 	sqlmatriz(4) = "    	     p.entidad = "+ALLTRIM(STR(p_entidad)) +" and u.idestador != " +ALLTRIM(STR(v_estadoAnulado))
 	sqlmatriz(5) = "    group BY p.entidad having isnull(i.idimpuret) "			
@@ -783,7 +783,7 @@ PARAMETERS  P_idimpuret, P_importe, P_fecha, P_entidad,P_nombreTabRes, p_regimen
 	
 		sqlmatriz(1)= " SELECT p.entidad, ifnull(i.idimpuret, 0) as idimpuret, ifnull(SUM(p.importe),0.00) as pagosdia, ifnull(sum(r.importe),0.00) as impretdia, ifnull(h.codigo,0) as codigo  "
 		sqlmatriz(2)= " FROM pagosprov p left join linkcompro l on p.idcomproba = l.idcomprobaa and p.idpago = l.idregistroa left join retenciones r on l.idcomprobab = r.idcomproba and l.idregistrob = r.idreten "
-		sqlmatriz(3)= " left join impuretencionh i on r.idreten = i.idreten left join ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' left join afipescalash h on i.idafipesc = h.idafipesc "
+		sqlmatriz(3)= " left join impuretencionh i on r.idreten = i.idreten left join r_ultimoestado u on p.idpago = u.id and u.campo = 'idpago' and u.tabla = 'pagosprov' left join afipescalash h on i.idafipesc = h.idafipesc "
 		sqlmatriz(4)= " WHERE p.fecha = '"+ALLTRIM(v_fechastr)+"' and  r.entidad = "+ALLTRIM(STR(p_entidad))+"  and u.idestador != "+ALLTRIM(STR(v_estadoAnulado))+" and h.codigo = "+ALLTRIM(STR(v_codigoret))
 	
 	

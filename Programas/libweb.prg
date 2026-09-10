@@ -81,7 +81,7 @@ FUNCTION WebCClientes  && COMIENZO FUNCION DE CARGA DE CUENTAS CORRIENTES PARA L
 			sqlmatriz(7)=" left join servicios se on c.servicio= se.servicio "
 			sqlmatriz(8)=" left join clasificacomp cm on cm.idclascomp = c.idclascomp "
 			sqlmatriz(9)=" left join r_facturasaldo fs on c.idfactura = fs.idfactura "
-			sqlmatriz(10)=" left join ultimoestado u on c.idfactura = u.id left join estadosr er on u.idestador = er.idestadosr "
+			sqlmatriz(10)=" left join r_ultimoestado u on c.idfactura = u.id left join estadosr er on u.idestador = er.idestadosr "
 			sqlmatriz(11)=v_condicion + " and u.tabla = 'facturas' and u.campo = 'idfactura' and u.idestador <> "+ALLTRIM(STR(v_idEstadoAnul))
 			sqlmatriz(12)=" order by fecha, numero "
 
@@ -175,7 +175,7 @@ FUNCTION WebCClientes  && COMIENZO FUNCION DE CARGA DE CUENTAS CORRIENTES PARA L
 		sqlmatriz(6)=" left join compactiv cp on c.idcomproba = cp.idcomproba and c.pventa = cp.pventa "
 		sqlmatriz(7)=" left join puntosventa pv on cp.pventa = pv.pventa "
 		sqlmatriz(8)=" left join r_recibossaldo rs on c.idrecibo = rs.idrecibo "
-		sqlmatriz(9)=v_condicion + " and c.idrecibo not in (select id from ultimoestado u where u.tabla = 'recibos' and u.campo = 'idrecibo' and u.idestador = "+ALLTRIM(STR(v_idEstadoAnul))+") "
+		sqlmatriz(9)=v_condicion + " and c.idrecibo not in (select id from r_ultimoestado u where u.tabla = 'recibos' and u.campo = 'idrecibo' and u.idestador = "+ALLTRIM(STR(v_idEstadoAnul))+") "
 		sqlmatriz(10)=" order by fecha, numero "
 		verror=sqlrun(vconeccionF,"recibos_sql_consultactacte")
 		IF verror=.f.  
@@ -471,7 +471,7 @@ v_listaWEB01 		= ArrProductoWEB(1)
 v_listaWEB02 		= ArrProductoWEB(2)
 v_depositoWEB   	= ArrProductoWEB(3)
 
-MESSAGEBOX(v_depositoWEB)
+** MESSAGEBOX(v_depositoWEB)
 
 RELEASE ArrProductoWEB
 
@@ -515,7 +515,7 @@ ENDIF
 
 sqlmatriz(1) =" select articulo, SUM(stock) as stock  from r_depostock where deposito in ( "+ALLTRIM(v_depositoWEB)+" ) group by articulo "
 
-MESSAGEBOX(sqlmatriz(1) )
+** MESSAGEBOX(sqlmatriz(1) )
 
 verror=sqlrun(vconeccionF,"r_depostock_sql")
 IF verror=.f.  
@@ -1078,7 +1078,7 @@ PARAMETERS pup_ejecutar
 
 	v_PathLIMGtmp   = v_PathLIMG   
 			
-	IF ( ALLTRIM(_syshost)==ALLTRIM(ArrProductoWEB(12)) OR ALLTRIM(_sysip)==ALLTRIM(ArrProductoWEB(12)) OR pup_ejecutar ) THEN && Función para Controlar la subida de productos a la Web de forma automatica
+	IF ( ALLTRIM(_syshost)==ALLTRIM(ArrProductoWEB(13)) OR ALLTRIM(_sysip)==ALLTRIM(ArrProductoWEB(13)) OR pup_ejecutar ) THEN && Función para Controlar la subida de productos a la Web de forma automatica
 
 		** SUBIR LAS IMAGENES
 		IMGUPTMP = ADDBS(v_PathLIMG)+'tmpup'
