@@ -34470,7 +34470,13 @@ PARAMETERS p_idcomproba,p_idregistro,p_entidad,p_idasiento,p_electro,p_anulaElim
 						
 					ENDIF 
 					**************************************************************************	
-				
+					v_eliminoAjuste = EliminaAnulaAjusteComprobante("E",p_idcomproba, "idfactura",p_idregistro)
+	
+					IF v_eliminoAjuste = .F.
+					
+						MESSAGEBOX("Hubo un problema al eliminar el ajuste de stock  asociado",0+16+256,"Eliminar ajuste de stock ")
+							
+					ENDIF 
 					v_ret = eliminarRegistros("facturas","idfactura",v_idcomp)
 					
 					IF v_ret THEN 
