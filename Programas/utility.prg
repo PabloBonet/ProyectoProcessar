@@ -17132,6 +17132,17 @@ PARAMETERS p_tabla,p_campo,p_valor
 						    
 						ENDIF
 
+
+						* --> estadosreg
+						sqlmatriz(1)=" delete from r_ultimoestado "
+						sqlmatriz(2)=" where tabla='"+ALLTRIM(p_tabla)+"' and id='"+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))+"'"
+						verror=sqlrun(vconeccionF,"eliminaTabla_sql")
+						IF verror=.f.  
+						    MESSAGEBOX("Ha Ocurrido un Error al eliminar el registro de la tabla: "+ALLTRIM(p_tabla),0+48+0,"Error")
+						    SQLFlagErrorTrans=1
+						    
+						ENDIF
+
 						* --> reldatosextra
 						sqlmatriz(1)=" delete from reldatosextra "
 						sqlmatriz(2)=" where tabla='"+ALLTRIM(p_tabla)+"' and idregistro="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))
@@ -36372,7 +36383,7 @@ PARAMETERS p_idtipop, p_idcomproba,p_nombreCampo,p_idregistro
 					
 *!*						v_tabla = "ajustestockp"
 *!*						v_nomindice = "idajuste"
-									v_tablaAjuste = "ajustestockp"
+						v_tablaAjuste = "ajustestockp"
 			
 					v_ret = registrarEstado(v_tablaAjuste ,v_campoAjuste ,v_indiceAjuste ,'I',"ANULADO")
 				
