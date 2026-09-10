@@ -5285,6 +5285,7 @@ PARAMETERS p_idacopio
 			v_numComp		= "AJUSTE - " + ALLTRIM(STRTRAN(STR(ajustesAcop_sql.idajustea, 8,0),' ','0'))
 			v_tipoComp 		= "AJUSTE "+ALLTRIM(IIF(v_op < 0, "DE EGRESO","DE INGRESO"))
 			v_neto			= ROUND(ajustesAcop_sql.montoAju,2)
+			v_neto 			= v_neto *v_op 
 			v_acopio		= ajustesAcop_sql.acopio
 			
 			v_imp 			= 1
@@ -7261,7 +7262,7 @@ PARAMETERS p_nomTabla,p_nomCampo,p_indice,p_tipoInd
 	vconeccionE=abreycierracon(0,_SYSSCHEMA)	
 	
 	sqlmatriz(1)=" Select idestador "
-	sqlmatriz(2)=" from ultimoestado "
+	sqlmatriz(2)=" from r_ultimoestado "
 	sqlmatriz(3)=" where tabla = '"+ALLTRIM(p_nomTabla)+"' and campo = '"+ALLTRIM(p_nomCampo)+"' and id = '"+ALLTRIM(v_indice)+"' and tipo ='"+ALLTRIM(p_tipoInd)+"'"
 	
 
@@ -8255,7 +8256,7 @@ PARAMETERS p_idremito, p_ubicacion
 	sqlmatriz(8)=" left join linkregistro l on tablaa = 'remitosh' and campoa = 'idremitoh' and tablab = 'ot' and campob = 'idot' and h.idremitoh = l.ida "
 	sqlmatriz(9)=" left join ot t on l.idb = t.idot left join np n on t.idnp = n.idnp left join etiquetanp q on n.idetiqueta = q.idetiqueta "
 	sqlmatriz(11)=" left join puntosventa v on p.pventa = v.pventa left join entidades e on p.entidad = e.entidad left join condfiscal c on e.iva = c.iva "
-	sqlmatriz(12)=" left join ultimoestado u  on u.tabla = 'remitos' and u.campo = 'idremito' and p.idremito = u.id left join entidades a on p.entidadaso = a.entidad "
+	sqlmatriz(12)=" left join r_ultimoestado u  on u.tabla = 'remitos' and u.campo = 'idremito' and p.idremito = u.id left join entidades a on p.entidadaso = a.entidad "
 	sqlmatriz(13)=" where p.idremito = "+ALLTRIM(STR(p_idremito))+" order by l.idb "
 
 
@@ -14441,7 +14442,7 @@ PARAMETERS pan_idcomproba, pan_idregistro, par_entidadrp
 
 		** Veo si el comprobante a Anular esta ACTIVO , sino no es posible anularlo nuevamente ***	
 *********************************************************************
-		sqlmatriz(1)=" select * from ultimoestado "
+		sqlmatriz(1)=" select * from r_ultimoestado "
 		sqlmatriz(4)=" where tabla = '"+ALLTRIM(tablarp.tabla)+"' and id = '"+ALLTRIM(STR(pan_idregistro))+"'"
 		verror=sqlrun(vconeccionAn ,"ultimoestado")
 		IF verror=.f.  
@@ -14956,7 +14957,7 @@ PARAMETERS  pan_idregistro
 
 		** Veo si el comprobante a Anular esta ACTIVO ***	
 *********************************************************************
-		sqlmatriz(1)=" select * from ultimoestado "
+		sqlmatriz(1)=" select * from r_ultimoestado "
 		sqlmatriz(4)=" where tabla = 'np' and id = '"+ALLTRIM(STR(pan_idregistro))+"'"
 		verror=sqlrun(vconeccionAn ,"ultimoestado")
 		IF verror=.f.  
@@ -17060,12 +17061,52 @@ PARAMETERS p_tabla,p_campo,p_valor
 			
 		IF v_tam > 0 THEN 
 				
+				
+					tipoComproObjtmp 	= CREATEOBJECT('comprobantesclass')
+	
+
+		v_idCompajuste = tipoComproObjtmp.getidcomprobante("AJUSTE DE STOCK")
+		
+		
 				* INICIAR TRANSACCION
 				SQLFlagErrorTrans=0
 				IF SqlIniciartrans(vconeccionF)=.f.
 					MESSAGEBOX("NO se pudo iniciar la Transaccion ",0+48+0,"Error")
 					SQLFlagErrorTrans=1
 				ELSE 
+				
+				
+					** Obtengo los detalles del comprobante
+					
+					DO CASE
+					CASE ALLTRIM(p_tabla) = "facturas"
+						sqlmatriz(1) = " select idfacturah as ida, 'idfacturah' as campoa, 'detafactu' as tablaa from detafactu "
+					CASE ALLTRIM(p_tabla) = "remitos"
+						sqlmatriz(1) = " select idremitoh as ida, 'idremitoh' as campoa, 'remitosh' as tablaa FROM remitosh  "
+					CASE ALLTRIM(p_tabla) = "np"
+						sqlmatriz(1) = " select idnp as ida, 'idnp' as campoa, 'np' as tablaa FROM np "
+					CASE ALLTRIM(p_tabla) = "cumplimentap"
+						sqlmatriz(1) = " select idcumph as ida, 'idcumph' as campoa, 'cumplimentah' as tablaa FROM cumplimentah "
+					CASE ALLTRIM(p_tabla) = "presupu"
+						sqlmatriz(1) = " select idpresupuh as ida, 'idpresupuh' as campoa, 'presupuh' as tablaa FROM presupuh "
+					CASE ALLTRIM(p_tabla) = "ajustestockp"
+						sqlmatriz(1) = " select idajusteh as ida, 'idajusteh' as campoa, 'ajustestockh' as tablaa FROM  ajustestockh "
+					OTHERWISE
+						sqlmatriz(1) = " "
+					ENDCASE
+					
+						IF EMPTY(ALLTRIM(sqlmatriz(1))) = .F.
+							sqlmatriz(2)=" where "+ALLTRIM(p_campo)+"="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),"'"+ALLTRIM(p_valor)+"'"))
+							verror=sqlrun(vconeccionF,"seldetalle_sql")
+							IF verror=.f.  
+							    MESSAGEBOX("Ha Ocurrido un Error al seleccionar el detalle de: "+ALLTRIM(p_tabla),0+48+0,"Error")
+							    SQLFlagErrorTrans=1
+							    EXIT 
+							ENDIF
+						ENDIF 
+					
+					
+					
 			
 					** Elimino los registros asociados a la tabla pasada como parámetro **
 					FOR ie = 1 TO v_tam
@@ -17150,7 +17191,38 @@ PARAMETERS p_tabla,p_campo,p_valor
 							    
 							ENDIF
 						ENDIF 				
-
+						
+*!*							* --> EliminoAjusteStock
+*!*							
+*!*							v_idCompajuste 
+*!*							IF var_idcompro > 0 THEN 
+*!*								sqlmatriz(1)=" select * from linkcompro "
+*!*								sqlmatriz(2)=" where ( idcomprobaa="+ALLTRIM(STR(var_idcompro))+" and idregistroa="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))+" and idcomprobab="+ALLTRIM(STR(v_idCompajuste))+" )"
+*!*								sqlmatriz(3)="       or ( idcomprobab="+ALLTRIM(STR(var_idcompro))+" and idregistrob="+ALLTRIM(IIF(TYPE('p_valor')='N',STR(p_valor),ALLTRIM(p_valor)))+" and idcomprobaa="+ALLTRIM(STR(v_idCompajuste))+" )"
+*!*								verror=sqlrun(vconeccionF,"selajuste_sql")
+*!*								IF verror=.f.  
+*!*								    MESSAGEBOX("Ha Ocurrido un Error al buscar el comprobante de ajuste asociado: linkcompro ",0+48+0,"Error")
+*!*								    SQLFlagErrorTrans=1
+*!*								    
+*!*								ENDIF
+*!*							ENDIF 
+*!*							
+*!*							
+*!*							SELECT selajuste_sql
+*!*							GO TOP 
+*!*							IF NOT EOF()
+*!*							
+*!*							
+*!*							
+*!*							
+*!*							
+*!*							ENDIF 
+*!*							
+						
+						
+						
+						
+						
 						
 						* --> linkcompro ( facturas, recibos, factuprove, pagosprov, remitos, vinculocomp, pagares, np, presupuesto, cajaie
 						IF var_idcompro > 0 THEN 
@@ -17223,7 +17295,40 @@ PARAMETERS p_tabla,p_campo,p_valor
 							ENDIF 
 						ENDIF 				
 								
-					**********************************************************
+					
+					
+						* --> linkregistro
+						
+						SELECT seldetalle_sql
+						GO TOP 
+						
+						DO WHILE NOT EOF()
+						
+								v_deltaba = seldetalle_sql.tablaa
+								v_delcampa = seldetalle_sql.campoa
+								v_delida =  seldetalle_sql.ida
+							
+														
+								IF !EMPTY(v_deltaba) AND !EMPTY(v_delcampa) AND !EMPTY(v_delida) 	THEN 	&& Elimino Vinculo Para una tabla 
+									sqlmatriz(1)= "delete from linkregistro where ( tablaa = '"+alltrim(v_deltaba)+"' and  campoa = '"+alltrim(v_delcampa)+"' and ida = "+alltrim(STR(v_delida))+" ) "
+									sqlmatriz(2)= " 						or	  ( tablab = '"+alltrim(v_deltaba)+"' and  campob = '"+alltrim(v_delcampa)+"' and idb = "+alltrim(STR(v_delida))+" ) "
+								ENDIF 
+								
+								verror=sqlrun(vconeccionF,"borra_rel")
+								IF verror=.f.  
+								    MESSAGEBOX("Ha Ocurrido un Error en Eliminacion de Registros de Tablas... ",0+48+0,"Error")
+								    SQLFlagErrorTrans=1
+								ENDIF 
+						
+								
+							SELECT seldetalle_sql
+							SKIP 1 
+
+						ENDDO
+						
+						
+						
+						******************************************************
 					
 					** Elimino el registro de la tabla pasada como parámetro**
 					sqlmatriz(1)=" delete from "+ALLTRIM(p_tabla)
@@ -17243,6 +17348,8 @@ PARAMETERS p_tabla,p_campo,p_valor
 						SQLFlagErrorTrans=1
 					ENDIF 
 
+
+					
 			
 				ENDIF 
 
@@ -17254,6 +17361,8 @@ PARAMETERS p_tabla,p_campo,p_valor
 						RETURN .F.
 					ELSE
 						*MESSAGEBOX("Se ha eliminado el registro correctamente",0+64+0,"Registro eliminado")
+						
+						
 						RETURN .T.
 					ENDIF 
 				ENDIF 
@@ -19146,7 +19255,7 @@ PARAMETERS pct_idcheque
 	sqlmatriz(4)=" left join cobropagolink k on k.tablacp = 'detallepagos' and k.tabla = 'cheques' and k.idregistro = c.idcheque "
 	sqlmatriz(5)=" left join detallepagos dc on dc.iddetapago = k.registrocp "
 	sqlmatriz(6)=" left join comprobantes cm on cm.idcomproba = dc.idcomproba "
-	sqlmatriz(7)=" left join ultimoestado ue on ue.tabla = cm.tabla and dc.idregistro = ue.id "
+	sqlmatriz(7)=" left join r_ultimoestado ue on ue.tabla = cm.tabla and dc.idregistro = ue.id "
 	sqlmatriz(8)=" left join cbancoentidad be on be.idcuenta = dc.idcuenta and be.predet = 'S'"
 	sqlmatriz(9)=" left join entidades en on en.entidad = be.entidad "
 	sqlmatriz(10)=" where idcheque = "+ALLTRIM(STR(pct_idcheque))
@@ -20819,7 +20928,7 @@ p_aliasretorno  = ""
 
 	vconeccionM = abreycierracon(0,_SYSSCHEMA)
 		
-	sqlmatriz(1)= "SELECT f.idfactura , e.idestador FROM ultimoestado e left join facturas f on e.tabla ='facturas' and e.id = f.idfactura where e.tabla = 'facturas' and ( e.idestador = 3 or e.idestador = 5) "
+	sqlmatriz(1)= "SELECT f.idfactura , e.idestador FROM r_ultimoestado e left join facturas f on e.tabla ='facturas' and e.id = f.idfactura where e.tabla = 'facturas' and ( e.idestador = 3 or e.idestador = 5) "
 
 	verror=sqlrun(vconeccionM ,"fpendiente_sql")
 	IF verror=.f.  
@@ -24558,7 +24667,7 @@ PARAMETERS p_Enti, p_tablareto, p_cone
 	sqlmatriz(13)= " left join comprobantes c on re.idcomproba = c.idcomproba "
 	sqlmatriz(14)= " left join tipocompro t on t.idtipocompro = c.idtipocompro "
 	sqlmatriz(15)= " left join puntosventa p on p.pventa = re.pventa "
-	sqlmatriz(16)= " left join ultimoestado u on u.tabla = 'recibos' and u.id = re.idrecibo "
+	sqlmatriz(16)= " left join r_ultimoestado u on u.tabla = 'recibos' and u.id = re.idrecibo "
 	sqlmatriz(17)= " where re.entidad = "+STR(p_Enti)+" and u.idestador <> 2 and r.saldo > 0 ) "
 	
 	verror=sqlrun(vconeccionFv,"saldos_sql")
@@ -34233,7 +34342,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_entidad,p_idasiento,p_electro,p_anulaElim
 
 			vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 			sqlmatriz(1)= "SELECT id as idcomp, fechaest as fecha, idestador "
-			sqlmatriz(2)= " FROM ultimoestado "
+			sqlmatriz(2)= " FROM r_ultimoestado "
 			sqlmatriz(3)= " where tabla = '"+ALLTRIM(v_aetabla)+"' and campo = '"+ALLTRIM(v_aenomindice)+"' and (idestador = "+ALLTRIM(STR(v_estadoPendiente))+" or idestador = "+ALLTRIM(STR(v_estadoAnulado ))+" or idestador = "+ALLTRIM(STR(v_estadoRechazado)) +") and id = '"+ ALLTRIM(STR(p_idregistro))+"'"
 
 			verror=sqlrun(vconeccionFN,"ComAnuRec_sql")
@@ -34286,7 +34395,7 @@ PARAMETERS p_idcomproba,p_idregistro,p_entidad,p_idasiento,p_electro,p_anulaElim
 
 		vconeccionF=abreycierracon(0,_SYSSCHEMA)	
 		sqlmatriz(1)= "SELECT id as idcomp, fechaest as fecha, idestador "
-		sqlmatriz(2)= " FROM ultimoestado "
+		sqlmatriz(2)= " FROM r_ultimoestado "
 		sqlmatriz(3)= " where tabla = '"+ALLTRIM(v_aetabla)+"' and campo = '"+ALLTRIM(v_aenomindice)+"' and (idestador = "+ALLTRIM(STR(v_estadoPendiente))+" or idestador = "+ALLTRIM(STR(v_estadoAnulado ))+" or idestador = "+ALLTRIM(STR(v_estadoRechazado)) +") and id = '"+ ALLTRIM(STR(p_idregistro))+"'"
 
 		verror=sqlrun(vconeccionFN,"ComAnuRec_sql")
@@ -34804,7 +34913,7 @@ FUNCTION ENVIOCOMPROBANTES
 	
 		sqlmatriz(1)=" select t.idregistro, t.idcomproba, v.electronica as electro, t.entidad,t.numero,v.puntov, i.email  from (select f.*, f."+v_nomindmail+" as idregistro from (select m.entidad,m.idcomproba,c.tabla from mailentcomp m left join mailfuncion f on m.idfnmail = f.idmailfn and f.funcion = 'ENVIOCOMPROBANTES' "
 		sqlmatriz(2)=" left join comprobantes c on m.idcomproba = c.idcomproba) as tmp  left join "+v_tablamail+" f on tmp.idcomproba = f.idcomproba and tmp.entidad = f.entidad "
-		sqlmatriz(3)=" left join ultimoestado u on f."+v_nomindmail+"= u.id and u.tabla = '"+v_tablamail+"' where f. fecha > '"+ALLTRIM(v_fechamail)+"' and (u.idestador = 1 or u.idestador = 4)) as t left join puntosventa v on t.pventa = v.pventa "
+		sqlmatriz(3)=" left join r_ultimoestado u on f."+v_nomindmail+"= u.id and u.tabla = '"+v_tablamail+"' where f. fecha > '"+ALLTRIM(v_fechamail)+"' and (u.idestador = 1 or u.idestador = 4)) as t left join puntosventa v on t.pventa = v.pventa "
 		sqlmatriz(4)=" left join mailcomp m on t.idcomproba = m.idcomproba and t.idregistro = m.idregistro left join maillog l on m.idmaillog = l.idmaillog left join mailestado e on l.idmailestado = e.idmailestado left join entidades i on t.entidad = i.entidad "
 		sqlmatriz(5)=" where isnull(l.idmaillog)  = true or e.estado = 'PENDIENTE' "
 			
@@ -35114,11 +35223,11 @@ PARAMETERS P_idcomprobaMail, P_idregistroMail, P_funcionMail, P_idmailestado, P_
 
 	v_retornoRegEnv = .F.
 
-	IF P_idcomprobaMail <= 0 OR P_idregistroMail <= 0 OR P_idmailestado <= 0 
-	
-		RETURN .F.
-	ENDIF 
-	
+*!*		IF P_idcomprobaMail <= 0 OR P_idregistroMail <= 0 OR P_idmailestado <= 0 
+*!*		
+*!*			RETURN .F.
+*!*		ENDIF 
+*!*		
 
 	
 	** Abro conexion **
@@ -35154,6 +35263,22 @@ PARAMETERS P_idcomprobaMail, P_idregistroMail, P_funcionMail, P_idmailestado, P_
 		v_idfuncionMail = 0
 	ENDIF 
 	
+	IF v_idfuncionMail = 0
+	
+		IF P_idcomprobaMail <= 0 and P_idregistroMail <= 0 and P_idmailestado <= 0 
+		
+			RETURN .T.
+		ENDIF 
+	
+	ELSE
+		IF P_idcomprobaMail <= 0 OR P_idregistroMail <= 0 OR P_idmailestado <= 0 
+		
+			RETURN .F.
+		ENDIF 
+	ENDIF 
+	
+	
+
 	
 
 	*** Inserto en la tabla 'maillog' ***
@@ -35607,6 +35732,880 @@ PARAMETERS p_idtipomov, p_idcomproba,p_idregistro, p_tablaDatos
 
 ENDFUNC 
 
+
+
+
+
+FUNCTION SaldosAcopios
+*!*	*#/****************************
+*!*	*** FUNCIÓN RETORNA EL SALDO DE ACOPIOS EN DOS TABLAS, INDICANDO EN UNA EL SALDO DE CADA ENTIDAD Y EN LA OTRA EL SALDO EN ACOPIOS DEL CARPINTERO  ***
+*!*  
+*!*	**  RETORNO: un string conteniendo "saldoacopioe;saldoacopioc" que refiere a las dos tablas que crea , la primera con los saldos en pesos en para las entidades
+*!*	             y la segunda con el saldo en pesos y kg para el carpintero
+*#/****************************
+
+
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+		sqlmatriz(1)=" Select e.*,if(concat(e.nombre,' ',e.apellido)='',e.compania,concat(e.nombre,' ',e.apellido)) as nomb_fanta  from entidades e "
+		verror=sqlrun(vconeccionD,"entidades_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Entidades ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+			
+
+		sqlmatriz(1)= " select * from acopio where idacopio in (SELECT a.idacopio FROM acopio a left join compacopio c on a.idacopio = c.idacopio left join facturas f on c.idregistro = f.idfactura "
+		sqlmatriz(2)= " left join ajustesacopio p on c.idajustea = p.idajustea )"
+
+		verror=sqlrun(vconeccionD,"acopios_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Acopios ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+
+		sqlmatriz(1)=" Select a.idacopiod,a.idacopio, a.idmateacopio as idmate,a.precio,a.tipocbio,a.moneda, m.detalle,m.unidad "
+		sqlmatriz(2)=" from acopiod a left join mateacopio m on a.idmateacopio = m.idmateacopio"
+
+		verror=sqlrun(vconeccionD,"acopd_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de Acopios ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+
+		sqlmatriz(1)=" SELECT c.idacopio,a.entidad, c.importe, c.acopio "
+		sqlmatriz(2)=" FROM compacopio c left join acopio a on c.idacopio = a.idacopio "
+		
+		verror=sqlrun(vconeccionD,"Aco_sql")
+		
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de saldo de Acopios ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+		
+		sqlmatriz(1)=" SELECT c.idacopio,c.importe, c.acopio, a.fecha as fechaFa "
+		sqlmatriz(2)=" FROM compacopio c left join facturas a on c.idregistro = a.idfactura "
+		sqlmatriz(3)=" where c.acopio = 'S' and c.idregistro > 0 "
+		
+		verror=sqlrun(vconeccionD,"AcoFact_sql")
+		
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de facturas de Acopios ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+		
+		sqlmatriz(1)=" SELECT m.articulo, ifnull(l.pventatot,0) as pventan fROM processar_alsafex.mateacopio m "
+		sqlmatriz(2)=" left join r_listaprea l on l.articulo = m.articulo and l.idlista = 1 "
+		sqlmatriz(3)=" where m.idmateacopio = "+STR(_SYSUNIDADREFACOPIO)
+		verror=sqlrun(vconeccionD,"PrecioAct_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de PrecioActualizado ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+		
+	* me desconecto	
+	=abreycierracon(vconeccionD,"")
+
+
+		SELECT idacopio, entidad, SUM(importe) as tot   FROM aco_sql WHERE (importe > 0 and acopio = 'S' ) or importe < 0  GROUP BY idacopio,entidad INTO TABLE totAcopios_sql
+		
+		SELECT idacopio, entidad, SUM(importe) as saldo FROM aco_sql WHERE (importe > 0 and acopio = 'S' ) or importe < 0  GROUP BY idacopio,entidad INTO TABLE saldoAcopios_sql
+
+	*** Agrego los Saldo en KG de los precios acordados ***
+	SELECT * FROM acopd_sql INTO TABLE  acopiosd_sql 
+
+	SELECT saldoAcopios_sql
+	GO TOP 
+
+	ALTER table acopiosd_sql ADD COLUMN saldokg Y
+	ALTER table acopiosd_sql ADD COLUMN totkg Y
+
+
+	SELECT acopiosd_sql
+	GO TOP 
+
+	DO WHILE NOT EOF()
+		
+		v_idacopio = acopiosd_sql.idacopio
+		
+		SELECT saldoAcopios_sql 
+		LOCATE FOR idacopio = v_idacopio
+		
+		v_saldo = saldoAcopios_sql.saldo
+		
+		SELECT acopiosd_sql
+		
+		replace saldokg WITH ROUND((v_saldo / (precio * tipocbio)),2)
+		
+			
+		SELECT totAcopios_sql
+		LOCATE FOR idacopio = v_idacopio
+		
+		v_tot = totAcopios_sql.tot
+		
+		SELECT acopiosd_sql
+		
+		replace totkg WITH ROUND((v_tot / (precio * tipocbio)),2)
+				
+		SELECT acopiosd_sql
+		SKIP 1
+
+	ENDDO
+
+	SELECT entidades_sql
+	GO TOP 
+
+	SELECT a.*, c.nomb_fanta as nomCli FROM acopios_sql a LEFT JOIN entidades_sql c ON a.entidad = c.entidad INTO TABLE .\acopiosA
+			
+	SELECT acopiosA
+	GO top
+
+	IF NOT EOF()
+			
+		SELECT *,ALLTRIM(STR(idacopio))+ALLTRIM(STR(entidad))+ALLTRIM(nomCli) as busqueda FROM acopiosA INTO TABLE .\acopiosaldo
+		
+	ELSE
+			
+		SELECT *, "" as busqueda FROM acopiosA INTO TABLE .\acopiosaldo
+		
+		ALTER table acopiosaldo alter COLUMN entidad I	
+		SELECT acopiosaldo
+		replace ALL entidad WITH 0
+		
+
+	ENDIF 
+
+	SELECT * FROM acopiosd_sql WHERE idacopio in (SELECT idacopio FROM acopiosaldo) INTO TABLE .\acopiosd
+	SELECT * FROM entidades_sql WHERE entidad in (SELECT entidad FROM acopiosaldo) INTO TABLE entidades
+
+
+	ALTER table entidades add COLUMN saldopeso N(13,3)
+	SELECT entidades
+
+	SELECT * FROM entidades_sql WHERE entidad in (SELECT carpintero FROM acopiosaldo GROUP BY carpintero) INTO TABLE carpinteros
+
+	SELECT carpinteros 
+	GO TOP 
+
+	IF NOT EOF()
+		INDEX on entidad TAG entidad
+	ENDIF 
+
+
+	*** Agrego los Saldo en $ y KG de los precios acordados PARA MATERIAL 1 ***
+	SELECT * FROM acopiosd WHERE idmate = IIF(ISNULL(_SYSUNIDADREFACOPIO),0,_SYSUNIDADREFACOPIO)  INTO TABLE acopiosd1
+
+	ALTER table acopiosaldo ADD COLUMN nomcarpi c(200)
+	ALTER table acopiosaldo ADD COLUMN totPeso	Y
+	ALTER table acopiosaldo ADD COLUMN saldoPeso Y
+	ALTER table acopiosaldo ADD COLUMN saldoKg 	Y
+	ALTER table acopiosaldo ADD COLUMN fechaFac C(8)
+	ALTER table acopiosaldo ADD COLUMN totkg Y
+	ALTER table acopiosaldo ADD COLUMN color I
+
+	v_fechaActDate = DATE()
+
+	*** Cargo los saldoPeso, SaldoKg, y TotPeso del acopio ***
+	SELECT acopiosaldo
+	SET RELATION TO carpintero INTO carpinteros additive
+
+	GO TOP 
+
+	DO WHILE NOT EOF()
+
+		v_idacopio 	= acopiosaldo.idacopio
+		
+		v_saldo 	= 0
+		v_kg		= 0
+		v_totKg		= 0
+		
+		** Agrego el color según el estado **
+		v_colorFondoE = RGB(255,255,255)
+		v_fechaAcopioDate = DATE(INT(VAL(SUBSTR(acopiosaldo.fecha,1,4))),INT(VAL(SUBSTR(acopiosaldo.fecha,5,2))),INT(VAL(SUBSTR(acopiosaldo.fecha,7,2))))
+		
+		v_diasAcopio = v_fechaActDate -  v_fechaAcopioDate
+		
+		
+		SELECT totAcopios_sql
+		GO TOP 
+		LOCATE FOR idacopio = v_idacopio
+		
+		v_totAcopio	= totAcopios_sql.tot
+		
+		SELECT saldoAcopios_sql 
+		GO TOP 
+		LOCATE FOR idacopio = v_idacopio
+		v_saldo = saldoAcopios_sql.saldo
+
+		SELECT acopiosd1
+		GO TOP 
+		LOCATE FOR idacopio = v_idacopio
+
+		IF NOT EOF()
+			v_kg	= acopiosd1.saldokg
+			v_totkg =  acopiosd1.totkg
+		ELSE
+			v_kg 	= 0
+			v_totkg = 0
+		
+		ENDIF 
+		
+		SELECT acopiosaldo
+
+		SELECT carpinteros
+		
+		v_nombrecarp =  carpinteros.nomb_fanta
+
+		SELECT acopiosaldo
+		
+		replace saldoPeso WITH ROUND(v_saldo,2), saldokg WITH ROUND(v_kg,2), totPeso WITH ROUND(v_totAcopio,2),totkg WITH ROUND(v_totkg,2), nomcarpi WITH v_nombrecarp &&, color WITH v_colorFondoE  
+
+		SELECT acopiosaldo
+		SKIP 1
+	ENDDO 
+
+	SET RELATION TO 
+
+	*** Cargo las fechas de facturas de acopio en el acopio ***
+
+	SELECT acopiosaldo
+	GO TOP 
+
+	DO WHILE NOT EOF()
+		
+		SELECT AcoFact_sql
+		GO TOP 
+		LOCATE FOR idacopio = acopiosaldo.idacopio
+
+		v_fechaFac	= AcoFact_sql.fechaFa
+		
+		SELECT acopiosaldo
+		replace fechaFac WITH v_fechaFac
+		
+		SELECT acopiosaldo
+		SKIP 1
+
+	ENDDO 
+	
+    SELECT precioAct_sql
+    GO TOP 
+    v_precionatural = 0
+    IF !EOF() THEN 
+	    v_precionatural = precioAct_sql.pventan
+    ENDIF 
+	SET ENGINEBEHAVIOR 70 
+	SELECT entidad,    SUM(saldopeso) as saldopeso,SUM(saldokg) as saldokg,SUM(saldokg*v_precionatural) as saldopeson  FROM acopiosaldo INTO TABLE acopiosaldoe GROUP BY entidad 
+	SELECT carpintero, SUM(saldopeso) as saldopeso,SUM(saldokg) as saldokg,SUM(saldokg*v_precionatural) as saldopeson  FROM acopiosaldo INTO TABLE acopiosaldoc GROUP BY carpintero 
+	SET ENGINEBEHAVIOR 90
+
+	USE IN AcoFact_sql
+	USE IN carpinteros
+	USE IN acopiosd
+	USE IN acopiosd1
+	USE IN entidades
+	USE IN acopiosA
+	USE IN totAcopios_sql
+	USE IN saldoAcopios_sql
+	USE IN acopiosd_sql 
+	USE IN Aco_sql
+	USE IN acopd_sql
+	USE IN acopios_sql
+	USE IN acopiosaldo
+	USE IN acopiosaldoe 
+	USE IN acopiosaldoc 
+	USE IN PrecioAct_sql	
+	RETURN "acopiosaldoe;acopiosaldoc"
+
+ENDFUNC 
+
+
+
+
+FUNCTION SaldosPendientesOT
+PARAMETERS par_sectores
+*!*	*#/****************************
+*!*	*** FUNCIÓN RETORNA EL SALDO PENDIENTES EN OT VALORIZADO AL PRECIO DEL DIA  ***
+*!*  
+*!*	**  RETORNO: un string conteniendo "saldopendOT" que obtiene de los pendientes de ot, calculando como saldo el mayor pendiente por ot segun sector
+*!* ** 			 calculando como pendiente el maximo valor y multiplicando por el precio de la lista 1
+*#/****************************
+	IF !EMPTY(par_sectores) THEN 
+		v_condisele = " and p.idsector in ( "+par_sectores+" )"
+	ELSE 
+		v_condisele = ""
+	ENDIF 
+
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+		sqlmatriz(1)= " SELECT np.entidad, np.idetiqueta, e.etiqueta, p.idot, p.articulo, max(p.cantpend) as cantpend, max(p.cantufpend) as cantufpend , p.base, p.unidadf, ifnull(r.pventatot,0) as pventa "
+		sqlmatriz(2)= "	FROM otsectorpendiente p "
+		sqlmatriz(3)= "	left join ot on ot.idot = p.idot "
+		sqlmatriz(4)= "	left join np on np.idnp = ot.idnp "
+		sqlmatriz(5)= " left join etiquetanp e on e.idetiqueta = np.idetiqueta "
+		sqlmatriz(6)= "	left join r_listaprea r on r.articulo = p.articulo and r.idlista = 1 "
+		sqlmatriz(7)= "	where p.cantufpend > 0 "+v_condisele +" group by p.idot "
+
+		verror=sqlrun(vconeccionD,"pendientesot_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Maximo Pendiente de OT ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+
+
+		sqlmatriz(1)=" SELECT e.idetiqueta, e.articulo, ifnull(r.pventatot,0)as pventas "
+		sqlmatriz(2)=" from etiquetanp e "
+		sqlmatriz(3)=" left join r_listaprea r on r.articulo = e.articulo and r.idlista = 1 "
+
+		verror=sqlrun(vconeccionD,"precioserv_sql")
+
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Precio de Servicios ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+
+			
+	* me desconecto	
+	=abreycierracon(vconeccionD,"")
+
+	SELECT p.entidad, p.idetiqueta, p.etiqueta, p.idot , p.articulo, p.cantpend, p.cantufpend ,p.base, p.pventa, p.unidadf, ;
+	p.cantufpend*p.pventa as importetot, s.pventas, ( p.cantufpend*s.pventas*IIF(ALLTRIM(p.unidadf) == 'KILOS',1,0) ) as  importeser  ;
+	FROM pendientesot_sql p ;
+	LEFT JOIN precioserv_sql s ON s.idetiqueta = p.idetiqueta ;
+	INTO TABLE PendientesOTD
+	
+	SELECT p.entidad, SUM(p.cantufpend) as cantufpend, SUM(IIF(ALLTRIM(p.unidadf) == 'KILOS',p.cantufpend*pventa,0)) as importeKgs, ;
+					SUM(IIF(ALLTRIM(p.unidadf) <> 'KILOS',p.cantufpend*p.pventa,0)) as importeOTR,  ;
+					SUM( p.cantufpend*s.pventas*IIF(ALLTRIM(p.unidadf) == 'KILOS',1,0) ) as  importeser  ;
+	 FROM pendientesot_sql p ;
+	 LEFT JOIN precioserv_sql s ON s.idetiqueta = p.idetiqueta ;
+	 INTO TABLE PendientesOTG GROUP BY entidad 
+	 
+
+	USE IN precioserv_sql
+	USE IN pendientesot_sql
+	USE IN PendientesOTD
+	USE IN PendientesOTG 
+	RETURN "PendientesOTD;PendientesOTG"
+			
+			
+ENDFUNC 
+
+
+
+FUNCTION ChequesPendientes
+PARAMETERS p_fechadesdevenc
+*!*	*#/****************************
+*!*	*** FUNCIÓN RETORNA LOS CHEQUES PENDIENTES DE ACREDITACIÓN QUE NO ESTÉN EN RECIBOS ANULADOS ***
+*!*  
+*!*	**  RETORNO: un string conteniendo "ChequesPendientes" que obtiene de los cheques pendientes de acreditar segun la fecha de vencimiento, es decir los cheques no vencidos a partir del dia de hoy
+*!* ** 			 
+*#/****************************
+	IF !EMPTY(p_fechadesdevenc) THEN 
+		v_fechadesdevenc= p_fechadesdevenc
+	ELSE 
+		p_fechadesdevenc = DTOS(DATE())
+	ENDIF 
+
+
+	vconeccionD=abreycierracon(0,_SYSSCHEMA)	
+
+		sqlmatriz(1)= " select r.entidad,r.nombre, r.fecha as fechareci, r.numero as numerore, r.importe as imporecibo, c.idcheque, c.serie, c.numero, c.importe, c.fechaemisi, c.fechavence, c.alaorden, c.loentrega, c.electro "
+		sqlmatriz(2)= "	from cheques c "
+		sqlmatriz(3)= "	left join cobropagolink l on l.tabla = 'cheques' and l.idregistro = c.idcheque and l.tablacp = 'detallecobros' "
+		sqlmatriz(4)= "	left join detallecobros d on d.iddetacobro = l.registrocp "
+		sqlmatriz(5)= " left join recibos r on r.idrecibo = d.idregistro "
+		sqlmatriz(6)= " left join r_ultimoestado u on  u.tabla ='recibos' and u.id = r.idrecibo "
+		sqlmatriz(7)= "	where c.fechavence >= '"+v_fechadesdevenc+"'  and c.detercero = 'S' and u.idestador = 4 group by c.idcheque "
+
+		verror=sqlrun(vconeccionD,"pendientesch_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA Cheques Pendientes ",0+48+0,"Error")
+		    RETURN 
+		ENDIF 
+			
+	* me desconecto	
+	=abreycierracon(vconeccionD,"")
+
+	SELECT entidad, nombre, fechareci, numerore, imporecibo, idcheque, serie, numero, importe, fechaemisi, fechavence, alaorden, loentrega, electro  FROM pendientesch_sql INTO TABLE PendientesCHQ
+	
+	SELECT entidad, SUM(importe) as totalche FROM pendientesch_sql INTO TABLE PendientesCHQG GROUP BY entidad 
+
+	USE IN pendientesch_sql 
+	USE IN PendientesCHQ
+	USE IN PendientesCHQG
+	RETURN "PendientesCHQ;PendientesCHQG"
+			
+ENDFUNC 
+
+
+FUNCTION EliminaAnulaAjusteComprobante
+PARAMETERS p_idtipop, p_idcomproba,p_nombreCampo,p_idregistro
+*#/----------------------------------------
+**** FUNCIÓN PARA GENERAR AJUSTES DE UN COMPROBANTE
+** PARAMETROS: 	p_idtipop: TIpo operación 'E': elimina, 'A': anula
+***				p_idcomproba: ID del comprobante asociado al comprobante (Si el comprobante no es de ajuste lo toma como comprobante relacionado al ajuste )
+***				P_nomreCampo: Nombre del campo Indice de la tabla asociada al comprobante
+***				P_Idregistro: ID de la tabla asociada al comprobante
+**RETORNO:		.T. o .F. Dependiendo si se realizó el ajuste correctamente o no respectivamente
+*#/----------------------------------------
+
+*****
+** Valido los parametros recibidos **
+*****
+
+	IF TYPE('p_idtipop') <> 'C'  OR EMPTY(ALLTRIM(p_idtipop))
+		MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; parametro 'p_idtipop' inválido",0+16+256,"Eliminar/Anular Ajuste comprobante")
+		RETURN .F.
+	ENDIF
+
+	IF TYPE('p_idcomproba') <> 'N'  OR EMPTY(ALLTRIM(STR(p_idcomproba)))
+		MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; parametro 'p_idcomproba' inválido",0+16+256,"Eliminar/Anular Ajuste comprobante")
+		RETURN .F.
+	ENDIF
+
+	IF TYPE('p_nombreCampo') <> 'C'  OR EMPTY(ALLTRIM(p_nombreCampo))
+		MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; parametro 'p_nombreCampo' inválido",0+16+256,"Eliminar/Anular Ajuste comprobante")
+		RETURN .F.
+	ENDIF
+
+	IF TYPE('p_idregistro') <> 'N'  OR EMPTY(ALLTRIM(STR(p_idregistro)))
+		MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; parametro 'p_idregistro' inválido",0+16+256,"Eliminar/Anular Ajuste comprobante")
+		RETURN .F.
+	ENDIF
+
+	estadosObjc		= CREATEOBJECT('estadosclass')
+	v_estadoAnulado = estadosObjc.getIdestado("ANULADO")
+	v_estadoRechazado = estadosObjc.getIdestado("RECHAZADO")
+	v_estadoError = estadosObjc.getIdestado("ERROR")
+	v_estadoPendiente = estadosObjc.getIdestado("PENDIENTE AUTORIZACION")
+	v_estadoActivo	=  estadosObjc.getIdestado("ACTIVO")
+*****		
+** Variables del comprobante de ajuste a anular / eliminar
+*****
+
+	v_tablaAjuste = ""
+	v_campoAjuste = ""
+	v_indiceAjuste = 0
+	v_numeroAjuste = ""
+
+	
+	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+*****
+** Busco el comprobante recibido, para identificar si es un comprobante de ajuste o no **
+*****
+
+	sqlmatriz(1)= "SELECT * "
+	sqlmatriz(2)= " FROM comprobantes "
+	sqlmatriz(3)= " where idcomproba = "+ALLTRIM(STR(p_idcomproba))
+
+	verror=sqlrun(vconeccionF,"comprobanteSel_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; Ha Ocurrido un Error al Buscar el comprobante asociado",0+48+0,"Error")
+	    * me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN .F.
+	ENDIF	
+	
+	v_tabla = ""
+	SELECT comprobanteSel_sql
+	GO TOP 
+	
+	IF NOT EOF() && Encontro el comprobante
+	
+		v_tabla = ALLTRIM(comprobanteSel_sql.tabla)
+
+
+		IF ALLTRIM(v_tabla) <> "ajustestockp" && Busco el ajuste asociado al comprobante
+*****
+** La tabla NO es ajustestockp -> Busco el comprobante asociado  **
+*****		
+	
+			v_indicetab = obtenerCampoIndice(v_tabla)
+			
+			
+			sqlmatriz(1)=" select l.idcomprobaa as idcompro, l.idregistroa as idregistro,'"+ALLTRIM(v_tabla)+"' as tabla,'"+ALLTRIM(v_indicetab)+"' as campoind,  l.idcomprobab as idcompaju, l.idregistrob as idregaju, 'ajustestokp' as tablaaju,'idajuste' as campoaju "
+			sqlmatriz(2)=" from linkcompro l left join comprobantes c on l.idcomprobab = c.idcomproba left join comprobantes o on l.idcomprobaa = o.idcomproba  "
+			sqlmatriz(3)=" where c.tabla = 'ajustestockp' and o.tabla = '"+ALLTRIM(v_tabla)+"' and l.idregistroa = "+ALLTRIM(STR(p_idregistro))
+			sqlmatriz(4)=" union "
+			sqlmatriz(5)=" select l.idcomprobab as idcompro, l.idregistrob as idregistro,'"+ALLTRIM(v_tabla)+"' as tabla,'"+ALLTRIM(v_indicetab)+"'  as campoind,  l.idcomprobaa as idcompaju, l.idregistroa as idregaju, 'ajustestokp' as tablaaju,'idajuste' as campoaju  "
+			sqlmatriz(6)=" from linkcompro l left join comprobantes c on l.idcomprobaa = c.idcomproba left join comprobantes o on l.idcomprobab = o.idcomproba "
+			sqlmatriz(7)=" where c.tabla = 'ajustestockp' and o.tabla = '"+ALLTRIM(v_tabla)+"'  and l.idregistrob = "+ALLTRIM(STR(p_idregistro))
+						
+			
+			
+			verror=sqlrun(vconeccionF,"compAjuste_sql")
+			IF verror=.f.  
+			    MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; Ha Ocurrido un Error al Buscar el comprobante de ajuste",0+48+0,"Error")
+			    * me desconecto	
+		=abreycierracon(vconeccionF,"")
+			    RETURN .F.
+			ENDIF	
+			
+			
+			SELECT compAjuste_sql
+			GO TOP 
+			
+			IF NOT EOF() && Encontró un comprobante asociado al ajuste -> Tengo que eliminar o anular el ajuste
+				
+				v_tablaAjuste = "ajustestockp"
+				v_campoAjuste =  "idajuste"
+				v_indiceAjuste = compAjuste_sql.idregaju
+				v_numeroAjuste = ""
+				
+			ELSE && NO encontró un comprobante asociado -> retorno true
+			
+
+				* me desconecto	
+				=abreycierracon(vconeccionF,"")
+			    RETURN .T.
+			
+			ENDIF 
+			
+		ELSE && El comprobante pasado es de ajuste
+
+			v_tablaAjuste = "ajustestockp"
+			v_campoAjuste =  p_nombreCampo
+			v_indiceAjuste = p_idregistro
+			v_numeroAjuste = ""
+		
+		ENDIF 
+	
+	ELSE && NO encontró el comprobante
+		MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; Ha Ocurrido un Error al Buscar el comprobante de ajuste",0+48+0,"Error")
+		* me desconecto	
+		=abreycierracon(vconeccionF,"")
+		RETURN .F.
+	ENDIF 
+	
+*****
+** Si llego hasta acá es porque tengo el comprobante de ajuste  identificado para Anular o Eliminar 
+**	Busco los datos faltantes	
+*****
+
+	sqlmatriz(1)= "SELECT * "
+	sqlmatriz(2)= " FROM ajustestockp "
+	sqlmatriz(3)= " where idajuste = "+ALLTRIM(STR(v_indiceAjuste))
+
+	verror=sqlrun(vconeccionF,"ajusteSel_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; Ha Ocurrido un Error al Buscar el ajuste de stock",0+48+0,"Error")
+	    * me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN .F.
+	ENDIF	
+
+	SELECT ajusteSel_sql
+	GO top
+	
+	IF NOT EOF()
+		v_numeroAjuste = ALLTRIM(ajusteSel_sql.puntov)+" - "+ALLTRIM(STR(ajusteSel_sql.numero))
+	
+	
+	ENDIF 
+
+	
+	sqlmatriz(1)= "SELECT id as idcomp, fechaest as fecha, idestador "
+	sqlmatriz(2)= " FROM r_ultimoestado "
+	sqlmatriz(3)= " where tabla = '"+ALLTRIM(v_tablaAjuste)+"' and campo = '"+ALLTRIM(v_campoAjuste)+"' and id = '"+ ALLTRIM(STR(v_indiceAjuste))+"'"
+
+	verror=sqlrun(vconeccionF,"ComEst_sql")
+	IF verror=.f.  
+	    MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; Ha Ocurrido un Error al Buscar estado del comprobante",0+48+0,"Error")
+	    * me desconecto	
+		=abreycierracon(vconeccionF,"")
+	    RETURN .F.
+	ENDIF	
+
+	v_anulado = .F.
+	SELECT ComEst_sql
+	GO top
+	 
+	IF NOT EOF()
+
+		v_estador = ComEst_sql.idestador
+
+		IF v_estador = v_estadoAnulado && El Ajuste está anulado
+			v_anulado = .T.
+			MESSAGEBOX("El comprobante ya esta Anulado. No se puede Anular ni eliminar",0+48+0,"Eliminar/Anular Ajuste comprobante")
+			* me desconecto	
+		=abreycierracon(vconeccionF,"")
+			RETURN .F.
+		ELSE
+			v_anulado = .F.
+		ENDIF 
+	ELSE
+
+		v_anulado = .F.
+	ENDIF 	
+ 
+*****
+** Si llego hasta acá es porque tengo el comprobante de ajuste No está anulado. 
+*****
+
+
+*!*		sqlmatriz(1)= "SELECT id as idcomp, fechaest as fecha, idestador "
+*!*		sqlmatriz(2)= " FROM r_ultimoestado "
+*!*		sqlmatriz(3)= " where tabla = '"+ALLTRIM(v_tablaAjuste)+"' and campo = '"+ALLTRIM(v_campoAjuste)+"' and id = '"+ ALLTRIM(STR(v_indiceAjuste))+"'"
+
+*!*		verror=sqlrun(vconeccionF,"ComEst_sql")
+*!*		IF verror=.f.  
+*!*		    MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; Ha Ocurrido un Error al Buscar estado del comprobante",0+48+0,"Error")
+*!*		    RETURN .F.
+*!*		ENDIF	
+
+
+
+	DO CASE
+		CASE p_idtipop = "A" && Anulo comprobante
+
+			sino=MESSAGEBOX("¿Confirma la ANULACION del Comprobante Nro:"+CHR(13)+CHR(13)+alltrim(v_numeroAjuste),4+32+256,"Confirmar")
+			IF sino<> 6 THEN 
+			* me desconecto	
+		=abreycierracon(vconeccionF,"")
+				RETURN .F.
+			ELSE 
+				* Anular
+				** Anulo cabecera **
+				
+					
+*!*						v_tabla = "ajustestockp"
+*!*						v_nomindice = "idajuste"
+									v_tablaAjuste = "ajustestockp"
+			
+					v_ret = registrarEstado(v_tablaAjuste ,v_campoAjuste ,v_indiceAjuste ,'I',"ANULADO")
+				
+
+				IF v_ret = .T.
+				
+					** Anulo detalle **
+					** Pongo a 0 el valor de la cantidad en el ajuste 
+					sqlmatriz(1)= "update ajustestockh set detalle = concat('##Anulado: ',cantidad,' ## ', detalle), cantidad = 0  "
+					sqlmatriz(2)= " where idajuste = "+ALLTRIM(STR(v_indiceAjuste))
+					verror=sqlrun(vconeccionF,"actuajusteh_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error al Anular el Ajuste",0+48+0,"Error")
+					    * me desconecto	
+							=abreycierracon(vconeccionF,"")
+					    RETURN .F.
+					ENDIF	
+
+
+					sqlmatriz(1)= "SELECT idajusteh  "
+					sqlmatriz(2)= " FROM ajustestockh "
+					sqlmatriz(3)= " where idajuste = "+ALLTRIM(STR(v_indiceAjuste))
+					verror=sqlrun(vconeccionF,"ajusteh_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error al Buscar estado del detalle del comprobante",0+48+0,"Error")
+					    * me desconecto	
+						=abreycierracon(vconeccionF,"")
+					    RETURN .F.
+					ENDIF	
+
+					
+					v_errores = .F.
+					SELECT ajusteh_sql
+					GO TOP 
+					
+					DO WHILE NOT EOF()
+					
+						
+						v_idajusteh = ajusteh_sql.idajusteh
+						
+						v_tabla = "ajustestockh"
+						v_nomindice = "idajusteh"
+						
+						v_ret = registrarEstado(v_tabla ,v_nomindice ,v_idajusteh ,'I',"ANULADO")
+					
+					
+						IF v_ret = .F.
+							v_errores = .T.
+						
+						ENDIF 
+						
+						SELECT ajusteh_sql
+						SKIP 1
+
+					ENDDO
+							
+					IF v_errores = .F.
+						
+						MESSAGEBOX("Comprobante anulado correctamente",0+64+0,"Anular comprobante")
+						* me desconecto	
+						=abreycierracon(vconeccionF,"")
+						RETURN .T.
+					ENDIF 
+				ENDIF 
+					
+
+			ENDIF 
+
+
+		CASE p_idtipop = "E" && Elimino comprobante
+
+
+				* me desconecto	
+				=abreycierracon(vconeccionF,"")
+
+				
+			v_eliminoAjuste = eliminarRegistros (v_tablaAjuste ,v_campoAjuste ,v_indiceAjuste )
+
+			IF v_eliminoAjuste   = .T.
+				RETURN .T.
+			ELSE
+				MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; Hubo un problema al Eliminar el ajuste de stock 'eliminarRegistros'",0+16+256,"Eliminar/Anular Ajuste comprobante")
+				RETURN .F.
+			ENDIF 
+			
+
+		OTHERWISE
+			MESSAGEBOX("Función <EliminaAnulaAjusteComprobante>; parametro 'p_idtipop' incorrecto",0+16+256,"Eliminar/Anular Ajuste comprobante")
+			* me desconecto	
+		=abreycierracon(vconeccionF,"")
+			RETURN .F.
+
+	ENDCASE
+
+
+
+*!*	estadosObjc		= CREATEOBJECT('estadosclass')
+*!*	vajustestock = 'ajustestock'+thisform.tmp 
+
+*!*	SELECT &vajustestock
+*!*	v_idcomp	= &vajustestock..idajuste
+*!*	v_tabla = "ajustestockp"
+*!*	v_nomindice = "idajuste"
+
+*!*	v_numero	= alltrim(&vajustestock..puntov)+'-'+alltrim(STR(&vajustestock..numero))
+*!*	v_estadoAnulado = estadosObjc.getIdestado("ANULADO")
+*!*	v_estadoRechazado = estadosObjc.getIdestado("RECHAZADO")
+*!*	v_estadoError = estadosObjc.getIdestado("ERROR")
+*!*	v_estadoPendiente = estadosObjc.getIdestado("PENDIENTE AUTORIZACION")
+*!*	v_estadoActivo	=  estadosObjc.getIdestado("ACTIVO")
+*!*		
+
+*!*	vconeccionF=abreycierracon(0,_SYSSCHEMA)	
+*!*		
+*!*	sqlmatriz(1)= "SELECT id as idcomp, fechaest as fecha, idestador "
+*!*	sqlmatriz(2)= " FROM ultimoestado "
+*!*	sqlmatriz(3)= " where tabla = '"+ALLTRIM(v_tabla)+"' and campo = '"+ALLTRIM(v_nomindice)+"' and id = '"+ ALLTRIM(STR(v_idcomp))+"'"
+
+*!*	verror=sqlrun(vconeccionF,"ComEst_sql")
+*!*	IF verror=.f.  
+*!*	    MESSAGEBOX("Ha Ocurrido un Error al Buscar estado del comprobante",0+48+0,"Error")
+*!*	    RETURN 
+*!*	ENDIF	
+
+*!*	v_anular = .F.
+*!*	SELECT ComEst_sql
+*!*	GO top
+*!*	 
+*!*	 IF NOT EOF()
+*!*	 
+*!*	 	v_estador = ComEst_sql.idestador
+
+*!*	 	DO CASE
+*!*		 	CASE v_estador = v_estadoAnulado
+*!*	 			MESSAGEBOX("El comprobante ya esta Anulado.",0+48+0,"Anulación de Comprobante")
+*!*	 			
+*!*				RETURN 
+*!*	 		CASE v_estador = v_estadoRechazado
+*!*				v_anular= .T.
+*!*			CASE v_estador = v_estadoActivo
+*!*				v_anular= .T.
+*!*			CASE v_estador = v_estadoError
+*!*				v_anular= .T.
+*!*				
+*!*		 	OTHERWISE
+*!*				v_anular= .F.
+*!*	 	ENDCASE
+*!*	 
+*!*	 ELSE
+*!*	 	v_anular= .F.
+*!*	 ENDIF 
+*!*	 
+*!*	 
+*!*	 
+*!*	 sino=MESSAGEBOX("¿Confirma la ANULACION del Comprobante Nro:"+CHR(13)+CHR(13)+alltrim(v_numero),4+32+256,"Confirmar")
+*!*	IF sino<> 6 THEN 
+*!*		* no hago nada
+*!*	ELSE 
+*!*		* Anular
+*!*		** Anulo cabecera **
+*!*		
+*!*			
+*!*			v_tabla = "ajustestockp"
+*!*			v_nomindice = "idajuste"
+*!*			
+*!*			v_ret = registrarEstado(v_tabla ,v_nomindice ,v_idcomp ,'I',"ANULADO")
+*!*		
+*!*		
+*!*		IF v_ret = .T.
+*!*		
+*!*			** Anulo detalle **
+*!*			** Pongo a 0 el valor de la cantidad en el ajuste 
+*!*			sqlmatriz(1)= "update ajustestockh set detalle = concat('##Anulado: ',cantidad,' ## ', detalle), cantidad = 0  "
+*!*			sqlmatriz(2)= " where idajuste = "+ALLTRIM(STR(v_idcomp))
+*!*			verror=sqlrun(vconeccionF,"actuajusteh_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error al Anular el Ajuste",0+48+0,"Error")
+*!*			    RETURN 
+*!*			ENDIF	
+
+
+*!*			sqlmatriz(1)= "SELECT idajusteh  "
+*!*			sqlmatriz(2)= " FROM ajustestockh "
+*!*			sqlmatriz(3)= " where idajuste = "+ALLTRIM(STR(v_idcomp))
+*!*			verror=sqlrun(vconeccionF,"ajusteh_sql")
+*!*			IF verror=.f.  
+*!*			    MESSAGEBOX("Ha Ocurrido un Error al Buscar estado del detalle del comprobante",0+48+0,"Error")
+*!*			    RETURN 
+*!*			ENDIF	
+
+
+*!*			
+*!*			v_errores = .F.
+*!*			SELECT ajusteh_sql
+*!*			GO TOP 
+*!*			
+*!*			DO WHILE NOT EOF()
+*!*			
+*!*				
+*!*				v_idajusteh = ajusteh_sql.idajusteh
+*!*				
+*!*				v_tabla = "ajustestockh"
+*!*				v_nomindice = "idajusteh"
+*!*				
+*!*				v_ret = registrarEstado(v_tabla ,v_nomindice ,v_idajusteh ,'I',"ANULADO")
+*!*			
+*!*			
+*!*				IF v_ret = .F.
+*!*					v_errores = .T.
+*!*				
+*!*				ENDIF 
+*!*				
+*!*				SELECT ajusteh_sql
+*!*				SKIP 1
+
+*!*			ENDDO
+*!*					
+*!*			IF v_errores = .F.
+*!*				
+*!*				MESSAGEBOX("Comprobante anulado correctamente",0+64+0,"Anular comprobante")
+*!*				
+*!*			ENDIF 
+*!*		ENDIF 
+*!*			
+
+*!*	ENDIF 
+
+
+	RETURN .F.
+
+ENDFUNC 
 
 
 
