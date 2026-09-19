@@ -1722,6 +1722,499 @@ ALTER TABLE `cobros` MODIFY COLUMN `idcobro` INTEGER UNSIGNED NOT NULL DEFAULT N
 
 ALTER TABLE `pagosprovfc` MODIFY COLUMN `idpagosprovfc` INTEGER UNSIGNED NOT NULL DEFAULT NULL AUTO_INCREMENT;
 
+-- 20260912 --
+-- Definición de triggers segun Horlit a la fechaentre`
+
+
+--
+-- Definition of trigger `ajustestockh_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `ajustestockh_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `ajustestockh_AFTER_INSERT` AFTER INSERT ON `ajustestockh` FOR EACH ROW BEGIN
+	call p_articulostock(NEW.articulo);
+	call p_depostock(NEW.deposito, NEW.articulo);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `ajustestockh_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `ajustestockh_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `ajustestockh_AFTER_DELETE` AFTER DELETE ON `ajustestockh` FOR EACH ROW BEGIN
+	call p_articulostock(OLD.articulo);
+	call p_depostock(OLD.deposito,OLD.articulo);
+END $$
+
+DELIMITER ;
+
+
+--
+-- Definition of trigger `cobros_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `cobros_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `cobros_AFTER_INSERT` AFTER INSERT ON `cobros` FOR EACH ROW BEGIN
+	call p_facturasaldo(NEW.idfactura);
+	call p_facturasctasaldo(NEW.idcuotafc);	
+	call p_recibossaldo(NEW.idregipago);
+	
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `cobros_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `cobros_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `cobros_AFTER_DELETE` AFTER DELETE ON `cobros` FOR EACH ROW BEGIN
+	call p_facturasaldo(OLD.idfactura);
+	call p_facturasctasaldo(OLD.idcuotafc);	
+	call p_recibossaldo(OLD.idregipago);
+END $$
+
+DELIMITER ;
+
+
+
+--
+-- Definition of trigger `cumplimentah_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `cumplimentah_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `cumplimentah_AFTER_INSERT` AFTER INSERT ON `cumplimentah` FOR EACH ROW BEGIN
+	call p_otpendientes(NEW.idot);
+	call p_artpendiente(NEW.articulo);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `cumplimentah_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `cumplimentah_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `cumplimentah_AFTER_DELETE` AFTER DELETE ON `cumplimentah` FOR EACH ROW BEGIN
+	call p_otpendientes(OLD.idot);
+	call p_artpendiente(OLD.articulo);
+END $$
+
+DELIMITER ;
+
+
+
+
+--
+-- Definition of trigger `cumplimentaocd_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `cumplimentaocd_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `cumplimentaocd_AFTER_INSERT` AFTER INSERT ON `cumplimentaocd` FOR EACH ROW BEGIN
+	call p_ocdpendientes(NEW.idocd);
+	call p_artocdpendiente(NEW.articulo);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `cumplimentaocd_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `cumplimentaocd_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `cumplimentaocd_AFTER_DELETE` AFTER DELETE ON `cumplimentaocd` FOR EACH ROW BEGIN
+	call p_ocdpendientes(OLD.idocd);
+	call p_artocdpendiente(OLD.articulo);
+END $$
+
+DELIMITER ;
+
+
+
+--
+-- Definition of trigger `detafactu_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `detafactu_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `detafactu_AFTER_INSERT` AFTER INSERT ON `detafactu` FOR EACH ROW BEGIN
+	call p_depostock(1, NEW.articulo);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `detafactu_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `detafactu_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `detafactu_AFTER_DELETE` AFTER DELETE ON `detafactu` FOR EACH ROW BEGIN
+	call p_depostock(1, OLD.articulo);
+END $$
+
+DELIMITER ;
+
+
+
+--
+-- Definition of trigger `detallecobros_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `detallecobros_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `detallecobros_AFTER_INSERT` AFTER INSERT ON `detallecobros` FOR EACH ROW BEGIN
+	call p_bancosaldos(NEW.idcuenta);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `detallecobros_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `detallecobros_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `detallecobros_AFTER_DELETE` AFTER DELETE ON `detallecobros` FOR EACH ROW BEGIN
+	call p_bancosaldos(OLD.idcuenta);
+END $$
+
+DELIMITER ;
+
+
+
+
+--
+-- Definition of trigger `detallepagos_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `detallepagos_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `detallepagos_AFTER_INSERT` AFTER INSERT ON `detallepagos` FOR EACH ROW BEGIN
+	call p_bancosaldos(NEW.idcuenta);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `detallepagos_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `detallepagos_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `detallepagos_AFTER_DELETE` AFTER DELETE ON `detallepagos` FOR EACH ROW BEGIN
+	call p_bancosaldos(OLD.idcuenta);
+END $$
+
+DELIMITER ;
+
+
+
+
+
+--
+-- Definition of trigger `estadosreg_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `estadosreg_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `estadosreg_AFTER_INSERT` AFTER INSERT ON `estadosreg` FOR EACH ROW BEGIN
+	call p_ultimoestado(NEW.idestadosreg);
+END $$
+
+DELIMITER ;
+
+
+
+
+--
+-- Definition of trigger `factuprove_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `factuprove_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `factuprove_AFTER_INSERT` AFTER INSERT ON `factuprove` FOR EACH ROW BEGIN
+	call p_factuprovesaldo(NEW.idfactprove);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `factuprove_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `factuprove_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `factuprove_AFTER_DELETE` AFTER DELETE ON `factuprove` FOR EACH ROW BEGIN
+	call p_factuprovesaldo(OLD.idfactprove);
+END $$
+
+DELIMITER ;
+
+
+
+--
+-- Definition of trigger `facturas_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `facturas_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `facturas_AFTER_INSERT` AFTER INSERT ON `facturas` FOR EACH ROW BEGIN
+	call p_facturasaldo(NEW.idfactura);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `facturas_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `facturas_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `facturas_AFTER_DELETE` AFTER DELETE ON `facturas` FOR EACH ROW BEGIN
+	call p_facturasaldo(OLD.idfactura);
+END $$
+
+DELIMITER ;
+
+
+
+
+
+--
+-- Definition of trigger `facturascta_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `facturascta_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `facturascta_AFTER_INSERT` AFTER INSERT ON `facturascta` FOR EACH ROW BEGIN
+	call p_facturasctasaldo(NEW.idcuotafc);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `facturascta_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `facturascta_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `facturascta_AFTER_DELETE` AFTER DELETE ON `facturascta` FOR EACH ROW BEGIN
+	call p_facturasctasaldo(OLD.idcuotafc);
+END $$
+
+DELIMITER ;
+
+
+
+--
+-- Definition of trigger `ocd_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `ocd_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `ocd_AFTER_INSERT` AFTER INSERT ON `ocd` FOR EACH ROW BEGIN
+	call p_ocdpendientes(NEW.idocd);
+	call p_artocdpendiente(NEW.articulo);
+END $$
+
+DELIMITER ;
+
+
+
+--
+-- Definition of trigger `ocd_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `ocd_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `ocd_AFTER_DELETE` AFTER DELETE ON `ocd` FOR EACH ROW BEGIN
+	call p_ocdpendientes(OLD.idocd);
+	call p_artocdpendiente(OLD.articulo);
+END $$
+
+DELIMITER ;
+
+
+
+--
+-- Definition of trigger `ot_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `ot_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `ot_AFTER_INSERT` AFTER INSERT ON `ot` FOR EACH ROW BEGIN
+	call p_otpendientes(NEW.idot);
+	call p_artpendiente(NEW.articulo);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `ot_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `ot_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `ot_AFTER_DELETE` AFTER DELETE ON `ot` FOR EACH ROW BEGIN
+	call p_otpendientes(OLD.idot);
+	call p_artpendiente(OLD.articulo);
+END $$
+
+DELIMITER ;
+
+
+--
+-- Definition of trigger `pagosprov_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `pagosprov_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `pagosprov_AFTER_INSERT` AFTER INSERT ON `pagosprov` FOR EACH ROW BEGIN
+	call p_pagosprovsaldo(NEW.idpago);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `pagosprov_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `pagosprov_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `pagosprov_AFTER_DELETE` AFTER DELETE ON `pagosprov` FOR EACH ROW BEGIN
+	call p_pagosprovsaldo(OLD.idpago);
+END $$
+
+DELIMITER ;
+
+
+
+--
+-- Definition of trigger `pagosprovfc_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `pagosprovfc_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `pagosprovfc_AFTER_INSERT` AFTER INSERT ON `pagosprovfc` FOR EACH ROW BEGIN
+	call p_factuprovesaldo(NEW.idfactprove);
+	call p_pagosprovsaldo(NEW.idpago);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `pagosprovfc_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `pagosprovfc_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `pagosprovfc_AFTER_DELETE` AFTER DELETE ON `pagosprovfc` FOR EACH ROW BEGIN
+	call p_factuprovesaldo(OLD.idfactprove);
+	call p_pagosprovsaldo(OLD.idpago);
+END $$
+
+DELIMITER ;
+
+
+
+
+--
+-- Definition of trigger `recibos_AFTER_INSERT`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `recibos_AFTER_INSERT`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `recibos_AFTER_INSERT` AFTER INSERT ON `recibos` FOR EACH ROW BEGIN
+	call p_recibossaldo(NEW.idrecibo);
+END $$
+
+DELIMITER ;
+
+--
+-- Definition of trigger `recibos_AFTER_DELETE`
+--
+
+DROP TRIGGER /*!50030 IF EXISTS */ `recibos_AFTER_DELETE`;
+
+DELIMITER $$
+
+CREATE DEFINER = `processaradmin`@`%` TRIGGER `recibos_AFTER_DELETE` AFTER DELETE ON `recibos` FOR EACH ROW BEGIN
+	call p_recibossaldo(OLD.idrecibo);
+END $$
+
+DELIMITER ;
+
 
 
 
