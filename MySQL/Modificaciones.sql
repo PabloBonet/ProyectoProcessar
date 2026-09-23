@@ -1230,7 +1230,7 @@ CREATE TABLE  `clasificanp` (
   PRIMARY KEY (`idclasifnp`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
-insert into clasificanp values (1, 'NP NORMAL', 'NP normal'),(2, 'NP ACOPIO', 'NP de acopio')
+insert into clasificanp values (1, 'NP NORMAL', 'NP normal'),(2, 'NP ACOPIO', 'NP de acopio');
 
 
 CREATE TABLE  `clasifopera` (
@@ -1280,7 +1280,7 @@ CREATE TABLE  `tipoctamail` (
   PRIMARY KEY (`idtipocm`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-insert into tipoctamail values (1, 'PARTICULAR'),(2, 'DIFUSION INFORMACION'),(3, 'DIFUSION FACTURACION')
+insert into tipoctamail values (1, 'PARTICULAR'),(2, 'DIFUSION INFORMACION'),(3, 'DIFUSION FACTURACION');
 
 -- 20260730 --
 
@@ -1653,7 +1653,7 @@ ALTER TABLE `r_listaprea` ADD COLUMN `idtipoart` INTEGER UNSIGNED NOT NULL AFTER
  
  ALTER TABLE `facturas`  ADD INDEX `numero`(`numero`);
 ALTER TABLE `remitos`  ADD INDEX `numero`(`numero`);
-ALTER TABLE `articulosimp`  ADD INDEX `articulo`(`articulo`),ADD INDEX `impuesto`(`impuesto`)
+ALTER TABLE `articulosimp`  ADD INDEX `articulo`(`articulo`),ADD INDEX `impuesto`(`impuesto`);
 ALTER TABLE `planillacajacomp`  ADD INDEX `idplanillacaja`(`idplanillacaja`),ADD INDEX `idregistro`(`idregistro`),ADD INDEX `tabla`(`tabla`),ADD INDEX `fecha`(`fecha`);
 ALTER TABLE `planillacartera`  ADD INDEX `idplanillacaja`(`idplanillacaja`),ADD INDEX `idregistro`(`idregistro`),ADD INDEX `tabla`(`tabla`);
 
