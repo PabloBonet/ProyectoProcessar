@@ -7798,7 +7798,7 @@ ENDFUNC
 *************************************************
 
 FUNCTION fdescribecompro
-PARAMETERS par_tabla,par_nomindice,par_valindice
+PARAMETERS parr_tabla,par_nomindice,par_valindice
 *#/-------------------------------------------------------------
 * Retorna un string conteniendo una descripcion del comprobante
 * que permite identificarlo univocamente. 
@@ -7811,14 +7811,16 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 
 
 	IF EMPTY(par_nomindice) THEN 
-		par_nomindice = obtenerCampoIndice(ALLTRIM(par_tabla))
+		va_par_nomindice = obtenerCampoIndice(ALLTRIM(parr_tabla))
+	ELSE 
+		va_par_nomindice = ALLTRIM(par_nomindice)
 	ENDIF 
 
 	vconeccionFD = abreycierracon(0,_SYSSCHEMA)
 	
 	*// Busco el registro de descripcion de la tabla *//
 	sqlmatriz(1)=" select * from tabladescrip "
-	sqlmatriz(2)=" where tabla = '"+ALLTRIM(par_tabla)+"'"
+	sqlmatriz(2)=" where tabla = '"+ALLTRIM(parr_tabla)+"'"
 	verror=sqlrun(vconeccionFD,"tabladescrip_sql")
 	IF verror=.f.
 		=abreycierracon(vconeccionFD,"")
@@ -7840,7 +7842,7 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 	ENDIF 
 	
 	sqlmatriz(1)= ALLTRIM(tabladescrip_sql.consulta)
-	sqlmatriz(2)=" where "+ALLTRIM(par_tabla)+"."+ALLTRIM(par_nomindice)+" = "+v_par_valindice  &&ALLTRIM(STR(par_valindice))
+	sqlmatriz(2)=" where "+ALLTRIM(parr_tabla)+"."+ALLTRIM(va_par_nomindice)+" = "+v_par_valindice  &&ALLTRIM(STR(par_valindice))
 
 	verror=sqlrun(vconeccionFD,"datoscompro_sql")
 	IF verror=.f.
@@ -7861,7 +7863,7 @@ PARAMETERS par_tabla,par_nomindice,par_valindice
 
 	IF !(TYPE('par_valindice')="C") THEN  && actualizo detalle de asientos solo si indice es numero --> comprobante
 		sqlmatriz(1)	="  update asientoscompro set detacompro = '"+ALLTRIM(SUBSTR(ALLTRIM(v_retornod)+SPACE(254),1,254))+"'"
-		sqlmatriz(2)	="  where  idregicomp = "+ALLTRIM(STR(par_valindice))+" and tabla = '"+ALLTRIM(par_tabla)+"'"
+		sqlmatriz(2)	="  where  idregicomp = "+ALLTRIM(STR(par_valindice))+" and tabla = '"+ALLTRIM(parr_tabla)+"'"
 		verror=sqlrun(vconeccionFD,"asientosco")
 		IF verror=.f.  
 		    MESSAGEBOX("Ha Ocurrido un Error en la Actualización de AsientosCompro ",0+48+0,"Error")
