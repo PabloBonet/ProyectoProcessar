@@ -2217,5 +2217,31 @@ DELIMITER ;
 
 
 
+-- 20260924 --
+
+ALTER TABLE `asientos` ADD INDEX `numero`(`numero`),
+ ADD INDEX `codigocta`(`codigocta`),
+ ADD INDEX `idpland`(`idpland`),
+ ADD INDEX `idasiento`(`idasiento`),
+ ADD INDEX `idtipoasi`(`idtipoasi`),
+ ADD INDEX `idastomode`(`idastomode`),
+ ADD INDEX `idfiltro`(`idfiltro`),
+ ADD INDEX `idastoe`(`idastoe`);
+
+
+ALTER TABLE `asientosg` ADD INDEX `idasientog`(`idasientog`),
+ ADD INDEX `numero`(`numero`),
+ ADD INDEX `fecha`(`fecha`);
+
+
+ALTER TABLE `astocuenta` ADD INDEX `idastomode`(`idastomode`),
+ ADD INDEX `idcpoconta`(`idcpoconta`);
+
+
+ALTER TABLE `astofiltros` ADD INDEX `idastomode`(`idastomode`),
+ ADD INDEX `tabla`(`tabla`);
+ 
+ ALTER TABLE `astovalor` ADD INDEX `idastocuenta`(`idastocuenta`),
+ ADD INDEX `tabla`(`tabla`);
 
 
