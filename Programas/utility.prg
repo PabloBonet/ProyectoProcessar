@@ -36619,7 +36619,6 @@ PARAMETERS p_idtipop, p_idcomproba,p_nombreCampo,p_idregistro
 ENDFUNC 
 
 
-
 *#/----------------------------------------
 * Incerta y Elimina Articulos en los Grupos asociados a las Lineas de los Artículos. Parametro : '+' o '-'
 *#/----------------------------------------
