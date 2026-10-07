@@ -217,7 +217,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 	sqlmatriz(1)=" Select e.idperiodoe, f.*, ifnull(c.funcion,'') as funcion, h.iva, ifnull(c.compuesto,'N') as compuesto, ifnull(a.idcuotasd,0) as cacuotas, ifnull(b.cantcuotas,0) as cacuotast  from entidadesd f left join factulotese e on e.identidadh = f.identidadh "
 	sqlmatriz(2)=" left join conceptoser c on c.idconcepto = f.idconcepto "
 	sqlmatriz(3)=" left join entidadesh h on h.identidadh = f.identidadh "
-	sqlmatriz(4)=" left join entidadesdc a on ( a.identidadd = f.identidadd  and a.facturar = 'S' and a.idfactura = 0 and ( a.fechavenc between '"+ALLTRIM(v_fechadl)+"' and '"+ALLTRIM(v_fechahl)+"' ))"
+*!*		sqlmatriz(4)=" left join entidadesdc a on ( a.identidadd = f.identidadd  and a.facturar = 'S' and a.idfactura = 0 and ( a.fechavenc between '"+ALLTRIM(v_fechadl)+"' and '"+ALLTRIM(v_fechahl)+"' ))"
+	sqlmatriz(4)=" left join entidadesdc a on ( a.identidadd = f.identidadd  and a.facturar = 'S' and a.idfactura = 0 and ( a.fechavenc >= '"+ALLTRIM(v_fechaemite)+"'))"
 	sqlmatriz(5)=" left join entidadesdc b on ( b.identidadd = f.identidadd ) "
 	sqlmatriz(6)=" where f.facturar = 'S' and h.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
 	sqlmatriz(7)=" and ( ( f.vigedesde='' or f.vigehasta='' ) or ( f.vigedesde<>'' and f.vigehasta <> '' and ( '"+ALLTRIM(v_fechaemite)+"' between f.vigedesde and f.vigehasta ) ) )"
@@ -287,7 +288,8 @@ PARAMETERS par_idperiodo, par_ordenfa
 	sqlmatriz(1)=" Select e.idperiodoe, c.* from entidadesdc c left join entidadesd d on d.identidadd = c.identidadd "
 	sqlmatriz(2)=" left join factulotese e on e.identidadh = d.identidadh "
 	sqlmatriz(3)=" where c.idfactura = 0 and c.facturar = 'S' and e.idperiodo = "+STR(par_idperiodo)
-	sqlmatriz(4)=" and c.fechavenc >='"+v_fechaemite+"' and ( c.fechavenc between '"+ALLTRIM(v_fechadl)+"' and '"+ALLTRIM(v_fechahl)+"' )  order by idcuotasd desc " 
+	sqlmatriz(4)=" and c.fechavenc >='"+v_fechaemite+"' order by idcuotasd desc " 
+ *** QUITADO PORQUE NO GENERA CUOTAS EN SERVICIOS	sqlmatriz(4)=" and c.fechavenc >='"+v_fechaemite+"' and ( c.fechavenc between '"+ALLTRIM(v_fechadl)+"' and '"+ALLTRIM(v_fechahl)+"' )  order by idcuotasd desc " 
 *!*		sqlmatriz(4)=" and c.fechavenc >='"+v_fechaemite+"' order by idcuotasd desc " 
 
 
@@ -1631,7 +1633,7 @@ PARAMETERS paut_idperiodo
 	estAutorizado = estObj.getIDestado("AUTORIZADO")
 	RELEASE estObj
 	
-	sqlmatriz(1)=" Select f.* from facturas f left join ultimoestado u on f.idfactura = u.id "
+	sqlmatriz(1)=" Select f.* from facturas f left join r_ultimoestado u on f.idfactura = u.id "
 	sqlmatriz(2)=" left join puntosventa p on p.pventa = f.pventa "
 	sqlmatriz(3)=" where f.idperiodo = "+STR(paut_idperiodo)
 	sqlmatriz(4)=" and u.tabla = 'facturas' and p.electronica = 'S' and  u.idestador <> "+ALLTRIM(str(estAnulado))+" and u.idestador <> "+ALLTRIM(str(estAutorizado))

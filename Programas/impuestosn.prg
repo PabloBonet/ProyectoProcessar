@@ -1479,7 +1479,7 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 	
 	INSERT INTO totperc (entidad,percdiario) VALUES (p_entidad,v_percdiario)
 	USE IN totperc0
-	
+		
 	
 *******************
 **** 3 - Obtengo los datos del impuesto que voy a aplicar
@@ -1521,10 +1521,14 @@ PARAMETERS p_idimpuper, p_entidad, P_fecha,  p_neto, P_importeiva, p_tipo, p_nom
 	IF r_percep > 0
 	    g_totaldia   = v_factdiario
 	    g_percepdia  = v_percdiario + r_percep
-		g_sujaperc   = (v_factdiario-v_percdiario) - s_sujaperc
+		**g_sujaperc   = (v_factdiario-v_percdiario) - s_sujaperc
+		IF v_razon > 0
+			g_sujaperc   = (r_percep / (v_razon /100))
+		ELSE
+			g_sujaperc   = 0
+		ENDIF 
 		
-		*g_sujaperc   = (v_factdiario-v_percdiario)
-
+		
 	    g_impperc    = r_percep
 		v_campoArt   = ""
 		

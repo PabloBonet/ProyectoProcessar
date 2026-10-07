@@ -31281,23 +31281,44 @@ RETURN
 *************************
 
 FUNCTION FSYSLOG()
-PARAMETERS log_string, log_archivo
+PARAMETERS log_string, log_archivo, log_guardasiempre
 *#/----------------------------------------
 * FUNCION Guarda un String en un Archivo de Log
 * PARAMETROS: 	log_string: String para guardar en el archivo de log
 *				log_archivo: Nombre del archivo en que se va a guardar el string
+*				log_guardasiempre: Si la variable es False: guarda según variable '_SYSLOGSYSTEM', si es True: guarda siempre
 *#/---
-	IF !(TYPE('_SYSLOGSYSTEM') = 'C') THEN 
-		RETURN 
-	ELSE 
-		IF EMPTY(_SYSLOGSYSTEM) THEN 
+	
+	IF TYPE('log_guardasiempre') = 'L'
+	
+		IF log_guardasiempre = .F.
+			IF !(TYPE('_SYSLOGSYSTEM') = 'C') THEN 
+				RETURN 
+			ELSE 
+				IF EMPTY(_SYSLOGSYSTEM) THEN 
+					RETURN 
+				ELSE 
+					IF UPPER(SUBSTR(_SYSLOGSYSTEM,1,1)) = 'N' THEN 
+						RETURN 			
+					ENDIF 
+				ENDIF 
+			ENDIF 
+		ENDIF 
+	ELSE
+		IF !(TYPE('_SYSLOGSYSTEM') = 'C') THEN 
 			RETURN 
 		ELSE 
-			IF UPPER(SUBSTR(_SYSLOGSYSTEM,1,1)) = 'N' THEN 
-				RETURN 			
+			IF EMPTY(_SYSLOGSYSTEM) THEN 
+				RETURN 
+			ELSE 
+				IF UPPER(SUBSTR(_SYSLOGSYSTEM,1,1)) = 'N' THEN 
+					RETURN 			
+				ENDIF 
 			ENDIF 
 		ENDIF 
 	ENDIF 
+	
+	
 	
 	IF EMPTY(log_string) THEN 
 		RETURN 
@@ -31736,7 +31757,11 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 				verror=sqlrun(vconeccionCO,"correoconf_sql")
 
 				IF verror=.f.  
-				    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de la Tabla de la configuración de correo",0+48+0,"Error")
+				    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de la Tabla de la configuración de correo",0+48+0,"Error",3000)
+				    
+				    v_mensajeError = "Ha Ocurrido un Error en la Busqueda de la Tabla de la configuración de correo. [ENVIARCORREOARCHIVO.(1)]"
+					FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
+				    
 				ENDIF 
 				= abreycierracon(vconeccionCO,"")
 				
@@ -31842,6 +31867,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 							
 								IF v_retReg = .F.
 									*MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									 v_mensajeError = "Ha Ocurrido un Error en el registro de estado del Correo. [ENVIARCORREOARCHIVO.registrarEnvioCorreo.(1)]"
+									FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 									RETURN .f.
 								ENDIF 
 								
@@ -31910,6 +31937,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 							
 								IF v_retReg = .F.
 									*MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									v_mensajeError = "Ha Ocurrido un Error en el registro de estado del Correo. [ENVIARCORREOARCHIVO.registrarEnvioCorreo.(2)]"
+									FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 									RETURN .f.
 								ENDIF 
 								
@@ -31978,6 +32007,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 							
 								IF v_retReg = .F.
 									*MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									v_mensajeError = "Ha Ocurrido un Error en el registro de estado del Correo. [ENVIARCORREOARCHIVO.registrarEnvioCorreo.(3)]"
+									FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 									RETURN .f.
 								ENDIF 
 								
@@ -32053,6 +32084,8 @@ PARAMETERS pUbicacion, pNombreArchivo, pasunto, pcuerpo,pidtipocm
 							
 								IF v_retReg = .F.
 									*MESSAGEBOX("Ha Ocurrido un Error en el registro de estado del Correo",0+48+0,"Error")
+									v_mensajeError = "Ha Ocurrido un Error en el registro de estado del Correo. [ENVIARCORREOARCHIVO.registrarEnvioCorreo.(4)]"
+									FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 									RETURN .f.
 								ENDIF 
 								
@@ -32190,6 +32223,8 @@ ENDFUNC
 	  IF EOF()
 	 
 	  	MESSAGEBOX("NO se pudo obtener el correo del usuario",0+16+0,"Error al obtener el correo")
+	  	v_mensajeError = "NO se pudo obtener el correo del usuario . [ENVIARCORREO.cargaCfgCorreo]"
+		FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 		RETURN -2
 	  ENDIF 
 
@@ -32268,11 +32303,13 @@ ENDFUNC
 	
 	IF ISNULL(v_correocfg)
 		MESSAGEBOX("Correo NO enviado: "+ALLTRIM(pcorreos),0+16+0,"Enviar Correo",2000)
-		
+		v_mensajeError = "Correo NO enviado: "+ALLTRIM(pcorreos)+". [ENVIARCORREO.Send]"
+		FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 		RETURN -3
 	ELSE
 *!*			MESSAGEBOX("Correo enviado correctamente: "+ALLTRIM(pcorreos),0+64+256,"Enviar Correo",2000)
-		
+			v_mensaje = "Correo enviado correctamente: "+ALLTRIM(pcorreos)+". [ENVIARCORREO.Send]"
+			FSYSLOG(v_mensaje,'logcorreos.log',.T.)
 		RETURN 1
 	ENDIF 
 
@@ -34885,9 +34922,14 @@ FUNCTION ENVIOCOMPROBANTES
 	verror=sqlrun(vconeccionC,"compAgrumail_Sql")
 
 	IF verror=.f.  
-	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar ",0+48+0,"Error")
+	    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar ",0+48+0,"Error",3000)
 	*** me desconecto	
 		=abreycierracon(vconeccionC,"")
+		
+		v_mensajeError = "Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar. [ENVIOCOMPROBANTES.(1)]"
+		FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
+		
+		
 	    RETURN  .F.
 	ENDIF 
 	
@@ -34934,9 +34976,14 @@ FUNCTION ENVIOCOMPROBANTES
 		verror=sqlrun(vconeccionC,"compromail_sql")
 
 		IF verror=.f.  
-		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar ",0+48+0,"Error")
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar ",0+48+0,"Error",3000)
 		*** me desconecto	
 			=abreycierracon(vconeccionC,"")
+			
+			v_mensajeError = "Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar. [ENVIOCOMPROBANTES.(2)]"
+			FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
+		
+		
 		    RETURN  .F.
 		ENDIF 
 		
@@ -35021,16 +35068,22 @@ FUNCTION ENVIOCOMPROBANTES
 	
 	IF EMPTY(ALLTRIM(v_retm)) = .T.
 
-		MESSAGEBOX("Error al generar los comprobantes",0+16+256,"Generar comprobantes")
+		MESSAGEBOX("Error al generar los comprobantes",0+16+256,"Generar comprobantes",3000)
+*		RETURN .F.
+		v_mensajeError = "Error al generar los comprobantes. [ENVIOCOMPROBANTES.generarcomprobantes]"
+		FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 		RETURN .F.
-			
 	ENDIF 
 
 		v_retm = v_retm
-	v_r = enviarcorreoscsv(v_retm)
+		v_r = enviarcorreoscsv(v_retm)
 
+		IF v_r = .F.
+			v_mensajeError = "Error al enviar correos. [ENVIOCOMPROBANTES.enviarcorreoscsv]"
+			FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
+		ENDIF 
 	
-	RETURN v_r
+		RETURN v_r
 	
 
 
@@ -35182,6 +35235,10 @@ v_retenv = .F.
 
 	IF EMPTY(ALLTRIM(p_archivoenv)) = .T.
 		MESSAGEBOX("Debe Seleccionar el archivo que contiene los comprobantes a enviar por E-Mail ...",0+64,"Enviar PDF Por E-Mail")
+		
+		v_mensajeError = "Debe Seleccionar el archivo que contiene los comprobantes a enviar por E-Mail. [ENVIARCORREOSCSV]"
+		FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
+			
 		RETURN .F.
 	ELSE 
 			v_pathpdfs = ALLTRIM(p_archivoenv)
