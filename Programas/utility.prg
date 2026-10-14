@@ -9262,12 +9262,6 @@ ENDIF
 	v_descmovStock	= tipomstock_sql.descmov
 *	v_generaEtiqueta = tipomstock_sql.generaeti
 		
-	
-	SELECT &v_tablaDatos
-	GO TOP 
-
-	IF NOT EOF()
-		
 		*** Busco el comprobante asociado
 		sqlmatriz(1)=" select * from articulos "
 			
@@ -9277,6 +9271,13 @@ ENDIF
 		     =abreycierracon(vconeccionA,"")
 		    RETURN .F.
 		ENDIF
+	
+	SELECT &v_tablaDatos
+	GO TOP 
+
+	IF NOT EOF()
+		
+		
 
 
 		SELECT articulos_sql
@@ -9284,7 +9285,7 @@ ENDIF
 		
 		IF NOT EOF()
 			SELECT t.*,a.detalle FROM &v_tablaDatos t LEFT JOIN articulos_sql a ON ALLTRIM(t.articulo) == ALLTRIM(a.articulo) ;
-			INTO TABLE articulosDatos WHERE !ISNULL(a.detalle) 
+			INTO TABLE articulosDatos WHERE !ISNULL(a.articulo) 
 			
 			v_primerEti = 0
 			v_ultimaEti = 0
