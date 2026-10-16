@@ -2739,7 +2739,7 @@ FUNCTION ImputarCobros
 *!*				** GENERO EL ASIENTO PARA EL RECIBO			
 *!*				v_cargo = ContabilizaCompro('recibos', v_idrecibo, vconeccionF, v_recibo_importe)
 			
-*!*				v_ret = ctaCteBancos('RECIBOS',v_idrecibo,0)
+				v_ret = ctaCteBancos('RECIBOS',v_idrecibo,0)
 			
 			
 			* me desconecto	
@@ -2766,7 +2766,7 @@ FUNCTION ImputarCobros
 
 	ENDDO
 	
-		v_ret = ctaCteBancos('RECIBOS',0,0)
+***		v_ret = ctaCteBancos('RECIBOS',0,0)  &&& QUITADO PARA VERIFICAR SI AL IMPORTAR SE ACELERA EL PROCESO
 		
 		RETURN 1
 	
@@ -3294,5 +3294,333 @@ PARAMETERS pcb_EmpresaID, pcb_archivo, pcb_operacion
 
 	RETURN pcb_Retorno
 ENDFUNC 
+
+
+
+
+
+
+
+FUNCTION CBFNMROMANG
+*#/----------------------------------------
+*** Función para convertir un archivo al formato de Mutual Romang
+*** Parameter:
+***		pcb_EmpresaID: Id de la empresa
+***		pcb_archivo: path completo del archivo a convertir (el parametro puede ser vacio, en ese caso se pedirá seleccionar)
+***		pcb_operacion: Operación, puede ser I o E (I: formato archivo para Importación, E: Formato archivo para exportarción)
+***	Retorno
+*** 	pcb_retorno: Devuelve el path del archivo convertido. Si no puede convertir o hay algún error retorna vacio
+**  Se debe llamar a la funcion sin ninguna conexion abierta, ya que cierra y abre una conexion a otra base de datos
+*#/----------------------------------------
+PARAMETERS pcb_EmpresaID, pcb_archivo, pcb_operacion
+
+	pcb_Retorno = ""
+
+*** Obtengo las configuraciones de los archivos y datos de empresa asociada y cobrador ***
+
+	vconeccionCBA=abreycierracon(0,_SYSSCHEMA) && ME CONECTO
+
+	IF vconeccionCBA > 0 THEN 
+		
+		sqlmatriz(1)= " select * from cbasociadas "
+		
+		verror=sqlrun(vconeccionCBA,"cbasociada_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error al obtener los datos de la entidad asociada ",0+48+0,"Error al Importar comprobantes")
+		    RETURN 0
+		ENDIF	
+			
+		SELECT cbasociada_sql
+		GO TOP 
+		
+		IF EOF()
+			
+		 	MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los datos del archivo de la empresa ",0+48+0,"Error")
+		    =abreycierracon(vconeccionCBA,"")
+		    pcb_Retorno = ""
+	
+		    RETURN pcb_Retorno 
+		ENDIF 
+		
+		sqlmatriz(1)=" Select * from cbcobrador where empresaid = '"+ALLTRIM(pcb_EmpresaID)+"'"
+	
+		verror=sqlrun(vconeccionCBA,"cbcobrador_sql")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los datos del cobrador",0+48+0,"Error")
+		    =abreycierracon(vconeccionCBA,"")
+		    pcb_Retorno = ""
+	
+		    RETURN pcb_Retorno 
+		ENDIF
+		
+		SELECT cbcobrador_sql
+		GO TOP 
+		
+		IF NOT EOF()
+			SELECT cbcobrador_sql
+				
+		ELSE
+		
+			pcb_Retorno = ""
+		
+			RETURN pcb_Retorno 
+		ENDIF  
+
+	***********************************
+	
+	*** Creo la tabla con los datos de los cobros ****	
+		v_s1 = "CREATE TABLE cobrostmp  FREE (idcbasoci I, empresaid I, idsubent I,idcomp I, comproba C(100),total1 Y, "
+		v_s2 = " vence1 C(8),idcbcobro I,fechacob C(8),importeCob Y,recargoCob Y, cb C(254), sel L) "
+		v_s = v_s1+v_s2
+		
+		&v_s
+
+		
+	***************
+	
+	*** Cargo la tabla con los datos de los cobros desde el archivo de REDLINK ****
+	
+		sqlmatriz(1)=" select * from servicios "
+		verror=sqlrun(vconeccionCBA,"servicios")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los datos de los servicios ",0+48+0,"Error")
+		    =abreycierracon(vconeccionCBA,"")
+		    pcb_Retorno = ""
+	
+		    RETURN pcb_Retorno 
+		ENDIF
+					
+		IF EMPTY(pcb_archivo)
+	*!*			pcb_archivo = GETFILE('ret','Docs.','Ok',0,'Adjuntar Archivo')
+			pcb_archivo = GETFILE()
+		ENDIF 
+
+
+		IF !EMPTY(pcb_archivo) AND UPPER(SUBSTR(ALLTRIM(JUSTFNAME(pcb_archivo)),1,3))=='MSC' then
+			IF used("lectura") then
+				SELECT lectura
+				use
+			ENDIF
+
+			CREATE TABLE lectura FREE (REGISTRO C(239) ,FECHA D, IDREGISTRO N(12), COBRADO N(12,2))
+			
+								
+			SELECT lectura
+			APPEND FROM &pcb_archivo SDF
+			
+			SELECT lectura 
+			GO TOP 
+
+			IF  (LEN(ALLTRIM(lectura.registro))= 238) AND ( SUBSTR(ALLTRIM(lectura.registro),1,8)='DATOS   ' ) THEN
+
+
+				
+*!*					DELETE
+*!*					GO bott
+*!*					DELETE
+*!*					PACK
+*!*					GO TOP 
+*!*					REPLACE ALL idregistro 	WITH VAL(SUBSTR(ALLTRIM(lectura.registro),49,10)), ;
+*!*									cobrado WITH VAL(SUBSTR(ALLTRIM(lectura.registro),29,12))/100 ;
+*!*									fecha   WITH DATE((INT(VAL(SUBSTR(ALLTRIM(lectura.registro),41,4)))),INT(VAL(SUBSTR(ALLTRIM(lectura.registro),45,2))),INT(VAL(SUBSTR(ALLTRIM(lectura.registro),47,2))))
+					REPLACE ALL idregistro 	WITH VAL(SUBSTR(ALLTRIM(lectura.registro),174,10)), ;
+								fecha   WITH DATE((INT(VAL('20'+SUBSTR(ALLTRIM(lectura.registro),233,2)))),INT(VAL(SUBSTR(ALLTRIM(lectura.registro),235,2))),INT(VAL(SUBSTR(ALLTRIM(lectura.registro),237,2))))
+
+*!*					***** Completo los datos restantes de la factura *****
+*!*			
+				tipoComproObjtmp 	= CREATEOBJECT('comprobantesclass')
+				
+				v_idCompNDA = tipoComproObjtmp.getidcomprobante("ND DE AJUSTE CTA CTE")
+				
+				RELEASE tipoComproObjtmp   
+*!*					
+				SELECT lectura 
+				GO TOP 
+*!*					
+				DO WHILE NOT EOF()
+			
+					v_idregistro = lectura.idregistro
+*!*						v_cobrado	= lectura.cobrado
+					v_fecha	= lectura.fecha
+					vc_fechacobro = DTOS(v_fecha)
+					v_cobradoven1 	 = VAL(SUBSTR(ALLTRIM(lectura.registro),186,11))/100
+					v_cobradoven2	 = VAL(SUBSTR(ALLTRIM(lectura.registro),201,11))/100
+					v_cobradoven3    = VAL(SUBSTR(ALLTRIM(lectura.registro),216,11))/100
+					
+					
+					sqlmatriz(1)=" select * from facturas f left join comprobantes c on f.idcomproba = c.idcomproba left join puntosventa p on f.pventa = p.pventa "
+					sqlmatriz(2)=" where (f.observa2 = '"+ALLTRIM(STR(v_idregistro))+"' and f.idcomproba = "+ALLTRIM(STR(v_idCompNDA))+") or (f.idfactura = "+ALLTRIM(STR(v_idregistro))+" and f.idcomproba <> "+ALLTRIM(STR(v_idCompNDA))+" ) " 
+					
+					verror=sqlrun(vconeccionCBA,"factura_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA  de los datos de la factura ",0+48+0,"Error")
+					    =abreycierracon(vconeccionCBA,"")
+					ELSE
+					
+						SELECT factura_sql
+						GO TOP 
+						
+						IF NOT EOF()
+						
+							IF vc_fechacobro <= factura_sql.fechavenc1 THEN 
+								v_cobrado	= v_cobradoven1 
+							ENDIF 
+							IF vc_fechacobro > factura_sql.fechavenc1 AND  vc_fechacobro <= factura_sql.fechavenc2 THEN 
+								v_cobrado	= v_cobradoven2
+							ENDIF 
+							IF vc_fechacobro > factura_sql.fechavenc2 THEN 
+								v_cobrado	= v_cobradoven3
+							ENDIF 
+
+							SELECT lectura 
+							REPLACE cobrado WITH v_cobrado
+
+						
+							v_idcbasoci =  cbasociada_sql.idcbasoci
+							v_empresaid = VAL(cbasociada_sql.empresaid)
+							v_idsubent	= VAL(cbasociada_sql.subcodid)
+							v_idcomp 	= IIF(TYPE('v_idregistro')='C',VAL(v_idregistro),v_idregistro)
+
+							v_comproba = factura_sql.comprobante
+							v_total1 = factura_sql.total
+							v_vence1 = factura_sql.fechavenc1
+							v_idcbcobro = 0
+							v_fechacob = DTOS(lectura.fecha)
+							v_importeCob = lectura.cobrado
+							v_recargoCob = lectura.cobrado - v_total1 
+
+							ALINES(ARR_codebccomp,cbcobrador_sql.ebc,'-')
+							v_tbc  = VAL(ARR_codebccomp(2))
+									
+							ALINES(ARR_codebccomp,cbcobrador_sql.ebceid,'-')
+							v_tbceid  = VAL(ARR_codebccomp(2))
+													
+							ALINES(ARR_codebccomp,cbcobrador_sql.ebcsid,'-')
+							v_tbcsid  = VAL(ARR_codebccomp(2))
+							
+							ALINES(ARR_codebccomp,cbcobrador_sql.ebcidcomp,'-')
+							v_tcbcodcomp= VAL(ARR_codebccomp(2))
+							v_idfactura = 	factura_sql.idfactura	
+												
+							v_strempresaid = STRTRAN(STR(v_empresaid,v_tbceid,0)," ","0")
+							v_stridsubent = STRTRAN(STR(v_idsubent,v_tbcsid,0)," ","0")
+							v_stridcomp = STRTRAN(STR(v_idfactura ,(v_tcbcodcomp-2),0)," ","0")
+							
+							v_codibc = v_strempresaid+v_stridsubent+v_stridcomp+"00"
+							
+							v_difbc = v_tbc - LEN(v_codibc)
+							
+							IF v_difbc >= 0
+								v_cb = v_codibc + REPLICATE('0',v_difbc )
+							ELSE
+								v_cb = "00010001000000000000000"
+							ENDIF 
+	
+							v_sel = .T.
+							
+							SELECT cobrostmp 
+							INSERT INTO cobrostmp VALUES (v_idcbasoci , v_empresaid, v_idsubent,v_idfactura , v_comproba,v_total1, v_vence1,v_idcbcobro,v_fechacob,v_importeCob,v_recargoCob, v_cb, v_sel)
+*!*							
+						ENDIF 
+											
+					ENDIF
+									
+					SELECT lectura
+					SKIP 1
+
+				ENDDO
+
+
+				***********************
+				SELECT cobrostmp 
+				GO TOP 
+				IF EOF()
+					MESSAGEBOX("No se pudieron cargar los cobros del archivo... Verifique...",0+16+256,"Convertir archivo")					
+					pcb_Retorno = ""
+					RETURN pcb_Retorno
+				ENDIF 
+
+				**** Exporto el archivo .ret ****
+				DO CASE
+				CASE pcb_operacion = 'R' && Formato de archivo Retorno [.RET]
+					v_r = 0
+					
+					SELECT cbcobrador_sql
+					GO  TOP 
+					v_idcbcobra = cbcobrador_sql.idcbcobra
+					
+					v_maxSecuencia = calculaSecMaxCobrador(v_idcbcobra)
+					IF v_maxSecuencia < 0
+						v_secuenciastr = '00000'
+							
+					ELSE
+						v_secuenciaAct = v_maxSecuencia + 1
+							
+						IF v_secuenciaAct > 0
+							
+							SELECT cbasociada_sql
+							v_narchivor	= ALLTRIM(cbasociada_sql.narchivor)
+							v_longNarchivor = LEN(v_narchivor)
+
+							IF v_longNarchivor <= 4 AND v_secuenciaAct <= 99999
+									
+								v_secuenciaStr = REPLICATE('0',5-LEN(ALLTRIM(STR(v_secuenciaAct))))+ALLTRIM(STR(v_secuenciaAct))
+									
+								v_secuenciastr = ALLTRIM(v_secuenciaStr)
+									
+								v_nombrearchivo = v_narchivor+v_secuenciaStr+".ret"	
+									
+								p_idcbasociada = cbasociada_sql.idcbasoci
+																				
+								v_archivo= _SYSESTACION+"\"+v_nombrearchivo
+							
+								v_r = ExportarCobro (p_idcbasociada, v_archivo ,"cobrostmp",pcb_EmpresaID,.T.  )
+
+							ELSE
+								v_secuenciastr  = '00000'
+							ENDIF 
+						ELSE
+							v_secuenciastr  = '00000'				
+						ENDIF 
+					ENDIF 
+						
+
+				*******************
+
+					IF v_r = 1
+						pcb_Retorno = v_archivo 
+					ELSE
+						pcb_Retorno = ""
+					ENDIF 
+
+				CASE pcb_operacion = 'E' && Formato de archivo Envio[.ENV])
+					
+						OTHERWISE
+				ENDCASE
+*!*	 
+			ELSE
+				MESSAGEBOX("El Archivo Seleccionado no es Valido... Verifique...",0+16+256,"Convertir archivo")
+				pcb_Retorno = ""
+				RETURN pcb_Retorno
+			ENDIF 
+*!*				
+		ELSE
+			MESSAGEBOX("No ha seleccionado un Archivo Válido... Verifique...",0+16+256,"Convertir archivo")		
+			pcb_Retorno = ""
+			RETURN pcb_Retorno
+		ENDIF
+	
+	ELSE
+	
+		MESSAGEBOX("Error al crear la conexión con la Base de Datos",0+16+256,"Convertir archivo")
+		pcb_Retorno = ""
+		RETURN pcb_Retorno
+	ENDIF 
+
+	RETURN pcb_Retorno
+ENDFUNC 
+
+
+
 
 
