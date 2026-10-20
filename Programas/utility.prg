@@ -34905,6 +34905,15 @@ FUNCTION ENVIOCOMPROBANTES
 		MESSAGEBOX("La variable _SYSENVCORREOS NO está configurada correctamente, Revisar parámetro: DIAS-BUSQUEDA ",0+16+256)
 		RETURN .F.
 	ENDIF 
+	
+	
+		*** BLOQUEO EL TIMER para que no siga ejecutando ****
+		
+		va_sysbgproce = _SYSBGPROCE
+		
+		_SYSBGPROCE = 0
+		
+		
 		
 	** Fecha limite para busqueda de correos.
 	v_diasBusqueda = VAL(v_diasBusquedastr)
@@ -34930,12 +34939,18 @@ FUNCTION ENVIOCOMPROBANTES
 		v_mensajeError = "Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar. [ENVIOCOMPROBANTES.(1)]"
 		FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 		
-		
+		_SYSBGPROCE = va_sysbgproce 
 	    RETURN  .F.
 	ENDIF 
 	
 	*** me desconecto	
 	=abreycierracon(vconeccionC,"")
+	
+	
+	
+	
+	
+
 			
 	******************
 	*** Para cada tipo de comprobante, filtro por dias y por enviado o no ***
@@ -34984,7 +34999,8 @@ FUNCTION ENVIOCOMPROBANTES
 			v_mensajeError = "Ha Ocurrido un Error en la BÚSQUEDA de los comprobantes a enviar. [ENVIOCOMPROBANTES.(2)]"
 			FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 		
-		
+			_SYSBGPROCE = va_sysbgproce 
+			
 		    RETURN  .F.
 		ENDIF 
 		
@@ -35073,6 +35089,8 @@ FUNCTION ENVIOCOMPROBANTES
 *		RETURN .F.
 		v_mensajeError = "Error al generar los comprobantes. [ENVIOCOMPROBANTES.generarcomprobantes]"
 		FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
+		_SYSBGPROCE = va_sysbgproce 
+		
 		RETURN .F.
 	ENDIF 
 
@@ -35083,6 +35101,8 @@ FUNCTION ENVIOCOMPROBANTES
 			v_mensajeError = "Error al enviar correos. [ENVIOCOMPROBANTES.enviarcorreoscsv]"
 			FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 		ENDIF 
+		
+		_SYSBGPROCE = va_sysbgproce 
 	
 		RETURN v_r
 	
@@ -36706,3 +36726,44 @@ ENDFUNC
 
 *!*	ENDFUNC 
 *!*	 
+
+
+
+FUNCTION ejecutartimer
+*#/----------------------------------------
+**** FUNCIÓN PARA DETERMINAR SI SE EJECUTA EL TIMER O NO. Compara la hora actual con la variable _SYSTIMERPER. 
+****	La variable tiene establecido un perido donde se va a ejecutar el timer: hh:mm:SS-HH:MM:SS
+**RETORNO:		.T. si la hora actual está dentro del periodo o si no está definida la variable, .F. en otro caso
+*#/----------------------------------------
+
+
+	IF TYPE('_SYSTIMERPER') = 'U'
+		RETURN .T.
+	ENDIF 
+
+
+	v_can = ALINES(v_timerper,_SYSTIMERPER,"-")
+	
+	
+	IF v_can = 2
+		v_inicio = v_timerper[1]
+		v_fin	 = v_timerper[2]
+		
+		v_horaact = time()
+		
+		IF v_horaact >= v_inicio AND v_horaact =< v_fin
+			RETURN .T.
+		ELSE
+			RETURN .F.
+		ENDIF 
+		
+	ELSE
+		MESSAGEBOX("La variable _SYSTIMERPER está mal configurada",0+48+0,"Ejecutar Timer")
+		
+		RETURN .T.
+	ENDIF 
+	
+	
+	
+
+ENDFUNC 
