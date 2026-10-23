@@ -11731,8 +11731,8 @@ PARAMETERS p_idpagoProv
 			GO TOP 
 			v_idcomproba = pago.idcomproba
 			
-			DO FORM reporteform WITH "pago;pagos","pagocr;pagoscr",v_idcomproba
-			
+*!*				DO FORM reporteform WITH "pago;pagos","pagocr;pagoscr",v_idcomproba
+			DO FORM reporteform WITH "pago;pagos","pagocr;pagoscr",v_idcomproba,.F.,pEnviarImpresora
 		ELSE
 			MESSAGEBOX("Error al cargar el Pago de proveedor para imprimir",0+48+0,"Error al cargar el Pago de proveedor ")
 			RETURN 	
@@ -36767,3 +36767,471 @@ FUNCTION ejecutartimer
 	
 
 ENDFUNC 
+
+
+FUNCTION imprimirplanillacarga
+PARAMETERS p_idctrltran
+*#/----------------------------------------
+**** FUNCIÓN PARA IMPRIMIR UNA PLANILLA DE CONTROL DE CARGA
+*#/----------------------------------------
+
+
+
+	IF p_idctrltran > 0
+
+		*** BUSCO LOS DATOS DE LA PLANILLA ***
+			v_errTZ =.F.
+
+
+			* Me conecto a la base de datos maestros
+			vconeccionM=abreycierracon(0,_SYSSCHEMA)	
+			
+			sqlmatriz(1)="Select * from transportistas "
+			verror=sqlrun(vconeccionM,"transp_imp")
+			IF verror=.f.
+				MESSAGEBOX("Ha Ocurrido un Error en la Búsqueda de los Transportes ",+48+0,"Aviso del Sistema")
+				v_errTZ =.T.
+				
+			ENDIF 
+
+
+			sqlmatriz(1)="Select * from zonas"
+			verror=sqlrun(vconeccionM,"zonas_imp")
+			IF verror=.f.
+				MESSAGEBOX("Ha Ocurrido un Error en la Búsqueda de las zonas",+48+0,"Aviso del Sistema")
+				v_errTZ =.T.
+				
+			ENDIF 
+
+
+
+
+*!*					sqlmatriz(1) = " SELECT p.*,h.*, ifnull(c.comprobante,'') as comp,t.nombre as tipo, s.apellido as nomb_socio, ifnull(m.tabla,'                    ') as tabla,h.observa as observai "
+*!*					sqlmatriz(2) = " FROM ctrltransp p left join ctrltransh h on p.idctrltran = h.idctrltran left join comprobantes c on h.idcomp = c.idcomp "
+*!*					sqlmatriz(3) = " left join tipoitemtran t on h.idtipoitra = t.idtipoitra left join socios s on h.cod_socio = s.cod_socio "
+*!*					sqlmatriz(4) = " left join comprobantes m on h.idcomp = m.idcomp "	
+*!*					sqlmatriz(5) = " WHERE  p.idctrltran = "+ALLTRIM(STR(p_idctrltran))+" and h.estado = 1"
+*!*					sqlmatriz(6) = " order by h.orden"
+
+				
+				estObj	= CREATEOBJECT('estadosclass')
+				v_estadoActivo = estObj.getIdestado("ACTIVO")
+				v_estadoAutorizado = estObj.getIdestado("AUTORIZADO")
+				
+				
+				sqlmatriz(1) = " SELECT p.*,h.*, ifnull(c.comprobante,'') as comp,t.nombre as tipo, s.apellido as nomb_socio, ifnull(m.tabla,'                    ') as tabla,h.observa as observai "
+				sqlmatriz(2) = " FROM ctrltransp p left join ctrltransh h on p.idctrltran = h.idctrltran left join comprobantes c on h.idcomproba = c.idcomproba "
+				sqlmatriz(3) = " left join tipoitemtran t on h.idtipoitra = t.idtipoitra left join entidades s on h.entidad = s.entidad "
+				sqlmatriz(4) = " left join comprobantes m on h.idcomproba = m.idcomproba "
+				sqlmatriz(5) = " WHERE  p.idctrltran = 6 and ( h.idestadosr = "+ALLTRIM(STR(v_estadoActivo))+" or h.idestadosr = "+ALLTRIM(STR(v_estadoAutorizado))+")"
+				sqlmatriz(6) = " order by h.orden "
+	 
+	 
+	 
+				verror=sqlrun(vconeccionM,"planilla_impa")
+			IF verror=.f.  
+			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la planilla",0+48+0,"Error")
+			    RETURN 
+			ENDIF 
+
+			SELECT * FROM planilla_impa INTO TABLE planillacarga
+
+			ALTER table planillacarga alter COLUMN comp C(100)
+			ALTER table planillacarga alter COLUMN observa C(250)
+			ALTER table planillacarga alter COLUMN observai C(250)
+			ALTER table planillacarga ADD COLUMN nombzona C(100)
+			ALTER table planillacarga ADD COLUMN cliente I
+			ALTER table planillacarga ADD COLUMN nombcli C(100)
+
+			SELECT planillacarga
+			GO TOP 
+				v_tipo = planillacarga.tipo
+			DO WHILE NOT EOF()
+
+				v_tabla = planillacarga.tabla
+				v_idregistro  = planillacarga.idregistro
+				v_zona = planillacarga.zona
+				
+				DO CASE
+				CASE ALLTRIM(v_tabla) = "remitosp"
+				
+					sqlmatriz(1)= " select * "
+					sqlmatriz(2)= " from "+ALLTRIM(v_tabla)
+					sqlmatriz(3)= " where idremitop = "+ALLTRIM(STR(v_idregistro))
+				
+					
+					verror=sqlrun(vconeccionC,"comprobante_imp")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante asociado",0+48+0,"Error")
+					    RETURN 
+					ENDIF
+					
+					SELECT comprobante_imp
+					GO TOP 
+					
+					IF NOT EOF()
+				
+						
+						v_actividad = REPLICATE('0',4- LEN(ALLTRIM(STR(comprobante_imp.actividad))))+ALLTRIM(STR(comprobante_imp.actividad))
+						v_numero = REPLICATE('0',8- LEN(ALLTRIM(STR(comprobante_imp.numero))))+ALLTRIM(STR(comprobante_imp.numero))
+						
+						v_actividad = IIF(ISNULL(v_actividad) = .T.,'',v_actividad)
+						v_numero = IIF(ISNULL(v_numero)=.T.,'',v_numero)
+						
+						v_compnuevo = "Rem: "+ALLTRIM(v_actividad)+"-"+ALLTRIM(v_numero)
+						
+						v_cliente = comprobante_imp.cliente
+						v_nombcliente = ALLTRIM(comprobante_imp.nomb_fanta)
+						
+						SELECT zonas_imp
+						GO TOP 
+						LOCATE FOR zona = v_zona 
+						
+						IF NOT EOF()
+						
+						
+							v_nombzona = zonas_imp.nombre
+						
+						ENDIF 
+
+						SELECT planillacarga
+						replace comp WITH v_compnuevo,nombzona WITH ALLTRIM(v_nombzona), cliente WITH v_cliente, nombcli with v_nombcliente
+					ENDIF 
+					
+				
+				
+					 
+				OTHERWISE
+					v_tipo = planillacarga.tipo
+					
+					v_carp = planillacarga.cod_socio
+					v_nomb_socio = planillacarga.nomb_socio
+					
+					v_nomb_socio = IIF(ISNULL(v_nomb_socio) = .T.,'',v_nomb_socio)
+					
+					v_carp = IIF(ISNULL(v_carp ) = .T.,0,v_carp )
+					
+					v_cliente = 0
+					v_nombcliente = ''
+					
+					IF ISNULL(v_tipo) = .T.
+				
+						replace comp WITH ''
+					
+					ELSE
+						v_compitem = "ITEM: "+ALLTRIM(v_tipo)
+						
+						
+							
+						SELECT zonas_imp
+						GO TOP 
+						LOCATE FOR zona =v_zona 
+						
+						IF NOT EOF()
+						
+						
+							v_nombzona = zonas_imp.nombre
+						
+						ENDIF 
+						
+						
+						SELECT planillacarga
+						replace comp WITH v_compitem,nombzona WITH ALLTRIM(v_nombzona), cod_socio WITH v_carp, nomb_socio WITH v_nomb_socio, cliente WITH v_cliente, nombcli WITH v_nombcliente
+					
+					ENDIF 
+							
+				ENDCASE
+
+				
+				SELECT planillacarga
+				SKIP 1
+
+			ENDDO
+
+
+			*me desconecto
+			=abreycierracon(vconeccionC,"")
+
+				
+		
+		
+
+
+
+		SELECT planillacarga
+		GO TOP 
+
+		DO salida.prg WITH "planillacarga","planillacarga.frx","","","","",""
+
+
+	ENDIF 
+
+
+ENDFUNC 
+
+
+*#/----------------------------------------
+* Inserta y Elimina Articulos en los Grupos asociados a las Lineas de los Artículos. Parametro : '+' o '-'
+*#/----------------------------------------
+
+FUNCTION FSaldoPendiente
+*#/****************************
+*** FUNCIÓN OBTENER LOS SALDOS DE LOS COMPROBANTES O DE LA CUENTA PASADA COMO PARAMETRO  ***
+**	PARAMETERS: ps_Entidad: Entidad para la cual se quiere obtener el saldo de la cuenta o sus comprobantes
+**				ps_CliPro: C= Indica que debe calcular el saldo de la Cta Cte como Cliente ; P= Indica que debe calcular el saldo de la Cta Cte como Proveedor
+**				ps_DebitoCredito: Indica si se quiere obtener el saldo de los Debitos , Credigos o Saldo de la Cuenta Completa D=Debitos C=Creditos S=Saldo Total 
+**  RETORNO: Retorna en positivo el valor del saldo calculado segun lo solicitado en los parametros.
+*#/****************************
+	PARAMETERS ps_Entidad, ps_CliPro, ps_DebitoCredito
+	LOCAL r_saldos_pend 
+	r_saldos_pend = 0.00
+	
+	IF ps_Entidad > 0 THEN 
+		
+		IF ps_CliPro == 'C' THEN  && Solicita Saldo de Cuentas Corrientes de Clientes
+			
+			DO CASE  
+				CASE ps_DebitoCredito == 'D' 
+
+					vconeccionS=abreycierracon(0,_SYSSCHEMA)	
+
+					sqlmatriz(1)= " SELECT f.entidad,  SUM(ifnull(s.saldof,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_facturasaldo s left join facturas f on f.idfactura = s.idfactura "
+					sqlmatriz(3)= " left  join comprobantes c on c.idcomproba = f.idcomproba "
+					sqlmatriz(4)= " left  join tipocompro tc on tc.idtipocompro = c.idtipocompro where tc.opera > 0 and f.entidad = "+STR(ps_Entidad)
+					sqlmatriz(5)= " group by f.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosFC_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+
+					SELECT SaldosFC_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosFC_sql.saldo 
+					ENDIF 
+					USE IN SaldosFC_sql
+					
+
+					* me desconecto	
+					=abreycierracon(vconeccionS,"")
+
+
+				CASE ps_DebitoCredito == 'C' 
+
+					vconeccionS=abreycierracon(0,_SYSSCHEMA)	
+
+					sqlmatriz(1)= " SELECT f.entidad,  SUM(ifnull(s.saldof,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_facturasaldo s left join facturas f on f.idfactura = s.idfactura "
+					sqlmatriz(3)= " left  join comprobantes c on c.idcomproba = f.idcomproba "
+					sqlmatriz(4)= " left  join tipocompro tc on tc.idtipocompro = c.idtipocompro where tc.opera < 0 and f.entidad = "+STR(ps_Entidad)
+					sqlmatriz(5)= " group by f.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosFC_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+
+					sqlmatriz(1)= " SELECT r.entidad,  SUM(ifnull(s.saldo,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_recibossaldo s left join recibos r on r.idrecibo = s.idrecibo and s.idcomproba = r.idcomproba "
+					sqlmatriz(4)= " where r.entidad = "+STR(ps_Entidad)
+					sqlmatriz(5)= " group by r.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosRE_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+					
+					SELECT SaldosFC_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosFC_sql.saldo 
+					ENDIF 
+					USE IN SaldosFC_sql
+					
+					SELECT SaldosRE_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosRE_sql.saldo 
+					ENDIF 
+					USE IN SaldosRE_sql
+					
+					* me desconecto	
+					=abreycierracon(vconeccionS,"")
+			
+				CASE ps_DebitoCredito == 'S' 
+
+					vconeccionS=abreycierracon(0,_SYSSCHEMA)	
+
+					sqlmatriz(1)= " SELECT f.entidad,  SUM(ifnull(s.saldof*tc.opera,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_facturasaldo s left join facturas f on f.idfactura = s.idfactura "
+					sqlmatriz(3)= " left  join comprobantes c on c.idcomproba = f.idcomproba "
+					sqlmatriz(4)= " left  join tipocompro tc on tc.idtipocompro = c.idtipocompro where tc.opera <> 0 and f.entidad = "+STR(ps_Entidad)
+					sqlmatriz(5)= " group by f.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosFC_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+
+					sqlmatriz(1)= " SELECT r.entidad,  SUM(ifnull(s.saldo,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_recibossaldo s left join recibos r on r.idrecibo = s.idrecibo and s.idcomproba = r.idcomproba "
+					sqlmatriz(3)= " where r.entidad = "+STR(ps_Entidad)
+					sqlmatriz(4)= " group by r.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosRE_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+					
+					SELECT SaldosFC_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosFC_sql.saldo 
+					ENDIF 
+					USE IN SaldosFC_sql
+					
+					SELECT SaldosRE_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosRE_sql.saldo 
+					ENDIF 
+					USE IN SaldosRE_sql
+					
+					* me desconecto	
+					=abreycierracon(vconeccionS,"")
+
+			
+				OTHERWISE 
+			ENDCASE 
+
+
+
+
+		ELSE && Solicita Saldo de Cuentas Corrientes de Proveedores 
+		
+			DO CASE  
+				CASE ps_DebitoCredito == 'D' && Saldos de Facturas de Proveedores solamente
+
+					vconeccionS=abreycierracon(0,_SYSSCHEMA)	
+
+					sqlmatriz(1)= " SELECT f.entidad,  SUM(ifnull(s.saldof,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_factuprovesaldo s left join factuprove f on f.idfactprove = s.idfactprov "
+					sqlmatriz(3)= " left  join comprobantes c on c.idcomproba = f.idcomproba "
+					sqlmatriz(4)= " left  join tipocompro tc on tc.idtipocompro = c.idtipocompro where tc.opera < 0 and f.entidad = "+STR(ps_Entidad)
+					sqlmatriz(5)= " group by f.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosFCP_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+
+					SELECT SaldosFCP_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosFCP_sql.saldo 
+					ENDIF 
+					USE IN SaldosFCP_sql
+					
+
+					* me desconecto	
+					=abreycierracon(vconeccionS,"")
+
+
+				CASE ps_DebitoCredito == 'C' && Saldos de Pagos y Notas de Credito de Proveedores solamente
+
+					vconeccionS=abreycierracon(0,_SYSSCHEMA)	
+
+					sqlmatriz(1)= " SELECT f.entidad,  SUM(ifnull(s.saldof,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_factuprovesaldo s left join factuprove f on f.idfactprove = s.idfactprov "
+					sqlmatriz(3)= " left  join comprobantes c on c.idcomproba = f.idcomproba "
+					sqlmatriz(4)= " left  join tipocompro tc on tc.idtipocompro = c.idtipocompro where tc.opera > 0 and f.entidad = "+STR(ps_Entidad)
+					sqlmatriz(5)= " group by f.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosNCP_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+
+					sqlmatriz(1)= " SELECT p.entidad,  SUM(ifnull(s.saldo,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_pagosprovsaldo s left join pagosprov p on p.idpago = s.idpago and s.idcomproba = p.idcomproba "
+					sqlmatriz(4)= " where p.entidad = "+STR(ps_Entidad)
+					sqlmatriz(5)= " group by p.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosPAG_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+					
+					SELECT SaldosNCP_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosNCP_sql.saldo 
+					ENDIF 
+					USE IN SaldosNCP_sql
+					
+					SELECT SaldosPAG_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosPAG_sql.saldo 
+					ENDIF 
+					USE IN SaldosPAG_sql
+					
+					* me desconecto	
+					=abreycierracon(vconeccionS,"")
+
+
+			
+				CASE ps_DebitoCredito == 'S' && Saldos de Cuenta de Proveedor
+				
+					vconeccionS=abreycierracon(0,_SYSSCHEMA)	
+
+					sqlmatriz(1)= " SELECT f.entidad,  SUM(ifnull(s.saldof*tc.opera,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_factuprovesaldo s left join factuprove f on f.idfactprove = s.idfactprov "
+					sqlmatriz(3)= " left  join comprobantes c on c.idcomproba = f.idcomproba "
+					sqlmatriz(4)= " left  join tipocompro tc on tc.idtipocompro = c.idtipocompro where tc.opera <> 0 and f.entidad = "+STR(ps_Entidad)
+					sqlmatriz(5)= " group by f.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosFCP_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+
+					sqlmatriz(1)= " SELECT p.entidad,  SUM(ifnull(s.saldo,0.00)) as saldo "
+					sqlmatriz(2)= " FROM  r_pagosprovsaldo s left join pagosprov p on p.idpago = s.idpago and s.idcomproba = p.idcomproba "
+					sqlmatriz(4)= " where p.entidad = "+STR(ps_Entidad)
+					sqlmatriz(5)= " group by p.entidad "
+					
+					verror=sqlrun(vconeccionS,"SaldosPAG_sql")
+					IF verror=.f.  
+					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del Saldo ",0+48+0,"Error")
+					    RETURN 
+					ENDIF 
+					
+					SELECT SaldosFCP_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosNCP_sql.saldo 
+					ENDIF 
+					USE IN SaldosFCP_sql
+					
+					SELECT SaldosPAG_sql
+					IF !EOF() THEN 
+						r_saldos_pend = r_saldos_pend + SaldosPAG_sql.saldo 
+					ENDIF 
+					USE IN SaldosPAG_sql
+					
+					* me desconecto	
+					=abreycierracon(vconeccionS,"")
+
+			
+				OTHERWISE 
+			ENDCASE 	
+		ENDIF 
+		
+	ENDIF 
+	RETURN r_saldos_pend
+ENDFUNC 
+
+
