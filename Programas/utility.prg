@@ -11446,7 +11446,7 @@ ENDFUNC
 
 
 FUNCTION imprimirPagoProv
-PARAMETERS p_idpagoProv
+PARAMETERS p_idpagoProv,pEnviarImpresora
 *#/----------------------------------------
 * FUNCIÓN PARA IMPRIMIR PAGO
 * PARAMETROS: P_idPagoProv
