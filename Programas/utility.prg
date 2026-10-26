@@ -8725,7 +8725,7 @@ ENDFUNC
 
 
 FUNCTION imprimirRetenciones
-PARAMETERS P_idpago, p_conexion
+PARAMETERS P_idpago, p_conexion,pEnviarImpresora
 *#/****************************
 * FUNCIÓN PARA IMPRIMIR LOS COMPROBANTES DE RETENCIONES DADO UNA ORDEN DE PAGO
 * PARAMETROS: P_idpago: Recibe como parámetro el ID de la orden de pago
@@ -8767,7 +8767,7 @@ PARAMETERS P_idpago, p_conexion
 			v_idretencion = retAimp_sql.idregret 
 			
 			
-			imprimirRetencion(v_idretencion)
+			imprimirRetencion(v_idretencion,.f.,pEnviarImpresora)
 			
 			
 			SELECT retAimp_Sql
@@ -8782,7 +8782,7 @@ ENDFUNC
 
 
 FUNCTION imprimirRetencion
-PARAMETERS p_idretencion, p_conexion
+PARAMETERS p_idretencion, p_conexion,pEnviarImpresora
 *#/****************************
 * FUNCIÓN PARA IMPRIMIR EL COMPROBANTE DE RENTECIÓN
 * PARAMETROS: P_idretencion: Recibe como parámetro el ID de la retención ha imprimir
@@ -8868,7 +8868,7 @@ PARAMETERS p_idretencion, p_conexion
 			GO TOP 
 			
 			v_idcomprobaret = retenciones.idcomproba
-			DO FORM reporteform WITH "retenciones","retencionescr",v_idcomprobaret
+			DO FORM reporteform WITH "retenciones","retencionescr",v_idcomprobaret,.f.,pEnviarImpresora
 				
 *!*			SELECT * FROM retenciones_sql INTO TABLE retenciones
 *!*					
