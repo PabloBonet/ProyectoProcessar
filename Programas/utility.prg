@@ -32223,7 +32223,7 @@ ENDFUNC
 	  
 	  IF EOF()
 	 
-	  	MESSAGEBOX("NO se pudo obtener el correo del usuario",0+16+0,"Error al obtener el correo")
+	  	MESSAGEBOX("NO se pudo obtener el correo del usuario",0+16+0,"Error al obtener el correo",5000)
 	  	v_mensajeError = "NO se pudo obtener el correo del usuario . [ENVIARCORREO.cargaCfgCorreo]"
 		FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 		RETURN -2
@@ -32293,7 +32293,7 @@ ENDFUNC
 	CATCH TO loErr 
 	  MESSAGEBOX("No se pudo enviar el mensaje" + CHR(13) + ;
 	    "Error: " + TRANSFORM(loErr.ErrorNo) + CHR(13) + ;
-	    "Mensaje: " + loErr.Message , 16, "Error")
+	    "Mensaje: " + loErr.Message , 16, "Error",10000)
 	      loMsg = NULL
 		  v_correocfg = NULL
 	    	
@@ -32303,7 +32303,7 @@ ENDFUNC
 	ENDTRY
 	
 	IF ISNULL(v_correocfg)
-		MESSAGEBOX("Correo NO enviado: "+ALLTRIM(pcorreos),0+16+0,"Enviar Correo",2000)
+		MESSAGEBOX("Correo NO enviado: "+ALLTRIM(pcorreos),0+16+0,"Enviar Correo",5000)
 		v_mensajeError = "Correo NO enviado: "+ALLTRIM(pcorreos)+". [ENVIARCORREO.Send]"
 		FSYSLOG(v_mensajeError,'logcorreos.log',.T.)
 		RETURN -3
@@ -36783,25 +36783,25 @@ PARAMETERS p_idctrltran
 			v_errTZ =.F.
 
 
-			* Me conecto a la base de datos maestros
+			* Me conecto a la base de datos 
 			vconeccionM=abreycierracon(0,_SYSSCHEMA)	
 			
-			sqlmatriz(1)="Select * from transportistas "
-			verror=sqlrun(vconeccionM,"transp_imp")
-			IF verror=.f.
-				MESSAGEBOX("Ha Ocurrido un Error en la Búsqueda de los Transportes ",+48+0,"Aviso del Sistema")
-				v_errTZ =.T.
-				
-			ENDIF 
+*!*				sqlmatriz(1)="Select * from transportistas "
+*!*				verror=sqlrun(vconeccionM,"transp_imp")
+*!*				IF verror=.f.
+*!*					MESSAGEBOX("Ha Ocurrido un Error en la Búsqueda de los Transportes ",+48+0,"Aviso del Sistema")
+*!*					v_errTZ =.T.
+*!*					
+*!*				ENDIF 
 
 
-			sqlmatriz(1)="Select * from zonas"
-			verror=sqlrun(vconeccionM,"zonas_imp")
-			IF verror=.f.
-				MESSAGEBOX("Ha Ocurrido un Error en la Búsqueda de las zonas",+48+0,"Aviso del Sistema")
-				v_errTZ =.T.
-				
-			ENDIF 
+*!*				sqlmatriz(1)="Select * from zonas"
+*!*				verror=sqlrun(vconeccionM,"zonas_imp")
+*!*				IF verror=.f.
+*!*					MESSAGEBOX("Ha Ocurrido un Error en la Búsqueda de las zonas",+48+0,"Aviso del Sistema")
+*!*					v_errTZ =.T.
+*!*					
+*!*				ENDIF 
 
 
 
@@ -36813,54 +36813,84 @@ PARAMETERS p_idctrltran
 *!*					sqlmatriz(5) = " WHERE  p.idctrltran = "+ALLTRIM(STR(p_idctrltran))+" and h.estado = 1"
 *!*					sqlmatriz(6) = " order by h.orden"
 
-				
-				estObj	= CREATEOBJECT('estadosclass')
-				v_estadoActivo = estObj.getIdestado("ACTIVO")
-				v_estadoAutorizado = estObj.getIdestado("AUTORIZADO")
-				
-				
-				sqlmatriz(1) = " SELECT p.*,h.*, ifnull(c.comprobante,'') as comp,t.nombre as tipo, s.apellido as nomb_socio, ifnull(m.tabla,'                    ') as tabla,h.observa as observai "
-				sqlmatriz(2) = " FROM ctrltransp p left join ctrltransh h on p.idctrltran = h.idctrltran left join comprobantes c on h.idcomproba = c.idcomproba "
-				sqlmatriz(3) = " left join tipoitemtran t on h.idtipoitra = t.idtipoitra left join entidades s on h.entidad = s.entidad "
-				sqlmatriz(4) = " left join comprobantes m on h.idcomproba = m.idcomproba "
-				sqlmatriz(5) = " WHERE  p.idctrltran = 6 and ( h.idestadosr = "+ALLTRIM(STR(v_estadoActivo))+" or h.idestadosr = "+ALLTRIM(STR(v_estadoAutorizado))+")"
-				sqlmatriz(6) = " order by h.orden "
+*!*					
+*!*					estObj	= CREATEOBJECT('estadosclass')
+*!*					v_estadoActivo = estObj.getIdestado("ACTIVO")
+*!*					v_estadoAutorizado = estObj.getIdestado("AUTORIZADO")
+*!*					
+*!*					
+				sqlmatriz(1) = " SELECT p.*,h.idtranh, h.idtipoitra,h.entidad as cliente,h.idcomproba as idcomph, h.idregistro as idregh, h.kgtotal as kgtotalh, h.lios, h.observa as observai,h.orden,h.estado, h.cod_socio, ifnull(c.comprobante,'') as compp, "
+				sqlmatriz(2) = " t.nombre as tipo, s.apellido as nomb_socio, ifnull(m.tabla,'                    ') as tabla,concat(e.nombre,' ',e.apellido) as nombcli,ifnull(concat(n.nombre,' ',n.apellido),'') as nomb_socio, p.idcomproba as idcomppla, "
+				sqlmatriz(3) = " z.detalle as nombzona, v.puntov, ec.entidad as entcont, concat(ec.nombre,' ',ec.apellido) as camionero, i.apellido as entpla "
+				sqlmatriz(4) = " FROM ctrltransp p left join ctrltransh h on p.idctrltran = h.idctrltran left join comprobantes c on h.idcomproba = c.idcomproba left join puntosventa v on p.pventa = v.pventa left join entidades i on p.entidad = i.entidad "
+				sqlmatriz(5) = " left join tipoitemtran t on h.idtipoitra = t.idtipoitra left join entidades s on h.entidad = s.entidad "
+				sqlmatriz(6) = " left join comprobantes m on h.idcomproba = m.idcomproba left join zonas z on p.zona = z.zona left join entidadesc ec on p.idcontacto = ec.idcontacto "
+				sqlmatriz(7) = " left join entidades e on h.entidad = e.entidad left join entidades as n on h.cod_socio = n.entidad "
+				sqlmatriz(8) = " where p.idctrltran = "+ALLTRIM(STR(p_idctrltran))+" and h.estado = 1"
+				sqlmatriz(9) = " order by h.orden "
 	 
+*!*		 
+*!*		 
+*!*		 SELECT p.*,h.*, ifnull(c.comprobante,'') as comp,t.nombre as tipo, s.apellido as nomb_socio, ifnull(m.tabla,'                    ') as tabla,h.observa as observai,z.detalle as nombzona, ec.entidad as entcont, concat(ec.nombre,' ',ec.apellido) as camionero,
+*!*		 concat(e.nombre,' ',e.apellido) as nombcli,ifnull(concat(n.nombre,' ',n.apellido),'') as nomb_socio
+*!*		 FROM ctrltransp p left join ctrltransh h on p.idctrltran = h.idctrltran left join comprobantes c on h.idcomproba = c.idcomproba
+*!*	 left join tipoitemtran t on h.idtipoitra = t.idtipoitra left join entidades s on h.entidad = s.entidad
+*!*		 left join comprobantes m on h.idcomproba = m.idcomproba left join zonas z on p.zona = z.zona left join entidadesc ec on p.idcontacto = ec.idcontacto
+*!*		left join entidades e on h.entidad = e.entidad left join entidades as n on h.cod_socio = n.entidad
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		
+*!*		SELECT h.*,
+*!*	concat(e.nombre,' ',e.apellido) as nombcli,ifnull(concat(n.nombre,' ',n.apellido),'') as nomb_socio
+*!*		 FROM ctrltransp p left join ctrltransh h on p.idctrltran = h.idctrltran left join comprobantes c on h.idcomproba = c.idcomproba
+*!*	 left join tipoitemtran t on h.idtipoitra = t.idtipoitra left join entidades s on h.entidad = s.entidad
+*!*		 left join comprobantes m on h.idcomproba = m.idcomproba left join zonas z on p.zona = z.zona left join entidadesc ec on p.idcontacto = ec.idcontacto
+*!*	left join entidades e on h.entidad = e.entidad left join entidades as n on h.cod_socio = n.entidad
+
+
+*!*		
+*!*		
+	
 	 
-	 
-				verror=sqlrun(vconeccionM,"planilla_impa")
+			verror=sqlrun(vconeccionM,"planilla_impa")
 			IF verror=.f.  
 			    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA de la planilla",0+48+0,"Error")
 			    RETURN 
 			ENDIF 
-
+			
+			SELECT planilla_impa
+			GO TOP 
+			
 			SELECT * FROM planilla_impa INTO TABLE planillacarga
 
-			ALTER table planillacarga alter COLUMN comp C(100)
+			ALTER table planillacarga alter COLUMN compp C(100)
 			ALTER table planillacarga alter COLUMN observa C(250)
 			ALTER table planillacarga alter COLUMN observai C(250)
-			ALTER table planillacarga ADD COLUMN nombzona C(100)
-			ALTER table planillacarga ADD COLUMN cliente I
-			ALTER table planillacarga ADD COLUMN nombcli C(100)
+			ALTER table planillacarga alter COLUMN nombzona C(100)
+			ALTER table planillacarga alter COLUMN cliente I
+			ALTER table planillacarga alter COLUMN nombcli C(100)
 
 			SELECT planillacarga
 			GO TOP 
+			
 				v_tipo = planillacarga.tipo
 			DO WHILE NOT EOF()
 
 				v_tabla = planillacarga.tabla
-				v_idregistro  = planillacarga.idregistro
+				v_idregistro  = planillacarga.idregh
 				v_zona = planillacarga.zona
 				
 				DO CASE
-				CASE ALLTRIM(v_tabla) = "remitosp"
+				CASE ALLTRIM(v_tabla) = "remitos"
 				
-					sqlmatriz(1)= " select * "
-					sqlmatriz(2)= " from "+ALLTRIM(v_tabla)
-					sqlmatriz(3)= " where idremitop = "+ALLTRIM(STR(v_idregistro))
+					sqlmatriz(1)= " select *,p.puntov "
+					sqlmatriz(2)= " from "+ALLTRIM(v_tabla)+" r left join puntosventa p on r.pventa = p.pventa "
+					sqlmatriz(3)= " where r.idremito = "+ALLTRIM(STR(v_idregistro))
 				
 					
-					verror=sqlrun(vconeccionC,"comprobante_imp")
+					verror=sqlrun(vconeccionM,"comprobante_imp")
 					IF verror=.f.  
 					    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del comprobante asociado",0+48+0,"Error")
 					    RETURN 
@@ -36872,7 +36902,7 @@ PARAMETERS p_idctrltran
 					IF NOT EOF()
 				
 						
-						v_actividad = REPLICATE('0',4- LEN(ALLTRIM(STR(comprobante_imp.actividad))))+ALLTRIM(STR(comprobante_imp.actividad))
+						v_actividad = ALLTRIM(comprobante_imp.PUNTOV)
 						v_numero = REPLICATE('0',8- LEN(ALLTRIM(STR(comprobante_imp.numero))))+ALLTRIM(STR(comprobante_imp.numero))
 						
 						v_actividad = IIF(ISNULL(v_actividad) = .T.,'',v_actividad)
@@ -36880,22 +36910,24 @@ PARAMETERS p_idctrltran
 						
 						v_compnuevo = "Rem: "+ALLTRIM(v_actividad)+"-"+ALLTRIM(v_numero)
 						
-						v_cliente = comprobante_imp.cliente
-						v_nombcliente = ALLTRIM(comprobante_imp.nomb_fanta)
+						v_cliente = comprobante_imp.entidad
+						v_nombcliente = ALLTRIM(comprobante_imp.nombre)+" "+ALLTRIM(comprobante_imp.apellido)
 						
-						SELECT zonas_imp
-						GO TOP 
-						LOCATE FOR zona = v_zona 
-						
-						IF NOT EOF()
-						
-						
-							v_nombzona = zonas_imp.nombre
-						
-						ENDIF 
+*!*							SELECT zonas_imp
+*!*							GO TOP 
+*!*							LOCATE FOR zona = v_zona 
+*!*							
+*!*							IF NOT EOF()
+*!*							
+*!*							
+*!*								v_nombzona = zonas_imp.nombre
+*!*							
+*!*							ENDIF 
 
 						SELECT planillacarga
-						replace comp WITH v_compnuevo,nombzona WITH ALLTRIM(v_nombzona), cliente WITH v_cliente, nombcli with v_nombcliente
+*!*							replace comp WITH v_compnuevo,nombzona WITH ALLTRIM(v_nombzona), cliente WITH v_cliente, nombcli with v_nombcliente
+						replace compp WITH v_compnuevo
+
 					ENDIF 
 					
 				
@@ -36916,28 +36948,31 @@ PARAMETERS p_idctrltran
 					
 					IF ISNULL(v_tipo) = .T.
 				
-						replace comp WITH ''
+						replace compp WITH ''
 					
 					ELSE
 						v_compitem = "ITEM: "+ALLTRIM(v_tipo)
 						
 						
-							
-						SELECT zonas_imp
-						GO TOP 
-						LOCATE FOR zona =v_zona 
+*!*								
+*!*							SELECT zonas_imp
+*!*							GO TOP 
+*!*							LOCATE FOR zona =v_zona 
+*!*							
+*!*							IF NOT EOF()
+*!*							
+*!*							
+*!*								v_nombzona = zonas_imp.nombre
+*!*							
+*!*							ENDIF 
+*!*							
+*!*							
+*!*							SELECT planillacarga
+*!*							replace compp WITH v_compitem,nombzona WITH ALLTRIM(v_nombzona), cod_socio WITH v_carp, nomb_socio WITH v_nomb_socio, cliente WITH v_cliente, nombcli WITH v_nombcliente
+*!*						
+							SELECT planillacarga
+							replace compp WITH v_compitem
 						
-						IF NOT EOF()
-						
-						
-							v_nombzona = zonas_imp.nombre
-						
-						ENDIF 
-						
-						
-						SELECT planillacarga
-						replace comp WITH v_compitem,nombzona WITH ALLTRIM(v_nombzona), cod_socio WITH v_carp, nomb_socio WITH v_nomb_socio, cliente WITH v_cliente, nombcli WITH v_nombcliente
-					
 					ENDIF 
 							
 				ENDCASE
@@ -36948,9 +36983,8 @@ PARAMETERS p_idctrltran
 
 			ENDDO
 
-
 			*me desconecto
-			=abreycierracon(vconeccionC,"")
+			=abreycierracon(vconeccionM,"")
 
 				
 		
@@ -36958,12 +36992,18 @@ PARAMETERS p_idctrltran
 
 
 
+	 
+
+*!*			DO salida.prg WITH "planillacarga","planillacarga.frx","","","","",""
 		SELECT planillacarga
 		GO TOP 
+		v_idcomproba = planillacarga.idcomppla
+		
 
-		DO salida.prg WITH "planillacarga","planillacarga.frx","","","","",""
-
-
+		DO FORM reporteform WITH "planillacarga","planillacargacr",v_idcomproba
+			
+			
+			
 	ENDIF 
 
 
