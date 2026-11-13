@@ -36820,12 +36820,12 @@ PARAMETERS p_idctrltran
 *!*					
 *!*					
 				sqlmatriz(1) = " SELECT p.*,h.idtranh, h.idtipoitra,h.entidad as cliente,h.idcomproba as idcomph, h.idregistro as idregh, h.kgtotal as kgtotalh, h.lios, h.observa as observai,h.orden,h.estado, h.cod_socio, ifnull(c.comprobante,'') as compp, "
-				sqlmatriz(2) = " t.nombre as tipoi, s.apellido as nomb_socio, ifnull(m.tabla,'                    ') as tabla,concat(e.nombre,' ',e.apellido) as nombcli,ifnull(concat(n.nombre,' ',n.apellido),'') as nomb_socio, p.idcomproba as idcomppla, "
+				sqlmatriz(2) = " t.nombre as tipoi, ifnull(m.tabla,'                    ') as tabla,concat(e.nombre,' ',e.apellido) as nombcli,ifnull(concat(n.nombre,' ',n.apellido),'') as nomb_socio, p.idcomproba as idcomppla, "
 				sqlmatriz(3) = " z.detalle as nombzona, v.puntov, ec.entidad as entcont, concat(ec.nombre,' ',ec.apellido) as camionero, ifnull(concat(i.nombre,' ',i.apellido,' ',i.compania),0) as entpla, concat(tr.nombre,' ',tr.apellido,' ',tr.compania) as nombtrans "
 				sqlmatriz(4) = " FROM ctrltransp p left join ctrltransh h on p.idctrltran = h.idctrltran left join comprobantes c on h.idcomproba = c.idcomproba left join puntosventa v on p.pventa = v.pventa left join entidades i on p.entidad = i.entidad "
 				sqlmatriz(5) = " left join tipoitemtran t on h.idtipoitra = t.idtipoitra left join entidades s on h.entidad = s.entidad "
 				sqlmatriz(6) = " left join comprobantes m on h.idcomproba = m.idcomproba left join zonas z on p.zona = z.zona left join entidadesc ec on p.idcontacto = ec.idcontacto "
-				sqlmatriz(7) = " left join entidades e on h.entidad = e.entidad left join entidades as n on h.cod_socio = n.entidad left join entidades tr on p.transporte = tr.entidad"
+				sqlmatriz(7) = " left join entidades e on h.entidad = e.entidad left join entidades n on h.cod_socio = n.entidad left join entidades tr on p.transporte = tr.entidad"
 				sqlmatriz(8) = " where p.idctrltran = "+ALLTRIM(STR(p_idctrltran))+" and h.estado = 1"
 				sqlmatriz(9) = " order by h.orden "
 	 
@@ -37275,3 +37275,24 @@ FUNCTION FSaldoPendiente
 ENDFUNC 
 
 
+FUNCTION actualizarGrupolineas
+*#/****************************
+*** FUNCIÓN QUE ACTUALIZA LOS GRUPOS DE LINEAS-ARTICULOS  ***
+**  RETORNO: true si se actualizo correctamente, false en otro caso
+*#/****************************
+
+
+
+sqlmatriz(1)="select * from lineas"
+verror=sqlrun(vconeccionF,"lineas_sql")
+IF verror=.f.  
+    MESSAGEBOX("Ha Ocurrido un Error en la Busqueda de lineas",0+16+256,"Actualizar grupo lineas")
+    
+	* me desconecto	
+	=abreycierracon(vconeccionF,"")
+    RETURN 
+ENDIF 
+
+
+	
+ENDFUNC 
