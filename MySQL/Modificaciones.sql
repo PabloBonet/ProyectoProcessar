@@ -2245,3 +2245,49 @@ ALTER TABLE `astofiltros` ADD INDEX `idastomode`(`idastomode`),
  ADD INDEX `tabla`(`tabla`);
 
 
+
+
+-- 20261114 --
+
+ALTER TABLE `facturas` MODIFY COLUMN `idfactura` INTEGER UNSIGNED NOT NULL DEFAULT NULL AUTO_INCREMENT;
+ALTER TABLE `detafactu` MODIFY COLUMN `idfacturah` INTEGER UNSIGNED NOT NULL DEFAULT NULL AUTO_INCREMENT;
+
+
+-- En p_creartablasr_ --
+
+   DROP TABLE IF EXISTS `r_ultimoestado`;
+   CREATE TABLE `r_ultimoestado` AS select tabla, campo, cast(id as UNSIGNED) as id, idestador, tipo, fechaest from ultimoestado ;
+   ALTER TABLE  `r_ultimoestado` ADD INDEX `tabla`(`tabla`), ADD INDEX `campo`(`campo`), ADD INDEX `id`(`id`), ADD INDEX `idestador`(`idestador`),ADD INDEX `tabla_id`(`tabla`, `id`);
+
+-- p_ultimoestado --
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `processar_alsafex`.`p_ultimoestado` $$
+CREATE DEFINER=`tulior`@`%` PROCEDURE `p_ultimoestado`(in pidestadosreg int )
+BEGIN
+
+    set @vtabla  	:= "" ;
+    set @vcampo 	:= "" ;
+    set @vid  		:= 0 ;
+    set @videstador := 0  ;
+    set @vtipo      := "" ;
+	set @vfechaest  := "" ;
+
+    select `r`.`tabla` ,`r`.`campo` , `r`.`id` ,`r`.`idestador`, `r`.`tipo`,`r`.`fecha`  
+    into   @vtabla, @vcampo, @vid, @videstador, @vtipo, @vfechaest
+    from `estadosreg` `r`  
+    where r.idestadosreg = pidestadosreg ;
+
+    if isnull(@vtabla) <> true then
+		delete from r_ultimoestado where tabla = @vtabla and id = @vid ;
+		insert into r_ultimoestado values ( @vtabla, @vcampo, @vid, @videstador, @vtipo, @vfechaest);
+    end if ;
+
+END $$
+
+DELIMITER ;
+
+
+
+
