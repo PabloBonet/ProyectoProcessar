@@ -3152,11 +3152,12 @@ FUNCTION CargaCtaCteClientes
 			*** GUARDA DATOS DE CABECERA DEL COMPROBANTE
 
 
-			v_idfactura  = maxnumeroidx("idfactura","I","facturas",1)
-			IF v_idfactura <= 0
-				MESSAGEBOX("No se pudo recuperar el ultimo indice de la factura",0+16,"Error")
-				RETURN 
-			ENDIF 
+*!*				v_idfactura  = maxnumeroidx("idfactura","I","facturas",1)
+*!*				IF v_idfactura <= 0
+*!*					MESSAGEBOX("No se pudo recuperar el ultimo indice de la factura",0+16,"Error")
+*!*					RETURN 
+*!*				ENDIF 
+			v_idfactura = 0
 			
 			* Guardo el minimo idfactura y el maximo para el lote procesado
 			IF v_idfactura_min = 0 THEN 
@@ -3417,6 +3418,25 @@ FUNCTION CargaCtaCteClientes
 			    RETURN 
 			ENDIF  
 
+
+			sqlmatriz(1)=" select last_insert_id() as maxid "
+		verror=sqlrun(vconeccionF,"facturasUID")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+			=abreycierracon(vconeccionF,"")	
+		    RETURN 
+		ENDIF 
+		
+		
+		SELECT facturasUID
+		GO TOP 
+		v_idfactura_Ultimo = VAL(facturasUID.maxid)
+		USE IN facturasUID
+
+		v_idfactura = v_idfactura_Ultimo 	
+		
+		
+		
 		
 		
 			p_cantidad = 1
@@ -3815,7 +3835,8 @@ PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
 
 	*** INSERTO DETALLE EN  DETAFACTU ***
 		v_idfactura = p_idfactura
-		v_idfacturah = maxnumeroidx("idfacturah","I","detafactu",1)
+*!*			v_idfacturah = maxnumeroidx("idfacturah","I","detafactu",1)
+		v_idfacturah = 0		
 		v_articulo = v_codigo
 		v_idconcepto = 0 
 		v_servicio = 0
@@ -3896,6 +3917,28 @@ PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
 		    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
 		    RETURN .F.
 		ENDIF	
+		
+		
+		
+		sqlmatriz(1)=" select last_insert_id() as maxid "
+		verror=sqlrun(vconeccionF,"detafactuUID")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+			=abreycierracon(vconeccionF,"")	
+		    RETURN 
+		ENDIF 
+		
+		
+		SELECT detafactuUID
+		GO TOP 
+		v_idfacturah_Ultimo = VAL(detafactuUID.maxid)
+		USE IN detafactuUID
+
+		v_idfacturah = v_idfacturah_Ultimo
+		
+		
+		
+		
 		
 		
 		
@@ -4590,7 +4633,7 @@ PARAMETERS p_operacion,p_cantidad,p_unitario,p_idfactura,p_iva
 				v_titulo      = " EL ALTA "
 				
 				v_idfacturah = maxnumeroidx("idfactproveh","I","factuproved",1)
-
+			
 				
 					
 			

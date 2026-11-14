@@ -27408,12 +27408,13 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular, p_imprimircmp, p_NOContabilizar
 			
 	*** GUARDA DATOS DE CABECERA DEL COMPROBANTE
 
-	v_idfactura  = maxnumeroidx("idfactura","I","facturas",1)
-	IF v_idfactura <= 0
-		MESSAGEBOX("No se pudo recuperar el ultimo indice de la factura",0+16,"Error")
-		RETURN 
-	ENDIF 
-
+*!*		v_idfactura  = maxnumeroidx("idfactura","I","facturas",1)
+*!*		IF v_idfactura <= 0
+*!*			MESSAGEBOX("No se pudo recuperar el ultimo indice de la factura",0+16,"Error")
+*!*			RETURN 
+*!*		ENDIF 
+	v_idfactura  = 0
+	
 	SELECT compIngEgr_sql
 	GO TOP 
 			
@@ -27547,8 +27548,8 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular, p_imprimircmp, p_NOContabilizar
 	
 			* datos para vinculos de comprobantes
 			v_idcompro_va   = v_idcom
-			v_idregistro_va = v_idfactura
-	
+*!*				v_idregistro_va = v_idfactura
+
 			DIMENSION lamatriz1(53,2)
 			
 			lamatriz1(1,1)='idfactura'
@@ -27666,6 +27667,28 @@ PARAMETERS p_tablaarti, p_cone, p_idvincular, p_imprimircmp, p_NOContabilizar
 			    MESSAGEBOX("Ha Ocurrido un Error en "+v_titulo+" "+ALLTRIM(STR(v_numero)),0+48+0,"Error")
 			    RETURN 
 			ENDIF  
+
+
+
+
+	sqlmatriz(1)=" select last_insert_id() as maxid "
+		verror=sqlrun(vconeccionF,"facturasUID")
+		IF verror=.f.  
+		    MESSAGEBOX("Ha Ocurrido un Error en la BÚSQUEDA del maximo Numero de indice",0+48+0,"Error")
+			=abreycierracon(vconeccionF,"")	
+		    RETURN 
+		ENDIF 
+		
+		
+		SELECT facturasUID
+		GO TOP 
+		v_idfactura_Ultimo = VAL(facturasUID.maxid)
+		USE IN facturasUID
+
+		v_idfactura = v_idfactura_Ultimo 
+
+
+		v_idregistro_va = v_idfactura
 
 
 			*** Agrego el detalle de la factura recien cargada
